@@ -1,6 +1,6 @@
-# Windows 11 Classic Context Menu
+# Windows
 
-## Modify Right-click Context Menu
+## Modify Windows 11 Right-click Context Menu
 
 In Windows 11, run the following command in Command Prompt (Terminal) to apply the Windows 10 classic context menu style :
 
