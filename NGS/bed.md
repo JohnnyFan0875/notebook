@@ -26,7 +26,7 @@ bedtools merge -i bam_file.sorted -c 4 -o collapse > bam_file.sorted.merged
 
 ### Convert sambamba output position to bed file
 
-- sambamba usage: [sambamba](bam.md#method-2)
+- sambamba usage: [sambamba](bam.md#sambamba-depth-base-method)
 
 - Position: `chr7:150652580-150652581`
 - Bed file content: `chr7   150652579   150652581`

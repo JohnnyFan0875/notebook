@@ -8,14 +8,14 @@ samtools index bam_file
 
 ## Generate alignment statistics
 
-### Option 1
+### `samtools stats` method
 
 ```bash
 samtools stats -@ threads_no input.bam > input.bam.stats
 plot-bamstats -p prefix_name input.bam.stats #-p test/ will create files in test folder
 ```
 
-### Option 2
+### `samtools flagstats` method
 
 ```bash
 samtools flagstats input.bam > input.bam.stats
@@ -71,7 +71,7 @@ chr12   25398207        25398329        KRAS    1       877467
 
 ### Per-base coverage
 
-#### Method 1
+#### `samtools depth` method
 
 ```bash
 samtools depth -b regions.bed input.bam > per_base_coverage.txt
@@ -85,7 +85,7 @@ chr12   25378549        4903
 chr12   25378550        4907
 ```
 
-#### Method 2
+#### `sambamba depth base` method
 
 ```bash
 sambamba depth base -L regions.bed -o per_base_coverage.txt -c 0 -q20 input.bam
