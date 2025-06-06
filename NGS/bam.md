@@ -1,19 +1,21 @@
 # BAM
 
+## Generate index file (bai file)
+
+```bash
+samtools index bam_file
+```
+
 ## Generate alignment statistics
 
-- option 1
+### Option 1
 
 ```bash
 samtools stats -@ threads_no input.bam > input.bam.stats
 plot-bamstats -p prefix_name input.bam.stats #-p test/ will create files in test folder
 ```
 
-```text
-# output
-```
-
-- option 2
+### Option 2
 
 ```bash
 samtools flagstats input.bam > input.bam.stats
@@ -43,7 +45,12 @@ samtools flagstats input.bam > input.bam.stats
   - **Biostars**: [PDF](reference/samtools_flagstas_result.pdf) | [Website](https://www.biostars.org/p/268550/)
   - **Biostars**: [PDF](reference/samtools_flagstas_result_2.pdf) | [Website](https://www.biostars.org/p/149883/#149889)
 
----
+## Create smaller bam file by a given regions
+
+```bash
+regions="chr1:1-100"
+samtools view -h -b -o bam_file.selected.bam bam_file "$regions"
+```
 
 ## Calculate coverage by a BED file
 
@@ -64,6 +71,8 @@ chr12   25398207        25398329        KRAS    1       877467
 
 ### Per-base coverage
 
+#### Method 1
+
 ```bash
 samtools depth -b regions.bed input.bam > per_base_coverage.txt
 ```
@@ -75,3 +84,13 @@ chr12   25378548        4909
 chr12   25378549        4903
 chr12   25378550        4907
 ```
+
+#### Method 2
+
+```bash
+sambamba depth base -L regions.bed -o per_base_coverage.txt -c 0 -q20 input.bam
+
+# -c: minimal count depth
+```
+
+- Convert sambamba output position to bed file: [Link](bed.md#convert-sambamba-output-position-to-bed-file)
