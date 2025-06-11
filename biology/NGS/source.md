@@ -72,6 +72,11 @@
   - A large-scale aggregation of human genetic variation data, offering allele frequency information across diverse populations to aid variant interpretation.
   - Website: [https://gnomad.broadinstitute.org/](https://gnomad.broadinstitute.org/)
 
+- **TaiwanGenomes**
+
+  - A national initiative providing whole-genome sequencing data from Taiwanese populations to support genetic research and precision medicine.
+  - Website: [https://genomes.tw/#/](https://genomes.tw/#/)
+
 ### Nomenclature
 
 - **HGNC (HUGO Gene Nomenclature Committee)**
@@ -97,7 +102,6 @@
   - Website: [https://www.ncbi.nlm.nih.gov/clinvar/](https://www.ncbi.nlm.nih.gov/clinvar/)
   - FTP (VCF, hg38): [https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/)
   - FTP (annotation): [https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/)
-  - FTP (GTF, hg38): [https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/](https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/)
 
 - **Database of Genomic Variants (Structural Variants)**
 
@@ -217,8 +221,6 @@
 
 ## Tools
 
-### NGS Analysis
-
 - **OpenCRAVAT**
 
   - An open-source platform for annotation and interpretation of genetic variants from next-generation sequencing data.
@@ -236,10 +238,15 @@
   - A comprehensive repository of nucleotide sequencing data from a wide range of organisms.
   - Website: [https://www.ebi.ac.uk/ena/browser/home](https://www.ebi.ac.uk/ena/browser/home)
 
-- **Ensembl Human GTF File**
+- **Ensembl Human GTF File (hg38)**
 
   - Gene annotation files in GTF format from Ensembl for the human genome.
   - FTP: [https://ftp.ensembl.org/pub/release-113/gtf/homo_sapiens/](https://ftp.ensembl.org/pub/release-113/gtf/homo_sapiens/)
+
+- **NCBI Human GTF File (hg38)**
+
+  - Gene annotation files in GTF format from NCBI for the human genome.
+  - FTP: [https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/](https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/)
 
 - **Ensembl Human Fasta File**
 
@@ -255,11 +262,16 @@
 
   - Curated gene sequences and annotations from the NCBI Reference Sequence database.
   - FTP: [https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/RefSeqGene/](https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/RefSeqGene/)
+  - FTP: [https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/](https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/) `ncbiRefSeqSelect.txt.gz`
 
 - **UCSC refGene File**
 
   - Gene annotation data from the UCSC Genome Browser.
   - FTP: [https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/](https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/)
+
+- **How to Download All Exons Of The Human Genome In Fasta Format**
+
+  - **Biostars**: [PDF](How_to_Download_All_Exons_Of_The_Human_Genome_In_Fasta_Format.pdf) | [Website](https://www.biostars.org/p/67847/#67892)
 
 ## Online Courses
 
