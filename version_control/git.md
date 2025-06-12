@@ -157,6 +157,7 @@ git log --oneline --graph --all --decorate --color # Graph view of branching
 ## Merge commit
 
 ![Image](reference/git_merge_rebase.jpg)
+Reference: [https://bytebytego.com/guides/git-merge-vs-git-rebate/](https://bytebytego.com/guides/git-merge-vs-git-rebate/)
 
 ## Git Worktree
 
