@@ -33,7 +33,6 @@ fastqc -o output_file -t 8 file.fastq.gz
 ```
 
 - `-o`: Output directory for report files
-
 - `-t`: Number of threads (faster with more cores)
 
 - Output:
@@ -44,13 +43,9 @@ fastqc -o output_file -t 8 file.fastq.gz
 - Key Metrics:
 
   - Per-base sequence quality
-
   - Per-sequence GC content
-
   - Overrepresented sequences
-
   - Adapter content
-
   - Sequence duplication levels
 
 > Review the .html report to decide whether trimming or filtering is needed before analysis.
@@ -64,13 +59,8 @@ fastp -i input_R1.fastq.gz -I input_R2.fastq.gz \
 ```
 
 - `-q`: Quality score cutoff
-
 - `-u`: Max allowed % of low-quality bases per read
-
 - `-l`: Minimum read length
-
 - `-w`: Threads
-
 - `-h`: Generate HTML report
-
 - `-j`: Generate JSON summary
