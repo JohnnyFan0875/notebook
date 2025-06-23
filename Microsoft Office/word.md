@@ -1,4 +1,4 @@
-# Microsoft Word
+# Word
 
 ## Adjusting Total Number of Pages using Field codes
 
