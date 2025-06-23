@@ -1,4 +1,4 @@
-# Vertual Machine
+# Virtual Machine
 
 ## Free up space in a `vdi` (VirtualBox Disk Image) file
 
@@ -15,6 +15,6 @@
 
 3. Compact the VDI from host machine
 
-    ```bash
-    VBoxManage modifymedium disk /path/to/your-disk.vdi --compact
-    ```
+   ```bash
+   VBoxManage modifymedium disk /path/to/your-disk.vdi --compact
+   ```
