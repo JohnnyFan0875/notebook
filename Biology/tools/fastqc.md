@@ -1,10 +1,12 @@
 # FastQC
 
-[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) is a widely used tool for performing quality control checks on raw high-throughput sequencing data (FASTQ files). It provides an overview of per-base sequence quality, GC content, adapter contamination, and other technical artifacts.
-
 ---
 
+[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) is a widely used tool for performing quality control checks on raw high-throughput sequencing data (FASTQ files). It provides an overview of per-base sequence quality, GC content, adapter contamination, and other technical artifacts.
+
 ## Key Features
+
+---
 
 - **Per base sequence quality**
 - **Per sequence GC content**
@@ -16,9 +18,9 @@
 
 > Review the .html report to decide whether trimming or filtering is needed before analysis.
 
----
-
 ## How to Run FastQC
+
+---
 
 Install with Conda:
 
@@ -45,8 +47,8 @@ Output:
 - `.html` file for interactive summary
 - `.zip` file containing raw data and metrics
 
----
-
 ## Reference
 
-- Fastqc report annotation ([PDF](fastqc_reference_01.pdf) | [Website](https://blog.csdn.net/qq_44520665/article/details/113779792))
+---
+
+- **CSDN**: ([Website](https://blog.csdn.net/qq_44520665/article/details/113779792) | [PDF](fastqc_reference_01.pdf))

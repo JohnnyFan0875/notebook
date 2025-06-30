@@ -1,10 +1,16 @@
 # FASTQ
 
+---
+
 ## Introduction
+
+---
 
 **FASTQ** is a standard text-based format for storing both biological sequence data and corresponding base quality scores. It is commonly produced by high-throughput sequencing platforms such as Illumina, and forms the foundation for downstream analyses like alignment, quantification, and variant calling.
 
 ## Data Structure
+
+---
 
 Each read in a FASTQ file consists of **4 lines**:
 
@@ -28,6 +34,8 @@ GATTTGGGGTTTAAAGGG
 
 ## Quality Control
 
-- [FastQC](fastqc.md): Quality control report generation
+---
 
-- [Fastp](fastp.md): Adapter trimming and filtering
+- [FastQC](../tools/fastqc.md): Quality control report generation
+
+- [Fastp](../tools/fastp.md): Adapter trimming and filtering

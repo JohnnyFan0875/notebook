@@ -1,10 +1,12 @@
 # Fastp
 
-[fastp](https://github.com/OpenGene/fastp) is a fast and versatile tool for preprocessing FASTQ files. It performs quality filtering, adapter trimming, polyG/polyX trimming, per-base correction, and generates QC reports — all in one step.
-
 ---
 
+[fastp](https://github.com/OpenGene/fastp) is a fast and versatile tool for preprocessing FASTQ files. It performs quality filtering, adapter trimming, polyG/polyX trimming, per-base correction, and generates QC reports — all in one step.
+
 ## Key Features
+
+---
 
 - Quality filtering and trimming
 - Adapter detection and removal (automatic or manual)
@@ -14,9 +16,9 @@
 - Quality control report in **HTML** and **JSON**
 - Multi-threaded for high speed
 
----
-
 ## How to Run FastQC
+
+---
 
 Install with Conda:
 
