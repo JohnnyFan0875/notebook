@@ -51,4 +51,4 @@ Output:
 
 ---
 
-- **CSDN**: ([Website](https://blog.csdn.net/qq_44520665/article/details/113779792) | [PDF](fastqc_reference_01.pdf))
+- **CSDN**: ([Website](https://blog.csdn.net/qq_44520665/article/details/113779792) | [PDF](reference/fastqc_reference_01.pdf))

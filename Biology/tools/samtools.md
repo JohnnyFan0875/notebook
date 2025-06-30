@@ -34,5 +34,75 @@ samtools flagstats input.bam > input.bam.stats
 ```
 
 - For detail information, please referred to the following documentations
-  - **Biostars**: [PDF](samtools_flagstats_reference_01.pdf) | [Website](https://www.biostars.org/p/268550/)
-  - **Biostars**: [PDF](samtools_flagstats_reference_02.pdf) | [Website](https://www.biostars.org/p/149883/#149889)
+  - **Biostars**: [PDF](reference/samtools_flagstats_reference_01.pdf) | [Website](https://www.biostars.org/p/268550/)
+  - **Biostars**: [PDF](reference/samtools_flagstats_reference_02.pdf) | [Website](https://www.biostars.org/p/149883/#149889)
+
+## Create smaller bam file by a given regions
+
+```bash
+regions="chr1:1-100"
+samtools view -h -b -o bam_file.selected.bam bam_file "$regions"
+```
+
+## Calculate coverage by a BED file
+
+### Region-level coverage
+
+```bash
+samtools bedcov regions.bed input.bam > coverage_output.txt
+```
+
+```text
+# output
+
+chr12   25358179        25362845        KRAS    1       0
+chr12   25378547        25378707        KRAS    1       709757
+chr12   25380167        25380346        KRAS    1       501596
+chr12   25398207        25398329        KRAS    1       877467
+```
+
+### Per-base coverage
+
+#### `samtools depth` method
+
+```bash
+samtools depth -b regions.bed input.bam > per_base_coverage.txt
+```
+
+```text
+# output
+
+chr12   25378548        4909
+chr12   25378549        4903
+chr12   25378550        4907
+```
+
+#### `sambamba depth base` method
+
+```bash
+sambamba depth base -L regions.bed -o per_base_coverage.txt -c 0 -q20 input.bam
+
+# -c: minimal count depth
+```
+
+- Convert sambamba output position to bed file: [Link](bed.md#convert-sambamba-output-position-to-bed-file)
+
+## Convert BAM to SAM
+
+---
+
+```bash
+samtools view -h -o output.sam input.bam
+```
+
+- Add `-h` to include header.
+
+
+## Indexing BAM Files
+
+To enable fast random access (e.g., view reads in a genomic window), you need to **index** the BAM:
+
+```bash
+samtools index sample.bam
+# Produces sample.bam.bai
+```
