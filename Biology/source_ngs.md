@@ -271,7 +271,7 @@
 
 - **How to Download All Exons Of The Human Genome In Fasta Format**
 
-  - **Biostars**: [PDF](How_to_Download_All_Exons_Of_The_Human_Genome_In_Fasta_Format.pdf) | [Website](https://www.biostars.org/p/67847/#67892)
+  - [Biostars](https://www.biostars.org/p/67847/#67892)
 
 ## Online Courses
 

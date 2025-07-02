@@ -61,7 +61,7 @@ Example:
 
 - The **CIGAR** string can get more complex (e.g., 76M2I23M1D), representing matches, insertions, deletions, clipping, etc.
 
-  ![Images](reference/bam-format.webp)
+  ![Images](https://ugc.futurelearn.com/uploads/assets/f8/31/f8314226-810d-4b91-bdbf-05be43f1ca37.png)
   Reference: [futurelearn](https://www.futurelearn.com/info/courses/bioinformatics-for-biologists-analysing-and-interpreting-genomics-datasets/0/steps/388425)
 
 - The **FLAG** field is important for filtering reads. 0 = simple case.

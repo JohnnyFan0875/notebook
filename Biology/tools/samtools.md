@@ -27,7 +27,7 @@ plot-bamstats -p prefix_name input.bam.stats  # -p test/ will create files in te
 samtools flagstats input.bam > input.bam.stats
 ```
 
-Output
+**Output**
 
 ```bash
 363458 + 0 in total (QC-passed reads + QC-failed reads) # Total number of reads including other such as supplementary
@@ -96,7 +96,7 @@ chr12   25378549        4903
 chr12   25378550        4907
 ```
 
-- Per-base Coverage by sambamba: [sambamba depth base](#sambamba.md#per-base-coverage)
+- Per-base Coverage by sambamba: [sambamba depth base](sambamba.md#per-base-coverage)
 
 ## Convert BAM to SAM
 
