@@ -59,9 +59,9 @@ Example:
   | SEQ   | Read sequence                           | AGCTTAGCTAGCTACCTAT...  |
   | QUAL  | Quality string (ASCII-encoded Phred)    | FFFFFFFFFFFFFFFFFFFF... |
 
-- The **CIGAR** string can get more complex (e.g., 76M2I23M1D), representing matches, insertions, deletions, clipping, etc.   
+- The **CIGAR** string can get more complex (e.g., 76M2I23M1D), representing matches, insertions, deletions, clipping, etc.
 
-  ![Images](bam-format.webp)
+  ![Images](reference/bam-format.webp)
   Reference: [futurelearn](https://www.futurelearn.com/info/courses/bioinformatics-for-biologists-analysing-and-interpreting-genomics-datasets/0/steps/388425)
 
 - The **FLAG** field is important for filtering reads. 0 = simple case.
@@ -73,9 +73,9 @@ Example:
 
 ---
 
-| Tool         | Purpose                             |
-| ------------ | ----------------------------------- |
-| [**Samtools**](../tools/samtools.md) | View, sort, index, filter BAM files |
-| **Picard**   | Mark duplicates, collect metrics    |
-| **Bedtools** | Intersect BAM with BED regions      |
-| **IGV**      | Visualize BAM alignments            |
+| Tool                                 | Purpose                             |
+| ------------------------------------ | ----------------------------------- |
+| [**samtools**](../tools/samtools.md) | View, sort, index, filter BAM files |
+| [**picard**](../tools/picard.md)     | Mark duplicates, collect metrics    |
+| [**bedtools**](../tools/bedtools.md) | Intersect BAM with BED regions      |
+| [**IGV**](../tools/igv.md)           | Visualize BAM alignments            |
