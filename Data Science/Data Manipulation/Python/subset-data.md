@@ -67,6 +67,12 @@ df.loc["dog1"]
 
 # Access a subset of rows and columns
 df.loc[["dog1", "dog3"], ["name", "height_cm"]]
+
+# Select rows 0,1,2 and columns 'name','height_cm' (row index labels 0,1,2)
+df_select = df.loc[[0,1,2],['name','height_cm']]
+
+# Select all rows and columns 'name','height_cm'
+df_select = df.loc[:,['name','height_cm']]
 ```
 
 ## Position-based access (`.iloc[]`)
@@ -85,6 +91,18 @@ df.tail(2)
 
 # Access a subset of rows and columns
 df.iloc[[0, 2], [0, 2]]
+
+# Select rows 0,1,2 and columns 0,1 by integer position
+df_select = df.iloc[[0,1,2],[0,1]]
+
+# Select all rows and columns 0,1
+df_select = df.iloc[:,[0,1]]
+
+# Select a single column as DataFrame
+df_select = df.iloc[:,[2]]  # DataFrame
+
+# Select a single column as Series
+df_select = df.iloc[:,2]    # Series
 ```
 
 ## Multiple conditions
