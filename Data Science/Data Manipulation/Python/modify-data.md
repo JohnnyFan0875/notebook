@@ -68,11 +68,11 @@ df['name'] = df['name'].str.replace("C", "c")                 # Replace substrin
 
 ```python
 # Column-wise transformation
-df['height_plus_1'] = df['height_cm'].apply(lambda x: x + 1)  # Add 1 to each height
+df['height_plus_1'] = df['height_cm'].apply(lambda x: x + 1)               # Add 1 to each height
 
 # Element-wise transformation for entire DataFrame
 numeric_df = df[['height_cm', 'weight_kg', 'age']]
-df_doubled = numeric_df.applymap(lambda x: x * 2)      # Multiply all numbers by 2
+df_doubled = numeric_df.applymap(lambda x: x * 2)                          # Multiply all numbers by 2
 
 # Transform one Series using map
 df['age_label'] = df['age'].map(lambda x: 'puppy' if x < 2 else 'adult')
@@ -635,9 +635,9 @@ df['birth_date'].dtype
 - Extract datetime components
 
 ```python
-df['year'] = df['birth_date'].dt.year       # Extract year
-df['month'] = df['birth_date'].dt.month     # Extract month number
-df['day'] = df['birth_date'].dt.day         # Extract day of month
+df['year'] = df['birth_date'].dt.year           # Extract year
+df['month'] = df['birth_date'].dt.month         # Extract month number
+df['day'] = df['birth_date'].dt.day             # Extract day of month
 df['weekday'] = df['birth_date'].dt.day_name()  # Day of week (string)
 ```
 
