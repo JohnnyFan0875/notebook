@@ -1,19 +1,19 @@
 # Modifying Data
 
-| #   | Category                         | Key Methods / Functions                                                                                       |
-| --- | -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| 1   | Updating Data                    | `.loc[]`, `.iloc[]`, `.at[]`, `.iat[]`, `.replace()`, `.str.replace()`, `.apply()`, `.applymap()`, `.map()`   |
-| 2   | Adding / Removing Columns & Rows | `df['col']=...`, `.assign()`, `.insert()`, `.loc[]`, `.drop()`, `.dropna()`                                   |
-| 3   | Handling Missing Data            | `.fillna()`, `.dropna()`, `.isna()`, `.notna()`                                                               |
-| 4   | Data Types & String Operations   | `.astype()`, `pd.to_datetime()`, `.str.lower()`, `.str.strip()`, `.str.replace()`                             |
-| 5   | Row Selection & Filtering        | `df[cond]`, `.query()`, `.str.contains()`, `np.select()`, `np.where()`                                        |
-| 6   | Sampling, Duplicates, & Unique   | `.unique()`, `.nunique()`, `.drop_duplicates()`, `.duplicated()`, `.sample()`, `.groupby().sample()`          |
-| 7   | Grouping & Aggregation           | `.groupby()`, `.agg()`, `.transform()`, `.size()`, `.describe()`                                              |
-| 8   | Reshaping Data                   | `.pivot_table()`, `.melt()`, `.unstack()`, `pd.concat()`, `.merge()`, `pd.merge_ordered()`, `pd.merge_asof()` |
-| 9   | Categorical Data & Encoding      | `.astype('category')`, `.cat.codes`, `pd.get_dummies()`, `.cat.categories`, `.cat.rename_categories()`        |
-| 10  | Index & MultiIndex               | `.set_index()`, `.reset_index()`, `.loc[]` with tuples, `.swaplevel()`, `.sort_index()`, `pd.IndexSlice`      |
-| 11  | Binning & Categorization         | `pd.cut()`, `pd.qcut()`, `.value_counts()`, `.cat.categories`                                                 |
-| 12  | Datetime Handling                | `pd.to_datetime()`, `.dt.year/month/day`, `.dt.day_name()`, `.dt.strftime()`, `pd.Timedelta`, filtering       |
+| Category                                                                          | Key Methods / Functions                                                                                       |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [**1. Updating Data**](#1-updating-data)                                          | `.loc[]`, `.iloc[]`, `.at[]`, `.iat[]`, `.replace()`, `.str.replace()`, `.apply()`, `.applymap()`, `.map()`   |
+| [**2. Adding / Removing Columns & Rows**](#2-adding--removing-columns-and-rows)   | `df['col']=...`, `.assign()`, `.insert()`, `.loc[]`, `.drop()`, `.dropna()`                                   |
+| [**3. Handling Missing Data**](#3-handling-missing-data)                          | `.fillna()`, `.dropna()`                                                                                      |
+| [**4. Data Types & String Operations**](#4-data-types--string-operations)         | `.astype()`, `pd.to_datetime()`, `.str.lower()`, `.str.strip()`                                               |
+| [**5. Row Selection & Filtering**](#5-row-selection--filtering)                   | `df[cond]`, `.query()`, `.str.contains()`, `np.select()`, `np.where()`                                        |
+| [**6. Sampling, Duplicates, & Unique**](#6-sampling-duplicates-and-unique-values) | `.unique()`, `.nunique()`, `.drop_duplicates()`, `.duplicated()`, `.sample()`, `.groupby().sample()`          |
+| [**7. Grouping & Aggregation**](#7-grouping--aggregation)                         | `.groupby()`, `.agg()`, `.transform()`, `.describe()`                                                         |
+| [**8. Reshaping Data**](#8-reshaping-data)                                        | `.pivot_table()`, `.melt()`, `.unstack()`, `pd.concat()`, `.merge()`, `pd.merge_ordered()`, `pd.merge_asof()` |
+| [**9. Categorical Data & Encoding**](#9-categorical-data--encoding)               | `.astype('category')`, `.cat.codes`, `pd.get_dummies()`, `.cat.categories`, `.cat.rename_categories()`        |
+| [**10. Index & MultiIndex**](#10-index--multiindex)                               | `.set_index()`, `.reset_index()`                                                                              |
+| [**11. Binning & Categorization**](#11-binning--categorization)                   | `pd.cut()`, `pd.qcut()`                                                                                       |
+| [**12. Datetime Handling**](#12-datetime-handling)                                | `pd.to_datetime()`, `.dt.year/month/day`, `.dt.day_name()`, `.dt.strftime()`                                  |
 
 ## Example Dataset
 
