@@ -68,6 +68,11 @@ df.loc["dog1"]
 # Access a subset of rows and columns
 df.loc[["dog1", "dog3"], ["name", "height_cm"]]
 
+# Access subsets of rows based on multiindex
+df = df.set_index(['name', 'height_cm'], drop=False)
+df.loc[[('Bella', 56), ('Charlie', 43)]]
+df.loc['Bella':'Charlie'] # Charlie is included
+
 # Select rows 0,1,2 and columns 'name','height_cm' (row index labels 0,1,2)
 df_select = df.loc[[0,1,2],['name','height_cm']]
 

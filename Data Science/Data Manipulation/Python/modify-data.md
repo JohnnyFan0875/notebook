@@ -107,6 +107,9 @@ df = df.assign(bmi = df['weight_kg'] / (df['height_cm']/100)**2)      # Calculat
 
 # Insert column at a specific position
 df.insert(2, "weight_g", df["weight_kg"]*1000)                        # Insert grams column at index 2
+
+# Create a new column based on calculation of existing columns
+df["age_in_months"] = df["age"] * 12 
 ```
 
 - Add row
@@ -337,6 +340,10 @@ df.groupby('name')['weight_kg'].sum()
 
 # Mean height per name
 df.groupby('name')['height_cm'].mean()
+
+# Many groups, many summaries
+df.groupby(['name', 'weight_kg'])['height_cm'].mean()
+df.groupby(['name', 'weight_kg'])[['height_cm', 'age']].mean()
 ```
 
 - Multiple aggregations
@@ -440,6 +447,12 @@ pd.concat([df, df], ignore_index=True)
 
 # Horizontal concatenation (align by index)
 pd.concat([df, df[['weight_kg']]], axis=1)
+
+# Concatenate Series objects
+series1 = pd.Series(['a','b','c','d'], index=['1','2','3','4'])
+series2 = pd.Series(['e','f','g','h'], index=['5','6','7','8'])
+
+pd.concat([series1, series2], ignore_index=True)
 ```
 
 - Merge DataFrames
@@ -529,8 +542,9 @@ df['name_cat'] = df['name_cat'].cat.rename_categories(
 - Set / reset index
 
 ```python
-# Set 'name' as the new index
+# Set column as the new index
 idx_df = df.set_index('name')
+idx_df = df.set_index(['name', 'weight_kg'])
 
 # Reset back to default integer index
 reset_df = idx_df.reset_index()
