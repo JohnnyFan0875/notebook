@@ -56,6 +56,14 @@ iris.sum(numeric_only=True)             # Compute the sum of values for each num
 iris.quantile([0.25, 0.5, 0.75])        # Compute the 25th, 50th (median), and 75th percentiles (quartiles) for each numeric column
 ```
 
+- Calculate interquartile range (IQR)
+
+```python
+q75 = iris["sepal_length"].quantile(0.75)
+q25 = iris["sepal_length"].quantile(0.25)
+iqr = q75 - q25
+```
+
 - Conditional mean calculation:
 
 ```python
@@ -140,6 +148,16 @@ iris["collected_date"] = pd.to_datetime(iris["collected_date"], errors="coerce")
 iris['species'].value_counts(sort=True)                 # Frequency of each category
 iris['species'].value_counts(normalize=True)            # Proportion of each category
 pd.crosstab(iris['species'], iris['sepal_width'] > 3.0) # Rows = species, Columns = whether sepal_width > 3.0; values = counts
+
+# Crosstab with aggregation (e.g., median score per species × sepal width group)
+iris["score"] = iris["sepal_length"] * 10 + iris["petal_length"]
+
+pd.crosstab(
+    iris["species"],
+    iris["sepal_width"] > 3.0,
+    values=iris["score"],
+    aggfunc="median"
+)
 ```
 
 - Find inconsistent categories:

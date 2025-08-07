@@ -76,7 +76,7 @@ df['height_plus_1'] = df['height_cm'].apply(lambda x: x + 1)               # Add
 def to_inches(cm):
     return cm / 2.54 if pd.notna(cm) else np.nan
 
-df['height_inch'] = df['height_cm'].apply(to_inches)   
+df['height_inch'] = df['height_cm'].apply(to_inches)
 
 # Element-wise transformation for entire DataFrame
 numeric_df = df[['height_cm', 'weight_kg', 'age']]
@@ -181,11 +181,12 @@ df.dropna(subset=['age'])
 
 ## 4. Data Types & String Operations
 
-| Task                    | Method / Function              |
-| ----------------------- | ------------------------------ |
-| Change dtype            | `.astype()`                    |
-| Convert to datetime     | `pd.to_datetime()`             |
-| Clean/transform strings | `.str.strip()`, `.str.lower()` |
+| Task                    | Method / Function                  |
+| ----------------------- | ---------------------------------- |
+| Change dtype            | `.astype()`                        |
+| Convert to datetime     | `pd.to_datetime()`                 |
+| Clean/transform strings | `.str.strip()`, `.str.lower()`     |
+| Select numeric columns  | `.select_dtypes(include="number")` |
 
 - Change dtype
 
@@ -229,6 +230,17 @@ df['name'] = df['name'].str.replace('a', '@', regex=False)  # Replace 'a' with '
 df['starts_with_b'] = df['name'].str.startswith('b')
 ```
 
+- Select numeric columns
+
+```python
+# Select only numeric columns from DataFrame
+numeric_df = df.select_dtypes(include="number")
+
+# Use-case: apply statistical functions only on numeric data
+numeric_df.mean(), numeric_df.std()
+
+```
+
 ## 5. Row Selection & Filtering
 
 | Task                  | Method / Function         |
@@ -261,6 +273,12 @@ df[df['name'].str.startswith('b')]
 
 # Names ending with 'y'
 df[df['name'].str.endswith('y')]
+
+# Names containing 'a' or 'b'
+df[df['name'].str.contains('a|b')]
+
+# Names containing 'a' in the begining
+df[df['name'].str.contains('^a')]
 ```
 
 - Advanced conditions
