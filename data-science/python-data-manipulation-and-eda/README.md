@@ -1,4 +1,4 @@
-## Python
+## Data Manipulation and EDA
 
 Data manipulation refers to the process of transforming, cleaning, restructuring, and enriching raw data into a desired format for analysis.
 
