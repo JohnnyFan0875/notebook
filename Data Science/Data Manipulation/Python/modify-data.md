@@ -59,9 +59,11 @@ df.at['dog1', 'age'] = 2                               # dog1 age becomes 2
 - Replace values
 
 ```python
-# Replace values
 df['name'] = df['name'].replace("Charlie", "Charles")         # Replace exact match
 df['name'] = df['name'].str.replace("C", "c")                 # Replace substring in strings
+
+replace_dict = {"Bella": "Bell", "Lucy": "Lucia"}
+df['name'] = df['name'].replace(replace_dict)                 # Replace using a dictionary (multiple mappings)
 ```
 
 - Apply function
@@ -69,6 +71,12 @@ df['name'] = df['name'].str.replace("C", "c")                 # Replace substrin
 ```python
 # Column-wise transformation
 df['height_plus_1'] = df['height_cm'].apply(lambda x: x + 1)               # Add 1 to each height
+
+# Apply function using a predefined function (no lambda)
+def to_inches(cm):
+    return cm / 2.54 if pd.notna(cm) else np.nan
+
+df['height_inch'] = df['height_cm'].apply(to_inches)   
 
 # Element-wise transformation for entire DataFrame
 numeric_df = df[['height_cm', 'weight_kg', 'age']]
@@ -109,7 +117,7 @@ df = df.assign(bmi = df['weight_kg'] / (df['height_cm']/100)**2)      # Calculat
 df.insert(2, "weight_g", df["weight_kg"]*1000)                        # Insert grams column at index 2
 
 # Create a new column based on calculation of existing columns
-df["age_in_months"] = df["age"] * 12 
+df["age_in_months"] = df["age"] * 12
 ```
 
 - Add row
@@ -640,7 +648,7 @@ df['weight_group'].value_counts()
 # Create a datetime column for dog birth dates
 df['birth_date'] = pd.to_datetime([
     '2025-01-01', '2024-05-03', '2024-06-20', '2022-07-01', '2021-08-01'
-])
+], errors = 'coerce')    # Return NaT (not a time) if conversion failed
 
 # Inspect datetime column dtype
 df['birth_date'].dtype
