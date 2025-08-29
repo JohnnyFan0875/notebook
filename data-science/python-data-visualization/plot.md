@@ -86,3 +86,5 @@ plt.show()
 
 sns.kdeplot(data=divorce, x="marriage_duration", hue="education_man", cut=0)
 plt.show()
+
+df.plot()

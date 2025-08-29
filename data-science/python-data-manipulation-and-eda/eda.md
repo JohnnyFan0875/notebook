@@ -1,5 +1,11 @@
 # Exploratory Data Analysis (EDA)
 
+```
+to be added
+df['col'].pct_change()
+df['col'].diff()
+```
+
 **Exploratory Data Analysis (EDA)** is the initial step in data analysis where we examine datasets to summarize their key characteristics using statistical and visual methods. The goal is to understand the structure, detect anomalies, test assumptions, and uncover patterns or relationships that guide further analysis or modeling. EDA involves inspecting distributions, missing values, correlations, data types, and potential outliers to ensure data quality and analytic readiness.
 
 | Category                        | Key Methods / Functions                                                                                                                                                          |

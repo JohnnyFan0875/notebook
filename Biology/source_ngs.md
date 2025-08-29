@@ -269,6 +269,11 @@
   - Gene annotation data from the UCSC Genome Browser.
   - FTP: [https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/](https://hgdownload.cse.ucsc.edu/goldenpath/hg38/database/)
 
+- **HGNC Gene Name File**
+
+  - Gene symbol from the HGNC database.
+  - FTP: [storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt](storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt)
+
 - **How to Download All Exons Of The Human Genome In Fasta Format**
 
   - [Biostars](https://www.biostars.org/p/67847/#67892)
