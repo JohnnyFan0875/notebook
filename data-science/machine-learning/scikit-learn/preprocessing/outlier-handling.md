@@ -1,5 +1,41 @@
 # Outlier Handling
 
+## -- to be added
+```
+- Using IQR (Interquartile Range)
+    - (data < Q1 - 1.5 * IQR) or (data > Q3 + 1.5 * IQR)
+
+```python
+#method 1
+data_0.75 = np.quantile(data, 0.75) = data.quantile(0.75)
+data_0.25 = np.quantile(data, 0.25) = data.quantile(0.25)
+iqr = data_0.75 - data_0.25
+
+#method2
+from scipy.stats import iqr
+col1_iqr = iqr(data)
+```
+
+```python
+lower_threshold = np.quantile(df['col1'], 0.25) - 1.5 * iqr
+upper_threshold = np.quantile(df['col1'], 0.75) + 1.5 * iqr
+df_outlier = df[(df['col1'] < lower_threshold) | (df['col1'] > upper_threshold)]
+```
+
+- Using z-score
+
+```python
+df = pd.DataFrame({'feature': [10, 12, 14, 15, 100, 18, 20, 21, 25, 28]})
+df['zscore'] = scipy.stats.zscore(df['feature'])
+
+threshold = 3
+
+# Detect outliers (Z-score > 3 or < -3)
+outliers = df[abs(df['zscore']) > threshold]
+```
+```
+---
+
 Outliers are data points that deviate significantly from the majority of a dataset. They can arise from measurement errors, data entry mistakes, or genuine variability. Handling outliers appropriately is important, as they can distort statistical summaries, bias model training, and affect prediction accuracy.
 
 ## Common Techniques

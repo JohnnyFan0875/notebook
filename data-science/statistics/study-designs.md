@@ -1,0 +1,113 @@
+# Study Designs in Epidemiology and Clinical Research
+
+## Study Designs
+
+Study designs are broadly divided into three main categories:
+
+1. **Observational studies** – researchers do not intervene, only observe.
+2. **Experimental studies** – researchers assign interventions.
+3. **Evidence synthesis** – researchers summarize findings across multiple studies.
+
+## Hierarchy
+
+```
+Study Designs
+├── Observational
+│ ├── Cohort
+│ │ ├── Prospective
+│ │ └── Retrospective
+│ ├── Case–Control
+│ └── Cross-Sectional
+├── Experimental
+│ └── Randomized Controlled Trial (RCT)
+└── Evidence Synthesis
+├── Systematic Review
+└── Meta-analysis
+```
+
+## 1. Observational Studies
+
+Researchers observe exposures and outcomes without intervention.  
+Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
+
+### 1.1 Cohort Studies
+
+- Participants are grouped by **exposure status** (exposed vs. unexposed), then followed to determine outcomes.
+- Key feature: Exposure identified **before** outcome.
+
+#### a. Prospective Cohort
+
+- Researchers enroll participants now and follow them forward in time.
+- Often start with healthy individuals who are free from the disease or outcome of interest
+- **Example:** The _Framingham Heart Study_ (since 1948) has followed residents to identify cardiovascular risk factors (e.g., smoking, cholesterol, blood pressure).
+- **Strengths:** Clear temporal sequence, less recall bias.
+- **Weaknesses:** Time- and cost-intensive.
+
+![Image](https://www.scribbr.com/wp-content/uploads/2023/06/prospective-cohort-study.webp)
+
+#### b. Retrospective Cohort
+
+- Researchers use **existing records** (e.g., medical charts, registries) to reconstruct past exposures and outcomes.
+- **Example:** Hospital employee vaccination records linked to archived infection data.
+- **Strengths:** Faster, less expensive.
+- **Weaknesses:** Data quality limits, missing confounders.
+
+![Image](https://www.scribbr.co.uk/wp-content/uploads/2023/06/retrospective-cohort-study.webp)
+
+### 1.2 Case–Control Studies
+
+- Start with **outcome status**:
+  - Cases = individuals with disease/outcome
+  - Controls = individuals without disease
+- Look backward to assess exposures.
+- **Example:** Doll & Hill (1950s) showed smoking was strongly associated with lung cancer by comparing smoking history of lung cancer patients vs. controls.
+- **Strengths:** Efficient for rare diseases, multiple exposures.
+- **Weaknesses:** Recall bias, cannot directly measure incidence (case–control starts with outcome, not population at risk).
+
+### 1.3 Cross-Sectional Studies
+
+- Snapshot of exposure and outcome measured **at the same time**.
+- **Example:** The CDC conducts annual telephone surveys of thousands of adults, collecting data at one point in time on smoking, alcohol use, physical activity, obesity, and chronic disease prevalence.
+- **Strengths:** Quick, inexpensive, useful for prevalence estimates.
+- **Weaknesses:** No temporal sequence, cannot infer causality.
+
+## 2. Experimental Studies
+
+Researchers intervene and randomly assign participants to groups.
+
+### 2.1 Randomized Controlled Trial (RCT)
+
+- Participants are randomly assigned to intervention vs. control groups.
+- **Example:** The _Women’s Health Initiative (WHI)_ hormone therapy trial tested estrogen/progesterone vs. placebo in postmenopausal women, showing increased breast cancer and cardiovascular risk.
+- **Strengths:** Gold standard for causal inference, minimizes bias.
+- **Weaknesses:** Expensive, ethical constraints, may lack generalizability.
+
+![Image](https://www.simplypsychology.org/wp-content/uploads/randomized-controlled-trial-1536x894.jpeg)
+
+## 3. Evidence Synthesis
+
+Researchers summarize and analyze findings from multiple studies.
+
+### 3.1 Systematic Review
+
+- Comprehensive collection and critical evaluation of all relevant studies.
+- **Example:** Cochrane systematic reviews of vaccines or cancer therapies.
+
+### 3.2 Meta-Analysis
+
+- Statistical pooling of results from multiple studies (often nested within a systematic review).
+- **Example:** Meta-analysis of statin RCTs showing reduction in cardiovascular mortality.
+- **Strengths:** Provides higher-level evidence, increases power.
+- **Weaknesses:** Limited by quality and heterogeneity of included studies.
+
+## 4. Summary Table
+
+| Category               | Study type             | Direction          | Key feature                                | Example                               |
+| ---------------------- | ---------------------- | ------------------ | ------------------------------------------ | ------------------------------------- |
+| **Observational**      | Cohort (prospective)   | Forward            | Exposure → outcome (future follow-up)      | Framingham Heart Study                |
+|                        | Cohort (retrospective) | Backward (records) | Exposure → outcome (archived data)         | Hospital vaccination vs. infection    |
+|                        | Case–control           | Backward           | Start with outcome, look for exposures     | Doll & Hill smoking–lung cancer study |
+|                        | Cross-sectional        | Snapshot           | Exposure & outcome measured simultaneously | NHANES obesity surveys                |
+| **Experimental**       | RCT                    | Forward (random)   | Randomized intervention vs. control        | WHI hormone therapy trial             |
+| **Evidence synthesis** | Systematic review      | N/A                | Critical synthesis of multiple studies     | Cochrane vaccine review               |
+|                        | Meta-analysis          | N/A                | Statistical pooling of study results       | Statin RCT meta-analysis              |
