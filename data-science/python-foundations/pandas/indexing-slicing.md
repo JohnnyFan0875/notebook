@@ -1,23 +1,4 @@
-# Subsetting Data
-
-Subsetting is the process of selecting specific **rows**, **columns**, or **cells** from a DataFrame or Series. It is one of the most fundamental tasks in data manipulation, often used for filtering data, extracting features, or preparing subsets for analysis.
-
-## Why Subset?
-
-- Focus on a region or category of interest
-- Perform operations on a filtered dataset
-- Clean or validate specific parts of the data
-
-## Common Subsetting Techniques
-
-| Type                                                 | Method                     | Example                                                 | Description                      |
-| ---------------------------------------------------- | -------------------------- | ------------------------------------------------------- | -------------------------------- |
-| [Column selection](#column-selection)                | `df["col"]`, `df[["col"]]` | `df["age"]`                                             | Select one or more columns       |
-| [Row filtering](#row-filtering)                      | Boolean indexing           | `df[df["age"] > 30]`                                    | Filter rows based on a condition |
-| [Label-based access](#label-based-access-loc)        | `df.loc[row, col]`         | `df.loc["dog1", "weight_kg"]`                           | Subset by row/column labels      |
-| [Position-based access](#position-based-access-iloc) | `df.iloc[row, col]`        | `df.iloc[0, 1]`                                         | Subset by integer position       |
-| [Multiple conditions](#multiple-conditions)          | `&`, `isin()`              | `df[(df["color"] == "Black") & (df["weight_kg"] > 20)]` | Filter with compound logic       |
-| [Index filtering](#index-filtering)                  | `.loc[index_list]`         | `df.loc[["dog1", "dog3"]]`                              | Select multiple rows by index    |
+# Pandas: Indexing and Slicing
 
 ## Example Dataset
 

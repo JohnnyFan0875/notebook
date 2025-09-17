@@ -1,17 +1,4 @@
-# Sorting Data
-
-Sorting is a key operation in data manipulation. It helps organize data for readability, prioritization, and further analysis.
-
-## Common Sorting Techniques
-
-| Task                                              | Method / Example                             | Description                                                     |
-| ------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------- |
-| [Sort by column value](#sorting-by-column-values) | `df.sort_values("col")`                      | Sort rows by one/multiple column(s) (ascending by default)      |
-| [Sort by index](#sorting-by-index)                | `df.sort_index()`                            | Sort rows by index labels                                       |
-| [In-place sort](#in-place-sorting)                | `df.sort_values("col", inplace=True)`        | Modify original DataFrame directly                              |
-| [Sort a Series](#sorting-a-series)                | `series.sort_values()`,`series.sort_index()` | Sort a Series from smallest to largest or based on index labels |
-
----
+# Pandas: Sorting
 
 ## Example Dataset
 

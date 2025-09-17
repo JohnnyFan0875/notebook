@@ -6,21 +6,7 @@ df['col'].pct_change()
 df['col'].diff()
 ```
 
-**Exploratory Data Analysis (EDA)** is the initial step in data analysis where we examine datasets to summarize their key characteristics using statistical and visual methods. The goal is to understand the structure, detect anomalies, test assumptions, and uncover patterns or relationships that guide further analysis or modeling. EDA involves inspecting distributions, missing values, correlations, data types, and potential outliers to ensure data quality and analytic readiness.
 
-| Category                        | Key Methods / Functions                                                                                                                                                          |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1. Dataset Overview**         | `.shape`, `.columns`, `.info()`, `.describe()`, `.head()`, `.tail()`, `.dtypes`, `df.nunique()`, `.index`                                                                        |
-| **2. Summary Statistics**       | `.describe()`, `.mean()`, `.median()`, `.mode()`, `.std()`, `.var()`, `.min()`, `.max()`, `.quantile()`, `.sum()`, `.cumsum()`, `.cummax()`, `.cummin()`, `.cumprod()`, `.agg()` |
-| **3. Missing Values**           | `.isna()`, `.isnull()`, `.sum()`, `.mean()`, `.value_counts(dropna=False)`, `missingno`                                                                                          |
-| **4. Data Types & Conversion**  | `.astype()`, `pd.to_datetime()`, `.apply()`                                                                                                                                      |
-| **5. Categorical Analysis**     | `.value_counts()`, `.unique()`, `pd.crosstab()`, `pd.get_dummies()`, `.value_counts(normalize=True)`                                                                             |
-| **6. Numerical Analysis**       | `.hist()`, `.boxplot()`, `.plot()`, `.describe()`, `.corr()`, `sns.pairplot()`                                                                                                   |
-| **7. Grouping & Aggregation**   | `.groupby()`, `.agg()`, `.pivot_table()`, `.crosstab()`                                                                                                                          |
-| **8. Correlation & Covariance** | `.corr()`, `.cov()`, `sns.heatmap()`, `sns.clustermap()`                                                                                                                         |
-| **9. Visualization**            | `matplotlib.pyplot`, `seaborn`, `plotly.express`, `pandas.plot()`                                                                                                                |
-| **10. Outliers & Distribution** | `sns.boxplot()`, `sns.histplot()`, `sns.violinplot()`, `df.describe(percentiles=[...])`                                                                                          |
-| **11. Data Validation**         | `.str.len()`, conditional filtering, type checks, value range sanity check                                                                                                       |
 
 ## Example Dataset
 
