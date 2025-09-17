@@ -143,6 +143,17 @@ data = [
 df = pd.DataFrame(data, columns=["ID", "Name", "Age"])
 ```
 
+### DataFrame → Array
+
+```python
+import pandas as pd
+import seaborn as sns
+
+iris = sns.load_dataset("iris")
+numeric_df = iris.select_dtypes(include='number')
+array = numeric_df.to_numpy()
+```
+
 ## Summary
 
 - **JSON ↔ dict**: `json.dump`, `json.load`, `json.dumps`, `json.loads`

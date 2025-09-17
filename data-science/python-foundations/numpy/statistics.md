@@ -24,6 +24,7 @@ arr.sum()   # 115 → total sum of all elements
 arr.min()   # 1   → smallest value
 arr.max()   # 100 → largest value
 arr.std()   # 36.1 (approx) → standard deviation, measure of spread
+arr.var()
 ```
 
 - These are **descriptive statistics** that summarize the dataset.

@@ -49,6 +49,30 @@ encoded.head()
 - Creates binary indicator variables for each category.
 - Useful for machine learning models.
 
+## Crosstab (Contingency Tables)
+
+`pd.crosstab()` is useful for analyzing the relationship between two or more categorical variables.
+
+```python
+# Frequency of species vs. sepal_width > 3.0
+pd.crosstab(iris['species'], iris['sepal_width'] > 3.0)
+
+# Crosstab with aggregation (median sepal length per species × width group)
+pd.crosstab(
+    iris['species'],
+    iris['sepal_width'] > 3.0,
+    values=iris['sepal_length'],
+    aggfunc='median'
+)
+
+# Normalize to get proportions
+pd.crosstab(iris['species'], iris['sepal_width'] > 3.0, normalize='index')
+```
+
+- `crosstab` creates frequency or summary tables of categorical variables.
+- Supports aggregation and normalization.
+- Useful for quick exploratory comparisons.
+
 ## Inspect Category Info
 
 ### Reorder Categories
@@ -96,10 +120,31 @@ Output:
 - `pd.get_dummies(..., dummy_na=True)`: produces consistent dummy columns with an extra `NaN` column.
 - This ensures **train and test sets** have the same dummy columns, avoiding model training/serving mismatches.
 
+## Find Inconsistent Categories
+
+```python
+# Simulate a known set of categories
+known_species = ["setosa", "versicolor", "virginica"]
+
+# Introduce a typo for demonstration
+iris_with_typo = iris.copy()
+iris_with_typo.loc[0, 'species'] = "setossa"
+
+# Identify inconsistent categories
+observed_species = set(iris_with_typo['species'])
+inconsistent_species = observed_species.difference(known_species)
+
+# Filter inconsistent and consistent rows
+inconsistent_rows = iris_with_typo['species'].isin(inconsistent_species)
+inconsistent_data = iris_with_typo[inconsistent_rows]
+consistent_data = iris_with_typo[~inconsistent_rows]
+```
+
 ## Key Takeaways
 
 - Use `.astype('category')` to convert columns to categorical type.
 - Use `.cat.codes` for label encoding.
 - Use `pd.get_dummies()` for one-hot encoding.
+- Use `pd.crosstab()` for contingency tables and categorical comparisons.
 - `.cat` accessor allows reordering, renaming, and inspecting categories.
 - Use `set_categories` + `pd.get_dummies(..., dummy_na=True)` for **consistent encoding across datasets**.

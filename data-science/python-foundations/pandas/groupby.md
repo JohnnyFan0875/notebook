@@ -50,6 +50,26 @@ iris.groupby('species').agg(
 - `.agg()` allows different functions on different columns.
 - Tuple syntax provides meaningful column names.
 
+## Custom quantile aggregation and cumulative statistics
+
+```python
+# Define custom aggregation functions
+def pct30(column):
+    return column.quantile(0.3)
+
+def pct40(column):
+    return column.quantile(0.4)
+
+# Apply to single column
+iris["sepal_length"].agg(pct30)
+
+# Apply to multiple columns
+iris[["sepal_length", "petal_length"]].agg(pct30)
+
+# Multiple aggregations
+iris["sepal_length"].agg([pct30, pct40])
+```
+
 ## Group Transformation
 
 ```python

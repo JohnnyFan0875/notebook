@@ -29,6 +29,9 @@ iris.isna().sum()
 
 # Check if any value is missing
 iris.isna().any()
+
+# Rows with any missing values
+iris[iris.isnull().any(axis=1)]
 ```
 
 - `.isna()` (or `.isnull()`) marks missing values as True.
