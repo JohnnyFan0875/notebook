@@ -154,10 +154,49 @@ numeric_df = iris.select_dtypes(include='number')
 array = numeric_df.to_numpy()
 ```
 
+## DataFrame ↔ Other Formats
+
+### DataFrame → Dictionary
+
+```python
+import pandas as pd
+
+iris = pd.DataFrame({
+    "col": [1, 2, 3]
+})
+
+df_dict = iris.to_dict()
+print(df_dict)
+```
+
+- `.to_dict()` converts the DataFrame into a dictionary.
+- Orientations can be specified: `dict`, `list`, `series`, `records`, `split`.
+
+### DataFrame Series → List
+
+```python
+col_list = iris['col'].tolist()
+print(col_list)
+```
+
+- `.tolist()` converts a Series to a Python list.
+- Useful when exporting a column to a standard Python structure.
+
+### DataFrame → CSV Output
+
+```python
+iris.to_csv("output.csv")
+```
+
+- `.to_csv()` exports the DataFrame to a CSV file.
+- Options include `index=False`, custom separators, encoding, etc.
+
 ## Summary
 
 - **JSON ↔ dict**: `json.dump`, `json.load`, `json.dumps`, `json.loads`
 - **List ↔ tuple**: `list()`, `tuple()`
 - **String ↔ datetime**: `strftime`, `strptime`
 - **CSV ↔ dict/list**: `csv.DictReader`, `csv.DictWriter`
-- **Array ↔ DataFrame**: `pd.DataFrame`
+- **Array ↔ DataFrame**: `pd.DataFrame`, `.to_numpy()`
+- **DataFrame ↔ dict/list**: `.to_dict()`, `.tolist()`
+- **DataFrame → CSV**: `.to_csv()`

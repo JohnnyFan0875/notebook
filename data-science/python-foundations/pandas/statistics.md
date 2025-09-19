@@ -44,6 +44,10 @@ iris.min(numeric_only=True)      # Minimum
 iris.max(numeric_only=True)      # Maximum
 iris.quantile([0.25, 0.5, 0.75]) # Quartiles
 iris.sum(numeric_only=True)      # Sum
+
+# Top-k values in a Series
+iris['sepal_length'].nlargest(2)   # Get 2 largest values
+iris['sepal_length'].nsmallest(2)  # Get 2 smallest values
 ```
 
 ## Difference & Percentage Change
@@ -101,6 +105,7 @@ iris['expanding_mean'] = iris['sepal_length'].expanding().mean()
 ## Key Takeaways
 
 - Use `.describe()` and dataset overview methods for quick inspection.
+- `.nlargest()` and `.nsmallest()` are useful for quickly finding extremes.
 - `.diff()` and `.pct_change()` are useful for time-series or sequential comparisons.
 - `.corr()` and `.cov()` reveal relationships between variables.
 - Cumulative and rolling functions support sequential trend analysis.

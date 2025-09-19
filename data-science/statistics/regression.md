@@ -25,86 +25,118 @@ results = sm.OLS(df['R2000_Ret'],df[['const','SPX_Ret']]).fit()
 results.params[0]
 results.params[1]
 
----
+# Question
 
-# 問題
-
-當我們用迴歸模型檢驗「月子餐與母乳 parabens 的關係」時，如果再把 **產後天數 (≤7 天 vs. >7 天)** 變數納入模型，不同的顯著性結果代表什麼意義？
+When using a regression model to test the relationship between postpartum meal consumption and breastmilk parabens, what does it mean if we add the variable **postpartum days (≤7 days vs. >7 days)** to the model and obtain different significance results?
 
 ---
 
-## 情境 1
+## Scenario 1
 
-- 月子餐 (V) → 顯著
-- 月子餐 + 產後天數 (V, V) → **兩個都顯著**
+- Postpartum meal (V) → significant
+- Postpartum meal + postpartum days (V, V) → both significant
 
-**解釋**  
-月子餐與產後天數 **各自對結果有獨立影響**。  
-即使兩個變數同時放進模型，效果仍存在。
+**Interpretation**  
+Both postpartum meal and postpartum days have independent effects on the outcome.  
+Even when both variables are included in the model, their effects remain.
 
-👉 **結論**：兩者都是 **獨立影響因子 (independent predictors)**。
-
----
-
-## 情境 2
-
-- 月子餐 (V) → 顯著
-- 月子餐 + 產後天數 (V, V) → **月子餐不顯著，產後天數顯著**
-
-**解釋**  
-月子餐的效果消失，因為 **產後天數解釋了月子餐與結果的關係**。  
-換句話說，月子餐與結果的關聯是 **由產後天數這個混雜因子造成**。
-
-👉 **結論**：產後天數才是主要影響因子；月子餐不是獨立因子。
+**Conclusion**: Both are **independent predictors**.
 
 ---
 
-## 情境 3
+## Scenario 2
 
-- 月子餐 (V) → 顯著
-- 月子餐 + 產後天數 (V, V) → **都不顯著**
+- Postpartum meal (V) → significant
+- Postpartum meal + postpartum days (V, V) → postpartum meal not significant, postpartum days significant
 
-**解釋**  
-當兩個變數同時放進模型，解釋力被「分散」掉。  
-這通常代表 **兩者高度相關 (collinearity)**，而且樣本數不足導致統計力下降。
+**Interpretation**  
+The effect of postpartum meal disappears because postpartum days explains the relationship between postpartum meal and the outcome.  
+In other words, the observed association between postpartum meal and outcome is due to postpartum days acting as a **confounding factor**.
 
-👉 **結論**：月子餐與產後天數可能彼此高度相關，難以區分獨立效應。
-
----
-
-## 情境 4
-
-- 月子餐 (V) → 不顯著
-- 月子餐 + 產後天數 (V, V) → **產後天數顯著**
-
-**解釋**  
-單看月子餐沒有影響；加入產後天數後，只有產後天數顯著。
-
-👉 **結論**：產後天數是主要影響因子；月子餐不影響。
+**Conclusion**: Postpartum days is the true predictor; postpartum meal is not an independent predictor.
 
 ---
 
-## 情境 5
+## Scenario 3
 
-- 月子餐 (V) → 不顯著
-- 月子餐 + 產後天數 (V, V) → **都顯著**
+- Postpartum meal (V) → significant
+- Postpartum meal + postpartum days (V, V) → neither significant
 
-**解釋**  
-單看月子餐沒有顯著，但控制產後天數後，月子餐的效果才顯現。  
-這代表 **產後天數是抑制變項 (suppressor variable)**：  
-它釋放了隱藏的變異，讓月子餐的效果浮現。
+**Interpretation**  
+When both variables are included in the model, explanatory power is dispersed.  
+This usually indicates **high collinearity** between the two variables and possibly insufficient sample size, which reduces statistical power.
 
-👉 **結論**：兩者都有影響，但月子餐的效果需要控制產後天數才看得清楚。
+**Conclusion**: Postpartum meal and postpartum days may be highly correlated, making it difficult to distinguish their independent effects.
 
 ---
 
-## 情境 6
+## Scenario 4
 
-- 月子餐 (V) → 不顯著
-- 月子餐 + 產後天數 (V, V) → **月子餐顯著，產後天數不顯著**
+- Postpartum meal (V) → not significant
+- Postpartum meal + postpartum days (V, V) → postpartum days significant
 
-**解釋**  
-當單獨檢視月子餐時，它與結果沒有關聯；但在同時控制產後天數後，月子餐的效果變得顯著，而產後天數不再顯著。  
-這是一種 **抑制效應 (suppressor effect)**，代表產後天數吸收了雜訊，讓月子餐的真實效應被顯現出來。
+**Interpretation**  
+Postpartum meal alone has no effect; after adding postpartum days, only postpartum days remains significant.
 
-👉 **結論**：月子餐可能是主要影響因子，但必須控制產後天數後才看得清楚。
+**Conclusion**: Postpartum days is the main predictor; postpartum meal has no effect.
+
+---
+
+## Scenario 5
+
+- Postpartum meal (V) → not significant
+- Postpartum meal + postpartum days (V, V) → both significant
+
+**Interpretation**  
+Postpartum meal is not significant when examined alone, but becomes significant when controlling for postpartum days.  
+This indicates that **postpartum days is a suppressor variable**:  
+it accounts for hidden variation, allowing the effect of postpartum meal to emerge.
+
+**Conclusion**: Both have effects, but the effect of postpartum meal is only visible after controlling for postpartum days.
+
+---
+
+## Scenario 6
+
+- Postpartum meal (V) → not significant
+- Postpartum meal + postpartum days (V, V) → postpartum meal significant, postpartum days not significant
+
+**Interpretation**  
+Postpartum meal alone shows no association with the outcome; however, when controlling for postpartum days, postpartum meal becomes significant while postpartum days is no longer significant.  
+This reflects a **suppressor effect**, meaning postpartum days absorbs noise, allowing the true effect of postpartum meal to become apparent.
+
+**Conclusion**: Postpartum meal may be the main predictor, but its effect only becomes clear after controlling for postpartum days.
+
+## test homogeneity of variance
+
+- variance of the residuals (the difference between observed and predicted values) is constant across all levels of the independent variables
+- H₀: variance of the residuals (errors) from the regression model is constant
+
+```python
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as smf
+import statsmodels.stats.api as sms
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+
+data = load_breast_cancer()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+df['target'] = data.target
+X = df.drop('target', axis=1)
+y = df['target']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+train_data = X_train.copy()
+train_data['target'] = y_train
+
+logit_model = smf.logit('target ~ ' + ' + '.join(X_train.columns), data=train_data)
+logit_result = logit_model.fit()
+
+y_pred = logit_result.predict(X_train)  # predicted probabilities
+residuals = y_train - y_pred  # residuals (actual - predicted)
+
+bp_test = sms.het_breuschpagan(residuals, X_train)
+bp_test_statistic, bp_test_p_value, _, _ = bp_test
+```

@@ -13,16 +13,18 @@ Study designs are broadly divided into three main categories:
 ```
 Study Designs
 ├── Observational
-│ ├── Cohort
-│ │ ├── Prospective
-│ │ └── Retrospective
-│ ├── Case–Control
-│ └── Cross-Sectional
+│   ├── Cohort
+│   │   ├── Prospective
+│   │   └── Retrospective
+│   ├── Case–Control
+│   ├── Cross-Sectional
+│   └── Longitudinal
 ├── Experimental
-│ └── Randomized Controlled Trial (RCT)
+│   └── Randomized Controlled Trial (RCT)
 └── Evidence Synthesis
-├── Systematic Review
-└── Meta-analysis
+    ├── Systematic Review
+    └── Meta-analysis
+
 ```
 
 ## 1. Observational Studies
@@ -70,6 +72,29 @@ Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
 - **Example:** The CDC conducts annual telephone surveys of thousands of adults, collecting data at one point in time on smoking, alcohol use, physical activity, obesity, and chronic disease prevalence.
 - **Strengths:** Quick, inexpensive, useful for prevalence estimates.
 - **Weaknesses:** No temporal sequence, cannot infer causality.
+
+### 1.4 Longitudinal Studies
+
+- Track the same participants over an extended period, collecting data at multiple time points.
+- Can be **prospective** (follow forward) or **retrospective** (using past records).
+- Unlike cross-sectional studies, longitudinal designs establish **temporal relationships** between exposure and outcome.
+
+**Examples:**
+
+- The Nurses’ Health Study (since 1976) following >100,000 women to examine diet, lifestyle, and chronic disease.
+- Long-term school-based studies assessing how early-life factors affect adult outcomes.
+
+**Strengths:**
+
+- Can observe **changes over time** within individuals.
+- Establishes temporal sequence (exposure precedes outcome).
+- Useful for incidence, risk factor identification, and natural history of disease.
+
+**Weaknesses:**
+
+- Time- and cost-intensive.
+- Attrition bias (participants dropping out).
+- Requires strong data management and follow-up.
 
 ## 2. Experimental Studies
 

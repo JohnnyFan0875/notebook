@@ -92,6 +92,52 @@ iris['species_cat'] = iris['species_cat'].cat.rename_categories(
 )
 ```
 
+## Remove Unused Categories
+
+When filtering or modifying a DataFrame, some categories may no longer be used in the data but still appear in the category list. Use `.remove_unused_categories()` to clean them up.
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({'col': ['apple', 'banana', 'apple']})
+df['col'] = df['col'].astype('category')
+print(df['col'].cat.categories)
+# Index(['apple', 'banana'], dtype='object')
+
+# Drop all banana rows
+df = df[df['col'] != 'banana']
+print(df['col'].cat.categories)
+# Index(['apple', 'banana'], dtype='object')  <- banana still listed
+
+# Remove unused categories
+df['col'] = df['col'].cat.remove_unused_categories()
+print(df['col'].cat.categories)
+# Index(['apple'], dtype='object')
+```
+
+- `.remove_unused_categories()` updates the category list to include only categories actually present in the data.
+- Rows are **not dropped** and values are **not turned into NaN** — it only prunes the category list.
+
+### Difference from `set_categories`
+
+```python
+# Force categories to only 'apple'
+df['col'] = df['col'].cat.set_categories(['apple'])
+print(df)
+```
+
+Output:
+
+```
+     col
+0   apple
+1     NaN   # banana is no longer a valid category → becomes NaN
+2   apple
+```
+
+- `.set_categories()` explicitly resets allowed categories, and any values not in the new set become `NaN`.
+- `.remove_unused_categories()` only cleans up unused categories without altering valid values.
+
 ## Consistent Encoding Across Datasets
 
 When preparing train/test splits, you may want to ensure both have the **same set of categories**, even if some are missing in one split.
@@ -147,4 +193,6 @@ consistent_data = iris_with_typo[~inconsistent_rows]
 - Use `pd.get_dummies()` for one-hot encoding.
 - Use `pd.crosstab()` for contingency tables and categorical comparisons.
 - `.cat` accessor allows reordering, renaming, and inspecting categories.
+- Use `.remove_unused_categories()` to prune unused categories.
+- Use `.set_categories()` carefully, since it can turn values not in the new list into `NaN`.
 - Use `set_categories` + `pd.get_dummies(..., dummy_na=True)` for **consistent encoding across datasets**.
