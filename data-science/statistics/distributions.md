@@ -12,6 +12,56 @@ Probability distributions are foundational in statistics and data science. The `
 - **PPF (Percent-Point Function)**: The inverse of the CDF, used to find threshold values for a given percentile.
 - **rvs (Random Variates)**: Function to generate random samples following a specified distribution.
 
+### 1.2 Standardization
+
+- Standardization transforms raw values of a variable into **z-scores (or t-scores)**.
+- After standardization:
+  - Mean = 0
+  - Standard deviation = 1
+- Skewness of the original distribution remains unchanged.
+- The x-axis becomes standardized units (z or t).
+- Interpretation:
+  - \(Z = \pm 1\) → The value is 1 standard deviation away from the mean.
+
+\[
+Z = \frac{X - \mu}{\sigma}
+\]
+
+### 1.3 Continuous Probability Distribution
+
+- **x-axis:** values of the random variable \(X\)
+- **y-axis:** probability density associated with each value (Probability Density Function, PDF)
+- The probability of \(X\) lying within a range \([a,b]\) is given by the **area under the curve** of the PDF between those points:
+
+\[
+P(a \leq X \leq b) = \int_a^b f(x) \, dx
+\]
+
+- The value of the PDF at a single point \(f(x)\) is **not** the probability; probability comes from the **area under the curve**.
+
+#### Examples of Continuous Distributions
+
+- **Normal distribution (Gaussian, z-distribution)**
+
+  - Bell-shaped, symmetric
+  - [Empirical Rule (68–95–99.7 rule)](https://www.notion.so/Empirical-Rule-68-95-99-7-rule-15f06ef7ce8a80589f26d5296667e845?pvs=21)
+
+- **Exponential distribution**
+
+  - Models waiting times between independent events
+
+- **Chi distribution**
+
+  - With low degrees of freedom (df): positively skewed
+  - As df increases (>30): approaches normal
+  - Mean = df, Variance = \(2 \times df\)
+
+- **t-distribution**
+  - Similar to normal but with heavier tails
+  - Mean = 0, Variance = \(\frac{df}{df-2}\) (for df > 2)
+  - As \(n > 30\), t-distribution ≈ normal distribution
+  - Used when population variance is unknown, regardless of sample size
+
 ## 2. Common Distribution Functions
 
 Each distribution in `scipy.stats` provides a consistent interface:
