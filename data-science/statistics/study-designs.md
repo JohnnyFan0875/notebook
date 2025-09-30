@@ -20,7 +20,11 @@ Study Designs
 │   ├── Cross-Sectional
 │   └── Longitudinal
 ├── Experimental
-│   └── Randomized Controlled Trial (RCT)
+│   ├── Randomized Controlled Trial (RCT)
+│   ├── Experimental Design
+│   ├── Explanatory Design
+│   ├── Descriptive Design
+│   └── Correlational Design
 └── Evidence Synthesis
     ├── Systematic Review
     └── Meta-analysis
@@ -29,7 +33,7 @@ Study Designs
 
 ## 1. Observational Studies
 
-Researchers observe exposures and outcomes without intervention.  
+Researchers observe exposures and outcomes without intervention.
 Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
 
 ### 1.1 Cohort Studies
@@ -59,8 +63,10 @@ Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
 ### 1.2 Case–Control Studies
 
 - Start with **outcome status**:
+
   - Cases = individuals with disease/outcome
   - Controls = individuals without disease
+
 - Look backward to assess exposures.
 - **Example:** Doll & Hill (1950s) showed smoking was strongly associated with lung cancer by comparing smoking history of lung cancer patients vs. controls.
 - **Strengths:** Efficient for rare diseases, multiple exposures.
@@ -109,6 +115,38 @@ Researchers intervene and randomly assign participants to groups.
 
 ![Image](https://www.simplypsychology.org/wp-content/uploads/randomized-controlled-trial-1536x894.jpeg)
 
+### 2.2 Experimental Design
+
+- Involves deliberate manipulation of one or more independent variables to measure their effect on dependent variables.
+- Often includes control groups, randomization, and replication.
+- **Example:** Testing different doses of a new drug on separate patient groups.
+- **Strengths:** Establishes causality.
+- **Weaknesses:** May be difficult or unethical in human studies.
+
+### 2.3 Explanatory Design
+
+- Focuses on explaining the relationships or mechanisms underlying observed phenomena.
+- Goes beyond description to identify causal links.
+- **Example:** Examining how exercise reduces blood pressure through changes in vascular function.
+- **Strengths:** Provides mechanistic insights.
+- **Weaknesses:** Requires strong theoretical framework and careful control of confounding variables.
+
+### 2.4 Descriptive Design
+
+- Aims to describe characteristics of a population or phenomenon.
+- Does not test hypotheses but provides valuable baseline data.
+- **Example:** Describing demographic patterns of diabetes prevalence in a region.
+- **Strengths:** Useful for generating hypotheses and informing policy.
+- **Weaknesses:** Cannot establish causality.
+
+### 2.5 Correlational Design
+
+- Examines the relationship between two or more variables without manipulation.
+- Determines whether variables are associated (positive, negative, or no correlation).
+- **Example:** Investigating the association between physical activity and depression scores.
+- **Strengths:** Identifies potential associations.
+- **Weaknesses:** Correlation does not imply causation.
+
 ## 3. Evidence Synthesis
 
 Researchers summarize and analyze findings from multiple studies.
@@ -127,12 +165,16 @@ Researchers summarize and analyze findings from multiple studies.
 
 ## 4. Summary Table
 
-| Category               | Study type             | Direction          | Key feature                                | Example                               |
-| ---------------------- | ---------------------- | ------------------ | ------------------------------------------ | ------------------------------------- |
-| **Observational**      | Cohort (prospective)   | Forward            | Exposure → outcome (future follow-up)      | Framingham Heart Study                |
-|                        | Cohort (retrospective) | Backward (records) | Exposure → outcome (archived data)         | Hospital vaccination vs. infection    |
-|                        | Case–control           | Backward           | Start with outcome, look for exposures     | Doll & Hill smoking–lung cancer study |
-|                        | Cross-sectional        | Snapshot           | Exposure & outcome measured simultaneously | NHANES obesity surveys                |
-| **Experimental**       | RCT                    | Forward (random)   | Randomized intervention vs. control        | WHI hormone therapy trial             |
-| **Evidence synthesis** | Systematic review      | N/A                | Critical synthesis of multiple studies     | Cochrane vaccine review               |
-|                        | Meta-analysis          | N/A                | Statistical pooling of study results       | Statin RCT meta-analysis              |
+| Category               | Study type             | Direction            | Key feature                                | Example                               |
+| ---------------------- | ---------------------- | -------------------- | ------------------------------------------ | ------------------------------------- |
+| **Observational**      | Cohort (prospective)   | Forward              | Exposure → outcome (future follow-up)      | Framingham Heart Study                |
+|                        | Cohort (retrospective) | Backward (records)   | Exposure → outcome (archived data)         | Hospital vaccination vs. infection    |
+|                        | Case–control           | Backward             | Start with outcome, look for exposures     | Doll & Hill smoking–lung cancer study |
+|                        | Cross-sectional        | Snapshot             | Exposure & outcome measured simultaneously | NHANES obesity surveys                |
+| **Experimental**       | RCT                    | Forward (random)     | Randomized intervention vs. control        | WHI hormone therapy trial             |
+|                        | Experimental design    | Forward (controlled) | Manipulation of independent variables      | Drug dose testing                     |
+|                        | Explanatory design     | Forward              | Explains causal mechanisms                 | Exercise and vascular function        |
+|                        | Descriptive design     | Snapshot             | Describes population characteristics       | Diabetes prevalence                   |
+|                        | Correlational design   | Snapshot             | Examines associations between variables    | Physical activity vs. depression      |
+| **Evidence synthesis** | Systematic review      | N/A                  | Critical synthesis of multiple studies     | Cochrane vaccine review               |
+|                        | Meta-analysis          | N/A                  | Statistical pooling of study results       | Statin RCT meta-analysis              |
