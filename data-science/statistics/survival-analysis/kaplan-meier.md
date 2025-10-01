@@ -223,8 +223,6 @@ tau = max(durations) # Specify an upper limit tau
 mean_survival = kmf.mean_survival_time_
 ```
 
-```md
-\[
-\hat{S}(t) = \prod\_{t_i \leq t} \left( 1 - \frac{d_i}{n_i} \right)
-\]
-```
+$$
+\hat{S}(t) = \prod_{t_i \leq t} \left( 1 - \frac{d_i}{n_i} \right)
+$$
