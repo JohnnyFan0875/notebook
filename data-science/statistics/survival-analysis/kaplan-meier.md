@@ -80,21 +80,21 @@ Suppose we follow 5 patients:
   - 從研究一開始到 2 個月，總體的存活機率是 80% (此時 individuals at risk 為 5 人，其中 1 個死亡)
 
 - **At 3 months**:  
-  \(n=4, d=1\) (A already dead, 4 remain at risk).  
-  Conditional survival = \(1 - 1/4 = 0.75\).  
-  Cumulative survival = \(0.8 \times 0.75 = 0.6\).
+  n=4, d=1 (A already dead, 4 remain at risk).  
+  Conditional survival = 1 - 1/4 = 0.75.  
+  Cumulative survival = 0.8 \times 0.75 = 0.6.
 
   - 條件生存率（3 個月）：在已經存活超過 2 個月的病人當中，仍有 75% 能活過 3 個月（此時 individuals at risk 為 4 人，其中 1 人死亡）。
   - 累積生存率（3 個月）：從研究一開始到 3 個月為止，整體存活機率為 60%（因為 5 個人中有 2 人死亡）。這個結果也可以由前兩段條件生存率相乘得到：80% (4/5) × 75% (3/4) = 60% (3/5)。
 
 - **At 6 months**:  
-  \(n=3, d=0\) (A,B already dead, 3 remain at risk).  
-  Conditional survival = \(1 - 3/3 = 1\).  
-  Cumulative survival = \(0.6 \times 1 = 0.6\).
+  n=3, d=0 (A,B already dead, 3 remain at risk).  
+  Conditional survival = 1 - 3/3 = 1.  
+  Cumulative survival = 0.6 \times 1 = 0.6.
 
   - 條件生存率（6 個月）：在已經存活超過 3 個月的病人當中，有 100% 能活過 6 個月（此時 individuals at risk 為 3 人，其中 0 人死亡，其中 1 人 censored）。
   - 累積生存率（6 個月）：從研究一開始到 6 個月為止，整體存活機率為 60%（因為 5 個人中有 2 人死亡）。這個結果也可以由前兩段條件生存率相乘得到：80% (4/5) × 75% (3/4) x 100% (3/3) = 60% (3/5)。
-  - 超過這個時間點，C 不再列處 risk candidate。
+  - 超過這個時間點，C 不再列為 risk candidate。
 
 ### Interpretation
 
