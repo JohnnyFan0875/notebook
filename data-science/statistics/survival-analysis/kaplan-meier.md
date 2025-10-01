@@ -15,9 +15,9 @@ Key features:
 
 The KM estimator of the survival probability at time _t_ is:
 
-\[
+$$
 \hat{S}(t) = \prod\_{t_i \leq t} \left( 1 - \frac{d_i}{n_i} \right)
-\]
+$$
 
 Where:
 
@@ -222,7 +222,3 @@ median_survival = kmf.median_survival_time_
 tau = max(durations) # Specify an upper limit tau
 mean_survival = kmf.mean_survival_time_
 ```
-
-$$
-\hat{S}(t) = \prod_{t_i \leq t} \left( 1 - \frac{d_i}{n_i} \right)
-$$
