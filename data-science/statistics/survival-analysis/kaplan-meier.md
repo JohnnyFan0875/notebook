@@ -30,19 +30,19 @@ Where:
 ### Conditional Survival
 
 - The probability of surviving a particular interval, **given that the subject has survived up to the start of that interval**.
-- Formula at time \(t_i\):  
-  \[
+- Formula at time \(t_i\):
+  $$
   p_i = 1 - \frac{d_i}{n_i}
-  \]
+  $$
 - Example interpretation: “If a patient has survived until 3 months, what is the chance they survive past 3 months?”
 
 ### Cumulative Survival
 
 - The overall probability of surviving **from time 0 up to a certain time**.
-- Computed by multiplying all conditional survival probabilities up to that point:  
-  \[
+- Computed by multiplying all conditional survival probabilities up to that point:
+  $$
   \hat{S}(t) = p_1 \times p_2 \times \cdots \times p_i
-  \]
+  $$
 - Example interpretation: “What is the probability a patient survives from the beginning of the study up to 3 months?”
 
 ## Censoring
@@ -72,7 +72,7 @@ Suppose we follow 5 patients:
 ### Step-by-step KM calculation:
 
 - **At 2 months**:  
-  \(n=5, d=1\).  
+  $n=5, d=1$.  
   Conditional survival = \(1 - 1/5 = 0.8\).
   Cumulative survival = 0.8.
 
@@ -80,7 +80,7 @@ Suppose we follow 5 patients:
   - 從研究一開始到 2 個月，總體的存活機率是 80% (此時 individuals at risk 為 5 人，其中 1 個死亡)
 
 - **At 3 months**:  
-  n=4, d=1 (A already dead, 4 remain at risk).  
+  $n=4, d=1$ (A already dead, 4 remain at risk).  
   Conditional survival = 1 - 1/4 = 0.75.  
   Cumulative survival = 0.8 \times 0.75 = 0.6.
 
@@ -88,7 +88,7 @@ Suppose we follow 5 patients:
   - 累積生存率（3 個月）：從研究一開始到 3 個月為止，整體存活機率為 60%（因為 5 個人中有 2 人死亡）。這個結果也可以由前兩段條件生存率相乘得到：80% (4/5) × 75% (3/4) = 60% (3/5)。
 
 - **At 6 months**:  
-  n=3, d=0 (A,B already dead, 3 remain at risk).  
+  $n=3, d=0$ (A,B already dead, 3 remain at risk).  
   Conditional survival = 1 - 3/3 = 1.  
   Cumulative survival = 0.6 \times 1 = 0.6.
 
@@ -114,13 +114,13 @@ Suppose we follow 5 patients:
 2. **Calculate Survival Probabilities**
 
    - At each observed event time, compute the proportion surviving:
-     \[
+     $$
      p_i = 1 - \frac{d_i}{n_i}
-     \]
+     $$
    - Multiply sequentially to obtain cumulative survival:
-     \[
+     $$
      \hat{S}(t) = p_1 \times p_2 \times \cdots \times p_i
-     \]
+     $$
 
 3. **Plot Kaplan–Meier Curve**
    - X-axis: time
@@ -130,36 +130,8 @@ Suppose we follow 5 patients:
 
 ## Basic Methods of Analysis
 
-### 1. Median Survival Time
 
-- The time point when the survival probability drops to 50%.
-- Provides a simple summary of central tendency in survival distribution.
 
-![Image](http://www.finprog.org/images/text/statis12.gif)
-
-### 2. Mean Survival Time
-
-- The **average expected survival time** for individuals in the study population.
-- Defined mathematically as the **area under the survival curve**:  
-  \[
-  E[T] = \int_0^\infty S(t) \, dt
-  \]
-- Provides an overall summary of survival experience across the entire follow-up period.
-- Unlike the median survival time (which focuses on the 50% point), the mean incorporates **all observed survival times** and is more sensitive to long-term follow-up and censoring.
-
-#### Mean Survival vs. Restricted Mean Survival Time (RMST)
-
-- In theory, the mean survival time requires the curve to be observed **until it reaches 0** (all individuals have had the event).
-- In practice, survival data are censored, and follow-up is finite → the full mean survival time is usually **not estimable**.
-- **Restricted Mean Survival Time (RMST)** is therefore used:  
-  \[
-  RMST(\tau) = \int_0^\tau S(t) \, dt
-  \]
-  where \(\tau\) is a chosen time horizon (e.g., the maximum follow-up or a clinically meaningful cutoff such as 5 years).
-- RMST is always well-defined and interpretable as the **average survival up to time \(\tau\)**.
-- If follow-up were infinitely long and censoring absent, RMST would converge to the true mean survival time.
-
-![Image](../../../reference/RMST-figure.png)
 
 ### 3. Comparison Between Groups
 

@@ -7,21 +7,31 @@ Chi-square (\(\chi^2\)) statistics are always non-negative (≥ 0) and tests are
 
 - Data must be **counts or frequencies** (not percentages or continuous values).
 - Observations must be **independent**.
-- Expected frequencies should be sufficiently large:  
-  \[
+- Expected frequencies should be sufficiently large:
+  $$
   n \cdot \hat{p} \geq 5 \quad \text{and} \quad n \cdot (1-\hat{p}) \geq 5
-  \]
+  $$
 
 ## Chi-square Test of Independence
 
 - **Purpose:** Test association between two categorical variables.
 - **Null hypothesis (H₀):** The two variables are independent.
 - **Alternative hypothesis (Hₐ):** The two variables are not independent (association exists).
-- **Degrees of freedom:**  
-  \[
+- **Degrees of freedom:**
+  $$
   (r - 1) \times (c - 1)
-  \]  
+  $$
   where \(r\) = rows, \(c\) = columns.
+
+### Limitations in Clinical Research
+
+While Chi-square tests are widely used, they are not always appropriate in biomedical studies involving genetic and clinical outcomes:
+
+- **Fixed variables vs. dynamic outcomes**: Germline SNPs (genetic variants that do not change over time) should not be directly tested against dynamic clinical outcomes such as cancer stage using Chi-square, as cancer stage evolves due to multiple confounding factors (treatment, follow-up time, comorbidities).
+
+- **Better approaches**: For genetic association studies, regression models (e.g., logistic regression for incidence, Cox regression for survival outcomes) are more appropriate as they allow adjustment for covariates such as age, sex, and stage.
+
+- **Proper endpoints**: Chi-square is best suited for binary or categorical clinical endpoints such as treatment response (responder vs. non-responder), recurrence (yes/no), or mortality status at a specific follow-up time.
 
 ### Python Example
 
@@ -30,12 +40,15 @@ from scipy.stats import chi2_contingency
 import numpy as np
 import pandas as pd
 
-data = np.array([[30, 10, 15],
-                 [20, 25, 10]])
+# Example: SNP genotype (AA, AG, GG) vs. chemotherapy response (Responder/Non-responder)
+
+data = np.array([[30, 20],   # AA genotype: responder/non-responder
+                 [25, 25],   # AG genotype
+                 [15, 30]]) # GG genotype
 
 df = pd.DataFrame(data,
-                  columns=["Democrat", "Republican", "Independent"],
-                  index=["Male", "Female"])
+columns=["Responder", "Non-responder"],
+index=["AA", "AG", "GG"])
 
 chi2_stat, p_value, dof, expected = chi2_contingency(data)
 print("Chi2 Statistic:", chi2_stat)
@@ -49,10 +62,10 @@ print("Expected frequencies:\n", expected)
 - **Purpose:** Tests whether the observed frequency distribution of a categorical variable matches a hypothesized distribution.
 - **Null hypothesis (H₀):** The observed frequencies fit the expected distribution.
 - **Alternative hypothesis (Hₐ):** The observed frequencies do not fit the expected distribution.
-- **Degrees of freedom:**  
-  \[
+- **Degrees of freedom:**
+  $$
   k - 1
-  \]  
+  $$
   where \(k\) = number of categories.
 
 ### Python Example

@@ -102,6 +102,8 @@ Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
 - Attrition bias (participants dropping out).
 - Requires strong data management and follow-up.
 
+![Image](https://www.questionpro.com/blog/wp-content/uploads/2018/06/cross-sectional-study-vs-longitudinal-study-min-scaled-1.jpg)
+
 ## 2. Experimental Studies
 
 Researchers intervene and randomly assign participants to groups.
@@ -178,3 +180,47 @@ Researchers summarize and analyze findings from multiple studies.
 |                        | Correlational design   | Snapshot             | Examines associations between variables    | Physical activity vs. depression      |
 | **Evidence synthesis** | Systematic review      | N/A                  | Critical synthesis of multiple studies     | Cochrane vaccine review               |
 |                        | Meta-analysis          | N/A                  | Statistical pooling of study results       | Statin RCT meta-analysis              |
+
+## 5. Genetic Association and Clinical Endpoint Analysis
+
+Beyond classical epidemiologic study designs, clinical research often requires appropriate statistical methods to evaluate genetic variants (e.g., germline SNPs) in relation to different endpoints. The following summarizes typical analysis strategies:
+
+### A. Incidence (Disease Risk Analysis)
+
+- **Control group:** Healthy individuals without cancer.
+- **Methods:**
+
+  - Chi-square test: initial comparison of SNP distribution.
+  - Logistic regression: association between SNP and incidence, adjusting for demographic covariates (age, sex, etc.).
+  - ROC curve: evaluate the discriminative ability of SNPs to classify cases vs. controls.
+
+### B. Treatment Response Analysis
+
+- **Variables:** Specific therapies (chemotherapy, targeted therapy, radiotherapy).
+- **Methods:**
+
+  - Chi-square test: SNP vs. binary treatment response (responder/non-responder).
+  - Logistic regression: adjusted for age, sex, and stage, to assess SNP as an independent predictor.
+  - ROC curve: assess predictive performance.
+
+### C. Recurrence Risk Analysis
+
+- **Required data:** Recurrence status and follow-up time → definition of Disease-Free Survival (DFS).
+- **Starting time:** Surgery or treatment initiation.
+- **Methods:**
+
+  - Chi-square test: initial proportion comparison.
+  - Cox regression: adjusted analysis of SNP effect on DFS.
+  - Kaplan–Meier survival curve: visualize survival differences by SNP genotype.
+  - ROC curve: evaluate discriminatory ability.
+
+### D. Mortality Risk Analysis
+
+- **Required data:** Survival status and follow-up time; exclude non-disease deaths.
+- **Starting time:** Surgery or treatment initiation.
+- **Methods:**
+
+  - Chi-square test: crude mortality proportion comparison.
+  - Cox regression: adjusted hazard ratios for SNP and overall survival (OS).
+  - Kaplan–Meier survival curve: survival probability comparison by genotype.
+  - ROC curve: predictive performance assessment.
