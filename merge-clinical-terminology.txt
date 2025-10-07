@@ -1,0 +1,868 @@
+#####################
+biology/clinical-terminology/cdisc.md
+#####################
+# CDISC SDTM / ADaM
+
+## 1. Overview
+
+**CDISC** (Clinical Data Interchange Standards Consortium) develops global standards that streamline the collection, organization, analysis, and regulatory submission of **clinical trial data**. These standards ensure that data from clinical studies are **consistent, machine-readable, and compliant** with regulatory requirements (e.g., FDA, EMA).
+
+Two of the most widely used CDISC models are:
+
+- **SDTM (Study Data Tabulation Model)** – for organizing raw clinical trial data.
+- **ADaM (Analysis Data Model)** – for preparing data used in statistical analyses.
+
+## 2. SDTM (Study Data Tabulation Model)
+
+### Purpose
+
+SDTM defines how clinical trial data should be **structured for regulatory submission**. It converts collected clinical data into standardized **domains** for consistency across studies.
+
+### Structure
+
+Each SDTM dataset represents a domain (subject area) organized by variables.
+
+| Domain | Description      | Example Variables             |
+| ------ | ---------------- | ----------------------------- |
+| **DM** | Demographics     | Subject ID, Age, Sex, Race    |
+| **AE** | Adverse Events   | AE term, severity, onset date |
+| **LB** | Laboratory Tests | Test name, result, units      |
+| **VS** | Vital Signs      | Blood pressure, heart rate    |
+| **EX** | Exposure         | Treatment dose, frequency     |
+
+All datasets include **standardized variable naming conventions**, metadata, and controlled terminology (often linked to MedDRA or CDISC codelists).
+
+### Example (Simplified SDTM AE Domain)
+
+| STUDYID | USUBJID | AETERM   | AESEV | AESTDTC    |
+| ------- | ------- | -------- | ----- | ---------- |
+| STUDY01 | SUBJ001 | Headache | MILD  | 2024-06-15 |
+
+## 3. ADaM (Analysis Data Model)
+
+### Purpose
+
+ADaM defines **analysis-ready datasets** derived from SDTM data. It ensures traceability between raw data and statistical results (e.g., tables, figures, and listings in clinical study reports).
+
+### Structure
+
+Common ADaM datasets include:
+
+| Dataset  | Description                                                  |
+| -------- | ------------------------------------------------------------ |
+| **ADSL** | Subject-level analysis dataset (e.g., baseline demographics) |
+| **ADAE** | Adverse events analysis dataset                              |
+| **ADLB** | Laboratory results for analysis                              |
+| **ADVS** | Vital signs for analysis                                     |
+
+### Traceability
+
+Each derived ADaM variable must link back to its SDTM origin through clear metadata documentation.
+
+### Example
+
+| USUBJID | PARAM       | AVISIT | AVAL | CHG |
+| ------- | ----------- | ------ | ---- | --- |
+| SUBJ001 | Systolic BP | Week 8 | 120  | -5  |
+
+## 4. Relationship Between SDTM and ADaM
+
+```
+Raw CRF Data
+    ↓  (Transformation)
+SDTM (Standardized Study Data)
+    ↓  (Derivation)
+ADaM (Analysis-Ready Data)
+    ↓
+Statistical Outputs (Tables, Figures, Listings)
+```
+
+## 5. Controlled Terminology and Integration
+
+CDISC models use controlled vocabularies maintained by the **NCI EVS (National Cancer Institute – Enterprise Vocabulary Services)**.
+
+| Domain               | Linked Vocabulary           |
+| -------------------- | --------------------------- |
+| **Adverse Events**   | MedDRA                      |
+| **Laboratory Tests** | LOINC                       |
+| **Units**            | UCUM                        |
+| **Drugs**            | WHO Drug Dictionary, RxNorm |
+
+## 6. Regulatory Adoption
+
+| Regulatory Body  | Requirement                                          |
+| ---------------- | ---------------------------------------------------- |
+| **FDA (U.S.)**   | Requires CDISC SDTM and ADaM formats for submissions |
+| **PMDA (Japan)** | Mandates CDISC compliance for eCTD submissions       |
+| **EMA (Europe)** | Accepts CDISC standards for harmonized submissions   |
+
+## 7. Governance and Access
+
+- **Maintained by:** Clinical Data Interchange Standards Consortium (CDISC)
+- **Key standards:** SDTM, ADaM, SEND (for nonclinical studies), Define-XML
+- **Access:** [https://www.cdisc.org](https://www.cdisc.org)
+
+
+#####################
+biology/clinical-terminology/cpt-hcpcs.md
+#####################
+# CPT / HCPCS
+
+## 1. Overview
+
+**CPT** (Current Procedural Terminology) and **HCPCS** (Healthcare Common Procedure Coding System) are two standardized systems used primarily in the **United States** for coding **medical procedures, services, and supplies**. They support administrative, billing, and insurance reimbursement processes, ensuring that medical procedures are recorded and interpreted consistently across healthcare institutions.
+
+## 2. CPT (Current Procedural Terminology)
+
+### Description
+
+Developed and maintained by the **American Medical Association (AMA)**, CPT provides a uniform language for describing **medical, surgical, and diagnostic services** performed by healthcare professionals.
+
+### Structure of CPT Codes
+
+- CPT codes are **five-digit numeric codes**, sometimes followed by modifiers.
+- Organized into three main categories:
+
+| Category         | Purpose                                           | Example                                                |
+| ---------------- | ------------------------------------------------- | ------------------------------------------------------ |
+| **Category I**   | Standard medical procedures and services          | `99213` – Office/outpatient visit, established patient |
+| **Category II**  | Performance measurement / quality reporting       | `0001F` – Tobacco use screening performed              |
+| **Category III** | Emerging technologies and experimental procedures | `0075T` – Computer-aided detection for MRI             |
+
+### Common Use Cases
+
+- Insurance billing and reimbursement
+- Hospital and outpatient documentation
+- Performance reporting and quality metrics
+
+## 3. HCPCS (Healthcare Common Procedure Coding System)
+
+### Description
+
+HCPCS is a two-level system developed by the **Centers for Medicare & Medicaid Services (CMS)** to complement CPT and cover additional services and items not included in CPT.
+
+### Structure of HCPCS Codes
+
+| Level        | Description                                                                                   | Example                                         |
+| ------------ | --------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Level I**  | CPT codes maintained by AMA                                                                   | `99213` – Office visit                          |
+| **Level II** | Alphanumeric codes for supplies, durable medical equipment, drugs, and non-physician services | `A0429` – Ambulance service, basic life support |
+
+### Common Use Cases
+
+- Medicare/Medicaid billing
+- Durable medical equipment (DME) tracking
+- Drugs and biologics reimbursement (e.g., injectables)
+
+## 4. Integration and Mapping
+
+| Framework              | Role of CPT/HCPCS                                                      |
+| ---------------------- | ---------------------------------------------------------------------- |
+| **FHIR**               | Used in `Procedure.code`, `ServiceRequest.code`, and billing resources |
+| **OMOP-CDM**           | Stored in the `procedure_occurrence` table as `procedure_concept_id`   |
+| **Claims databases**   | Core identifiers for billing and cost analyses                         |
+| **SNOMED CT / ICD-10** | Crosswalk available for clinical-to-billing code translation           |
+
+## 5. Maintenance and Access
+
+| System    | Maintained by                                  | Update Frequency | Access                                               |
+| --------- | ---------------------------------------------- | ---------------- | ---------------------------------------------------- |
+| **CPT**   | American Medical Association (AMA)             | Annual (October) | [https://www.ama-assn.org](https://www.ama-assn.org) |
+| **HCPCS** | Centers for Medicare & Medicaid Services (CMS) | Quarterly        | [https://www.cms.gov](https://www.cms.gov)           |
+
+
+#####################
+biology/clinical-terminology/fhir.md
+#####################
+# FHIR
+
+## 1. Overview
+
+**HL7 FHIR** (Fast Healthcare Interoperability Resources) is a modern, web-based standard developed by **Health Level Seven International (HL7)** for exchanging healthcare information electronically.
+
+FHIR combines the best features of previous HL7 versions (v2, v3, CDA) with modern API design principles, supporting **RESTful APIs**, **JSON/XML serialization**, and **extensibility** for both clinical and administrative data.
+
+## 2. Core Principles
+
+| Principle                         | Description                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Resource-based**                | All data are represented as modular, reusable resources (e.g., Patient, Observation, Medication). |
+| **RESTful architecture**          | Supports standard HTTP operations (`GET`, `POST`, `PUT`, `DELETE`).                               |
+| **Interoperability by design**    | Enables systems to share data consistently using global terminologies (LOINC, SNOMED CT, RxNorm). |
+| **Extensibility**                 | Allows customization via extensions without breaking compatibility.                               |
+| **Human and machine readability** | Data can be serialized in JSON, XML, or Turtle (RDF).                                             |
+
+## 3. FHIR Resource Model
+
+FHIR organizes healthcare data into more than **150 resource types**. Each resource has a consistent structure (metadata + content + links).
+
+| Resource Type   | Example                                 | Description                    |
+| --------------- | --------------------------------------- | ------------------------------ |
+| **Patient**     | Demographics, identifiers, contact info | Core patient record            |
+| **Observation** | Lab results, vital signs, measurements  | e.g., Glucose, Blood Pressure  |
+| **Condition**   | Clinical diagnosis or finding           | e.g., Diabetes Mellitus        |
+| **Medication**  | Drugs and substances                    | e.g., Metformin 500 mg tablet  |
+| **Procedure**   | Surgical or diagnostic interventions    | e.g., MRI brain scan           |
+| **Encounter**   | Patient visit or admission              | e.g., Hospital admission event |
+
+**Example (FHIR JSON snippet):**
+
+```json
+{
+  "resourceType": "Observation",
+  "id": "glucose",
+  "code": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "2345-7",
+        "display": "Glucose [Mass/volume] in Serum or Plasma"
+      }
+    ]
+  },
+  "valueQuantity": {
+    "value": 95,
+    "unit": "mg/dL",
+    "system": "http://unitsofmeasure.org",
+    "code": "mg/dL"
+  },
+  "subject": { "reference": "Patient/123" }
+}
+```
+
+## 4. Interoperability and Terminology Bindings
+
+FHIR integrates directly with standardized vocabularies:
+
+| Vocabulary    | Role in FHIR                                                             |
+| ------------- | ------------------------------------------------------------------------ |
+| **LOINC**     | Laboratory test identifiers (`Observation.code`)                         |
+| **SNOMED CT** | Diagnoses, findings, and procedures (`Condition.code`, `Procedure.code`) |
+| **RxNorm**    | Medications and drug products (`Medication.code`)                        |
+| **UCUM**      | Units of measure (`Observation.valueQuantity.unit`)                      |
+
+## 5. Implementation Layers
+
+| Layer                     | Example                          | Purpose                                            |
+| ------------------------- | -------------------------------- | -------------------------------------------------- |
+| **RESTful API**           | `/Patient/123`                   | CRUD operations for resources                      |
+| **Profiles & Extensions** | US Core, IPS                     | Customize base resources for national/regional use |
+| **Terminology Services**  | Concept lookup, code translation | Bind FHIR elements to vocabularies                 |
+| **Security**              | OAuth 2.0, SMART on FHIR         | Authentication and authorization framework         |
+
+## 6. FHIR Versions and Profiles
+
+- **Major releases:** DSTU2 → STU3 → R4 → R5 (current, 2024)
+- **Profiles:** Constrain and extend base FHIR resources for local contexts (e.g., **US Core**, **International Patient Summary (IPS)**)
+- **Implementation Guides (IGs):** Official specifications for specific workflows (e.g., immunization, oncology, genomics)
+
+## 7. Relationship to Other Standards
+
+| Standard                          | Integration with FHIR                                            |
+| --------------------------------- | ---------------------------------------------------------------- |
+| **openEHR**                       | Archetypes can be mapped to FHIR resources                       |
+| **OMOP-CDM**                      | FHIR data can be ETL-transformed into analytical OMOP structures |
+| **ICD / SNOMED / LOINC / RxNorm** | Used for semantic consistency in resource coding                 |
+| **DICOM**                         | Imaging metadata linked via `ImagingStudy` resources             |
+
+## 8. Governance and Access
+
+- **Maintained by:** HL7 International
+- **Open standard:** Freely available with community-driven updates
+- **Official site:** [https://hl7.org/fhir](https://hl7.org/fhir)
+- **Current release:** FHIR R5 (2024)
+
+
+#####################
+biology/clinical-terminology/icd.md
+#####################
+# ICD
+
+## 1. Overview
+
+The **International Classification of Diseases (ICD)** is a global standard for coding diseases, signs, symptoms, abnormal findings, and external causes of injury. It is maintained by the **World Health Organization (WHO)** and serves as the primary classification system for **morbidity and mortality statistics**, **health insurance claims**, and **public health reporting**.
+
+ICD is widely used for clinical documentation, billing, and epidemiological research. The most current versions are **ICD-10** (1990) and **ICD-11** (released in 2019).
+
+## 2. ICD-10 Overview
+
+ICD-10 organizes diseases into **chapters**, each representing a body system or disease category. Codes are alphanumeric and generally consist of **one letter followed by two digits** (e.g., `E11`).
+
+| Example   | Description                                        |
+| --------- | -------------------------------------------------- |
+| **E11**   | Type 2 diabetes mellitus                           |
+| **I10**   | Essential (primary) hypertension                   |
+| **C34.1** | Malignant neoplasm of upper lobe, bronchus or lung |
+
+### Structure:
+
+```
+E11 — Type 2 diabetes mellitus
+ ├── E11.0 — With coma
+ ├── E11.3 — With ophthalmic complications
+ ├── E11.9 — Without complications
+```
+
+## 3. ICD-11 Overview
+
+ICD-11 represents a major digital transformation of the ICD framework. It is:
+
+- **Ontology-based** (built with semantic relationships)
+- **Machine-readable and API-accessible**
+- **Cross-linked with SNOMED CT, LOINC, and other modern terminologies**
+
+### ICD-11 Code Structure
+
+ICD-11 codes are alphanumeric, with up to **seven characters** and a new hierarchical model.
+
+| Example  | Description                                   |
+| -------- | --------------------------------------------- |
+| **5A11** | Type 2 diabetes mellitus                      |
+| **1A00** | Cholera due to _Vibrio cholerae_ O1 serogroup |
+
+### Advantages over ICD-10
+
+- Improved digital data handling and web API access
+- More detailed clinical granularity
+- Enhanced interoperability with modern EHR systems
+
+## 4. Integration and Mapping
+
+| Framework            | Usage                                                                        |
+| -------------------- | ---------------------------------------------------------------------------- |
+| **ICD-10-CM (U.S.)** | Clinical modification for diagnosis coding in hospitals and insurance claims |
+| **ICD-10-PCS**       | Procedure coding system for inpatient procedures (U.S.)                      |
+| **SNOMED CT**        | Mapped for detailed semantic representation                                  |
+| **FHIR / OMOP-CDM**  | ICD codes mapped to standardized vocabularies for interoperability           |
+
+## 5. Governance and Access
+
+- **Maintained by:** World Health Organization (WHO)
+- **Releases:** ICD-10 (1990), ICD-11 (2019)
+- **Access:** [https://icd.who.int](https://icd.who.int)
+
+
+#####################
+biology/clinical-terminology/loinc.md
+#####################
+# LOINC
+
+## 1. Overview
+
+**LOINC** (Logical Observation Identifiers Names and Codes) is a global standard for identifying laboratory and clinical observations. Developed by the **Regenstrief Institute** and maintained in collaboration with the **U.S. National Library of Medicine (NLM)**, LOINC enables consistent exchange and aggregation of clinical results across systems and institutions.
+
+LOINC provides a **universal code system** for tests, measurements, and observations, allowing healthcare data to be shared unambiguously across different laboratories and EHR systems.
+
+## 2. Structure of a LOINC Term
+
+Each LOINC entry describes a single, testable observation defined by **six core attributes**:
+
+| Attribute     | Description                                                | Example                      |
+| ------------- | ---------------------------------------------------------- | ---------------------------- |
+| **Component** | What is being measured, evaluated, or observed             | _Glucose_                    |
+| **Property**  | The characteristic or attribute measured                   | _MCnc_ (Mass concentration)  |
+| **Time**      | The interval of time over which an observation is made     | _Pt_ (Point in time)         |
+| **System**    | The sample or system on which the measurement is performed | _Ser/Plas_ (Serum or plasma) |
+| **Scale**     | The scale of measurement                                   | _Qn_ (Quantitative)          |
+| **Method**    | The method used to make the measurement (optional)         | _Enzymatic_                  |
+
+**Example:**
+LOINC code **2345-7** corresponds to:
+**Glucose [Mass/volume] in Serum or Plasma – Point in time – Quantitative – Enzymatic method**
+
+## 3. Categories of Use
+
+LOINC codes are widely applied across healthcare:
+
+- **Laboratory tests:** Blood chemistry, hematology, microbiology, molecular diagnostics
+- **Clinical measurements:** Vital signs, height, weight, BMI
+- **Clinical documents:** Discharge summaries, radiology reports, pathology findings
+- **Survey instruments:** Patient questionnaires such as PHQ-9, PROMIS
+
+## 4. LOINC in Interoperability
+
+LOINC is an integral component of modern interoperability frameworks:
+
+| Framework                   | Role of LOINC                                                            |
+| --------------------------- | ------------------------------------------------------------------------ |
+| **HL7 FHIR**                | Used in `Observation.code`, `DiagnosticReport.code` fields               |
+| **OMOP-CDM**                | Maps to measurement and observation tables                               |
+| **Public health reporting** | Enables standardized reporting of laboratory results to national systems |
+
+## 5. Maintenance and Access
+
+- **Maintained by:** Regenstrief Institute & NLM
+- **Update frequency:** Twice yearly (June and December)
+- **Access:** Free download from [https://loinc.org](https://loinc.org)
+
+
+#####################
+biology/clinical-terminology/meddra.md
+#####################
+# MedDRA
+
+## 1. Overview
+
+**MedDRA** (Medical Dictionary for Regulatory Activities) is a standardized, multilingual terminology used for coding and classifying **medical information related to drugs, biologics, and medical devices**, particularly in clinical trials and post-marketing safety reporting.
+
+It is maintained by the **International Council for Harmonisation (ICH)** and is globally recognized by regulatory agencies such as the **FDA**, **EMA**, and **PMDA**.
+MedDRA enables consistent communication of **adverse events (AEs)**, **indications**, and **medical histories** across organizations and jurisdictions.
+
+## 2. Purpose
+
+MedDRA provides a **hierarchical structure** that allows medical conditions to be recorded at varying levels of detail while maintaining consistency in classification.
+It supports:
+
+- Adverse event coding in **clinical trials** and **pharmacovigilance**.
+- Regulatory submissions and safety reports (e.g., **E2B** format).
+- Signal detection and risk management.
+
+## 3. Hierarchical Structure
+
+MedDRA is a **five-level hierarchy**, from the broadest to the most specific term:
+
+| Level                            | Description                                 | Example                             |
+| -------------------------------- | ------------------------------------------- | ----------------------------------- |
+| **System Organ Class (SOC)**     | Broadest level, groups by organ or etiology | _Cardiac disorders_                 |
+| **High Level Group Term (HLGT)** | Groups related HLTs                         | _Heart failures_                    |
+| **High Level Term (HLT)**        | Groups related PTs                          | _Cardiac failure and complications_ |
+| **Preferred Term (PT)**          | Single medical concept used for coding      | _Congestive heart failure_          |
+| **Lowest Level Term (LLT)**      | Synonyms or lexical variants of PT          | _CHF_, _Heart failure NOS_          |
+
+## 4. Coding Example
+
+```
+Adverse Event Reported: "Heart failure, acute on chronic"
+ → LLT: Heart failure acute on chronic
+ → PT: Congestive heart failure
+ → HLT: Cardiac failure and complications
+ → HLGT: Heart failures
+ → SOC: Cardiac disorders
+```
+
+This hierarchical mapping ensures consistent aggregation of related events in safety analyses.
+
+## 5. Integration with Other Standards
+
+| Standard                         | Integration with MedDRA                                                 |
+| -------------------------------- | ----------------------------------------------------------------------- |
+| **CDISC SDTM**                   | Used in AE (Adverse Events) domain via AETERM / AEDECOD variables       |
+| **E2B / ICH Guidelines**         | Required for electronic adverse event reporting                         |
+| **WHO Drug Dictionary / RxNorm** | Can be cross-referenced for drug–event relationships                    |
+| **SNOMED CT**                    | Partial mappings exist for interoperability with clinical terminologies |
+
+## 6. Maintenance and Updates
+
+- **Maintained by:** ICH MedDRA Maintenance and Support Services Organization (MSSO)
+- **Release frequency:** Twice per year (March and September)
+- **Languages:** Available in 11 languages (English, Japanese, Chinese, Spanish, etc.)
+- **Versioning:** Each release includes a version number (e.g., v27.0)
+
+## 7. Use in Regulatory Submissions
+
+| Agency           | Implementation                                        |
+| ---------------- | ----------------------------------------------------- |
+| **FDA (U.S.)**   | Mandatory for electronic AE submissions (e.g., FAERS) |
+| **EMA (Europe)** | Required for EudraVigilance reporting                 |
+| **PMDA (Japan)** | Required for post-marketing safety data               |
+
+## 8. Access and Licensing
+
+- **Website:** [https://www.meddra.org](https://www.meddra.org)
+- **Access:** Free for non-commercial use (academic, regulatory, or government institutions)
+- **Commercial license:** Required for industry use
+
+
+#####################
+biology/clinical-terminology/omop-cdm.md
+#####################
+# OMOP-CDM
+
+## 1. Overview
+
+The Observational Medical Outcomes Partnership – Common Data Model (**OMOP-CDM**) is a standardized data structure developed by the **Observational Health Data Sciences and Informatics (OHDSI)** initiative. It enables consistent representation, integration, and analysis of observational healthcare data from multiple sources — such as EHRs, claims, registries, and biobanks.
+
+OMOP-CDM supports large-scale, reproducible research by transforming heterogeneous clinical data into a **common schema with standardized vocabularies** (LOINC, SNOMED CT, RxNorm, etc.).
+
+## 2. Core Principles
+
+| Principle                     | Description                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Standardized schema**       | All participating databases follow the same table structure and field definitions.                                 |
+| **Standardized vocabularies** | Clinical concepts are mapped to standard terminologies (SNOMED CT, RxNorm, LOINC, ICD).                            |
+| **Provenance preservation**   | Source data and mappings are traceable through concept IDs and source values.                                      |
+| **Reproducible analytics**    | Standardized structure allows OHDSI tools (e.g., ATLAS, Achilles, CohortDiagnostics) to run analyses across sites. |
+
+## 3. Data Model Structure
+
+OMOP-CDM organizes data into relational tables grouped by domain:
+
+| Domain                   | Example Tables                                                                 | Description                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| **Person-level data**    | `person`, `observation_period`                                                 | Demographics and observation windows                                           |
+| **Clinical events**      | `condition_occurrence`, `procedure_occurrence`, `drug_exposure`, `observation` | Captures clinical diagnoses, procedures, prescriptions, and other observations |
+| **Measurement and labs** | `measurement`                                                                  | Quantitative or qualitative results (e.g., lab values)                         |
+| **Health economics**     | `cost`, `payer_plan_period`                                                    | Claims and reimbursement data                                                  |
+| **Metadata**             | `concept`, `concept_relationship`, `vocabulary`                                | Stores controlled terminology and relationships                                |
+
+## 4. Vocabulary System
+
+OMOP maintains its own **Standardized Vocabularies**, integrating multiple sources:
+
+- **Conditions** → SNOMED CT
+- **Drugs** → RxNorm
+- **Measurements** → LOINC
+- **Procedures** → CPT, ICD-9/10-PCS
+- **Units** → UCUM
+
+Each record is identified by a **concept_id**, ensuring semantic interoperability.
+
+## 5. Example Schema Flow
+
+```
+EHR Source Data (ICD-10, Local codes)
+        ↓  ETL (Extract–Transform–Load)
+OMOP-CDM Tables (standardized schema)
+        ↓
+OHDSI Analytics (ATLAS, ACHILLES, CohortDiagnostics)
+```
+
+## 6. Tools and Ecosystem
+
+| Tool                  | Function                                                        |
+| --------------------- | --------------------------------------------------------------- |
+| **ATLAS**             | Web-based cohort design and analysis platform                   |
+| **ACHILLES**          | Data quality and characterization tool                          |
+| **CohortDiagnostics** | Evaluates reproducibility and consistency of cohort definitions |
+| **PLP / PLE**         | Predictive and population-level effect estimation frameworks    |
+
+## 7. Governance and Access
+
+- **Maintained by:** OHDSI community
+- **Specification:** [https://ohdsi.github.io/CommonDataModel](https://ohdsi.github.io/CommonDataModel)
+- **License:** Open and freely available (Apache 2.0)
+- **Latest version:** v5.4 (2024)
+
+
+#####################
+biology/clinical-terminology/open-ehr.md
+#####################
+# openEHR
+
+## 1. Overview
+
+**openEHR** is an open, standards-based framework for designing, storing, and exchanging **electronic health records (EHRs)**.
+It focuses on **semantic interoperability**, ensuring that clinical data can be shared, interpreted, and reused across different systems, institutions, and countries.
+
+Unlike message-based standards (e.g., HL7 v2, FHIR), openEHR defines how clinical information is **modeled and persisted** in databases using a robust two-level modeling architecture.
+
+## 2. Key Concepts
+
+| Concept                  | Description                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Two-level modeling**   | Separates the technical data structure (Reference Model) from the clinical content definitions (Archetypes and Templates).           |
+| **Archetype**            | A reusable, machine-readable model that defines the structure and semantics of a clinical concept (e.g., blood pressure, diagnosis). |
+| **Template**             | Combines multiple archetypes to create a use-case-specific structure (e.g., discharge summary, encounter note).                      |
+| **Reference Model (RM)** | Defines the fundamental building blocks (e.g., data types, composition, observations).                                               |
+| **EHR Persistence**      | openEHR defines how structured data is stored for long-term semantic stability.                                                      |
+
+## 3. openEHR Architecture
+
+```
++--------------------------------------------------+
+|   Applications (UI, EHR systems, analytics)      |
++--------------------------------------------------+
+|   Templates (composed of archetypes)             |
++--------------------------------------------------+
+|   Archetypes (clinical concept definitions)       |
++--------------------------------------------------+
+|   Reference Model (core data structures)          |
++--------------------------------------------------+
+|   Data persistence / versioning / audit trail     |
++--------------------------------------------------+
+```
+
+This design allows openEHR systems to evolve clinically (by updating archetypes) without changing underlying database schemas.
+
+## 4. Archetypes and Templates
+
+### Archetype Example – Blood Pressure
+
+```
+openEHR-EHR-OBSERVATION.blood_pressure.v1
+ ├── systolic: Quantity (mmHg)
+ ├── diastolic: Quantity (mmHg)
+ ├── position: Coded text
+ ├── time: DateTime
+```
+
+### Template Example – Vital Signs
+
+Combines multiple archetypes:
+
+- Blood Pressure
+- Heart Rate
+- Body Temperature
+
+## 5. Interoperability
+
+| Standard            | Relationship with openEHR                                                            |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| **HL7 FHIR**        | openEHR can export or map archetypes to FHIR resources (e.g., Observation, Patient). |
+| **LOINC**           | Used within archetypes for lab test identifiers.                                     |
+| **SNOMED CT / ICD** | Integrated for coded value sets and clinical terminology bindings.                   |
+| **OMOP-CDM**        | Can be used as a downstream analytical model for harmonized data export.             |
+
+## 6. Governance and Tools
+
+| Component            | Description                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| **Maintained by**    | openEHR International Foundation                                                     |
+| **Modeling tools**   | Archetype Designer, Template Designer, Archetype Editor                              |
+| **Programming APIs** | Available in Java, .NET, Python, and REST APIs                                       |
+| **Repositories**     | Clinical Knowledge Manager (CKM): [https://ckm.openehr.org](https://ckm.openehr.org) |
+
+## 7. Advantages
+
+- Long-term semantic stability
+- Clinician-driven data modeling
+- Fully open specification and governance
+- Support for multilingual, multi-domain health records
+- Compatible with FHIR, SNOMED CT, and LOINC
+
+
+#####################
+biology/clinical-terminology/rxnorm.md
+#####################
+# RxNorm
+
+## 1. Overview
+
+**RxNorm** is a standardized nomenclature for **clinical drugs** maintained by the **U.S. National Library of Medicine (NLM)**. It provides normalized names, identifiers, and relationships among drug concepts to ensure semantic interoperability across healthcare systems, e-prescribing networks, and research databases.
+
+RxNorm connects various drug vocabularies—such as First Databank, Micromedex, and the FDA’s Structured Product Labeling (SPL)—into a single, consistent coding framework.
+
+## 2. Structure of RxNorm Concepts
+
+RxNorm organizes drugs into a **hierarchical system** of interrelated entities, each represented by a unique **RxCUI (RxNorm Concept Unique Identifier)**.
+
+| Concept Type                     | Example                          | Description                                                        |
+| -------------------------------- | -------------------------------- | ------------------------------------------------------------------ |
+| **IN (Ingredient)**              | Acetaminophen                    | The active chemical substance                                      |
+| **PIN (Precise Ingredient)**     | Acetaminophen anhydrous          | A more specific ingredient variant                                 |
+| **BN (Brand Name)**              | Tylenol                          | Manufacturer-specific brand name                                   |
+| **SCD (Semantic Clinical Drug)** | Acetaminophen 500 mg Oral Tablet | A precise clinical formulation (ingredient + strength + dose form) |
+| **SBD (Semantic Branded Drug)**  | Tylenol 500 mg Oral Tablet       | Branded version of a clinical drug                                 |
+| **DF (Dose Form)**               | Oral Tablet                      | The physical form and route of administration                      |
+
+**Example:**
+`RxCUI 198440` → _Acetaminophen 500 MG Oral Tablet (Tylenol)_
+
+## 3. Key Features
+
+- Provides a **standardized drug vocabulary** for EHRs and pharmacy systems.
+- Supports **e-prescribing and medication reconciliation**.
+- Facilitates **drug–drug interaction** and **allergy checking**.
+- Maps to other coding systems, including **NDC (National Drug Code)**, **SNOMED CT**, and **ATC**.
+
+## 4. Integration in Clinical Systems
+
+| Framework               | RxNorm Usage                                                       |
+| ----------------------- | ------------------------------------------------------------------ |
+| **HL7 FHIR**            | `Medication.code` or `MedicationRequest.medicationCodeableConcept` |
+| **OMOP-CDM**            | Populates `drug_concept_id` field in the drug exposure table       |
+| **EHR / e-Prescribing** | Ensures consistent naming and dosage interpretation                |
+| **Drug Databases**      | Links branded and generic drugs through RxCUI relationships        |
+
+## 5. Maintenance and Access
+
+- **Maintained by:** U.S. National Library of Medicine (NLM)
+- **Update frequency:** Weekly (Monday releases)
+- **Access:** Free download or API via [https://rxnav.nlm.nih.gov](https://rxnav.nlm.nih.gov)
+
+
+#####################
+biology/clinical-terminology/snomed-ct.md
+#####################
+# SNOMED CT
+
+## 1. Overview
+
+**SNOMED CT** (Systematized Nomenclature of Medicine – Clinical Terms) is the world’s most comprehensive, multilingual clinical healthcare terminology. It is maintained by **SNOMED International** and provides standardized codes for diseases, clinical findings, procedures, body structures, organisms, and other healthcare concepts.
+
+SNOMED CT serves as the foundation for semantic interoperability, enabling clinical information to be consistently represented and shared across electronic health record (EHR) systems, research databases, and healthcare analytics platforms.
+
+## 2. Concept Model
+
+SNOMED CT is built on an **ontology-based model**. Each medical concept has a unique identifier and is connected to other concepts through defined relationships.
+
+| Element                 | Description                                                                  | Example                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| **Concept ID**          | Unique numeric identifier for each concept                                   | `44054006`                                               |
+| **Preferred Term (PT)** | The most common name used for a concept                                      | _Type 2 diabetes mellitus_                               |
+| **Synonyms**            | Alternate or local names for the same concept                                | _Adult-onset diabetes_, _Non-insulin-dependent diabetes_ |
+| **Relationships**       | Logical links that define clinical meaning (e.g., "is a", "associated with") | _Type 2 diabetes mellitus → is a → Diabetes mellitus_    |
+
+## 3. Hierarchical Structure
+
+SNOMED CT concepts are organized hierarchically, from general to specific.
+Example:
+
+```
+Clinical finding
+ └── Endocrine disorder
+      └── Diabetes mellitus
+           └── Type 2 diabetes mellitus
+```
+
+This hierarchical design enables inheritance of properties, consistent classification, and semantic querying.
+
+## 4. Domains Covered
+
+| Domain                           | Example Concepts                     |
+| -------------------------------- | ------------------------------------ |
+| **Clinical findings / diseases** | Pneumonia, Asthma, Diabetes mellitus |
+| **Procedures**                   | Appendectomy, MRI scan of brain      |
+| **Body structures**              | Heart, Liver, Left lung              |
+| **Organisms / substances**       | Escherichia coli, Insulin            |
+| **Observable entities**          | Blood pressure, Heart rate           |
+| **Pharmaceutical products**      | Metformin, Insulin glargine          |
+
+## 5. Integration and Interoperability
+
+| Framework                   | Usage                                                                     |
+| --------------------------- | ------------------------------------------------------------------------- |
+| **HL7 FHIR**                | `Condition.code`, `Procedure.code`, and other clinical elements           |
+| **OMOP-CDM**                | Maps to `condition_concept_id`, `procedure_concept_id`, `drug_concept_id` |
+| **ICD-10 / ICD-11 Mapping** | Enables crosswalk between billing and clinical ontologies                 |
+| **EHR Systems**             | Standardized diagnosis, procedure, and problem lists                      |
+
+## 6. Maintenance and Access
+
+- **Maintained by:** SNOMED International (formerly IHTSDO)
+- **Release frequency:** Twice per year (January and July)
+- **License:** Free for member countries (including most OECD nations)
+- **Access:** [https://www.snomed.org](https://www.snomed.org)
+
+
+#####################
+biology/clinical-terminology/ucum.md
+#####################
+# UCUM
+
+## 1. Overview
+
+The **Unified Code for Units of Measure (UCUM)** is a standardized system designed to ensure the **consistent representation of measurement units** across electronic health records (EHRs), laboratory systems, and medical data exchanges.
+
+Developed by **Regenstrief Institute** (the same organization behind LOINC), UCUM provides a computer-readable format for expressing all physical measurement units used in healthcare, science, and engineering.
+
+## 2. Purpose
+
+In clinical and laboratory data, units such as `mg/dL`, `mmol/L`, or `µg/m³` are essential for interpreting quantitative results. However, variations in notation (e.g., `mg/dl` vs. `mg/dL`) can cause data incompatibility.
+UCUM solves this problem by defining a **formal syntax** and **canonical representation** for all units.
+
+## 3. Key Features
+
+| Feature                      | Description                                                         |
+| ---------------------------- | ------------------------------------------------------------------- |
+| **Comprehensive coverage**   | Includes SI, ISO, and non-SI units (e.g., mg, mL, IU)               |
+| **Machine-readable**         | Designed for automated data validation and exchange                 |
+| **Compatible with LOINC**    | Used in laboratory result units (e.g., glucose [Mass/volume] mg/dL) |
+| **Case-sensitive syntax**    | Differentiates between `m` (meter) and `M` (molar)                  |
+| **Dimensionally consistent** | Each derived unit can be expressed in base units                    |
+
+## 4. Syntax Examples
+
+| Expression | Meaning                                    |
+| ---------- | ------------------------------------------ |
+| `mg/dL`    | milligram per deciliter                    |
+| `mmol/L`   | millimole per liter                        |
+| `kg.m/s2`  | kilogram meter per second squared (Newton) |
+| `10*3/uL`  | thousand per microliter                    |
+| `Cel`      | degree Celsius                             |
+
+## 5. Integration in Health IT Standards
+
+| Framework    | UCUM Role                                                                        |
+| ------------ | -------------------------------------------------------------------------------- |
+| **LOINC**    | Defines the units of measurement for quantitative lab tests                      |
+| **FHIR**     | Standard unit representation in `Quantity.value` and `Observation.valueQuantity` |
+| **OMOP-CDM** | Harmonizes unit data in the `measurement` table                                  |
+| **DICOM**    | Supports consistent unit display for imaging-related measurements                |
+
+## 6. Governance and Access
+
+- **Maintained by:** Regenstrief Institute
+- **Current release:** UCUM 1.9 (Ongoing updates)
+- **Access and documentation:** [https://unitsofmeasure.org](https://unitsofmeasure.org)
+
+
+#####################
+biology/clinical-terminology/umls.md
+#####################
+# UMLS (Unified Medical Language System)
+
+## 1. Overview
+
+The **Unified Medical Language System (UMLS)** is an integrated biomedical terminology system developed by the **U.S. National Library of Medicine (NLM)**.
+Its goal is to **link diverse medical vocabularies and standards**—such as LOINC, SNOMED CT, MeSH, RxNorm, and ICD—into a unified framework that supports semantic interoperability, data integration, and natural language processing (NLP) in healthcare and biomedical research.
+
+## 2. Core Components
+
+UMLS is composed of three major knowledge sources:
+
+| Component                      | Description                                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Metathesaurus**              | A massive database of biomedical and health-related concepts, synonyms, and relationships aggregated from 200+ vocabularies.   |
+| **Semantic Network**           | Defines the high-level semantic types (e.g., _Disease or Syndrome_, _Pharmacologic Substance_) and relationships between them. |
+| **SPECIALIST Lexicon & Tools** | Provides linguistic resources for NLP, including morphological and syntactic information on biomedical terms.                  |
+
+## 3. The Metathesaurus
+
+The **UMLS Metathesaurus** is the core component, containing over 3 million biomedical concepts. Each concept is assigned a **Concept Unique Identifier (CUI)** that links equivalent terms across different terminologies.
+
+| Example                                                                           | Description                     |
+| --------------------------------------------------------------------------------- | ------------------------------- |
+| **CUI:** C0011849                                                                 | Concept for _Diabetes Mellitus_ |
+| **Linked vocabularies:** SNOMED CT (`44054006`), ICD-10 (`E11`), MeSH (`D003920`) |                                 |
+
+This crosswalk allows data coded in different systems to be aligned under one unified concept.
+
+## 4. Semantic Network
+
+The **Semantic Network** provides a conceptual backbone for the UMLS, defining the semantic relationships among biomedical entities.
+
+| Example Relationship                         | Meaning |
+| -------------------------------------------- | ------- |
+| _Insulin_ → _treats_ → _Diabetes Mellitus_   |         |
+| _Bacteria_ → _causes_ → _Infectious Disease_ |         |
+
+These relationships enable advanced reasoning, data mining, and AI applications in medical informatics.
+
+## 5. SPECIALIST Lexicon & NLP Tools
+
+The **SPECIALIST Lexicon** contains morphological and syntactic data on biomedical terms, supporting:
+
+- Text mining and named-entity recognition (NER)
+- Clinical documentation analysis
+- Concept extraction from free-text EHR notes
+
+The **Lexical Tools API** helps map natural-language text to UMLS concepts.
+
+## 6. Integration and Applications
+
+| Application Area              | Example Usage                                       |
+| ----------------------------- | --------------------------------------------------- |
+| **Clinical data integration** | Map ICD, SNOMED CT, and LOINC codes to shared CUIs  |
+| **NLP / text mining**         | Identify biomedical entities in clinical narratives |
+| **Ontology alignment**        | Harmonize concepts across datasets and standards    |
+| **FHIR Terminology Services** | Provide mappings for concept translation            |
+
+## 7. Governance and Access
+
+- **Maintained by:** U.S. National Library of Medicine (NLM)
+- **Updates:** Twice per year (January and July)
+- **Access:** [https://www.nlm.nih.gov/research/umls](https://www.nlm.nih.gov/research/umls)
+  (UMLS license required for download and API use)
+
+
