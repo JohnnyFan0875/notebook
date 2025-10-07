@@ -5,15 +5,16 @@ These frameworks ensure that healthcare information—ranging from lab results a
 
 ## Terminology Standards
 
-| Standard                          | Description                                                                                                                  |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| [**LOINC**](./loinc.md)           | Provides universal codes for identifying laboratory tests, measurements, and clinical observations.                          |
-| [**RxNorm**](./rxnorm.md)         | Defines normalized names and relationships for clinical drugs to ensure consistency across EHR and pharmacy systems.         |
-| [**SNOMED CT**](./snomed-ct.md)   | A comprehensive ontology covering diseases, findings, procedures, and other clinical concepts for semantic interoperability. |
-| [**ICD-10/11**](./icd.md)         | The World Health Organization’s global standard for disease and mortality classification.                                    |
-| [**CPT / HCPCS**](./cpt-hcpcs.md) | U.S. coding systems for documenting and billing medical procedures, services, and supplies.                                  |
-| [**UCUM**](./ucum.md)             | A unified code system ensuring consistent representation of measurement units across systems.                                |
-| [**UMLS**](./umls.md)             | Integrates multiple biomedical terminologies (LOINC, SNOMED CT, RxNorm, ICD, etc.) into a single semantic network.           |
+| Standard                                                              | Description                                                                                                                                        |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [**LOINC**](./loinc.md)                                               | Provides universal codes for identifying laboratory tests, measurements, and clinical observations.                                                |
+| [**RxNorm**](./rxnorm.md)                                             | Defines normalized names and relationships for clinical drugs to ensure consistency across EHR and pharmacy systems.                               |
+| [**SNOMED CT**](./snomed-ct.md)                                       | A comprehensive ontology covering diseases, findings, procedures, and other clinical concepts for semantic interoperability.                       |
+| [**ICD-10/11**](./icd.md)                                             | The World Health Organization’s global standard for disease and mortality classification.                                                          |
+| [**CPT / HCPCS**](./cpt-hcpcs.md)                                     | U.S. coding systems for documenting and billing medical procedures, services, and supplies.                                                        |
+| [**Taiwan NHI Service Standards**](./taiwan-nhi-service-standards.md) | Official medical service coverage and reimbursement framework under Taiwan’s National Health Insurance, defining procedures and payment standards. |
+| [**UCUM**](./ucum.md)                                                 | A unified code system ensuring consistent representation of measurement units across systems.                                                      |
+| [**UMLS**](./umls.md)                                                 | Integrates multiple biomedical terminologies (LOINC, SNOMED CT, RxNorm, ICD, etc.) into a single semantic network.                                 |
 
 ## Data Model and Interoperability Standards
 
