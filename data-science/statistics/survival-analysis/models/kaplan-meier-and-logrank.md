@@ -15,7 +15,7 @@ It updates survival probabilities stepwise as events occur.
 - Produces a **step function** survival curve.
 - Allows comparison of survival probabilities between groups.
 
-Mathematically, the estimated survival function at time \( t \) is:
+Mathematically, the estimated survival function at time $t$ is:
 
 $$
 \hat{S}(t) = \prod_{t_i \leq t} \left(1 - \frac{d_i}{n_i}\right)
@@ -23,14 +23,14 @@ $$
 
 where:
 
-- \(t_i\): the \(i^{th}\) event time
-- \(d_i\): number of events at \(t_i\)
-- \(n_i\): number of individuals at risk just before \(t_i\)
+- $t_i$: the $i^{th}$ event time
+- $d_i$: number of events at $t_i$
+- $n_i$: number of individuals at risk just before $t_i$
 
 ### Conditional Survival
 
 - The probability of surviving a particular interval, **given that the subject has survived up to the start of that interval**.
-- Formula at time \(t_i\):
+- Formula at time $t_i$:
   $$
   p_i = 1 - \frac{d_i}{n_i}
   $$
@@ -57,11 +57,11 @@ where:
 
 At each event time:
 
-| Time | \(n_i\) | \(d_i\) | Conditional Survival | Cumulative Survival |
-| ---- | ------- | ------- | -------------------- | ------------------- |
-| 2    | 5       | 1       | \(1 - 1/5 = 0.8\)    | 0.8                 |
-| 3    | 4       | 1       | \(1 - 1/4 = 0.75\)   | 0.8 × 0.75 = 0.60   |
-| 7    | 2       | 1       | \(1 - 1/2 = 0.5\)    | 0.6 × 0.5 = 0.30    |
+| Time | $n_i$ | $d_i$ | Conditional Survival | Cumulative Survival |
+| ---- | ----- | ----- | -------------------- | ------------------- |
+| 2    | 5     | 1     | $1 - 1/5 = 0.8$      | 0.8                 |
+| 3    | 4     | 1     | $1 - 1/4 = 0.75$     | 0.8 × 0.75 = 0.60   |
+| 7    | 2     | 1     | $1 - 1/2 = 0.5$      | 0.6 × 0.5 = 0.30    |
 
 Thus, by 7 months, the estimated survival probability is **30%**.
 
@@ -79,7 +79,7 @@ Thus, by 7 months, the estimated survival probability is **30%**.
 ### Interpreting the KM Curve
 
 - **X-axis:** Time (months, days, years)
-- **Y-axis:** Estimated survival probability \( \hat{S}(t) \)
+- **Y-axis:** Estimated survival probability $ \hat{S}(t) $
 - **Steps downward:** Events (e.g., deaths)
 - **Tick marks:** Censored cases
 - **Flat segments:** Periods with no observed events
@@ -146,11 +146,11 @@ A type of **non-parametric** statistical test
 
 ### Test Statistic
 
-At each event time ( t_j ):
+At each event time $ t_j $:
 
-- ( O\_{1j} ): observed events in group 1
-- ( E\_{1j} ): expected events in group 1 under ( H_0 )
-- ( V*{1j} ): variance of ( O*{1j} )
+- $ O\_{1j} $: observed events in group 1
+- $ E\_{1j} $: expected events in group 1 under $ H_0 $
+- $ V*{1j} $: variance of $ O*{1j} $
 
 The log-rank statistic is:
 
@@ -159,7 +159,7 @@ $$
 $$
 
 - Follows a **chi-square distribution** with 1 degree of freedom for two groups.
-- For ( k ) groups, degrees of freedom = ( k - 1 ).
+- For $ k $ groups, degrees of freedom = $ k - 1 $.
 
 ### Example in R
 

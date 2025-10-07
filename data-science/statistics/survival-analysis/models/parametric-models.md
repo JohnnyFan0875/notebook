@@ -25,7 +25,7 @@ Parametric models differ by the assumed shape of the hazard over time:
 | **Log-normal**   | Hazard rises then falls                 | Biological recovery or latency periods |
 | **Log-logistic** | Similar to log-normal but heavier tails | Long-term survival with late events    |
 
-Each distribution provides both a **survival function \(S(t)\)** and a **hazard function \(h(t)\)**.  
+Each distribution provides both a **survival function $S(t)$** and a **hazard function $h(t)$**.  
 Example for the **Weibull model**:
 
 $$
@@ -35,22 +35,22 @@ $$
 
 where:
 
-- \( \lambda \): scale parameter
-- \( k \): shape parameter
-  - \(k > 1\): hazard increases over time
-  - \(k < 1\): hazard decreases over time
+- $ \lambda $: scale parameter
+- $ k $: shape parameter
+  - $k > 1$: hazard increases over time
+  - $k < 1$: hazard decreases over time
 
 ## 3. Model Specification
 
-A parametric model relates the hazard for subject _i_ to covariates \(x_i\):
+A parametric model relates the hazard for subject _i_ to covariates $x_i$:
 
 $$
 h_i(t) = h_0(t; \theta) \exp(\beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_p x_{ip})
 $$
 
-- \(h_0(t; \theta)\): baseline hazard defined by chosen distribution (e.g., Weibull)
-- \(\beta\): regression coefficients
-- \(\theta\): parameters of the distribution (e.g., shape, scale)
+- $h_0(t; \theta)$: baseline hazard defined by chosen distribution (e.g., Weibull)
+- $\beta$: regression coefficients
+- $\theta$: parameters of the distribution (e.g., shape, scale)
 
 When the proportional hazards assumption holds, the parametric and Cox models yield similar hazard ratios.
 

@@ -15,10 +15,10 @@ Where:
 
 | Symbol      | Meaning                                                         |
 | :---------- | :-------------------------------------------------------------- |
-| \(h_i(t)\)  | Hazard (instantaneous event rate) for subject _i_ at time _t_   |
-| \(h_0(t)\)  | Baseline hazard function (unspecified, non-parametric)          |
-| \(x\_{ij}\) | Covariate _j_ for subject _i_ (e.g., age, sex, gene expression) |
-| \(\beta_j\) | Regression coefficient for covariate _j_                        |
+| $h_i(t)$  | Hazard (instantaneous event rate) for subject _i_ at time _t_   |
+| $h_0(t)$  | Baseline hazard function (unspecified, non-parametric)          |
+| $x\_{ij}$| Covariate _j_ for subject _i_ (e.g., age, sex, gene expression) |
+| $\beta_j$ | Regression coefficient for covariate _j_                        |
 
 The model estimates **hazard ratios (HR)**, which quantify the _relative risk_ associated with a one-unit increase in each covariate:
 

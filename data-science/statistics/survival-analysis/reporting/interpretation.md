@@ -7,7 +7,7 @@ This section summarizes how to interpret key outcomes from Kaplan–Meier curves
 
 ### Interpretation
 
-- The curve estimates the probability that a subject **survives longer than time \(t\)**.
+- The curve estimates the probability that a subject **survives longer than time $t$**.
   - Example: “At 12 months, the survival probability was 70%.”
 - Steeper drops indicate higher event rates.
 - Parallel or overlapping curves suggest similar outcomes between groups.
@@ -22,8 +22,8 @@ This section summarizes how to interpret key outcomes from Kaplan–Meier curves
 | Measure                                  | Meaning                                                                             | Comment                                           |
 | ---------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------- |
 | **Median survival time**                 | Time when survival probability = 0.5                                                | Most reported; robust to censoring.               |
-| **Mean survival time**                   | Area under survival curve \(E[T] = \int_0^\infty S(t)\,dt\)                         | Rarely estimable due to incomplete follow-up.     |
-| **Restricted Mean Survival Time (RMST)** | Average survival up to a fixed time \(\tau\): \(RMST(\tau) = \int_0^\tau S(t)\,dt\) | Useful for truncated or finite follow-up studies. |
+| **Mean survival time**                   | Area under survival curve $E[T] = \int_0^\infty S(t)\,dt$                         | Rarely estimable due to incomplete follow-up.     |
+| **Restricted Mean Survival Time (RMST)** | Average survival up to a fixed time $\tau$: $RMST(\tau) = \int_0^\tau S(t)\,dt$ | Useful for truncated or finite follow-up studies. |
 
 Example:
 
@@ -98,9 +98,9 @@ Example:
 
 ## 8. Example Summary Statement
 
-> Kaplan–Meier analysis revealed that patients receiving Drug A had significantly longer survival than those receiving Drug B (median 24 vs. 15 months; log-rank p = 0.02).  
-> Cox proportional hazards modeling confirmed the result (HR = 0.60, 95% CI: 0.42–0.86), with no violation of the proportional hazards assumption (p = 0.72, Schoenfeld test).  
-> These findings indicate that Drug A confers a clinically meaningful survival advantage.
+- Kaplan–Meier analysis revealed that patients receiving Drug A had significantly longer survival than those receiving Drug B (median 24 vs. 15 months; log-rank p = 0.02).  
+- Cox proportional hazards modeling confirmed the result (HR = 0.60, 95% CI: 0.42–0.86), with no violation of the proportional hazards assumption (p = 0.72, Schoenfeld test).  
+- These findings indicate that Drug A confers a clinically meaningful survival advantage.
 
 ## 9. Key Takeaways
 

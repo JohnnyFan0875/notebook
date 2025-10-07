@@ -23,14 +23,14 @@ This is the default form of censoring in most clinical and reliability studies.
 
 **Notation**
 
-\[
+$$
 T_i = \min(\text{event time}, \text{censoring time}), \quad
 \delta_i =
 \begin{cases}
 1, & \text{if event observed} \\
 0, & \text{if censored}
 \end{cases}
-\]
+$$
 
 ## 2. Left Censoring
 

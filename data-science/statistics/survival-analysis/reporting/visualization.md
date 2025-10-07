@@ -13,7 +13,7 @@ To display the estimated **survival probability over time** for one or more grou
 
 ### Key Features
 
-- Stepwise curve reflecting survival probability \( \hat{S}(t) \)
+- Stepwise curve reflecting survival probability $ \hat{S}(t) $
 - Vertical drops at event times
 - Tick marks (or crosses) indicating censored observations
 - Confidence intervals (optional shaded bands)

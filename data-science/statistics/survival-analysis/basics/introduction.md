@@ -23,11 +23,11 @@ Survival methods address these challenges by estimating the probability of survi
 | Concept               | Definition                                                            | Typical Symbol       |
 | --------------------- | --------------------------------------------------------------------- | -------------------- |
 | **Event**             | Outcome of interest (death, relapse, recovery)                        | —                    |
-| **Time-to-event**     | Duration between study entry and event or censoring                   | \(T\)                |
+| **Time-to-event**     | Duration between study entry and event or censoring                   | $T$                |
 | **Censoring**         | Incomplete observation of event time                                  | —                    |
-| **Survival function** | Probability of surviving beyond time \(t\)                            | \(S(t) = P(T > t)\)  |
-| **Hazard function**   | Instantaneous risk of event at time \(t\), given survival up to \(t\) | \(h(t)\)             |
-| **Cumulative hazard** | Total accumulated risk up to time \(t\)                               | \(H(t) = -\ln S(t)\) |
+| **Survival function** | Probability of surviving beyond time $t$                            | $S(t) = P(T > t)$  |
+| **Hazard function**   | Instantaneous risk of event at time $t$, given survival up to $t$ | $h(t)$             |
+| **Cumulative hazard** | Total accumulated risk up to time $t$                              | $H(t) = -\ln S(t)$ |
 
 Together, these functions describe both the **shape** and **timing** of risk in a population.
 
