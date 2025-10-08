@@ -71,4 +71,14 @@ imputed_df = pd.DataFrame(imputed_df, columns=['age', 'income', 'gender'])
 df[['col']] = SimpleImputer(strategy='mean').fit_transform(df[['col']])
 ```
 
+## Interpolation vs. Imputation
+
+Although both _imputation_ and _interpolation_ involve filling missing data, they differ in purpose and assumption.
+
+- **Imputation** estimates missing values based on other features or statistical distributions (common in clinical or tabular datasets).
+- **Interpolation** estimates intermediate values in a **continuous sequence**, such as time-series or spatial data.
+
+For interpolation methods in `pandas`, see:  
+👉 [Data Modification — Interpolation in Pandas](../../../python-foundations/pandas/missing-data.md#interpolation)
+
 > **Tip**: Always check the proportion of missing values before choosing an imputation strategy. For high missingness, consider advanced methods (e.g., KNN imputer, iterative imputer, or multiple imputation).
