@@ -3,8 +3,6 @@
 Homogeneity of variance (homoscedasticity) means the variance within each group is constant across levels of a categorical variable.  
 This is a key assumption for tests such as **t-tests** and **ANOVA**.
 
----
-
 ## Why Important?
 
 - Many parametric tests (t-tests, ANOVA) assume equal variances across groups.
@@ -12,14 +10,10 @@ This is a key assumption for tests such as **t-tests** and **ANOVA**.
   - Inflate **Type I error rates** (false positives).
   - Reduce statistical power.
 
----
-
 ## Hypotheses
 
 - **Null hypothesis (H₀):** Variances across groups are equal.
 - **Alternative hypothesis (Hₐ):** At least one group has a different variance.
-
----
 
 ## Levene’s Test
 

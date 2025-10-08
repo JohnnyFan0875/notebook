@@ -3,14 +3,10 @@
 ANOVA (Analysis of Variance) is used to compare the means of **three or more groups**.  
 It evaluates whether at least one group mean differs from the others.
 
----
-
 ## Hypotheses
 
 - **Null hypothesis (H₀):** All group means are equal.
 - **Alternative hypothesis (Hₐ):** At least one group mean differs.
-
----
 
 ## Assumptions
 
@@ -20,28 +16,45 @@ It evaluates whether at least one group mean differs from the others.
   - If violated → use **Welch’s ANOVA** (unequal variances)
   - If non-normal → use **Kruskal–Wallis test** (non-parametric alternative)
 
----
-
 ## Test Statistic
 
-\[
+The **F-test** is the core statistic in ANOVA.  
+It compares **between-group variance** to **within-group variance** to evaluate whether the observed differences among group means are larger than would be expected by chance.
+
+$$
 F = \frac{MS*{\text{between}}}{MS*{\text{within}}}
-\]
+$$
 
-- \(MS\_{\text{between}}\): variance between group means
-- \(MS\_{\text{within}}\): variance within groups
+- $MS\_{\text{between}}$: variance between group means
+- $MS\_{\text{within}}$: variance within groups
 
----
+### Distribution and Degrees of Freedom
 
-## Interpretation
+The **F-statistic** follows the F-distribution, which is **right-skewed** and defined by two parameters:
 
-- If **p-value ≤ α** → At least two groups differ significantly.
-- If **p-value > α** → Fail to reject H₀ (all group means are equal).
+$$
+F(df_1 = k - 1,\; df_2 = N - k)
+$$
+
+where:
+
+- $k$: number of groups
+- $N$: total sample size
+
+The critical value depends on the chosen significance level (α).  
+A larger F-value (relative to this cutoff) indicates that **between-group variation exceeds within-group variation**.
+
+### Interpretation
+
+| F value     | Meaning                                                                      |
+| ----------- | ---------------------------------------------------------------------------- |
+| **F ≈ 1**   | Group means are similar → fail to reject H₀                                  |
+| **F >> 1**  | Between-group variance is much larger than within-group variance → reject H₀ |
+| **p-value** | Probability of obtaining this F-ratio under H₀                               |
+
+- If **p ≤ α** (commonly 0.05), reject H₀ — meaning at least one group differs significantly.
+- However, ANOVA does **not** indicate _which_ groups differ; follow-up [**post-hoc tests**](#post-hoc-analysis) are required.
 - With more groups → more pairwise comparisons → higher chance of Type I error (false positives). Adjustments are required.
-
-⚠️ Note: ANOVA alone does **not** indicate which groups differ → use **post-hoc tests**.
-
----
 
 ## Python Example
 
@@ -154,8 +167,6 @@ for (group1, group2), corrected_p_val in zip(comparisons, corrected_p_values):
 - Effect size measures the **strength of the relationship** between independent variables (factors) and the dependent variable in ANOVA.
 - It complements the F-test and p-value, which only tell us whether an effect exists, by showing **how large or meaningful** the effect is.
 - Always report effect size with ANOVA results to provide practical significance, not just statistical significance.
-
----
 
 ### Eta squared (η²)
 

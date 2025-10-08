@@ -66,7 +66,7 @@ print("Expected frequencies:\n", expected)
   $$
   k - 1
   $$
-  where \(k\) = number of categories.
+  where $k$ = number of categories.
 
 ### Python Example
 

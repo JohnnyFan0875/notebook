@@ -32,24 +32,24 @@ The **p-value** is a probability that helps evaluate evidence against the null h
 
 For a test statistic \(T\) under the null distribution:
 
-\[
+$$
 p = P(\; T \;\geq\; T\_{obs} \;|\; H_0 \text{ is true})
-\]
+$$
 
 - **Right-tailed:**  
-  \[
+  $$
   p = P(T \geq t\_{obs})
-  \]
+  $$
 
 - **Left-tailed:**  
-  \[
+  $$
   p = P(T \leq t\_{obs})
-  \]
+  $$
 
 - **Two-tailed:**  
-  \[
+  $$
   p = 2 \times P(T \geq |t\_{obs}|)
-  \]
+  $$
 
 ## From t-score (Student’s t-distribution)
 

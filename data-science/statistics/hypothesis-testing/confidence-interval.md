@@ -7,14 +7,14 @@ It reflects the degree of uncertainty around an estimate.
 
 ## Formula for the Mean
 
-\[
+$$
 \text{CI} = \bar{x} \pm z \times \frac{s}{\sqrt{n}}
-\]
+$$
 
-- \(\bar{x}\): sample mean
-- \(s\): sample standard deviation
-- \(n\): sample size
-- \(z\): critical value from the normal distribution (e.g., 1.96 for 95% confidence)
+- $\bar{x}$: sample mean
+- $s$: sample standard deviation
+- $n$: sample size
+- $z$: critical value from the normal distribution (e.g., 1.96 for 95% confidence)
 
 ## Interpretation
 
@@ -27,9 +27,9 @@ It reflects the degree of uncertainty around an estimate.
   - Compare the **difference between two groups** in a sample population
 
 - **Margin of Error**:  
-  \[
+  $$
   \text{Margin of Error} = \text{Critical Value (t or z)} \times \text{Standard Error}
-  \]
+  $$
 
 - For a 95% confidence level:
 

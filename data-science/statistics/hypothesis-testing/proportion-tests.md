@@ -5,8 +5,6 @@ Proportion tests are used when the data are **categorical (binomial: success/fai
 As the sample size \(n\) grows, the binomial distribution approaches a normal distribution (Central Limit Theorem).  
 For small samples, use **exact tests** (binomial test, Fisher’s exact test).
 
----
-
 ## One-Sample Proportion Test
 
 - **Null hypothesis (H₀):** \(p = p_0\)  
@@ -17,9 +15,9 @@ For small samples, use **exact tests** (binomial test, Fisher’s exact test).
   - Left-tailed: \(p < p_0\)
 
 **Assumption:**  
-\[
+$$
 n\hat{p} \geq 10 \quad \text{and} \quad n(1-\hat{p}) \geq 10
-\]
+$$
 
 **Python Example:**
 
@@ -47,28 +45,22 @@ print(z_stat, p_value)
   - Right-tailed: \(p_1 > p_2\)
   - Left-tailed: \(p_1 < p_2\)
 
----
-
 ### Assumptions
 
 Each group must satisfy:
 
-\[
+$$
 n_i \hat{p}\_i \geq 10 \quad \text{and} \quad n_i (1 - \hat{p}\_i) \geq 10
-\]
-
----
+$$
 
 ### Test Statistic
 
-\[
+$$
 z = \frac{\hat{p}\_1 - \hat{p}\_2}{\sqrt{\hat{p}(1-\hat{p})\left(\frac{1}{n_1} + \frac{1}{n_2}\right)}}
-\]
+$$
 
 - \(\hat{p}\_1 = x_1 / n_1\), \(\hat{p}\_2 = x_2 / n_2\) → sample proportions
 - \(\hat{p} = (x_1 + x_2) / (n_1 + n_2)\) → pooled proportion
-
----
 
 ### Python Example
 

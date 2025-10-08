@@ -40,13 +40,14 @@ print(t_statistic, p_value)
   - Equal variance (if not, use Welch’s t-test)
 
 **Formula:**
-\[
-t = \frac{\bar{x}\_1 - \bar{x}\_2}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}}
-\]
 
-- \(\bar{x}\_1, \bar{x}\_2\): sample means
-- \(s_1, s_2\): standard deviations
-- \(n_1, n_2\): sample sizes
+$$
+t = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}}
+$$
+
+- $\bar{x}_1, \bar{x}_2$: sample means
+- $s_1, s_2$: standard deviations
+- $n_1, n_2$: sample sizes
 
 **Alternatives:**
 
@@ -71,14 +72,15 @@ print(t_statistic, p_value)
   - Differences approximately normally distributed (important for small n, CLT helps for larger n)
 
 **Formula:**
-\[
-t = \frac{\bar{d} - \mu_d}{s_d / \sqrt{n}}
-\]
 
-- \(\bar{d}\): mean of differences
-- \(\mu_d\): hypothesized difference (often 0)
-- \(s_d\): standard deviation of differences
-- \(n\): number of pairs
+$$
+t = \frac{\bar{d} - \mu_d}{s_d / \sqrt{n}}
+$$
+
+- $\bar{d}$: mean of differences
+- $\mu_d$: hypothesized difference (often 0)
+- $s_d$: standard deviation of differences
+- $n$: number of pairs
 
 **Python Example:**
 

@@ -2,7 +2,7 @@
 
 ## Significance Level (α)
 
-The **significance level (α)** is a threshold used in hypothesis testing to decide whether to reject the null hypothesis \(H_0\).
+The **significance level (α)** is a threshold used in hypothesis testing to decide whether to reject the null hypothesis $H_0$.
 
 ### Definition
 
@@ -18,7 +18,7 @@ Common choices:
 
 ### Relationship with Confidence Level
 
-- Confidence level = \(1 − α\).
+- Confidence level = $1 − α$.
 - Example: If α = 0.05 → confidence level = 95%.
 - Interpretation: If the study were repeated many times, about 95% of confidence intervals would contain the true parameter.
 
@@ -26,12 +26,12 @@ Common choices:
 
 When performing multiple hypothesis tests, the chance of at least one false positive increases.
 
-- Probability of **not** making a false positive in one test: \(1 − α\).
-- Probability of **not** making a false positive in all \(k\) tests: \((1 − α)^k\).
-- Probability of making **at least one false positive** across \(k\) tests:  
-  \[
+- Probability of **not** making a false positive in one test: $1 − α$.
+- Probability of **not** making a false positive in all $k$ tests: $(1 − α)^k$.
+- Probability of making **at least one false positive** across $k$ tests:  
+  $$
   1 − (1 − α)^k
-  \]
+  $$
 
 ### Choosing α
 
@@ -51,7 +51,7 @@ The **confidence level** represents the degree of certainty that a particular es
 
 ### Definition
 
-- Confidence level = \(1 − α\), where α is the significance level.
+- Confidence level = $1 − α$, where α is the significance level.
 - Common choices:
   - 95% confidence level → α = 0.05
   - 99% confidence level → α = 0.01

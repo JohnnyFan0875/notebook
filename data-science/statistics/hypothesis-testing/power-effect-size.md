@@ -56,9 +56,9 @@ print(f"Power: {power:.3f}")
 
 1. **Cohen’s d (two groups, mean difference):**
 
-\[
+$$
 d = \frac{\bar{x}\_1 - \bar{x}\_2}{s_p}
-\]
+$$
 
 where \(s_p\) is the pooled standard deviation.
 
@@ -68,9 +68,9 @@ where \(s_p\) is the pooled standard deviation.
 
 2. **Pearson’s r (correlation strength):**
 
-\[
+$$
 r = \frac{\text{Cov}(X,Y)}{\sigma_X \sigma_Y}
-\]
+$$
 
 - Small ≈ 0.1
 - Medium ≈ 0.3
@@ -78,9 +78,9 @@ r = \frac{\text{Cov}(X,Y)}{\sigma_X \sigma_Y}
 
 3. **Eta squared (η²) (ANOVA, variance explained):**
 
-\[
+$$
 \eta^2 = \frac{SS*{\text{between}}}{SS*{\text{total}}}
-\]
+$$
 
 - Small ≈ 0.01
 - Medium ≈ 0.06
