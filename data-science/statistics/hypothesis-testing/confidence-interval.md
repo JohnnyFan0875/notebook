@@ -107,7 +107,7 @@ from scipy import stats
 
 data = [23, 21, 19, 22, 20, 23, 21, 20, 22, 21]
 mean = np.mean(data)
-sem = stats.sem(data)  # standard error
+sem = stats.sem(data)  # standard error of the mean (sem)
 confidence = 0.95
 
 ci = stats.t.interval(confidence, len(data)-1, loc=mean, scale=sem)
