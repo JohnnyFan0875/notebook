@@ -27,13 +27,11 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 ## Basic Concepts
 
-| Concept                                                                   | Description                                                                                                                |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [Significance & Confidence Levels](significance-and-confidence-levels.md) | Define how sure we are about our statistical conclusions by setting thresholds for error tolerance and certainty.          |
-| [Confidence Intervals](confidence-interval.md)                            | Provide a range of values within which the true population parameter is likely to fall with a given level of confidence.   |
-| [t-score vs z-score](t-z-score.md)                                        | Compare standardized test statistics that differ based on whether population variance is known or estimated from a sample. |
-| [p-value](p-value.md)                                                     | Quantifies the probability of observing results at least as extreme as the data, assuming the null hypothesis is true.     |
-| [Power & Effect Size](power-effect-size.md)                               | Measure a test’s ability to detect true effects and the magnitude of those effects in practical terms.                     |
+- [Significance (α) & Confidence Levels (1 - α)](significance-and-confidence-levels.md)
+- [Confidence Intervals (CI)](confidence-interval.md)
+- [t-score vs z-score](t-z-score.md)
+- [p-value](p-value.md)
+- [Power & Effect Size](power-effect-size.md)
 
 ## Parametric vs Non-parametric Tests
 
