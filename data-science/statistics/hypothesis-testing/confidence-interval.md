@@ -15,9 +15,13 @@ It reflects the degree of uncertainty around an estimate.
 - $\bar{x}$: sample mean
 - $s$: sample standard deviation
 - $n$: sample size
-- $z$: critical value from the normal distribution (e.g., 1.96 for 95% confidence)
+- [**z / t**](./t-z-score.md): critical value corresponding to the desired confidence level  
+  - Use **z** from the **standard normal distribution** when the population standard deviation (σ) is known or n is large (e.g., z = 1.96 for 95% confidence).  
+  - Use **t** from the **Student’s t-distribution** when σ is unknown (critical value depends on degrees of freedom, df = n − 1).
 
 ### Relationship Between Sampling Distribution, Standard Error, and Margin of Error
+
+#### Sampling Distribution
 
 The confidence interval for the mean is derived from the **sampling distribution of the sample mean**.  
 When we repeatedly take samples of size $n$ from a population with mean $\mu$ and standard deviation $\sigma$, the sample means $\bar{x}$ follow an approximately **normal distribution** (by the Central Limit Theorem):
@@ -26,26 +30,21 @@ $$
 \bar{x} \sim N\!\left(\mu, \frac{\sigma}{\sqrt{n}}\right)
 $$
 
+#### Standard Error
+
 The standard deviation of this sampling distribution, $\frac{\sigma}{\sqrt{n}}$, is called the [Standard Error of the Mean (SE)](../descriptive-statistics.md#3-standard-error-se) — it quantifies how much sample means vary across repeated samples.
 
 $$
 SE = \frac{s}{\sqrt{n}}
 $$
 
-Because 95% of values in a normal distribution fall within ±1.96 standard deviations of the mean, we can write:
-
-$$
-P\!\left(\bar{x} - 1.96 \frac{\sigma}{\sqrt{n}} < \mu < \bar{x} + 1.96 \frac{\sigma}{\sqrt{n}}\right) = 0.95
-$$
-
-Rearranging gives the **95% confidence interval for the mean**:
-
 $$
 \text{CI} = \bar{x} \pm (z \text{ or } t) \times SE
 $$
 
-The term $(z \text{ or } t) \times SE$ is known as the **Margin of Error (E)** —  
-the maximum expected difference between the sample mean and the true population mean:
+#### Margin of Error
+
+Margion of Error: the maximum expected difference between the sample mean and the true population mean:
 
 $$
 E = (z \text{ or } t) \times \frac{s}{\sqrt{n}}
