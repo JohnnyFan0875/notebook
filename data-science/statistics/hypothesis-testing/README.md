@@ -30,10 +30,10 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 Statistical tests are broadly classified based on the assumptions they make about data distribution:
 
-| Type                     | Description                                                                                                                                                                                   | Notes                                                                                          |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Parametric Tests**     | Assume data follow a specific distribution (usually normal) and rely on parameters like mean and standard deviation.                                                                          | Use when normality and equal variance assumptions are met; generally more powerful when valid. |
-| **Non-parametric Tests** | Make minimal distributional assumptions and are suitable for ordinal, skewed, or small-sample data. Use when data violate parametric assumptions; analyze medians or ranks rather than means. | Use for skewed, ordinal, or small-sample data. Analyze ranks or medians rather than means.     |
+| Type                     | Description                                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Parametric Tests**     | Assume data follow a specific distribution (usually normal) and rely on parameters like mean and standard deviation. Use when normality and equal variance assumptions are met; generally more powerful when valid. |
+| **Non-parametric Tests** | Make minimal distributional assumptions and are suitable for ordinal, skewed, or small-sample data. Use when data violate parametric assumptions; analyze medians or ranks rather than means.                       |
 
 ## Choosing the Right Test
 
