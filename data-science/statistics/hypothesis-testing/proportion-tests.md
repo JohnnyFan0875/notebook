@@ -2,19 +2,20 @@
 
 Proportion tests are used when the data are **categorical (binomial: success/failure)** and we want to test whether a sample proportion differs from a hypothesized value, or whether two sample proportions differ.
 
-As the sample size \(n\) grows, the binomial distribution approaches a normal distribution (Central Limit Theorem).  
+As the sample size $n$ grows, the binomial distribution approaches a normal distribution (Central Limit Theorem).  
 For small samples, use **exact tests** (binomial test, Fisher’s exact test).
 
 ## One-Sample Proportion Test
 
-- **Null hypothesis (H₀):** \(p = p_0\)  
+- **Null hypothesis (H₀):** $p = p_0$  
   The population proportion equals the hypothesized proportion.
 - **Alternative hypothesis (Hₐ):**
-  - Two-tailed: \(p \neq p_0\)
-  - Right-tailed: \(p > p_0\)
-  - Left-tailed: \(p < p_0\)
+  - Two-tailed: $p \neq p_0$
+  - Right-tailed: $p > p_0$
+  - Left-tailed: $p < p_0$
 
-**Assumption:**  
+**Assumption:**
+
 $$
 n\hat{p} \geq 10 \quad \text{and} \quad n(1-\hat{p}) \geq 10
 $$
@@ -37,13 +38,13 @@ print(z_stat, p_value)
 
 ### Hypotheses
 
-- **Null hypothesis (H₀):** \(p_1 = p_2\)  
+- **Null hypothesis (H₀):** $p_1 = p_2$  
   The two population proportions are equal.
 
 - **Alternative hypothesis (Hₐ):**
-  - Two-tailed: \(p_1 \neq p_2\)
-  - Right-tailed: \(p_1 > p_2\)
-  - Left-tailed: \(p_1 < p_2\)
+  - Two-tailed: $p_1 \neq p_2$
+  - Right-tailed: $p_1 > p_2$
+  - Left-tailed: $p_1 < p_2$
 
 ### Assumptions
 
@@ -59,8 +60,8 @@ $$
 z = \frac{\hat{p}\_1 - \hat{p}\_2}{\sqrt{\hat{p}(1-\hat{p})\left(\frac{1}{n_1} + \frac{1}{n_2}\right)}}
 $$
 
-- \(\hat{p}\_1 = x_1 / n_1\), \(\hat{p}\_2 = x_2 / n_2\) → sample proportions
-- \(\hat{p} = (x_1 + x_2) / (n_1 + n_2)\) → pooled proportion
+- $\hat{p}\_1 = x_1 / n_1$, $\hat{p}\_2 = x_2 / n_2$ → sample proportions
+- $\hat{p} = (x_1 + x_2) / (n_1 + n_2)$ → pooled proportion
 
 ### Python Example
 

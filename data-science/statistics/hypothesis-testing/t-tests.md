@@ -6,8 +6,8 @@
 
 ## Comparison: t-test vs z-test
 
-- **z-test**: Used when the population standard deviation (\(\sigma\)) is **known**, usually with large samples (\(n ≥ 30\)).
-- **t-test**: Used when \(\sigma\) is **unknown** (typical case), especially with small samples (\(n < 30\)).
+- **z-test**: Used when the population standard deviation ($\sigma$) is **known**, usually with large samples ($n ≥ 30$).
+- **t-test**: Used when $\sigma$ is **unknown** (typical case), especially with small samples ($n < 30$).
 
 ## One-Sample t-test
 
@@ -17,7 +17,7 @@
 **Assumptions:**
 
 - Independence of observations
-- Normality of data (important for small samples; CLT helps when \(n ≥ 30\))
+- Normality of data (important for small samples; CLT helps when $n ≥ 30$)
 
 **Python Example:**
 

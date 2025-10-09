@@ -1,6 +1,6 @@
 # Hypothesis Testing
 
-Hypothesis testing is a framework to decide whether observed data provides enough evidence to reject a null hypothesis $H_0$.
+Hypothesis testing is a framework to decide whether observed data provides enough evidence to reject a null hypothesis H₀.
 
 ## General Notes
 
@@ -16,63 +16,47 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 - **Independence:** Each observation is independent (except paired tests)
 - **Sample size:** Large enough for the Central Limit Theorem (CLT) to apply
 
+## Basic Concepts
+
+| Concept                                                                   | Description                                                                                                                |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [Significance & Confidence Levels](significance-and-confidence-levels.md) | Define how sure we are about our statistical conclusions by setting thresholds for error tolerance and certainty.          |
+| [Confidence Intervals](confidence-interval.md)                            | Provide a range of values within which the true population parameter is likely to fall with a given level of confidence.   |
+| [t-score vs z-score](t-z-score.md)                                        | Compare standardized test statistics that differ based on whether population variance is known or estimated from a sample. |
+| [p-value](p-value.md)                                                     | Quantifies the probability of observing results at least as extreme as the data, assuming the null hypothesis is true.     |
+| [Power & Effect Size](power-effect-size.md)                               | Measure a test’s ability to detect true effects and the magnitude of those effects in practical terms.                     |
+
+## Parametric vs Non-parametric Tests
+
+Statistical tests are broadly classified based on the assumptions they make about data distribution:
+
+| Type                     | Description                                                                                                                         | Typical Examples                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Parametric Tests**     | Assume data follow a specific distribution (usually normal) and use parameters like mean and standard deviation to draw inferences. | t-test, ANOVA, z-test, Pearson correlation                                 |
+| **Non-parametric Tests** | Make fewer assumptions about the data distribution and are suitable for ordinal or non-normal data.                                 | Mann–Whitney U, Wilcoxon signed-rank, Kruskal–Wallis, Spearman correlation |
+
+**Key Points:**
+
+- Use parametric tests when assumptions of normality and equal variance are met.
+- Use non-parametric tests for skewed, ordinal, or small-sample data.
+- Non-parametric methods analyze ranks or medians rather than means.
+
 ## Choosing the Right Test
 
 The table below summarizes **which test to use** depending on study design, number of groups, and assumptions.
 
-| Scenario                                 | Parametric Test                        | Non-parametric / Exact Alternative                                 | Notes                                             |
-| ---------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------- |
-| One group mean vs population mean        | One-sample **t-test** / **z-test**     | –                                                                  | z-test if σ known and n ≥ 30; otherwise t-test    |
-| Two independent groups (equal variances) | Independent two-sample **t-test**      | Mann–Whitney U                                                     | Use Welch’s t-test if variances unequal           |
-| Two related groups (paired data)         | Paired **t-test**                      | Wilcoxon signed-rank                                               | Example: before–after measurements                |
-| ≥ 3 independent groups                   | One-way **ANOVA**                      | Kruskal–Wallis                                                     | Post-hoc tests (Tukey, Bonferroni) if significant |
-| Two factors (with interaction)           | Two-way **ANOVA**                      | –                                                                  | Report effect sizes (η², η²ₚ)                     |
-| Categorical proportions (1 group)        | One-sample **proportion z-test**       | [Exact **Binomial Test**](binomial-test.md)                        | Large sample → z-test; small sample → binomial    |
-| Categorical proportions (2 groups)       | Two-sample **proportion z-test**       | [**Fisher’s Exact Test**](fisher-exact-test.md)                    | Related: [odds-ratio.md](../odds-ratio.md)        |
-| Categorical association (r×c table)      | **Chi-square test of independence**    | [**Fisher’s Exact Test**](fisher-exact-test.md) (for small counts) | df = (r−1)(c−1)                                   |
-| Distribution fit                         | **Chi-square goodness-of-fit**         | –                                                                  | Tests if observed = expected distribution         |
-| Equality of variances                    | Levene’s / Bartlett’s / Brown–Forsythe | –                                                                  | Levene for robustness, Bartlett for normal data   |
-
-## Contents
-
-- [Significance & Confidence Levels](significance-and-confidence-levels.md)  
-  α (significance level), confidence level (1−α), familywise error, multiple testing corrections.
-
-- [Confidence Intervals](confidence-interval.md)  
-  CI formulas, margin of error, interpretation, analytical & simulation examples.
-
-- [t-score vs z-score](t-z-score.md)  
-  Standardization, formulas, critical values, when to use t vs z.
-
-- [p-value](p-value.md)  
-  Definition, decision rules, calculation from t/z, Python code, relation to power.
-
-- [Power & Effect Size](power-effect-size.md)  
-  Statistical power (1−β), determinants (n, effect size, α, variance), effect size measures (Cohen’s d, Pearson’s r, η²).
-
-- [t-tests](t-tests.md)  
-  One-sample, independent two-sample, paired t-tests; formulas, assumptions, Welch’s test, Python examples.
-
-- [Proportion Tests](proportion-tests.md)  
-  One-sample and two-sample z-tests for proportions, formulas, assumptions, Python examples.
-
-- [Exact Binomial Test](binomial-test.md)  
-  Tests if the observed proportion differs from a hypothesized value; exact inference for binary outcomes, small samples.
-
-- [Fisher’s Exact Test](fisher-exact-test.md)  
-  Tests association between two categorical variables in a 2×2 contingency table; exact alternative to chi-square test for small expected counts.
-
-- [ANOVA](anova.md)  
-  One-way ANOVA, F-statistic, assumptions, post-hoc tests (Tukey HSD, Bonferroni), Python examples.
-
-- [Variance Tests](variance-tests.md)  
-  Homogeneity of variance, Levene’s test, Bartlett’s test, when to use Welch’s ANOVA/t-test.
-
-- [Chi-square Tests](chi-square.md)  
-  Test of independence (r×c tables), goodness-of-fit, expected frequencies, degrees of freedom, Python examples.
-
-- [Non-parametric Tests](non-parametric-tests.md)  
-  Wilcoxon signed-rank, Mann–Whitney U, Kruskal–Wallis; use cases when normality/equal variance assumptions fail.
+| Scenario                                 | Parametric Test                                                                                                                                            | Non-parametric / Exact Alternative                                                 | Notes                                             |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------- |
+| One group mean vs population mean        | [One-sample t-test / z-test](./t-tests.md#one-sample-t-test)                                                                                               | –                                                                                  | z-test if σ known and n ≥ 30; otherwise t-test    |
+| Two independent groups (equal variances) | [Independent two-sample t-test](./t-tests.md#two-sample-t-test-independent-samples)                                                                        | [Mann–Whitney U](./non-parametric-tests.md#mannwhitney-u-test-wilcoxonmannwhitney) | Use Welch’s t-test if variances unequal           |
+| Two related groups (paired data)         | [Paired t-test](./t-tests.md#paired-sample-t-test-dependent-samples)                                                                                       | [Wilcoxon signed-rank](./non-parametric-tests.md#wilcoxon-signed-rank-test)        | Example: before–after measurements                |
+| ≥ 3 independent groups                   | [One-way ANOVA](./anova.md)                                                                                                                                | [Kruskal–Wallis](./non-parametric-tests.md#kruskalwallis-test)                     | Post-hoc tests (Tukey, Bonferroni) if significant |
+| Two factors (with interaction)           | [Two-way ANOVA](./anova.md#two-way-anova-factorial-anova)                                                                                                  | –                                                                                  | Report effect sizes (η², η²ₚ)                     |
+| Categorical proportions (1 group)        | [One-sample proportion z-test](./proportion-tests.md#one-sample-proportion-test)                                                                           | [Exact Binomial Test](binomial-test.md)                                            | Large sample → z-test; small sample → binomial    |
+| Categorical proportions (2 groups)       | [Two-sample proportion z-test](./proportion-tests.md#two-sample-proportion-test)                                                                           | [Fisher’s Exact Test](fisher-exact-test.md)                                        | Related: [odds-ratio](../odds-ratio.md)           |
+| Categorical association (r×c table)      | [Chi-square test of independence](./chi-square.md#chi-square-test-of-independence)                                                                         | [Fisher’s Exact Test](fisher-exact-test.md) (for small counts)                     | df = (r−1)(c−1)                                   |
+| Distribution fit                         | [Chi-square goodness-of-fit](./chi-square.md#chi-square-goodness-of-fit)                                                                                   | –                                                                                  | Tests if observed = expected distribution         |
+| Equality of variances                    | [Levene’s](./variance-tests.md#levenes-test) / [Bartlett’s](./variance-tests.md#bartletts-test) / [Brown–Forsythe](./variance-tests.md#brownforsythe-test) | –                                                                                  | Levene for robustness, Bartlett for normal data   |
 
 ## Critical Notes
 
