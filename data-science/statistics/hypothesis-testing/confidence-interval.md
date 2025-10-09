@@ -3,7 +3,7 @@
 A **confidence interval (CI)** provides a range of plausible values for a population parameter, based on sample data.  
 It reflects the degree of uncertainty around an estimate.
 
-👉 See also: [Significance and Confidence Levels](significance-and-confidence-levels.md)
+👉 See also: [Significance and Confidence Levels](significance-and-confidence-levels.md#confidence-level-1--α)
 
 ## Formula for the Mean
 

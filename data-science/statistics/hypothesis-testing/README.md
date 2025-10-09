@@ -10,6 +10,15 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 - **α (significance level):** Threshold (commonly 0.05) to decide whether to reject H₀.
 - **Test statistic:** A standardized value (z, t, or F) used to compute the p-value.
 
+## Type I and Type II Errors
+
+| 概念               | 真實狀況    | 檢定結果               | 結果解釋           | 類型                  |
+| ------------------ | ----------- | ---------------------- | ------------------ | --------------------- |
+| **True Positive**  | Hₐ (有差異) | 拒絕 H₀ (認為有差異)   | 正確偵測到效果存在 | 正確                  |
+| **False Positive** | H₀ (無差異) | 拒絕 H₀ (認為有差異)   | 錯誤地以為有差異   | **Type I error (α)**  |
+| **True Negative**  | H₀ (無差異) | 不拒絕 H₀ (認為無差異) | 正確判定無差異     | 正確                  |
+| **False Negative** | Hₐ (有差異) | 不拒絕 H₀ (認為無差異) | 錯誤地忽略真實差異 | **Type II error (β)** |
+
 ## Assumptions
 
 - **Randomness:** Samples are random subsets of larger populations
