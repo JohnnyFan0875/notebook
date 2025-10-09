@@ -15,8 +15,8 @@ It reflects the degree of uncertainty around an estimate.
 - $\bar{x}$: sample mean
 - $s$: sample standard deviation
 - $n$: sample size
-- [**z / t**](./t-z-score.md): critical value corresponding to the desired confidence level  
-  - Use **z** from the **standard normal distribution** when the population standard deviation (σ) is known or n is large (e.g., z = 1.96 for 95% confidence).  
+- [**z / t**](./t-z-score.md): critical value corresponding to the desired confidence level
+  - Use **z** from the **standard normal distribution** when the population standard deviation (σ) is known or n is large (e.g., z = 1.96 for 95% confidence).
   - Use **t** from the **Student’s t-distribution** when σ is unknown (critical value depends on degrees of freedom, df = n − 1).
 
 ### Relationship Between Sampling Distribution, Standard Error, and Margin of Error
@@ -50,14 +50,9 @@ $$
 E = (z \text{ or } t) \times \frac{s}{\sqrt{n}}
 $$
 
-Thus, the general expression for a confidence interval is:
-
 $$
 \text{CI} = \bar{x} \pm E
 $$
-
-- Use **z** when the population standard deviation (\(\sigma\)) is known or \(n\) is large.
-- Use **t** when \(\sigma\) is unknown and estimated by the sample standard deviation (\(s\)).
 
 ## Interpretation
 
