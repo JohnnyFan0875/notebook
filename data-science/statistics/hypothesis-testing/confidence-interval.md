@@ -19,17 +19,18 @@ $$
 ## Interpretation
 
 - **How confident we are that the interval contains the true population parameter**  
-  有 95% 的信心 (機率) 此信賴區間包含真實的母體參數
+  有多少的信心 (機率) 此信賴區間包含真實的母體參數
 
 - Uses of confidence intervals:
 
   - Estimate a **true population parameter**
   - Compare the **difference between two groups** in a sample population
 
-- **Margin of Error**:  
-  $$
-  \text{Margin of Error} = \text{Critical Value (t or z)} \times \text{Standard Error}
-  $$
+- **Margin of Error**:
+
+$$
+\text{Margin of Error} = \text{Critical Value (t or z)} \times \text{Standard Error}
+$$
 
 - For a 95% confidence level:
 
