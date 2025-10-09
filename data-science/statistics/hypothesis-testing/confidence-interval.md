@@ -7,14 +7,58 @@ It reflects the degree of uncertainty around an estimate.
 
 ## Formula for the Mean
 
-$$
-\text{CI} = \bar{x} \pm z \times \frac{s}{\sqrt{n}}
-$$
+| Case                                                            | Formula for Confidence Interval of the Mean           | Distribution Used            |
+| --------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------- |
+| **Population standard deviation known**                         | $\text{CI} = \bar{x} \pm z \times \frac{s}{\sqrt{n}}$ | **Standard Normal (z)**      |
+| **Population standard deviation unknown** (use sample SD ( s )) | $\text{CI} = \bar{x} \pm t \times \frac{s}{\sqrt{n}}$ | **Student’s t-distribution** |
 
 - $\bar{x}$: sample mean
 - $s$: sample standard deviation
 - $n$: sample size
 - $z$: critical value from the normal distribution (e.g., 1.96 for 95% confidence)
+
+### Relationship Between Sampling Distribution, Standard Error, and Margin of Error
+
+The confidence interval for the mean is derived from the **sampling distribution of the sample mean**.  
+When we repeatedly take samples of size $n$ from a population with mean $\mu$ and standard deviation $\sigma$, the sample means $\bar{x}$ follow an approximately **normal distribution** (by the Central Limit Theorem):
+
+$$
+\bar{x} \sim N\!\left(\mu, \frac{\sigma}{\sqrt{n}}\right)
+$$
+
+The standard deviation of this sampling distribution, $\frac{\sigma}{\sqrt{n}}$, is called the [Standard Error of the Mean (SE)](../descriptive-statistics.md#3-standard-error-se) — it quantifies how much sample means vary across repeated samples.
+
+$$
+SE = \frac{s}{\sqrt{n}}
+$$
+
+Because 95% of values in a normal distribution fall within ±1.96 standard deviations of the mean, we can write:
+
+$$
+P\!\left(\bar{x} - 1.96 \frac{\sigma}{\sqrt{n}} < \mu < \bar{x} + 1.96 \frac{\sigma}{\sqrt{n}}\right) = 0.95
+$$
+
+Rearranging gives the **95% confidence interval for the mean**:
+
+$$
+\text{CI} = \bar{x} \pm (z \text{ or } t) \times SE
+$$
+
+The term $(z \text{ or } t) \times SE$ is known as the **Margin of Error (E)** —  
+the maximum expected difference between the sample mean and the true population mean:
+
+$$
+E = (z \text{ or } t) \times \frac{s}{\sqrt{n}}
+$$
+
+Thus, the general expression for a confidence interval is:
+
+$$
+\text{CI} = \bar{x} \pm E
+$$
+
+- Use **z** when the population standard deviation (\(\sigma\)) is known or \(n\) is large.
+- Use **t** when \(\sigma\) is unknown and estimated by the sample standard deviation (\(s\)).
 
 ## Interpretation
 
@@ -25,12 +69,6 @@ $$
 
   - Estimate a **true population parameter**
   - Compare the **difference between two groups** in a sample population
-
-- **Margin of Error**:
-
-$$
-\text{Margin of Error} = \text{Critical Value (t or z)} \times \text{Standard Error}
-$$
 
 - For a 95% confidence level:
 

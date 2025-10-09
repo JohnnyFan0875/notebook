@@ -6,9 +6,9 @@ Descriptive statistics summarize and describe the main features of a dataset. Th
 
 ### Mean
 
-\[
+$$
 \bar{x} = \frac{\sum\_{i=1}^n x_i}{n}
-\]
+$$
 
 - \(x_i\): each individual data point
 - \(n\): number of data points (sample size)
