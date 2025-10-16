@@ -1,6 +1,7 @@
 # t-score and z-score
 
-Both the **t-score** and **z-score** are standardized test statistics that measure how many standard deviations a value is from the mean.  
+Both the **t-score** and **z-score** are standardized test statistics that measure how many standard deviations a value is from the mean.
+樣本平均數 $\bar{x}$ 離母體平均數 $𝜇$ 有幾個標準誤（SE）那麼遠
 They are used in hypothesis testing and confidence interval estimation.
 
 ## General Notes
@@ -50,20 +51,58 @@ $$
 - Same structure as z-score, but variability estimated from sample data.
 - Used for **small sample sizes ($n < 30$)**.
 - The **t-distribution** has heavier tails to account for uncertainty.
-- As \(n \to \infty\), the t-distribution approaches the normal distribution → t and z become nearly identical.
+- As $n \to \infty$, the t-distribution approaches the normal distribution → t and z become nearly identical.
 
 ## Critical Value from Confidence Level
 
-The critical z-value for a given confidence level is calculated as:
+### Two-Tailed Test (Default for Confidence Intervals)
 
 $$
-z\_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right)
+z_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right)
 $$
 
-Example: For 95% confidence ($\alpha = 0.05$):
+**Example (95% confidence):**
 
 $$
-z\_{0.025} = \texttt{stats.norm.ppf}(0.975) \approx 1.96
+z_{\alpha/2} = \texttt{stats.norm.ppf}(0.975) = +1.96
+$$
+
+The corresponding **left-tail** critical value is:
+
+$$
+-z_{\alpha/2} = -1.96
+$$
+
+$$
+z_{\alpha/2} = \texttt{stats.norm.ppf}(0.025) = -1.96
+$$
+
+### Right-Tailed Test
+
+Used when testing if the sample mean is **significantly greater** than the population mean.
+
+$$
+z_{\alpha} = \texttt{stats.norm.ppf}(1 - \alpha)
+$$
+
+**Example (α = 0.05):**
+
+$$
+z_{\alpha} = \texttt{stats.norm.ppf}(0.95) = +1.645
+$$
+
+### Left-Tailed Test
+
+Used when testing if the sample mean is **significantly less** than the population mean.
+
+$$
+z_{\alpha} = \texttt{stats.norm.ppf}(\alpha)
+$$
+
+**Example (α = 0.05):**
+
+$$
+z_{\alpha} = \texttt{stats.norm.ppf}(0.05) = -1.645
 $$
 
 ```python

@@ -3,7 +3,7 @@
 A **confidence interval (CI)** provides a range of plausible values for a population parameter, based on sample data.  
 It reflects the degree of uncertainty around an estimate.
 
-👉 See also: [Significance and Confidence Levels](significance-and-confidence-levels.md#confidence-level-1--α)
+👉 See also: [Significance and Confidence Levels](significance-and-confidence-levels.md)
 
 ## Formula for the Mean
 
@@ -68,6 +68,7 @@ $$
 
   - Z-score ≈ 1.96
   - The lower and upper bounds correspond to the **2.5th and 97.5th percentiles** of the sampling distribution of the mean.
+    ![Image](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*zhq4V275F0YthnSLYRU0FA.jpeg)
 
 - Wider intervals → lower precision (often due to smaller sample size or higher variability).
 
@@ -119,4 +120,4 @@ print("95% confidence interval:", ci)
 - Confidence intervals provide a range of plausible values for a parameter.
 - Confidence level (1 − α) sets the degree of certainty.
 - Narrower intervals indicate higher precision (larger n or lower variance).
-- Always report CIs alongside p-values and effect sizes for robust interpretation.
+- Always report CIs alongside [p-values](./p-value.md) and [effect sizes](./power-effect-size.md#effect-size) for robust interpretation.

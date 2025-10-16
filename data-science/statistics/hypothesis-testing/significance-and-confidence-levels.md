@@ -3,6 +3,7 @@
 ## Significance Level (α)
 
 The **significance level (α)** is a threshold used in hypothesis testing to decide whether to reject the null hypothesis $H_0$.
+接受多大的機率誤判。
 
 ### Definition
 
@@ -39,6 +40,7 @@ When performing multiple hypothesis tests, the chance of at least one false posi
 ## Confidence Level (1 − α)
 
 The **confidence level** represents the degree of certainty that a particular estimate includes the true population parameter.
+對這個『估計方法』有多少信心，若重複做很多次實驗，有這個比例的信賴區間會包含真實答案。
 
 ### Definition
 
@@ -54,3 +56,5 @@ The **confidence level** represents the degree of certainty that a particular es
 ### Confidence Interval of the Mean
 
 - Please refer to [confidence interval](confidence-interval.md)
+
+![Image](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*zhq4V275F0YthnSLYRU0FA.jpeg)
