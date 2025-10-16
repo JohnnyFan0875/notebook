@@ -1,6 +1,6 @@
 # t-score and z-score
 
-Both the **t-score** and **z-score** are standardized test statistics that measure how many standard deviations a value is from the mean.
+Both the **t-score** and **z-score** are standardized test statistics that measure how many standard deviations a value is from the mean.  
 樣本平均數 $\bar{x}$ 離母體平均數 $𝜇$ 有幾個標準誤（SE）那麼遠
 They are used in hypothesis testing and confidence interval estimation.
 
