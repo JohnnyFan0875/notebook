@@ -135,7 +135,7 @@ mean = np.mean(data)
 sem = stats.sem(data)  # standard error of the mean (sem)
 confidence = 0.95
 
-ci = stats.t.interval(confidence, len(data)-1, loc=mean, scale=sem)
+ci = stats.t.interval(confidence, len(data)-1, loc=mean, scale=sem) # df = len(data)-1
 print("95% confidence interval:", ci)
 ```
 
