@@ -79,6 +79,8 @@ $$
   - Estimate a **true population parameter**
   - Compare the **difference between two groups** in a sample population
 
+- Wider intervals → lower precision (often due to smaller sample size or higher variability).
+
 - For a 95% confidence level:
 
   - Z-score ≈ 1.96
@@ -87,8 +89,6 @@ $$
 <p align="center">
   <img src="https://miro.medium.com/v2/resize:fit:1100/format:webp/1*zhq4V275F0YthnSLYRU0FA.jpeg" width="500" height="300">
 </p>
-
-- Wider intervals → lower precision (often due to smaller sample size or higher variability).
 
 ## Python Example (Simulation)
 
