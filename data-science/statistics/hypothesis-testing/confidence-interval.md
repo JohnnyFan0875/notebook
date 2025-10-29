@@ -38,8 +38,8 @@ The standard deviation of this sampling distribution, $\frac{\sigma \text{ or } 
 $$
 SE =
 \begin{cases}
-\dfrac{\sigma}{\sqrt{n}}, & \text{if population SD (}\sigma\text{) is known} \\
-\dfrac{s}{\sqrt{n}}, & \text{if population SD (}\sigma\text{) is unknown}
+\dfrac{\sigma}{\sqrt{n}} & \text{if population SD (}\sigma\text{) is known} \\
+\dfrac{s}{\sqrt{n}} & \text{if population SD (}\sigma\text{) is unknown}
 \end{cases}
 $$
 
@@ -48,17 +48,21 @@ and the confidence interval (CI) is:
 $$
 CI =
 \begin{cases}
-\bar{x} \pm SE, & \text{if population SD (}\sigma\text{) is known} \\
-\bar{x} \pm SE, & \text{if population SD (}\sigma\text{) is unknown}
+\bar{x} \pm SE & \text{if population SD (}\sigma\text{) is known} \\
+\bar{x} \pm SE & \text{if population SD (}\sigma\text{) is unknown}
 \end{cases}
 $$
 
 #### Margin of Error
 
-Margion of Error: the maximum expected difference between the sample mean and the true population mean:
+Margion of Error ($E$): the maximum expected difference between the sample mean and the true population mean:
 
 $$
-E = (z \text{ or } t) \times \frac{s}{\sqrt{n}}
+E =
+\begin{cases}
+z \times \frac{\sigma}{\sqrt{n}} & \text{if population SD (}\sigma\text{) is known} \\
+t \times \frac{s}{\sqrt{n}} & \text{if population SD (}\sigma\text{) is unknown}
+\end{cases}
 $$
 
 $$
