@@ -2,7 +2,7 @@
 
 ## Significance Level (α)
 
-The **significance level (α)** is a threshold used in hypothesis testing to decide whether to reject the null hypothesis $H_0$.
+The **significance level (α)** is a threshold used in hypothesis testing to decide whether to reject the null hypothesis $H_0$.  
 接受多大的機率誤判。
 
 ### Definition
@@ -31,6 +31,26 @@ When performing multiple hypothesis tests, the chance of at least one false posi
 - **Confirmatory or critical studies (e.g., clinical trials):** Lower α (e.g. 0.01 or 0.001) is preferred.
 - Always justify your chosen α level in the study context.
 
+### Direction of the Test
+
+The allocation of α depends on the alternative hypothesis:
+
+| Test type             | Alternative hypothesis ($H_a$) | Tail(s) considered | How α is distributed   | Typical critical value (Z)         |
+| --------------------- | ------------------------------ | ------------------ | ---------------------- | ---------------------------------- |
+| **Right-tailed test** | $μ > μ_0$                      | Right tail only    | Entire α on right side | $z_{0.95} = +1.645$ (for α = 0.05) |
+| **Left-tailed test**  | $μ < μ_0$                      | Left tail only     | Entire α on left side  | $z_{0.05} = −1.645$ (for α = 0.05) |
+| **Two-tailed test**   | $μ ≠ μ_0$                      | Both tails         | α/2 on each side       | $z_{0.975} = ±1.96$ (for α = 0.05) |
+
+- Right-sided test: looks for results significantly larger than expected.
+- Left-sided test: looks for results significantly smaller than expected.
+- Two-sided test: detects any significant difference, whether higher or lower.
+
+Visually, α represents the **shaded area(s)** in the distribution tail(s) used to determine statistical significance.
+
+![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-171.jpg){width=300 height=200}
+![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-172a.jpg){width=300 height=200}
+![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-172a.jpg){width=300 height=200}
+
 ### Summary
 
 - α sets the decision threshold for rejecting $H_0$.
@@ -39,7 +59,7 @@ When performing multiple hypothesis tests, the chance of at least one false posi
 
 ## Confidence Level (1 − α)
 
-The **confidence level** represents the degree of certainty that a particular estimate includes the true population parameter.
+The **confidence level** represents the degree of certainty that a particular estimate includes the true population parameter.  
 對這個『估計方法』有多少信心，若重複做很多次實驗，有這個比例的信賴區間會包含真實答案。
 
 ### Definition
