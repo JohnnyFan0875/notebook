@@ -1,7 +1,7 @@
 # t-tests
 
 - The **t-test** family of statistical tests compares means to determine whether differences are statistically significant.
-- They are widely used for small sample sizes and when the **population standard deviation (\(\sigma\)) is unknown**.
+- They are widely used for small sample sizes and when the **population standard deviation ($\sigma$) is unknown**.
 - Please refer to [t-score](t-z-score.md#t-score) for basic definition.
 
 ## Comparison: t-test vs z-test
