@@ -32,33 +32,8 @@ The **p-value** is a probability that helps evaluate evidence against the null h
 
 📌 **Caution:**
 
-- A small p-value ≠ probability that $H_0$ is false.
+- A small p-value ≠ probability that $H_0$ is false. p-value 不代表 $H_0$ 錯的機率，而是在原假設 $H_0$ 為真時，觀察到目前這樣極端結果的機率。
 - A large p-value does not prove $H_0$ true — it means insufficient evidence to reject.
-
-## Formulas
-
-For a test statistic $T$ under the null distribution:
-
-$$
-p = P(\; T \;\geq\; T\_{obs} \;|\; H_0 \text{ is true})
-$$
-
-- **Right-tailed:**
-
-  $$
-  p = P(T \geq t\_{obs})
-  $$
-
-- **Left-tailed:**
-
-  $$
-  p = P(T \leq t\_{obs})
-  $$
-
-- **Two-tailed:**
-  $$
-  p = 2 \times P(T \geq |t\_{obs}|)
-  $$
 
 ## From t-score (Student’s t-distribution)
 
@@ -101,5 +76,4 @@ print(p_right, p_left, p_two)
 
 ## Relationship with Statistical Power
 
-- While the p-value measures evidence against H₀ in one test, power measures the ability of the test to correctly detect true effects (true positives).
-- Plase see [Power of a Test](power-effect-size.md#power-of-a-test)
+- While the p-value measures evidence against H₀ in one test, power measures the ability of the test to correctly detect true effects (true positives). Plase see [Power of a Test](power-effect-size.md#power-of-a-test)
