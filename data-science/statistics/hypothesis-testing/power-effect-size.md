@@ -5,13 +5,14 @@ They complement significance testing (p-values, α) by quantifying the ability t
 
 ## Power of a Test
 
-- **Definition:** Probability of correctly rejecting the null hypothesis when it is false (detecting a true effect).
-- **Formula:**  
-  \[
-  \text{Power} = 1 - \beta
-  \]  
-  where \(\beta\) = probability of a **Type II error** (failing to reject a false null).
+Probability of correctly rejecting the null hypothesis when it is false (detecting a true effect).  
+在原假設為假時，正確拒絕原假設的機率，代表統計檢定發現真實差異的能力。
 
+$$
+\text{Power} = 1 - \beta
+$$
+
+- $\beta$ = probability of a [**Type II error**](./README.md#type-i-and-type-ii-errors) (false negative).
 - **Typical target:** 0.80 (80%) → means an 80% chance of detecting a true effect if it exists.
 
 - **Determinants of power:**
