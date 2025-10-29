@@ -27,13 +27,13 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 ## Basic Concepts
 
-| Term                                                                                      | Note                                                                              | Relevance                |
-| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------ |
-| [**Significance (α) & Confidence Levels (1 − α)**](significance-and-confidence-levels.md) | 決定願意接受多大的錯誤機率（Type I error），並對應到信賴水準。                | 影響信賴區間與臨界值設定 |
-| [**Confidence Intervals (CI)**](confidence-interval.md)                                   | 根據樣本估計母體參數的範圍，反映 α 所設定的信心水準。                             | 與 z / t 分布有直接關聯  |
-| [**t-score vs z-score**](t-z-score.md)                                                    | 決定使用哪種分布來計算臨界值與信賴區間：<br>z 用於已知 σ；t 用於未知 σ。          | 用於 p-value 與 CI 的計算    |
-| [**p-value**](p-value.md)                                                                 | 衡量在 H₀ 為真時，觀察到這樣極端結果的機率。與 α 比較以判斷是否拒絕 H₀。      | 與檢定力 (Power) 相對應  |
-| [**Power & Effect Size**](power-effect-size.md)                                           | Power = 1 − β，表示在 H₀ 為假時能正確拒絕的機率；<br>效應量則說明「差異有多大」。 | 綜合評估結果的實質意義   |
+| Term                                                                                      | Meaning                                                                           | Note                      |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------- |
+| [**Significance (α) & Confidence Levels (1 − α)**](significance-and-confidence-levels.md) | 決定願意接受多大的錯誤機率（Type I error），並對應到信賴水準。                    | 影響信賴區間與臨界值設定  |
+| [**Confidence Intervals (CI)**](confidence-interval.md)                                   | 根據樣本估計母體參數的範圍，反映 α 所設定的信心水準。                             | 與 z / t 分布有直接關聯   |
+| [**t-score vs z-score**](t-z-score.md)                                                    | 決定使用哪種分布來計算臨界值與信賴區間：<br>z 用於已知 σ；t 用於未知 σ。          | 用於 p-value 與 CI 的計算 |
+| [**p-value**](p-value.md)                                                                 | 衡量在 H₀ 為真時，觀察到這樣極端結果的機率。與 α 比較以判斷是否拒絕 H₀。          | 與檢定力 (Power) 相對應   |
+| [**Power & Effect Size**](power-effect-size.md)                                           | Power = 1 − β，表示在 H₀ 為假時能正確拒絕的機率；<br>效應量則說明「差異有多大」。 | 綜合評估結果的實質意義    |
 
 ## Parametric vs Non-parametric Tests
 
