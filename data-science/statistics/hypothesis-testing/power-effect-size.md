@@ -35,11 +35,16 @@ power_analysis = TTestIndPower()
 power = power_analysis.solve_power(effect_size=0.5, nobs1=30, alpha=0.05)
 
 print(f"Power: {power:.3f}")
+
+# Calculate numbers required
+n_required = power_analysis.solve_power(effect_size=0.5, alpha=0.05, power=0.8)
+
+print(f"Required Sample Size per Group: {n_required:.2f}")
 ```
 
 ## Effect Size
 
-- **Definition:** A measure of how large or meaningful an effect is, beyond just statistical significance.
+- **Definition:** A measure of how large or meaningful an effect is, beyond just statistical significance. 差異或影響的實際大小
 - Statistical significance tells us _whether_ an effect exists, while effect size tells us _how big_ that effect is.
 
 ### Key Points
