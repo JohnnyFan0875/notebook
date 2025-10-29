@@ -33,7 +33,7 @@ $$
 
 #### Standard Error
 
-The standard deviation of this sampling distribution, $\frac{\sigma \text{ or } s}{\sqrt{n}}$, is called the [Standard Error of the Mean (SE)](../descriptive-statistics.md#3-standard-error-se) — it quantifies how much sample means vary across repeated samples.
+The standard deviation of this sampling distribution is called the [Standard Error of the Mean (SE)](../descriptive-statistics.md#3-standard-error-se) — it quantifies how much sample means vary across repeated samples.
 
 $$
 SE =
@@ -91,6 +91,12 @@ $$
 </p>
 
 ## Python Example (Simulation)
+
+從一個母體（population）中重複抽樣，每次抽取 50 個樣本，總共重複 1000 次。
+每次抽樣後都計算該樣本的平均值，得到 1000 個樣本平均（`sample means`）。
+這 1000 個樣本平均的平均值（`sample_mean`）會非常接近母體的真實平均數。
+而 `quantile_2_5` 和 `quantile_97_5` 則代表這些樣本平均的第 2.5 與第 97.5 百分位數，也就是說，約有 95% 的樣本平均值會落在這兩個數值之間。
+這個區間描述的是「樣本平均的抽樣分布（sampling distribution） 的 95% 範圍」。
 
 ```python
 import numpy as np
