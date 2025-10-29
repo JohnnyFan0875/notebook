@@ -83,7 +83,10 @@ $$
 
   - Z-score ≈ 1.96
   - The lower and upper bounds correspond to the **2.5th and 97.5th percentiles** of the sampling distribution of the mean.
-    ![Image](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*zhq4V275F0YthnSLYRU0FA.jpeg)
+
+<p align="center">
+  <img src="https://miro.medium.com/v2/resize:fit:1100/format:webp/1*zhq4V275F0YthnSLYRU0FA.jpeg" width="500" height="300">
+</p>
 
 - Wider intervals → lower precision (often due to smaller sample size or higher variability).
 
