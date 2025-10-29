@@ -7,12 +7,13 @@ It reflects the degree of uncertainty around an estimate.
 
 ## Formula for the Mean
 
-| Case                                                            | Formula for Confidence Interval of the Mean           | Distribution Used            |
-| --------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------- |
-| **Population standard deviation known**                         | $\text{CI} = \bar{x} \pm z \times \frac{s}{\sqrt{n}}$ | **Standard Normal (z)**      |
-| **Population standard deviation unknown** (use sample SD ( s )) | $\text{CI} = \bar{x} \pm t \times \frac{s}{\sqrt{n}}$ | **Student’s t-distribution** |
+| Case                                      | Formula for Confidence Interval of the Mean           | Distribution Used                    |
+| ----------------------------------------- | ----------------------------------------------------- | ------------------------------------ |
+| **Population standard deviation known**   | $\text{CI} = \bar{x} \pm z \times \frac{σ}{\sqrt{n}}$ | **Standard Normal (z-distribution)** |
+| **Population standard deviation unknown** | $\text{CI} = \bar{x} \pm t \times \frac{s}{\sqrt{n}}$ | **Student’s t-distribution**         |
 
 - $\bar{x}$: sample mean
+- $σ$: population standard deviation
 - $s$: sample standard deviation
 - $n$: sample size
 - [**z / t**](./t-z-score.md): critical value corresponding to the desired confidence level
@@ -32,14 +33,24 @@ $$
 
 #### Standard Error
 
-The standard deviation of this sampling distribution, $\frac{\sigma}{\sqrt{n}}$, is called the [Standard Error of the Mean (SE)](../descriptive-statistics.md#3-standard-error-se) — it quantifies how much sample means vary across repeated samples.
+The standard deviation of this sampling distribution, $\frac{\sigma \text{ or } s}{\sqrt{n}}$, is called the [Standard Error of the Mean (SE)](../descriptive-statistics.md#3-standard-error-se) — it quantifies how much sample means vary across repeated samples.
 
 $$
-SE = \frac{s}{\sqrt{n}}
+SE =
+\begin{cases}
+\dfrac{\sigma}{\sqrt{n}}, & \text{if population SD (}\sigma\text{) is known} \\
+\dfrac{s}{\sqrt{n}}, & \text{if population SD (}\sigma\text{) is unknown}
+\end{cases}
 $$
 
+and the confidence interval (CI) is:
+
 $$
-\text{CI} = \bar{x} \pm (z \text{ or } t) \times SE
+CI =
+\begin{cases}
+\bar{x} \pm SE, & \text{if population SD (}\sigma\text{) is known} \\
+\bar{x} \pm SE, & \text{if population SD (}\sigma\text{) is unknown}
+\end{cases}
 $$
 
 #### Margin of Error
