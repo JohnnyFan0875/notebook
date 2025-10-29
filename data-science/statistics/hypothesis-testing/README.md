@@ -6,9 +6,8 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 - **Null hypothesis (H₀):** No effect or no difference.
 - **Alternative hypothesis (Hₐ):** There is an effect or difference.
-- **p-value:** Probability of observing the data (or something more extreme) if H₀ is true.
-- **α (significance level):** Threshold (commonly 0.05) to decide whether to reject H₀.
 - **Test statistic:** A standardized value (z, t, or F) used to compute the p-value.
+- **Central Limit Theorem (CLT)**: When the sample size is sufficiently large (typically n ≥ 30), the sampling distribution of the sample mean approximates a normal distribution, regardless of the population’s original shape.
 
 ## Type I and Type II Errors
 
