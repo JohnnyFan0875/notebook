@@ -1,17 +1,18 @@
 # p-value
 
-The **p-value** is a probability that helps evaluate evidence against the null hypothesis $H_0$.
+The **p-value** is a probability that helps evaluate evidence against the null hypothesis $H_0$.  
 假設兩組本來沒差的前提下，出現現在這樣（或更極端）差異的機率。
 
 ## Definition
 
 - The probability of obtaining a result at least as extreme as the one observed, **assuming $H_0$ is true**.
 - It's the area in the "tail" or "tails" of the distribution, away from the center where the expected values lie.
+- Provides a measure of evidence **against $H_0$**.
+- Reference: [towardsdatascience](https://towardsdatascience.com/what-is-p-value-370056b8244d/)
+
 <p align="center">
   <img src="https://miro.medium.com/v2/resize:fit:1100/format:webp/1*RXi2Ja89hpMjUvsHSpMW9Q.png" width="500" height="300">
 </p>
-- Provides a measure of evidence **against $H_0$**.
-- Reference: [towardsdatascience](https://towardsdatascience.com/what-is-p-value-370056b8244d/)
 
 ## Decision Rule
 
