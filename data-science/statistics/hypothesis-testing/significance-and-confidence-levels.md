@@ -47,9 +47,13 @@ The allocation of α depends on the alternative hypothesis:
 
 Visually, α represents the **shaded area(s)** in the distribution tail(s) used to determine statistical significance.
 
-![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-171.jpg){width=300 height=200}
-![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-172a.jpg){width=300 height=200}
-![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-172a.jpg){width=300 height=200}
+![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-171.jpg)
+![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-172a.jpg)
+![Image](https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-172a.jpg)
+
+<p align="center">
+  <img src="https://analystprep.com/cfa-level-1-exam/wp-content/uploads/2019/08/page-172a.jpg" width="300" height="200">
+</p>
 
 ### Summary
 
