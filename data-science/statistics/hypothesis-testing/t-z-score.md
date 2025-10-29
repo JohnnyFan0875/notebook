@@ -6,8 +6,6 @@ They are used in hypothesis testing and confidence interval estimation.
 
 ## General Notes
 
-- **In hypothesis tests (z-test, t-test):** how many standard deviations a sample mean (or observation) is from the hypothesized population mean.
-- **In confidence intervals:** how far to extend around a sample statistic (like the sample mean) to capture a specified level of confidence (e.g., 95%).
 - The numerical value of a z-score or t-score may be the same, but the **interpretation differs** between contexts.
 
 ## z-score
@@ -116,10 +114,9 @@ print(z_alpha_over_2)  # ~1.96
 
 ## Interpretation
 
-- In a **hypothesis test**: measures how extreme your observed sample statistic is under $H_0$.
-- In a **confidence interval**: determines how far to extend around the sample mean to capture a specified confidence level.
+- In a **hypothesis test (z-test, t-test)**: how many standard deviations a sample mean (or observation) is from the hypothesized population mean.
+- In a **confidence interval**: determines how far to extend around the sample mean to capture a specified confidence level (e.g., 95%).
 
 ## Comparison: t-test vs z-test
 
-- **z-test**: Used when the **population standard deviation ($\sigma$) is known**, usually with **large samples ($n ≥ 30$)**.
-- **t-test**: Used when $\sigma$ is **unknown** (typical case), especially with **small samples ($n < 30$)**.
+Please refer to [t-test vs z-test](./t-tests.md)
