@@ -58,7 +58,7 @@ $$
 ### Two-Tailed Test (Default for Confidence Intervals)
 
 $$
-z_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right)
+z_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{\alpha}{2}\right)
 $$
 
 **Example (95% confidence):**
