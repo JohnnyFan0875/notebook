@@ -71,7 +71,11 @@ $$
 | 95%              | 0.05 | Right-tailed | 0.95                   | +1.645           |
 | 95%              | 0.05 | Left-tailed  | 0.05                   | −1.645           |
 
-$ z_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right) $
+$$
+z_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right)
+$$
+
+$ z\_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right) $
 
 ```python
 from scipy import stats
