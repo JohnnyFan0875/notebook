@@ -119,4 +119,4 @@ print(z_alpha_over_2)  # ~1.96
 
 ## Comparison: t-test vs z-test
 
-Please refer to [t-test vs z-test](./t-tests.md)
+👉 Please refer to [t-test vs z-test](./t-tests.md)

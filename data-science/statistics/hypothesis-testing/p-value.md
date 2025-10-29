@@ -7,7 +7,9 @@ The **p-value** is a probability that helps evaluate evidence against the null h
 
 - The probability of obtaining a result at least as extreme as the one observed, **assuming $H_0$ is true**.
 - It's the area in the "tail" or "tails" of the distribution, away from the center where the expected values lie.
-  ![Image](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*RXi2Ja89hpMjUvsHSpMW9Q.png)
+<p align="center">
+  <img src="https://miro.medium.com/v2/resize:fit:1100/format:webp/1*RXi2Ja89hpMjUvsHSpMW9Q.png" width="500" height="300">
+</p>
 - Provides a measure of evidence **against $H_0$**.
 - Reference: [towardsdatascience](https://towardsdatascience.com/what-is-p-value-370056b8244d/)
 
