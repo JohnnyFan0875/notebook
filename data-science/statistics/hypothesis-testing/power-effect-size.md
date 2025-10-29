@@ -13,10 +13,10 @@ $$
 $$
 
 - $\beta$ = probability of a [**Type II error**](./README.md#type-i-and-type-ii-errors) (false negative).
-- **Typical target:** 0.80 (80%) → means an 80% chance of detecting a true effect if it exists.
+- **Typical target:** 0.80 (80%) → an 80% chance of detecting a true effect if it exists.
 
 - **Determinants of power:**
-  - Sample size (\(n\)) ↑ → power ↑
+  - Sample size ($n$) ↑ → power ↑
   - Effect size ↑ → power ↑
   - Significance level (α) ↑ → power ↑ (but increases Type I error risk)
   - Variability (σ or s) ↓ → power ↑
@@ -61,11 +61,8 @@ $$
 d = \frac{\bar{x}\_1 - \bar{x}\_2}{s_p}
 $$
 
-where \(s_p\) is the pooled standard deviation.
-
-- Small ≈ 0.2
-- Medium ≈ 0.5
-- Large ≈ 0.8
+- where $s_p$ is the pooled standard deviation.
+- Small/Medium/Large ≈ 0.2/0.5/0.8
 
 2. **Pearson’s r (correlation strength):**
 
@@ -73,9 +70,7 @@ $$
 r = \frac{\text{Cov}(X,Y)}{\sigma_X \sigma_Y}
 $$
 
-- Small ≈ 0.1
-- Medium ≈ 0.3
-- Large ≈ 0.5
+- Small/Medium/Large ≈ 0.1/0.3/0.5
 
 3. **Eta squared (η²) (ANOVA, variance explained):**
 
@@ -83,9 +78,7 @@ $$
 \eta^2 = \frac{SS*{\text{between}}}{SS*{\text{total}}}
 $$
 
-- Small ≈ 0.01
-- Medium ≈ 0.06
-- Large ≈ 0.14
+- Small/Medium/Large ≈ 0.01/0.06/0.14
 
 ### Example in Python
 
