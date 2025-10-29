@@ -57,7 +57,7 @@ $$
 
 | Test Type                                              | Formula                                                                                           | Example                                                                                                                                                          | Interpretation                                                                              |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Two-Tailed Test** (Default for Confidence Intervals) | $$ z\_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right) $$ | **For 95% confidence:** $ z*{\alpha/2} = \texttt{stats.norm.ppf}(0.975) = +1.96 $ <br> **Left-tail:** $ -z*{\alpha/2} = -1.96 = \texttt{stats.norm.ppf}(0.025) $ | Used when testing for **any significant difference** (either higher or lower).              |
+| **Two-Tailed Test** (Default for Confidence Intervals) | $ z\_{\alpha/2} = \texttt{stats.norm.ppf}\left(1 - \frac{1 - \text{confidence level}}{2}\right) $ | **For 95% confidence:** $ z*{\alpha/2} = \texttt{stats.norm.ppf}(0.975) = +1.96 $ <br> **Left-tail:** $ -z*{\alpha/2} = -1.96 = \texttt{stats.norm.ppf}(0.025) $ | Used when testing for **any significant difference** (either higher or lower).              |
 | **Right-Tailed Test**                                  | $ z\_{\alpha} = \texttt{stats.norm.ppf}(1 - \alpha) $                                             | **For α = 0.05:** $ z\_{\alpha} = \texttt{stats.norm.ppf}(0.95) = +1.645 $                                                                                       | Used when testing if the sample mean is **significantly greater** than the population mean. |
 | **Left-Tailed Test**                                   | $ z\_{\alpha} = \texttt{stats.norm.ppf}(\alpha) $                                                 | **For α = 0.05:** <br> $ z\_{\alpha} = \texttt{stats.norm.ppf}(0.05) = -1.645 $                                                                                  | Used when testing if the sample mean is **significantly less** than the population mean.    |
 
@@ -70,6 +70,7 @@ $$
 | 99%              | 0.01 | Two-tailed   | 0.995                  | ±2.576           |
 | 95%              | 0.05 | Right-tailed | 0.95                   | +1.645           |
 | 95%              | 0.05 | Left-tailed  | 0.05                   | −1.645           |
+
 
 ```python
 from scipy import stats
