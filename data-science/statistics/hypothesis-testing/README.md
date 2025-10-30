@@ -62,12 +62,12 @@ Used when the dependent variable is **numeric (interval/ratio)** or **ordinal (o
 Used when the dependent variable is **categorical (nominal)** or represents **counts or proportions**.  
 Tests are based on binomial or multinomial distributions — no assumption of normality.
 
-| Scenario                                                  | Common Test                                                                                                                                   | Type                  |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| One group proportion                                      | [Exact Binomial Test](./exact-test.md#exact-binomial-test) / [One-sample proportion z-test](./proportion-tests.md#one-sample-proportion-test) | Exact / Approximation |
-| Two group proportions                                     | [Fisher’s Exact Test](./exact-test.md#fishers-exact-test) / [Two-sample proportion z-test](./proportion-tests.md#two-sample-proportion-test)              | Exact / Approximation |
-| Association between two categorical variables (r×c table) | [Chi-square Test of Independence](./chi-square.md#chi-square-test-of-independence) / [Fisher’s Exact Test](./exact-test.md#association-between-two-categorical-variables-rc-table)            | Approximation / Exact |
-| Goodness-of-fit (observed vs expected)                    | [Chi-square Goodness-of-Fit](./chi-square.md#chi-square-goodness-of-fit)                                                                      | Approximation         |
+| Scenario                                                      | Common Test                                                                                                                                                                        | Type                  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| One group proportion                                          | [Exact Binomial Test](./exact-test.md#exact-binomial-test) / [One-sample proportion z-test](./proportion-tests.md#one-sample-proportion-test)                                      | Exact / Approximation |
+| Two group proportions                                         | [Fisher’s Exact Test](./exact-test.md#fishers-exact-test) / [Two-sample proportion z-test](./proportion-tests.md#two-sample-proportion-test)                                       | Exact / Approximation |
+| Association between two categorical variables (r×c table)     | [Chi-square Test of Independence](./chi-square.md#chi-square-test-of-independence) / [Fisher’s Exact Test](./exact-test.md#association-between-two-categorical-variables-rc-table) | Approximation / Exact |
+| Goodness-of-fit (observed vs expected frequency distribution) | [Chi-square Goodness-of-Fit](./chi-square.md#chi-square-goodness-of-fit)                                                                                                           | Approximation         |
 
 Exact vs Approximation
 

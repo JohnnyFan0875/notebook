@@ -82,9 +82,6 @@ print("z-statistic:", z_stat, "p-value:", p_value)
 
 ## Relationship to Odds Ratio
 
-The **two-proportion z-test** looks at differences in proportions between two groups.  
-The **odds ratio** looks at ratios of odds between two groups.
-
 | Context / Concept                           | Measure Used                   | What It Quantifies                   | Typical Use Case                                 | Reason for Use                                                          |
 | ------------------------------------------- | ------------------------------ | ------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------- |
 | **Proportion z-test / Fisher’s Exact Test** | Difference between proportions | Compares probabilities directly      | Experiments, surveys                             | Probabilities can be directly estimated from data.                      |
