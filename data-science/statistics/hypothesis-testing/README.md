@@ -85,8 +85,8 @@ Before choosing a statistical test, it’s essential to check whether your data 
 | **Normality**                     | [Shapiro–Wilk test](./normality-tests.md#shapirowilk-test)             | Tests if data come from a normal distribution.                        | General test for small to moderate samples. |
 |                                   | [Kolmogorov–Smirnov test](./normality-tests.md#kolmogorovsmirnov-test) | Tests goodness-of-fit to normal distribution.                         | Alternative for larger samples.             |
 | **Equal variances (homogeneity)** | [Levene’s test](./variance-tests.md#levenes-test)                      | Tests equality of variances across groups; robust to non-normal data. | General-purpose test.                       |
-|                                   | [Bartlett’s test](./variance-tests.md#bartletts-test)                  | Tests equality of variances (assumes normality).                      | Use only for normal data.                   |
 |                                   | [Brown–Forsythe test](./variance-tests.md#brownforsythe-test)          | Modified Levene’s using medians; robust to outliers.                  | Best for skewed or heteroscedastic data.    |
+|                                   | [Bartlett’s test](./variance-tests.md#bartletts-test)                  | Tests equality of variances (assumes normality).                      | Use only for normal data.                   |
 
 **Tip:**
 

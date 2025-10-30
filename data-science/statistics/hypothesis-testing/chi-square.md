@@ -99,7 +99,7 @@ print("Expected frequencies:\n", expected)
 - **Degrees of freedom:**
 
 $$
-number of categories - 1
+\text{number of categories} - 1
 $$
 
 ### Python Example

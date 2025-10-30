@@ -47,8 +47,6 @@ plt.show()
 - Fits a logistic regression curve.
 - Useful for binary classification relationships.
 
----
-
 ## Residual Plot
 
 Residual plots help assess model fit.
@@ -64,8 +62,6 @@ plt.show()
 - `lowess=True`: adds a locally weighted smoothing line.
 - Ideally, residuals should be randomly scattered around 0.
 
----
-
 ## Quantile-Quantile (QQ) Plot
 
 For normality checks, QQ plots compare residual quantiles to a normal distribution.
@@ -80,8 +76,6 @@ plt.show()
 ```
 
 - If residuals follow a straight line, normality assumption holds.
-
----
 
 ## Scale-Location Plot
 

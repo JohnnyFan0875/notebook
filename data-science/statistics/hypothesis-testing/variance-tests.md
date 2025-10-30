@@ -1,4 +1,4 @@
-# Variance Tests (Homogeneity of Variance)
+# Variance Tests
 
 Homogeneity of variance (homoscedasticity) means the variance within each group is constant across levels of a categorical variable.  
 This is a key assumption for tests such as **t-tests** and **ANOVA**.
