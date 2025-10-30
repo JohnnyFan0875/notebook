@@ -1,28 +1,24 @@
 # Odds Ratio (OR)
 
-The **odds ratio (OR)** is a measure of association commonly used in case–control studies, epidemiology, and genetics. It compares the odds of an event occurring in one group to the odds of it occurring in another.
+The **odds ratio (OR)** is a measure of association commonly used in case–control studies, epidemiology, and genetics.  
+It compares the odds of an event occurring in one group to the odds of it occurring in another.
 
 ## Definition
 
-- Odds = $\dfrac{p}{1-p}$, where $p$ is the probability of an event.
-- Odds ratio = $\dfrac{\text{odds in group 1}}{\text{odds in group 2}}$.
+$$
+\text{Odds} = \dfrac{p}{1-p}
+$$
+
+$$
+\text{Odds ratio} = \dfrac{\text{odds in group 1}}{\text{odds in group 2}}
+$$
+
+- $p$: probability of an event
 - Often visualized on a **logarithmic scale** (log-odds), which linearizes the relationship.
 
-```python
-import numpy as np
+## Formula
 
-probability = 0.7
-odds = probability / (1 - probability)
-odds_ratio = odds / 1.2  # example denominator odds
-log_or = np.log(odds_ratio)
-print("Odds:", odds)
-print("Odds Ratio:", odds_ratio)
-print("Log(OR):", log_or)
-```
-
-## 2 × 2 Contingency Table
-
-For a binary exposure and a binary outcome:
+For a binary exposure and a binary outcome (2 × 2 Contingency Table):
 
 |               | Case (disease=Yes) | Control (disease=No) |
 | ------------- | ------------------ | -------------------- |
@@ -34,15 +30,11 @@ For a binary exposure and a binary outcome:
 - c = number of cases without exposure
 - d = number of controls without exposure
 
-## Formula
-
-The odds ratio (OR) is computed as:
-
 $$
-OR = \frac{a/c}{b/d} = \frac{ad}{bc}
+\text{Odds ratio (OR)} = \frac{a/c}{b/d} = \frac{ad}{bc}
 $$
 
-## Standard Error of Log(OR)
+### Standard Error of Log(OR)
 
 The standard error (SE) of the log odds ratio is useful for confidence intervals:
 
@@ -50,7 +42,7 @@ $$
 SE = \sqrt{\left(\frac{1}{a} + \frac{1}{b} + \frac{1}{c} + \frac{1}{d}\right)}
 $$
 
-## Confidence Interval
+### Confidence Interval
 
 A 95% confidence interval (CI) for OR is:
 
@@ -63,6 +55,12 @@ Exponentiate the bounds to return to the odds ratio scale:
 $$
 CI = \left( e^{\ln(OR) - 1.96 \times SE}, \; e^{\ln(OR) + 1.96 \times SE} \right)
 $$
+
+## Interpretation
+
+- **OR = 1** → No association.
+- **OR > 1** → Exposure increases odds of outcome.
+- **OR < 1** → Exposure decreases odds of outcome.
 
 ## Python Example
 
@@ -100,11 +98,3 @@ $$
 - $\beta_i$: coefficient for predictor \(X_i\)
 
 The exponentiated coefficients, $e^{\beta_i}$, are **odds ratios**, representing the multiplicative change in odds for a one-unit increase in predictor $X_i$.
-
-## Summary
-
-- **Odds ratio (OR)** measures how strongly exposure is associated with an outcome.
-- **OR = 1** → No association.
-- **OR > 1** → Exposure increases odds of outcome.
-- **OR < 1** → Exposure decreases odds of outcome.
-- Confidence intervals and the log-odds scale are essential for correct interpretation.
