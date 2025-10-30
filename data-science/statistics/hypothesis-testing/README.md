@@ -47,7 +47,7 @@ Statistical tests are broadly classified based on the assumptions they make abou
 
 ### Continuous or Ordinal Data
 
-Used when the dependent variable is **numeric (interval/ratio)** or **ordinal**.
+Used when the dependent variable is **numeric (interval/ratio)** or **ordinal (ordered category)**.
 
 | Scenario                                 | Parametric Test                                                                     | Non-parametric / Exact Alternative                                                                     | Notes                                             |
 | ---------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
@@ -69,7 +69,7 @@ Tests are based on binomial or multinomial distributions — no assumption of no
 | Association between two categorical variables (r×c table) | [Chi-square Test of Independence](./chi-square.md#chi-square-test-of-independence) / [Fisher’s Exact Test](./fisher-exact-test.md) | Approximation / Exact |
 | Goodness-of-fit (observed vs expected)                    | [Chi-square Goodness-of-Fit](./chi-square.md#chi-square-goodness-of-fit)                                                           | Approximation         |
 
-#### Exact vs Approximation
+Exact vs Approximation
 
 | Type              | Typical Distribution      | Example Tests                  | Recommended When                  |
 | ----------------- | ------------------------- | ------------------------------ | --------------------------------- |
