@@ -140,6 +140,13 @@ print(anova_table)
 When ANOVA is significant, **post-hoc tests** identify which groups differ.
 
 - **Purpose:** Perform pairwise comparisons while controlling for inflated Type I error (false positives) from multiple testing.
+- **Decision rule:**
+  - `p-unc` → uncorrected p-value (before adjustment)  
+     `p-adj` → adjusted p-value (after multiple comparison correction)  
+    | Result | Interpretation |
+    | -------------------------- | -------------------------------------------------------------------- |
+    | **p-adj ≤ α (e.g., 0.05)** | The two groups differ significantly. Reject H₀ for that pair. |
+    | **p-adj > α** | No significant difference between the two groups. Fail to reject H₀. |
 
 ### Common methods
 
@@ -181,6 +188,22 @@ corrected_p_values = multipletests(p_values, alpha=0.05, method='bonferroni')[1]
 
 for (group1, group2), corrected_p_val in zip(comparisons, corrected_p_values):
     print(f"{group1} vs {group2}: corrected p-value = {corrected_p_val:.4f}")
+```
+
+with `pingouin`
+
+```python
+import pingouin as pg
+import pandas as pd
+
+df = pg.read_dataset('anova')
+# columns: dv='Pain threshold', between='Hair color'
+
+aov = pg.anova(data=df, dv='Pain threshold', between='Hair color')
+print(aov)
+
+posthoc = pg.pairwise_ttests(data=df, dv='Pain threshold', between='Hair color', padjust='bonf')
+print(posthoc[['A', 'B', 'p-unc', 'p-adj', 'sig']])
 ```
 
 ## Effect Size in ANOVA
