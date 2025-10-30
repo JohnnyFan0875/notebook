@@ -85,6 +85,7 @@ The **p-value** is obtained by summing probabilities of all tables as extreme (o
 ```python
 from scipy.stats import fisher_exact
 
+# whether two treatments have different success rates.
 # Example 2x2 contingency table
 # [[Group1 success, Group1 failure], [Group2 success, Group2 failure]]
 table = [[8, 2],
@@ -102,6 +103,48 @@ Odds Ratio = 36.000, p-value = 0.0022 < 0.05 → reject H₀, indicating a signi
 | -------------- | -------------------------- | --------------------------------------------------------------------------- |
 | **One-tailed** | Directional association    | You expect a relationship in a specific direction (e.g., Group 1 > Group 2) |
 | **Two-tailed** | Nondirectional association | You want to test for any association (positive or negative)                 |
+
+### Relationship to Two-Group Proportion Tests
+
+Fisher’s Exact Test can also be interpreted as an **exact test for equality of two proportions**:
+
+- It compares whether the probability of “success” ($p_1$) in **Group 1** equals that in **Group 2** ($p_2$).
+- When sample sizes are small, Fisher’s test provides an **exact p-value** without relying on the normal approximation used in the [two-sample proportion z-test](./proportion-tests.md#two-sample-proportion-test).
+- When sample sizes are large, both tests **converge to the same result**.
+
+| Comparison           | **Fisher’s Exact Test**               | **Two-Sample Proportion z-test** |
+| -------------------- | ------------------------------------- | -------------------------------- |
+| **Distribution**     | Hypergeometric (exact)                | Normal (approximation)           |
+| **Assumptions**      | Small samples, any expected count < 5 | Large samples, np ≥ 5            |
+| **Null hypothesis**  | $p_1 = p_2$                           | $p_1 = p_2$                      |
+| **Recommended when** | Sample size is small                  | Sample size is large             |
+
+**Python Example:**  
+Using the same 2×2 contingency table shown above, Fisher’s test provides the exact p-value for testing whether the two success proportions differ.
+
+| Group           | Success | Failure | Total |
+| --------------- | ------- | ------- | ----- |
+| **Treatment A** | 8       | 2       | 10    |
+| **Treatment B** | 1       | 9       | 10    |
+
+### Association Between Two Categorical Variables (r×c Table)
+
+For larger contingency tables (e.g., 2×3, 3×3), Fisher’s Exact Test is extended using the **multivariate hypergeometric distribution**.
+
+The general probability of observing an r×c table with fixed row and column totals is:
+
+$$
+P = \frac{\prod_{i=1}^{r} (n_{i+}!)}{N!} \times \frac{\prod_{j=1}^{c} (n_{+j}!)}{\prod_{i=1}^{r}\prod_{j=1}^{c} n_{ij}!}
+$$
+
+**Python Example:**
+
+```python
+from statsmodels.stats.contingency_tables import Table
+
+result = Table(your_table).test_nominal_association()
+print(result)
+```
 
 ## Summary Comparison
 
