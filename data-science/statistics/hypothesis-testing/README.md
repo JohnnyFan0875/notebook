@@ -28,12 +28,12 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 | Term                                                                                      | Meaning                                                                                                                                               | Note                                                             |
 | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| [**Significance (α) & Confidence Levels (1 − α)**](significance-and-confidence-levels.md) | Determines how much probability of error (Type I error) is acceptable, which corresponds to the confidence level.                                     | Affects the setting of confidence intervals and critical values. |
-| [**Confidence Intervals (CI)**](confidence-interval.md)                                   | The range estimated from the sample that is likely to contain the population parameter, reflecting the confidence level set by α.                     | Directly related to the z or t distribution.                     |
-| [**t-score vs z-score**](t-z-score.md)                                                    | How many standard errors the sample mean (or observation) is away from the population mean                                                            | Used for calculating p-values and confidence intervals.          |
-| [**F-score**](anova.md#test-statistic)                                                    | Ratio of variances that compares explained variability (between groups or model) to unexplained variability (within groups or residuals).             | Used in ANOVA and regression to test overall model significance. |
-| [**p-value**](p-value.md)                                                                 | Measures the probability of observing such an extreme result assuming H₀ is true; compared against α to decide whether to reject H₀.                  | Related to statistical power (1 − β).                            |
-| [**Power & Effect Size**](power-effect-size.md)                                           | Power = 1 − β represents the probability of correctly rejecting H₀ when it is false; effect size describes how large or meaningful the difference is. | Provides practical interpretation of statistical results.        |
+| [Significance (α) & Confidence Levels (1 − α)](significance-and-confidence-levels.md) | Determines how much probability of error (Type I error) is acceptable, which corresponds to the confidence level.                                     | Affects the setting of confidence intervals and critical values. |
+| [Confidence Intervals (CI)](confidence-interval.md)                                   | The range estimated from the sample that is likely to contain the population parameter, reflecting the confidence level set by α.                     | Directly related to the z or t distribution.                     |
+| [t-score vs z-score](t-z-score.md)                                                    | How many standard errors the sample mean (or observation) is away from the population mean                                                            | Used for calculating p-values and confidence intervals.          |
+| [F-score](anova.md#test-statistic)                                                    | Ratio of variances that compares explained variability (between groups or model) to unexplained variability (within groups or residuals).             | Used in ANOVA and regression to test overall model significance. |
+| [p-value](p-value.md)                                                                 | Measures the probability of observing such an extreme result assuming H₀ is true; compared against α to decide whether to reject H₀.                  | Related to statistical power (1 − β).                            |
+| [Power & Effect Size](power-effect-size.md)                                           | Power = 1 − β represents the probability of correctly rejecting H₀ when it is false; effect size describes how large or meaningful the difference is. | Provides practical interpretation of statistical results.        |
 
 ## Choosing the Right Test
 
@@ -41,7 +41,7 @@ Selecting the correct test depends on:
 
 - the **type of dependent variable** (continuous vs categorical),
 - whether assumptions like **normality** and **equal variances** are met,
-- and whether data are **independent or paired**.
+- whether data are **independent or paired**.
 
 ### Continuous or Ordinal Data
 
