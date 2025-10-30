@@ -60,8 +60,8 @@ $$
 
 - The **F-statistic** measures how large the between-group variance is relative to the within-group variance  
   The **p-value** quantifies the probability of obtaining such an F if all group means were truly equal ($H_0$).
-- **Large F-value** → **small p-value** → such an extreme ratio of variances is unlikely under $H_0$.
-- **F-value near 1** → **large p-value** → group differences are no greater than expected by random chance.
+- **Large F-value** → **small p-value** → such an extreme ratio of variances is unlikely under $H_0$  
+  **F-value near 1** → **large p-value** → group differences are no greater than expected by random chance.
 
 **Decision rule:**
 
