@@ -95,21 +95,22 @@ groups = (['Group 1'] * len(group_1) +
           ['Group 3'] * len(group_3))
 df = pd.DataFrame({'data': data, 'group': groups})
 
-pg.anova(data=df, dv="data", between="group")
+pg.anova(data=df, dv="data", between="group") # output dataframe
 ```
 
 ## Two-Way ANOVA (Factorial ANOVA)
 
 - **Purpose:** Tests the effect of **two independent variables (factors)** on a dependent variable, and whether there is an **interaction effect** between them.
 - **Null hypotheses (H₀):**
-  1. No main effect of Factor A.
-  2. No main effect of Factor B.
-  3. No interaction effect between Factor A and Factor B.
+  1. The population means are the same across all levels of Factor A. Factor A has no influence on the dependent variable. 例如:低劑量組與高劑量組 (Factor A) 的血壓平均值 (dependent variable)在母體中是一樣的，因此藥物劑量不會影響血壓。
+  2. The population means are the same across all levels of Factor B. Factor B has no influence on the dependent variable.
+  3. The influence of Factor A does not depend on Factor B.
 
 **Test statistic (for each factor):**
-\[
+
+$$
 F = \frac{MS*{\text{factor}}}{MS*{\text{error}}}
-\]
+$$
 
 - Interaction term tests whether the effect of one factor depends on the level of the other factor.
 
