@@ -1,4 +1,4 @@
-# Odds Ratio (OR)
+# Odds Ratio
 
 The **odds ratio (OR)** is a measure of association commonly used in case–control studies, epidemiology, and genetics.  
 It compares the odds of an event occurring in one group to the odds of it occurring in another.
@@ -25,19 +25,15 @@ For a binary exposure and a binary outcome (2 × 2 Contingency Table):
 | **Exposed**   | a                  | b                    |
 | **Unexposed** | c                  | d                    |
 
-$$
-\text{Odds ratio (OR)} = \frac{a/c}{b/d} = \frac{ad}{bc}
-$$
+$\text{Odds ratio (OR)} = \frac{a/c}{b/d} = \frac{ad}{bc}$
 
-### Standard Error of Log(OR)
+### Standard Error of Log(OR) and Confidence Interval
 
 The standard error (SE) of the log odds ratio is useful for confidence intervals:
 
 $$
 SE = \sqrt{\left(\frac{1}{a} + \frac{1}{b} + \frac{1}{c} + \frac{1}{d}\right)}
 $$
-
-### Confidence Interval
 
 A 95% confidence interval (CI) for OR is:
 
