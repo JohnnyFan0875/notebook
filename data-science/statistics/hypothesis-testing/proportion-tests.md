@@ -1,9 +1,9 @@
-# Proportion Tests (z-test for proportions)
+# Proportion Tests
 
-Proportion tests are used when the data are **categorical (binomial: success/failure)** and we want to test whether a sample proportion differs from a hypothesized value, or whether two sample proportions differ.
+Proportion tests (z-test for proportions) are used when the data are **categorical (binomial: success/failure)** and we want to test whether a sample proportion differs from a hypothesized value, or whether two sample proportions differ.
 
 As the sample size $n$ grows, the binomial distribution approaches a normal distribution (Central Limit Theorem).  
-For small samples, use **exact tests** (binomial test, Fisher’s exact test).
+For small samples, use **exact tests** (Exact binomial test, Fisher’s exact test).
 
 ## One-Sample Proportion Test
 
@@ -17,8 +17,12 @@ For small samples, use **exact tests** (binomial test, Fisher’s exact test).
 **Assumption:**
 
 $$
-n\hat{p} \geq 10 \quad \text{and} \quad n(1-\hat{p}) \geq 10
+n\hat{p} \geq 5 \text{ or } 10 \quad \text{and} \quad n(1-\hat{p}) \geq 5 \text{ or } 10
 $$
+
+- n: Total number of observations
+- $\hat{p}$: The proportion of “successes” observed in your data
+- At least 5 or 10 expected “successes” and "failures"
 
 **Python Example:**
 
