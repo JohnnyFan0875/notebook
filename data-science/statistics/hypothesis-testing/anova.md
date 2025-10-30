@@ -101,10 +101,12 @@ pg.anova(data=df, dv="data", between="group") # output dataframe
 ## Two-Way ANOVA (Factorial ANOVA)
 
 - **Purpose:** Tests the effect of **two independent variables (factors)** on a dependent variable, and whether there is an **interaction effect** between them.
+
 - **Null hypotheses (H₀):**
-  1. The population means are the same across all levels of Factor A. Factor A has no influence on the dependent variable. 例如:低劑量組與高劑量組 (Factor A) 的血壓平均值 (dependent variable)在母體中是一樣的，因此藥物劑量不會影響血壓。
-  2. The population means are the same across all levels of Factor B. Factor B has no influence on the dependent variable.
-  3. The influence of Factor A does not depend on Factor B.
+  - The population means are the same across all levels of Factor A. Factor A has no influence on the dependent variable.  
+    例如:低劑量組與高劑量組 (Factor A) 的血壓平均值 (dependent variable)在母體中是一樣的，因此藥物劑量不會影響血壓。
+  - The population means are the same across all levels of Factor B. Factor B has no influence on the dependent variable.
+  - The influence of Factor A does not depend on Factor B.
 
 **Test statistic (for each factor):**
 
