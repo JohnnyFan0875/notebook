@@ -140,9 +140,10 @@ print(anova_table)
 When ANOVA is significant, **post-hoc tests** identify which groups differ.
 
 - **Purpose:** Perform pairwise comparisons while controlling for inflated Type I error (false positives) from multiple testing.
-- **Common methods:**
 
-### Tukey’s Honest Significant Difference (HSD) Test
+### Common methods
+
+#### Tukey’s Honest Significant Difference (HSD) Test
 
 ```python
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
@@ -159,7 +160,7 @@ print(tukey_results)
 #     Group 2 vs Group 3   |  0.03
 ```
 
-### Bonferroni Correction
+#### Bonferroni Correction
 
 - Adjusts significance level when performing multiple t-tests.
 - More conservative but reduces false positives.
