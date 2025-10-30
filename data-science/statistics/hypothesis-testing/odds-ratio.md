@@ -25,11 +25,6 @@ For a binary exposure and a binary outcome (2 × 2 Contingency Table):
 | **Exposed**   | a                  | b                    |
 | **Unexposed** | c                  | d                    |
 
-- a = number of cases with exposure
-- b = number of controls with exposure
-- c = number of cases without exposure
-- d = number of controls without exposure
-
 $$
 \text{Odds ratio (OR)} = \frac{a/c}{b/d} = \frac{ad}{bc}
 $$
