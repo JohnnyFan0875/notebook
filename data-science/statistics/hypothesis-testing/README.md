@@ -11,12 +11,12 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 ## Type I and Type II Errors
 
-| 概念               | 真實狀況    | 檢定結果               | 結果解釋           | 類型                  |
-| ------------------ | ----------- | ---------------------- | ------------------ | --------------------- |
-| **True Positive**  | Hₐ (有差異) | 拒絕 H₀ (認為有差異)   | 正確偵測到效果存在 | 正確                  |
-| **False Positive** | H₀ (無差異) | 拒絕 H₀ (認為有差異)   | 錯誤地以為有差異   | **Type I error (α)**  |
-| **True Negative**  | H₀ (無差異) | 不拒絕 H₀ (認為無差異) | 正確判定無差異     | 正確                  |
-| **False Negative** | Hₐ (有差異) | 不拒絕 H₀ (認為無差異) | 錯誤地忽略真實差異 | **Type II error (β)** |
+| Concept            | True Condition         | Test Result                                | Interpretation                     | Type                  |
+| ------------------ | ---------------------- | ------------------------------------------ | ---------------------------------- | --------------------- |
+| **True Positive**  | Hₐ (difference exists) | Reject H₀ (conclude difference exists)     | Correctly detects a real effect    | Correct               |
+| **False Positive** | H₀ (no difference)     | Reject H₀ (conclude difference exists)     | Incorrectly concludes a difference | **Type I error (α)**  |
+| **True Negative**  | H₀ (no difference)     | Fail to reject H₀ (conclude no difference) | Correctly concludes no difference  | Correct               |
+| **False Negative** | Hₐ (difference exists) | Fail to reject H₀ (conclude no difference) | Fails to detect a real effect      | **Type II error (β)** |
 
 ## Assumptions
 
@@ -26,13 +26,13 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 ## Basic Concepts
 
-| Term                                                                                      | Meaning                                                                           | Note                      |
-| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------- |
-| [**Significance (α) & Confidence Levels (1 − α)**](significance-and-confidence-levels.md) | 決定願意接受多大的錯誤機率（Type I error），並對應到信賴水準。                    | 影響信賴區間與臨界值設定  |
-| [**Confidence Intervals (CI)**](confidence-interval.md)                                   | 根據樣本估計母體參數的範圍，反映 α 所設定的信心水準。                             | 與 z / t 分布有直接關聯   |
-| [**t-score vs z-score**](t-z-score.md)                                                    | 決定使用哪種分布來計算臨界值與信賴區間：<br>z 用於已知 σ；t 用於未知 σ。          | 用於 p-value 與 CI 的計算 |
-| [**p-value**](p-value.md)                                                                 | 衡量在 H₀ 為真時，觀察到這樣極端結果的機率。與 α 比較以判斷是否拒絕 H₀。          | 與檢定力 (Power) 相對應   |
-| [**Power & Effect Size**](power-effect-size.md)                                           | Power = 1 − β，表示在 H₀ 為假時能正確拒絕的機率；<br>效應量則說明「差異有多大」。 | 綜合評估結果的實質意義    |
+| Term                                                                                      | Meaning                                                                                                                                               | Note                                                             |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [**Significance (α) & Confidence Levels (1 − α)**](significance-and-confidence-levels.md) | Determines how much probability of error (Type I error) is acceptable, which corresponds to the confidence level.                                     | Affects the setting of confidence intervals and critical values. |
+| [**Confidence Intervals (CI)**](confidence-interval.md)                                   | The range estimated from the sample that is likely to contain the population parameter, reflecting the confidence level set by α.                     | Directly related to the z or t distribution.                     |
+| [**t-score vs z-score**](t-z-score.md)                                                    | How many standard errors the sample mean (or observation) is away from the population mean                                                            | Used for calculating p-values and confidence intervals.          |
+| [**p-value**](p-value.md)                                                                 | Measures the probability of observing such an extreme result assuming H₀ is true; compared against α to decide whether to reject H₀.                  | Related to statistical power (1 − β).                            |
+| [**Power & Effect Size**](power-effect-size.md)                                           | Power = 1 − β represents the probability of correctly rejecting H₀ when it is false; effect size describes how large or meaningful the difference is. | Provides practical interpretation of statistical results.        |
 
 ## Parametric vs Non-parametric Tests
 
