@@ -5,15 +5,16 @@ It evaluates whether at least one group mean differs from the others.
 
 ## Hypotheses
 
-- **Null hypothesis (H₀):** All group means are equal.
-- **Alternative hypothesis (Hₐ):** At least one group mean differs.
+- **Null hypothesis (H₀):** All group means of `dependent variables` are equal.
+- **Alternative hypothesis (Hₐ):** At least one group mean of `dependent variable` differs.
 
 ## Assumptions
 
 - Independence of observations
 - Normality within each group
+  - The dependent variables follow normal distribution in the population within each group.
   - If not, use [Kruskal–Wallis test](./non-parametric-tests.md#kruskalwallis-test)
-- Equal variances across groups
+- Equal variances across all groups
   - If not, use **Welch’s ANOVA**
 - If both normality or variance equality are violated, use **Kruskal–Wallis test** for safer choice.
 
@@ -103,9 +104,9 @@ pg.anova(data=df, dv="data", between="group") # output dataframe
 - **Purpose:** Tests the effect of **two independent variables (factors)** on a dependent variable, and whether there is an **interaction effect** between them.
 
 - **Null hypotheses (H₀):**
-  - The population means are the same across all levels of Factor A. Factor A has no influence on the dependent variable.  
+  - The population means of the dependent variable are the same across all levels of Factor A. Factor A has no influence on the dependent variable.  
     例如:低劑量組與高劑量組 (Factor A) 的血壓平均值 (dependent variable)在母體中是一樣的，因此藥物劑量不會影響血壓。
-  - The population means are the same across all levels of Factor B. Factor B has no influence on the dependent variable.
+  - The population means of the dependent variable are the same across all levels of Factor B.
   - The influence of Factor A does not depend on Factor B.
 
 **Test statistic (for each factor):**
@@ -214,9 +215,9 @@ print(posthoc[['A', 'B', 'p-unc', 'p-adj', 'sig']])
 
 ### Eta squared (η²)
 
-\[
+$$
 \eta^2 = \frac{SS*{\text{between}}}{SS*{\text{total}}}
-\]
+$$
 
 - **SS_between**: Sum of squares between groups (variation explained by the independent variable).
 - **SS_total**: Total sum of squares (total variation in the data).
@@ -225,9 +226,9 @@ print(posthoc[['A', 'B', 'p-unc', 'p-adj', 'sig']])
 
 ### Partial eta squared (η²ₚ)
 
-\[
+$$
 \eta^2*p = \frac{SS*{\text{effect}}}{SS*{\text{effect}} + SS*{\text{error}}}
-\]
+$$
 
 - **SS_effect**: Sum of squares for the specific factor or interaction.
 - **SS_error**: Sum of squares for the error (residuals).
@@ -244,6 +245,6 @@ print(posthoc[['A', 'B', 'p-unc', 'p-adj', 'sig']])
 📌 **Summary:**
 
 - ANOVA tests whether there is a difference among groups, but not which groups differ.
-- Post-hoc analysis (Tukey’s HSD, Bonferroni, etc.) is essential when ANOVA is significant.
+- Post-hoc analysis is essential when ANOVA is significant.
 - Always check assumptions (normality, independence, equal variances).
 - Use `Welch’s ANOVA` if variances are unequal, or Kruskal–Wallis for non-parametric data.
