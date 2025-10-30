@@ -64,7 +64,7 @@ $$
 CI = \left( e^{\ln(OR) - 1.96 \times SE}, \; e^{\ln(OR) + 1.96 \times SE} \right)
 $$
 
-## Example in Python
+## Python Example
 
 ```python
 import numpy as np
@@ -99,13 +99,7 @@ $$
 - $\beta_0$: intercept
 - $\beta_i$: coefficient for predictor \(X_i\)
 
-The exponentiated coefficients:
-
-$$
-e^{\beta_i}
-$$
-
-are **odds ratios**, representing the multiplicative change in odds for a one-unit increase in predictor $X_i$.
+The exponentiated coefficients, $e^{\beta_i}$, are **odds ratios**, representing the multiplicative change in odds for a one-unit increase in predictor $X_i$.
 
 ## Summary
 
