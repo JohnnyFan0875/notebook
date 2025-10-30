@@ -86,6 +86,8 @@ Before choosing a statistical test, it’s essential to check whether your data 
 Used when the dependent variable is **categorical (nominal)** or represents **counts or proportions**.  
 Tests are based on binomial or multinomial distributions — no assumption of normality.
 
+#### Common Tests
+
 | Scenario                                                      | Common Test                                                                                                                                                                        | Type                  |
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | One group proportion                                          | [Exact Binomial Test](./exact-test.md#exact-binomial-test) / [One-sample proportion z-test](./proportion-tests.md#one-sample-proportion-test)                                      | Exact / Approximation |
