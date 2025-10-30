@@ -26,8 +26,8 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 ## Basic Concepts
 
-| Term                                                                                      | Meaning                                                                                                                                               | Note                                                             |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Term                                                                                  | Meaning                                                                                                                                               | Note                                                             |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | [Significance (α) & Confidence Levels (1 − α)](significance-and-confidence-levels.md) | Determines how much probability of error (Type I error) is acceptable, which corresponds to the confidence level.                                     | Affects the setting of confidence intervals and critical values. |
 | [Confidence Intervals (CI)](confidence-interval.md)                                   | The range estimated from the sample that is likely to contain the population parameter, reflecting the confidence level set by α.                     | Directly related to the z or t distribution.                     |
 | [t-score vs z-score](t-z-score.md)                                                    | How many standard errors the sample mean (or observation) is away from the population mean                                                            | Used for calculating p-values and confidence intervals.          |
@@ -42,6 +42,20 @@ Selecting the correct test depends on:
 - the **type of dependent variable** (continuous vs categorical),
 - whether assumptions like **normality** and **equal variances** are met,
 - whether data are **independent or paired**.
+
+### Assumption Tests (Diagnostic Tests)
+
+Before choosing a statistical test, it’s essential to check whether your data meet key assumptions such as **normality**, **equal variances**, and **independence**.  
+These are diagnostic checks — not hypothesis tests themselves.
+
+| Assumption                        | Test(s)                                                                                                                                            | Purpose                                     | Recommended Use                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------- |
+| **Normality**                     | [Shapiro–Wilk](normality-tests.md#shapirowilk-test), [K–S test](normality-tests.md#kolmogorovsmirnov-test)                                         | Tests if data follow a normal distribution. | Shapiro–Wilk for small to medium samples. |
+| **Equal variances (homogeneity)** | [Levene’s](variance-tests.md#levenes-test), [Brown–Forsythe](variance-tests.md#brownforsythe-test), [Bartlett’s](variance-tests.md#bartletts-test) | Tests equality of variances across groups.  | Use Bartlett only if normality is met.    |
+| **Independence**                  | – (usually by design); optionally **Durbin–Watson** or **Runs test**                                                                               | Ensures each observation is independent.    | For time-series or repeated-measure data. |
+
+**Note:**  
+If assumptions are violated, use non-parametric alternatives (Mann–Whitney, Kruskal–Wallis, etc.) or robust methods (Welch’s ANOVA).
 
 ### Continuous or Ordinal Data
 
@@ -65,21 +79,6 @@ Statistical tests are broadly classified based on the assumptions they make abou
 | Two related groups (paired data)         | [Paired t-test](./t-tests.md#paired-sample-t-test-dependent-samples)                | [Wilcoxon signed-rank](./non-parametric-tests.md#wilcoxon-signed-rank-test)                            | Example: before–after measurements                |
 | ≥ 3 independent groups                   | [One-way ANOVA](./anova.md)                                                         | [Kruskal–Wallis](./non-parametric-tests.md#kruskalwallis-test)                                         | Post-hoc tests (Tukey, Bonferroni) if significant |
 | Two factors (with interaction)           | [Two-way ANOVA](./anova.md#two-way-anova-factorial-anova)                           | Aligned Rank Transform ANOVA (ART ANOVA) / PERMANOVA                                                   | Report effect sizes (η², η²ₚ)                     |
-
-#### Assumption Tests (diagnostic tests)
-
-Before choosing a statistical test, it’s essential to check whether your data meet **key assumptions** such as `normality` and `equal variances`. These diagnostic tests are not parametric or non-parametric by themselves.
-
-- If normality or equal variance assumptions are violated → use **non-parametric alternatives** (e.g., Mann–Whitney, Kruskal–Wallis, or ART ANOVA).
-- For unequal variances in ANOVA → use **Welch’s ANOVA**.
-
-| Assumption                        | Test                                                                   | Purpose                                                               | Recommended Use                             |
-| --------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
-| **Normality**                     | [Shapiro–Wilk test](./normality-tests.md#shapirowilk-test)             | Tests if data come from a normal distribution.                        | General test for small to moderate samples. |
-|                                   | [Kolmogorov–Smirnov test](./normality-tests.md#kolmogorovsmirnov-test) | Tests goodness-of-fit to normal distribution.                         | Alternative for larger samples.             |
-| **Equal variances (homogeneity)** | [Levene’s test](./variance-tests.md#levenes-test)                      | Tests equality of variances across groups; robust to non-normal data. | General-purpose test.                       |
-|                                   | [Brown–Forsythe test](./variance-tests.md#brownforsythe-test)          | Modified Levene’s using medians; robust to outliers.                  | Best for skewed or heteroscedastic data.    |
-|                                   | [Bartlett’s test](./variance-tests.md#bartletts-test)                  | Tests equality of variances (assumes normality).                      | Use only for normal data.                   |
 
 ### Categorical or Count Data
 
