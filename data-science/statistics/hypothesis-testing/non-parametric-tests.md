@@ -74,14 +74,3 @@ group3 = [15, 16, 14, 17, 15]
 statistic, p_value = stats.kruskal(group1, group2, group3)
 print("Kruskal–Wallis statistic:", statistic, "p-value:", p_value)
 ```
-
-## Other Non-parametric or Exact Tests
-
-These tests are also **non-parametric**, but they focus on **categorical or count data** rather than continuous or ordinal ranks.
-
-| Test                                                   | Purpose                                                                                                                   | Data Type / Use Case                    |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| [**Binomial Test**](./binomial-test.md)                | Tests whether an observed proportion differs from a hypothesized value (exact probability from binomial distribution).    | Binary (success/failure, single sample) |
-| [**Fisher’s Exact Test**](./fisher-exact-test.md)      | Tests for association between two categorical variables in a 2×2 contingency table (exact test, valid for small samples). | Categorical (2×2 table)                 |
-| [**Chi-square Test**](./chi-square.md)                 | Tests for association or goodness-of-fit between categorical variables (approximation for large samples).                 | Categorical (r×c table, frequencies)    |
-| [**Proportion Tests (z-test)**](./proportion-tests.md) | Compares one or two sample proportions to hypothesized values (normal approximation of binomial).                         | Binary or categorical (large samples)   |
