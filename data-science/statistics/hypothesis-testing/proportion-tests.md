@@ -55,7 +55,7 @@ print(z_stat, p_value)
 Each group must satisfy:
 
 $$
-n_i \hat{p}\_i \geq 10 \quad \text{and} \quad n_i (1 - \hat{p}\_i) \geq 10
+n_i \hat{p}\_i \geq 5 \text{ or } 10 \quad \text{and} \quad n_i (1 - \hat{p}\_i) \geq 5 \text{ or } 10
 $$
 
 ### Test Statistic
@@ -82,7 +82,13 @@ print("z-statistic:", z_stat, "p-value:", p_value)
 
 ## Relationship to Odds Ratio
 
-While proportion z-tests compare proportions directly, in **case–control studies** the **odds ratio (OR)** is often used instead.
+The **two-proportion z-test** looks at differences in proportions between two groups.  
+The **odds ratio** looks at ratios of odds between two groups.
+
+| Context / Concept                           | Measure Used                   | What It Quantifies                   | Typical Use Case                                 | Reason for Use                                                          |
+| ------------------------------------------- | ------------------------------ | ------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------- |
+| **Proportion z-test / Fisher’s Exact Test** | Difference between proportions | Compares probabilities directly      | Experiments, surveys                             | Probabilities can be directly estimated from data.                      |
+| **Odds Ratio (OR)**                         | Ratio of odds                  | Compares odds of outcome vs exposure | Case–control studies, logistic regression models | Probabilities cannot be directly estimated (sampling based on outcome). |
 
 - **OR = 1** → No association.
 - **OR > 1** → Higher odds of outcome in exposed group.
