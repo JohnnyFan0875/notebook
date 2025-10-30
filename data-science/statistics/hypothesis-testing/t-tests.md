@@ -17,7 +17,18 @@
 **Assumptions:**
 
 - Independence of observations
-- Normality of data (important for small samples; CLT helps when $n ≥ 30$)
+- Normality of data (important for small samples; CLT helps when $n ≥ 30$)(if not, use [one-sample Wilcoxon Signed-Rank Test](./non-parametric-tests.md#one-sample-wilcoxon-signed-rank-test))
+
+**Formula:**
+
+$$
+t = \frac{\bar{x} - \mu_0}{s / \sqrt{n}}
+$$
+
+- $\bar{x}$: sample mean  
+- $\mu_0$: hypothesized (population) mean  
+- $s$: sample standard deviation  
+- $n$: sample size  
 
 **Python Example:**
 
@@ -51,8 +62,10 @@ $$
 
 **Alternatives:**
 
-- Welch’s t-test (unequal variances)
-- Mann–Whitney U test (non-parametric)
+| Situation                                                                                    | Test                                                                                                     |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| data roughly follow a **normal distribution** but have **unequal variances or sample sizes** | **Welch’s t-test**                                                                                       |
+| data are **non-normal** (e.g., skewed, ordinal, or contain outliers)                         | [Mann–Whitney U test](./non-parametric-tests.md#mannwhitney-u-test-wilcoxonmannwhitney) (non-parametric) |
 
 **Python Example:**
 
@@ -63,6 +76,8 @@ sample_2 = [30, 28, 29, 32, 31, 30, 33, 29, 30, 32]
 t_statistic, p_value = stats.ttest_ind(sample_1, sample_2, equal_var=True)
 print(t_statistic, p_value)
 ```
+
+- `equal_var=False` for Welch's t-test
 
 ## Paired Sample t-test (Dependent Samples)
 

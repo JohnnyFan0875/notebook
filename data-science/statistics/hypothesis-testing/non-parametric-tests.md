@@ -21,6 +21,27 @@ statistic, p_value = stats.wilcoxon(before_treatment, after_treatment)
 print("Wilcoxon statistic:", statistic, "p-value:", p_value)
 ```
 
+## One-Sample Wilcoxon Signed-Rank Test
+
+- **Purpose:** Non-parametric alternative to the one-sample t-test.
+- **Use case:** Compare a single sample median against a hypothesized value (default is 0).
+- **Null hypothesis (H₀):** Median of the differences between sample values and the hypothesized value = 0.
+
+**Python Example:**
+
+```python
+from scipy import stats
+
+sample_data = [6, 8, 7, 10, 9]
+hypothesized_median = 7
+
+# Calculate difference from hypothesized median
+differences = [x - hypothesized_median for x in sample_data]
+
+statistic, p_value = stats.wilcoxon(differences)
+print("Wilcoxon statistic:", statistic, "p-value:", p_value)
+```
+
 ### Mann–Whitney U Test (Wilcoxon–Mann–Whitney)
 
 - **Purpose:** Non-parametric alternative to the two-sample t-test.
