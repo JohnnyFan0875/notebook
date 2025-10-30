@@ -2,7 +2,7 @@
 
 Exact tests compute **true p-values** using discrete probability distributions,  
 without relying on large-sample (normal or chi-square) approximations.  
-They are most useful when **sample sizes are small** (usually count < 5>) or **expected frequencies are low**.
+They are most useful when **sample sizes are small** (usually count < 5) or **expected frequencies are low**.
 
 ## Exact Binomial Test
 
