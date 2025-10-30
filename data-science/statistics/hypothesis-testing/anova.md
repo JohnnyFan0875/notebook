@@ -29,6 +29,11 @@ $$
 - $MS\_{\text{between}}$: variance between group means
 - $MS\_{\text{within}}$: variance within groups
 
+| F value    | Meaning                                                          |
+| ---------- | ---------------------------------------------------------------- |
+| **F ≈ 1**  | Group means are similar                                          |
+| **F >> 1** | Between-group variance is much larger than within-group variance |
+
 ### Distribution and Degrees of Freedom
 
 The **F-statistic** follows the F-distribution, which is **right-skewed** and defined by two parameters:
@@ -45,16 +50,26 @@ where:
 The critical value depends on the chosen significance level (α).  
 A larger F-value (relative to this cutoff) indicates that **between-group variation exceeds within-group variation**.
 
-### Interpretation
+### Relationship Between F and p-value
 
-| F value     | Meaning                                                                      |
-| ----------- | ---------------------------------------------------------------------------- |
-| **F ≈ 1**   | Group means are similar → fail to reject H₀                                  |
-| **F >> 1**  | Between-group variance is much larger than within-group variance → reject H₀ |
-| **p-value** | Probability of obtaining this F-ratio under H₀                               |
+Once the **F-statistic** is computed, its corresponding **p-value** is obtained from the F-distribution:
 
-- If **p ≤ α** (commonly 0.05), reject H₀ — meaning at least one group differs significantly.
-- However, ANOVA does **not** indicate _which_ groups differ; follow-up [**post-hoc tests**](#post-hoc-analysis) are required.
+$$
+p = P(F' \geq F_{\text{observed}} \mid H_0)
+$$
+
+- The **F-statistic** measures how large the between-group variance is relative to the within-group variance, while the **p-value** quantifies the probability of obtaining such an F if all group means were truly equal ($H_0$).
+- **Large F-value** → **small p-value** → such an extreme ratio of variances is unlikely under $H_0$.
+- **F-value near 1** → **large p-value** → group differences are no greater than expected by random chance.
+
+**Decision rule:**
+
+- If **p ≤ α** → reject $H_0$ → at least one group mean differs significantly.
+- If **p > α** → fail to reject $H_0$ → differences are not statistically significant.
+
+### Note
+
+- ANOVA does **not** indicate _which_ groups differ; follow-up [**post-hoc tests**](#post-hoc-analysis) are required.
 - With more groups → more pairwise comparisons → higher chance of Type I error (false positives). Adjustments are required.
 
 ## Python Example
