@@ -58,6 +58,21 @@ Used when the dependent variable is **numeric (interval/ratio)** or **ordinal (o
 | ≥ 3 independent groups                   | [One-way ANOVA](./anova.md)                                                         | [Kruskal–Wallis](./non-parametric-tests.md#kruskalwallis-test)                                         | Post-hoc tests (Tukey, Bonferroni) if significant |
 | Two factors (with interaction)           | [Two-way ANOVA](./anova.md#two-way-anova-factorial-anova)                           | Aligned Rank Transform ANOVA (ART ANOVA) / PERMANOVA                                                   | Report effect sizes (η², η²ₚ)                     |
 
+**Assumption Tests (diagnostic tests)**
+
+Before choosing a statistical test, it’s essential to check whether your data meet **key assumptions** such as `normality` and `equal variances`. These diagnostic tests are not parametric or non-parametric by themselves.
+
+- If normality or equal variance assumptions are violated → use **non-parametric alternatives** (e.g., Mann–Whitney, Kruskal–Wallis, or ART ANOVA).
+- For unequal variances in ANOVA → use **Welch’s ANOVA**.
+
+| Assumption                        | Test                                                                   | Purpose                                                               | Recommended Use                             |
+| --------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
+| **Normality**                     | [Shapiro–Wilk test](./normality-tests.md#shapirowilk-test)             | Tests if data come from a normal distribution.                        | General test for small to moderate samples. |
+|                                   | [Kolmogorov–Smirnov test](./normality-tests.md#kolmogorovsmirnov-test) | Tests goodness-of-fit to normal distribution.                         | Alternative for larger samples.             |
+| **Equal variances (homogeneity)** | [Levene’s test](./variance-tests.md#levenes-test)                      | Tests equality of variances across groups; robust to non-normal data. | General-purpose test.                       |
+|                                   | [Brown–Forsythe test](./variance-tests.md#brownforsythe-test)          | Modified Levene’s using medians; robust to outliers.                  | Best for skewed or heteroscedastic data.    |
+|                                   | [Bartlett’s test](./variance-tests.md#bartletts-test)                  | Tests equality of variances (assumes normality).                      | Use only for normal data.                   |
+
 ### Categorical or Count Data
 
 Used when the dependent variable is **categorical (nominal)** or represents **counts or proportions**.  
@@ -76,23 +91,6 @@ Exact vs Approximation
 | ----------------- | ------------------------- | -------------------------------------------------------------------------------------- | ------------------------------ | --------------------------------- |
 | **Exact**         | Binomial / Hypergeometric | Compute the _true probability (p-value)_ using the exact discrete distribution         | Exact Binomial, Fisher’s Exact | Small sample, low expected counts |
 | **Approximation** | Normal / Chi-square       | Use a _continuous approximation_ (e.g., normal or chi-square) to estimate the p-value. | Proportion z-test, Chi-square  | Large sample, expected counts ≥ 5 |
-
-## Assumption Tests (diagnostic tests)
-
-Before choosing a statistical test, it’s essential to check whether your data meet **key assumptions** such as `normality` and `equal variances`. These diagnostic tests are not parametric or non-parametric by themselves.
-
-| Assumption                        | Test                                                                   | Purpose                                                               | Recommended Use                             |
-| --------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
-| **Normality**                     | [Shapiro–Wilk test](./normality-tests.md#shapirowilk-test)             | Tests if data come from a normal distribution.                        | General test for small to moderate samples. |
-|                                   | [Kolmogorov–Smirnov test](./normality-tests.md#kolmogorovsmirnov-test) | Tests goodness-of-fit to normal distribution.                         | Alternative for larger samples.             |
-| **Equal variances (homogeneity)** | [Levene’s test](./variance-tests.md#levenes-test)                      | Tests equality of variances across groups; robust to non-normal data. | General-purpose test.                       |
-|                                   | [Brown–Forsythe test](./variance-tests.md#brownforsythe-test)          | Modified Levene’s using medians; robust to outliers.                  | Best for skewed or heteroscedastic data.    |
-|                                   | [Bartlett’s test](./variance-tests.md#bartletts-test)                  | Tests equality of variances (assumes normality).                      | Use only for normal data.                   |
-
-**Tip:**
-
-- If normality or equal variance assumptions are violated → use **non-parametric alternatives** (e.g., Mann–Whitney, Kruskal–Wallis, or ART ANOVA).
-- For unequal variances in ANOVA → use **Welch’s ANOVA**.
 
 ## Critical Notes
 
