@@ -45,8 +45,7 @@ Selecting the correct test depends on:
 
 ### Assumption Tests (Diagnostic Tests)
 
-Before choosing a statistical test, it’s essential to check whether your data meet key assumptions such as **normality**, **equal variances**, and **independence**.  
-These are diagnostic checks — not hypothesis tests themselves.
+Before choosing a statistical test, it’s essential to check whether your data meet key assumptions such as **normality**, **equal variances**, and **independence**. These are diagnostic checks — not hypothesis tests themselves.
 
 | Assumption                        | Test(s)                                                                                                                                            | Purpose                                     | Recommended Use                           |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------- |

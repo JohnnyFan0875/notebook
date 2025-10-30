@@ -87,11 +87,7 @@ print("z-statistic:", z_stat, "p-value:", p_value)
 | **Proportion z-test / Fisher’s Exact Test** | Difference between proportions | Compares probabilities directly      | Experiments, surveys                             | Probabilities can be directly estimated from data.                      |
 | **Odds Ratio (OR)**                         | Ratio of odds                  | Compares odds of outcome vs exposure | Case–control studies, logistic regression models | Probabilities cannot be directly estimated (sampling based on outcome). |
 
-- **OR = 1** → No association.
-- **OR > 1** → Higher odds of outcome in exposed group.
-- **OR < 1** → Lower odds of outcome in exposed group.
-
-See [odds ratio](../odds-ratio.md) for details on calculation and interpretation.
+See [odds ratio](./odds-ratio.md) for details on calculation and interpretation.
 
 ## 📌 Summary
 

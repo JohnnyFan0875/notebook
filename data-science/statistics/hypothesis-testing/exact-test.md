@@ -59,7 +59,7 @@ p-value = 0.5034 > 0.05 → fail to reject H₀. The observed success rate is co
 
 ### Hypotheses
 
-- **Null hypothesis (H₀):** The two categorical variables are independent (no association).
+- **Null hypothesis (H₀):** The two categorical variables are independent (no association). [Odds ratio (OR)](./odds-ratio.md) = 1
 - **Alternative hypothesis (H₁):** The two variables are associated (dependent).
 
 ### Formula
