@@ -35,7 +35,19 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 | [**p-value**](p-value.md)                                                                 | Measures the probability of observing such an extreme result assuming H₀ is true; compared against α to decide whether to reject H₀.                  | Related to statistical power (1 − β).                            |
 | [**Power & Effect Size**](power-effect-size.md)                                           | Power = 1 − β represents the probability of correctly rejecting H₀ when it is false; effect size describes how large or meaningful the difference is. | Provides practical interpretation of statistical results.        |
 
-## Parametric vs Non-parametric Tests
+## Choosing the Right Test
+
+Selecting the correct test depends on:
+
+- the **type of dependent variable** (continuous vs categorical),
+- whether assumptions like **normality** and **equal variances** are met,
+- and whether data are **independent or paired**.
+
+### Continuous or Ordinal Data
+
+Used when the dependent variable is **numeric (interval/ratio)** or **ordinal (ordered category)**.
+
+#### Parametric vs Non-parametric Tests
 
 Statistical tests are broadly classified based on the assumptions they make about data distribution:
 
@@ -44,11 +56,7 @@ Statistical tests are broadly classified based on the assumptions they make abou
 | **Parametric Tests**     | Assume data follow a specific distribution (usually normal) and rely on parameters like mean and standard deviation. Use when normality and equal variance assumptions are met; generally more powerful when valid. |
 | **Non-parametric Tests** | Make minimal distributional assumptions and are suitable for ordinal, skewed, or small-sample data. Use when data violate parametric assumptions; analyze medians or ranks rather than means.                       |
 
-## Choosing the Right Test
-
-### Continuous or Ordinal Data
-
-Used when the dependent variable is **numeric (interval/ratio)** or **ordinal (ordered category)**.
+#### Common Tests
 
 | Scenario                                 | Parametric Test                                                                     | Non-parametric / Exact Alternative                                                                     | Notes                                             |
 | ---------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
@@ -58,7 +66,7 @@ Used when the dependent variable is **numeric (interval/ratio)** or **ordinal (o
 | ≥ 3 independent groups                   | [One-way ANOVA](./anova.md)                                                         | [Kruskal–Wallis](./non-parametric-tests.md#kruskalwallis-test)                                         | Post-hoc tests (Tukey, Bonferroni) if significant |
 | Two factors (with interaction)           | [Two-way ANOVA](./anova.md#two-way-anova-factorial-anova)                           | Aligned Rank Transform ANOVA (ART ANOVA) / PERMANOVA                                                   | Report effect sizes (η², η²ₚ)                     |
 
-**Assumption Tests (diagnostic tests)**
+#### Assumption Tests (diagnostic tests)
 
 Before choosing a statistical test, it’s essential to check whether your data meet **key assumptions** such as `normality` and `equal variances`. These diagnostic tests are not parametric or non-parametric by themselves.
 
@@ -85,7 +93,7 @@ Tests are based on binomial or multinomial distributions — no assumption of no
 | Association between two categorical variables (r×c table)     | [Chi-square Test of Independence](./chi-square.md#chi-square-test-of-independence) / [Fisher’s Exact Test](./exact-test.md#association-between-two-categorical-variables-rc-table) | Approximation / Exact |
 | Goodness-of-fit (observed vs expected frequency distribution) | [Chi-square Goodness-of-Fit](./chi-square.md#chi-square-goodness-of-fit)                                                                                                           | Approximation         |
 
-Exact vs Approximation
+#### Exact vs Approximation
 
 | Type              | Typical Distribution      | Meaning                                                                                | Example Tests                  | Recommended When                  |
 | ----------------- | ------------------------- | -------------------------------------------------------------------------------------- | ------------------------------ | --------------------------------- |
