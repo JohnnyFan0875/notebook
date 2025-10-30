@@ -17,7 +17,8 @@
 **Assumptions:**
 
 - Independence of observations
-- Normality of data (important for small samples; CLT helps when $n ≥ 30$)(if not, use [one-sample Wilcoxon Signed-Rank Test](./non-parametric-tests.md#one-sample-wilcoxon-signed-rank-test))
+- Normality of data (important for small samples; CLT helps when $n ≥ 30$)
+  - if not, use [one-sample Wilcoxon Signed-Rank Test](./non-parametric-tests.md#one-sample-wilcoxon-signed-rank-test)
 
 **Formula:**
 
@@ -25,10 +26,10 @@ $$
 t = \frac{\bar{x} - \mu_0}{s / \sqrt{n}}
 $$
 
-- $\bar{x}$: sample mean  
-- $\mu_0$: hypothesized (population) mean  
-- $s$: sample standard deviation  
-- $n$: sample size  
+- $\bar{x}$: sample mean
+- $\mu_0$: hypothesized (population) mean
+- $s$: sample standard deviation
+- $n$: sample size
 
 **Python Example:**
 
@@ -85,6 +86,7 @@ print(t_statistic, p_value)
 - **Assumptions:**
   - Independence between pairs
   - Differences approximately normally distributed (important for small n, CLT helps for larger n)
+    - if not, use [Wilcoxon Signed-Rank Test](./non-parametric-tests.md#wilcoxon-signed-rank-test)
 
 **Formula:**
 

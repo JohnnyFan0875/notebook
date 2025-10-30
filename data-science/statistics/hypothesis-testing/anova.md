@@ -1,4 +1,4 @@
-# ANOVA (Analysis of Variance)
+# ANOVA
 
 ANOVA (Analysis of Variance) is used to compare the means of **three or more groups**.  
 It evaluates whether at least one group mean differs from the others.
@@ -12,9 +12,10 @@ It evaluates whether at least one group mean differs from the others.
 
 - Independence of observations
 - Normality within each group
+  - If not, use [Kruskal–Wallis test](./non-parametric-tests.md#kruskalwallis-test)
 - Equal variances across groups
-  - If violated → use **Welch’s ANOVA** (unequal variances)
-  - If non-normal → use **Kruskal–Wallis test** (non-parametric alternative)
+  - If not, use **Welch’s ANOVA**
+- If both normality or variance equality are violated, use **Kruskal–Wallis test** for safer choice.
 
 ## Test Statistic
 
