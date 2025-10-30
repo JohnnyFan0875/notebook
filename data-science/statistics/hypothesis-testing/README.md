@@ -45,8 +45,6 @@ Statistical tests are broadly classified based on the assumptions they make abou
 
 ## Choosing the Right Test
 
-This section is now divided into two parts based on data type:
-
 ### Continuous or Ordinal Data
 
 Used when the dependent variable is **numeric (interval/ratio)** or **ordinal**.
@@ -61,15 +59,22 @@ Used when the dependent variable is **numeric (interval/ratio)** or **ordinal**.
 
 ### Categorical or Count Data
 
-Used when the dependent variable is **categorical (nominal)** or represents **counts/frequencies**.
+Used when the dependent variable is **categorical (nominal)** or represents **counts or proportions**.  
 Tests are based on binomial or multinomial distributions — no assumption of normality.
 
-| Scenario                                                  | Common Test                                                                                                                        | Type                  | Notes                                                           |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- | --------------------------------------------------------------- |
-| One group proportion                                      | [Exact Binomial Test](./binomial-test.md) / [One-sample proportion z-test](./proportion-tests.md#one-sample-proportion-test)       | Exact / Approximation | Binomial for small n, z-test for large n.                       |
-| Two group proportions                                     | [Fisher’s Exact Test](./fisher-exact-test.md) / [Two-sample proportion z-test](./proportion-tests.md#two-sample-proportion-test)   | Exact / Approximation | Fisher for small n, z-test for large n.                         |
-| Association between two categorical variables (r×c table) | [Chi-square Test of Independence](./chi-square.md#chi-square-test-of-independence) / [Fisher’s Exact Test](./fisher-exact-test.md) | Approximation / Exact | Fisher for small expected counts; χ² for large samples.         |
-| Goodness-of-fit (observed vs expected)                    | [Chi-square Goodness-of-Fit](./chi-square.md#chi-square-goodness-of-fit)                                                           | Approximation         | Tests whether observed frequencies match expected distribution. |
+| Scenario                                                  | Common Test                                                                                                                        | Type                  |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| One group proportion                                      | [Exact Binomial Test](./binomial-test.md) / [One-sample proportion z-test](./proportion-tests.md#one-sample-proportion-test)       | Exact / Approximation |
+| Two group proportions                                     | [Fisher’s Exact Test](./fisher-exact-test.md) / [Two-sample proportion z-test](./proportion-tests.md#two-sample-proportion-test)   | Exact / Approximation |
+| Association between two categorical variables (r×c table) | [Chi-square Test of Independence](./chi-square.md#chi-square-test-of-independence) / [Fisher’s Exact Test](./fisher-exact-test.md) | Approximation / Exact |
+| Goodness-of-fit (observed vs expected)                    | [Chi-square Goodness-of-Fit](./chi-square.md#chi-square-goodness-of-fit)                                                           | Approximation         |
+
+#### Exact vs Approximation
+
+| Type              | Typical Distribution      | Example Tests                  | Recommended When                  |
+| ----------------- | ------------------------- | ------------------------------ | --------------------------------- |
+| **Exact**         | Binomial / Hypergeometric | Exact Binomial, Fisher’s Exact | Small sample, low expected counts |
+| **Approximation** | Normal / Chi-square       | Proportion z-test, Chi-square  | Large sample, expected counts ≥ 5 |
 
 ## Assumption Tests (diagnostic tests)
 
