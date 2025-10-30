@@ -25,7 +25,9 @@ For a binary exposure and a binary outcome (2 × 2 Contingency Table):
 | **Exposed**   | a                  | b                    |
 | **Unexposed** | c                  | d                    |
 
-$\text{Odds ratio (OR)} = \frac{a/c}{b/d} = \frac{ad}{bc}$
+$$
+\text{Odds ratio (OR)} = \frac{a/c}{b/d} = \frac{ad}{bc}
+$$
 
 ### Standard Error of Log(OR) and Confidence Interval
 
