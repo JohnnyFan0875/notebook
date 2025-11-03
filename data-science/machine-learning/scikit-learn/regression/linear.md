@@ -107,3 +107,4 @@ Prediction for new data: [12.3456]
 - Use **cross-validation** to ensure generalizability.
 - Feature scaling makes coefficients more comparable.
 - For non-linear relationships, consider **polynomial regression** or other models.
+- Reference: [Kaggle discussion](https://www.kaggle.com/discussions/getting-started/27261).

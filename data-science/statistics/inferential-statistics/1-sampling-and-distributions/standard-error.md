@@ -1,15 +1,16 @@
 #### Standard Error
 
-The **Standard Error (SE, 標準誤)** quantifies how much a **sample statistic** (such as the sample mean) would vary if we repeatedly drew samples from the same population.  
-It represents the **standard deviation of a sampling distribution** — that is, the variability of an estimator, not of individual data points.  
-標準誤代表「樣本平均」在不同抽樣下會變動多少。若不斷重複抽樣，每次都算平均數，這些平均值會圍繞在母體平均數附近，形成分佈。這個分佈的標準差，就是標準誤。
+The **Standard Error (SE, 標準誤)** quantifies how much a **sample statistic** (such as the sample mean) would vary if we repeatedly drew samples from the same population.
+
+- It represents the **standard deviation of a sampling distribution** — that is, the variability of an estimator, not of individual data points.
+- 標準誤代表「樣本平均」在不同抽樣下會變動多少。若不斷重複抽樣，每次都算平均數，這些平均值會圍繞在母體平均數附近，形成分佈。這個分佈的標準差，就是標準誤。
 
 > - **Standard deviation (SD)** → describes variability _within_ a sample.
 > - **Standard error (SE)** → describes variability _between_ sample means.
 
 ## 1. Concept
 
-When we repeatedly take samples of size $ n $ from a population with mean $ \mu $ and standard deviation $\sigma$, the sample means $\bar{x}$ form a [**sampling distribution**](./sampling-and-clt.md#31-sampling-distribution-of-the-mean). The standard deviation of this distribution — the spread of the sample means — is called the **standard error**.
+When we repeatedly take samples of size $ n $ from a population with mean $\mu$ and standard deviation $\sigma$, the sample means $\bar{x}$ form a [**sampling distribution**](./sampling-and-clt.md#31-sampling-distribution-of-the-mean). The standard deviation of this distribution — the spread of the sample means — is called the **standard error**.
 
 $$
 SE =
@@ -19,19 +20,19 @@ SE =
 \end{cases}
 $$
 
-As sample size increases, $ SE $ decreases. Larger samples yield more stable and precise estimates of the population mean.
+As sample size increases, $SE$ decreases. Larger samples yield more stable and precise estimates of the population mean.
 
 ## 2. Relationship Between SD and SE
 
-| Concept                     | Symbol                 | Represents                             | Depends on                | Typical Use            |
-| --------------------------- | ---------------------- | -------------------------------------- | ------------------------- | ---------------------- |
+| Concept                     | Symbol               | Represents                             | Depends on                | Typical Use            |
+| --------------------------- | -------------------- | -------------------------------------- | ------------------------- | ---------------------- |
 | **Standard Deviation (SD)** | $s$                  | Variability of individual observations | Population or sample data | Descriptive statistics |
-| **Standard Error (SE)**     | $\frac{s}{\sqrt{n}}$ | Variability of sample means            | Sample size $ n $         | Inferential statistics |
+| **Standard Error (SE)**     | $\frac{s}{\sqrt{n}}$ | Variability of sample means            | Sample size $n$         | Inferential statistics |
 
 ## 3. Connection to Sampling Distribution
 
-- The **Law of Large Numbers** ensures that as $ n $ increases, sample means converge toward the true mean $ \mu $.
-- The **Central Limit Theorem (CLT)** tells us that the distribution of sample means becomes approximately normal for large $ n $.
+- The **Law of Large Numbers** ensures that as $n$ increases, sample means converge toward the true mean $\mu$.
+- The **Central Limit Theorem (CLT)** tells us that the distribution of sample means becomes approximately normal for large $n$.
 - The **Standard Error** gives the spread of that normal distribution.
 
 ## 5. Relation to Confidence Interval and Hypothesis Testing
