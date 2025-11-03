@@ -64,7 +64,7 @@ CI =
 \end{cases}
 $$
 
-- [Standard Error ($SE$)](./standard-error.md): variability between sample means
+- [Standard Error](./standard-error.md)($SE$): variability between sample means
 - Margion of Error ($E$): the maximum expected difference between the sample mean and the true population mean
 
 ## 5. Interpretation and Visualization
