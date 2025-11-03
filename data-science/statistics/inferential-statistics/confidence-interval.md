@@ -3,9 +3,19 @@
 A **confidence interval (CI)** provides a range of plausible values for a population parameter, based on sample data.  
 It reflects the degree of uncertainty around an estimate.
 
-👉 See also: [Significance and Confidence Levels](significance-and-confidence-levels.md)
+- Relationship with sampling distribution:
+  - The confidence interval for the mean is derived from the **sampling distribution of the sample mean**.
+  - When we repeatedly take samples of size $n$ from a population with mean $\mu$ and standard deviation $\sigma$, the sample means $\bar{x}$ follow an approximately **normal distribution** (by the Central Limit Theorem)
 
-## Formula for the Mean
+## 1. Concept Overview
+
+| Concept                                                                    | Meaning                                                               |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **Confidence Interval (CI)**                                               | Range of plausible values for a population parameter                  |
+| [**Confidence Level (1 − α)**](#3-confidence-level)                        | The proportion of repeated CIs expected to contain the true parameter |
+| [**Significance Level (α)**](../hypothesis-testing/significance-levels.md) | The complement of the confidence level (α = 1 − confidence level)     |
+
+## 2. Formula for the Mean
 
 | Case                                      | Formula for Confidence Interval of the Mean           | Distribution Used                    |
 | ----------------------------------------- | ----------------------------------------------------- | ------------------------------------ |
@@ -16,46 +26,23 @@ It reflects the degree of uncertainty around an estimate.
 - $σ$: population standard deviation
 - $s$: sample standard deviation
 - $n$: sample size
-- [**z / t**](./t-z-score.md): critical value corresponding to the desired confidence level
-  - Use **z** from the **standard normal distribution** when the population standard deviation (σ) is known or n is large (e.g., z = 1.96 for 95% confidence).
-  - Use **t** from the **Student’s t-distribution** when σ is unknown (critical value depends on degrees of freedom, df = n − 1).
+- [**z / t**](../hypothesis-testing/t-z-score.md): critical value corresponding to the desired confidence level
 
-### Relationship Between Sampling Distribution, Standard Error, and Margin of Error
+## 3. Confidence Level
 
-#### Sampling Distribution
+The **confidence level** represents the degree of certainty that a particular estimate includes the true population parameter.  
+對這個『估計方法』有多少信心，若重複做很多次實驗，有這個比例的信賴區間會包含真實答案。
 
-The confidence interval for the mean is derived from the **sampling distribution of the sample mean**.  
-When we repeatedly take samples of size $n$ from a population with mean $\mu$ and standard deviation $\sigma$, the sample means $\bar{x}$ follow an approximately **normal distribution** (by the Central Limit Theorem):
+- Confidence level = $1 − α$, where α is the significance level.
+- Common choices:
+  - 95% confidence level → α = 0.05
+  - 99% confidence level → α = 0.01
+- Interpretation:
+  - If we repeat the same study many times, approximately 95% (or 99%) of the calculated confidence intervals would contain the true parameter.
+  - It does **not** mean that there is a 95% probability the true parameter is in a specific interval (the parameter is fixed, the interval varies).
+    - 想像射箭 100 次，每次都畫一個區間（信賴區間）去「包住靶心」。95 次成功包到靶心表示方法的「信心」是 95%。但單看其中一個箭圈（某一次的區間）時，靶心不是「有 95% 機率在圈裡」，而是要嘛在裡面、要嘛不在裡面。
 
-$$
-\bar{x} \sim N\!\left(\mu, \frac{\sigma}{\sqrt{n}}\right)
-$$
-
-#### Standard Error
-
-The standard deviation of this sampling distribution is called the [Standard Error of the Mean (SE)](../descriptive-statistics.md#3-standard-error-se) — it quantifies how much sample means vary across repeated samples.
-
-$$
-SE =
-\begin{cases}
-\dfrac{\sigma}{\sqrt{n}} & \text{if population SD (}\sigma\text{) is known} \\
-\dfrac{s}{\sqrt{n}} & \text{if population SD (}\sigma\text{) is unknown}
-\end{cases}
-$$
-
-and the confidence interval (CI) is:
-
-$$
-CI =
-\begin{cases}
-\bar{x} \pm SE & \text{if population SD (}\sigma\text{) is known} \\
-\bar{x} \pm SE & \text{if population SD (}\sigma\text{) is unknown}
-\end{cases}
-$$
-
-#### Margin of Error
-
-Margion of Error ($E$): the maximum expected difference between the sample mean and the true population mean:
+## 4. Components of CI
 
 $$
 E =
@@ -69,28 +56,29 @@ $$
 \text{CI} = \bar{x} \pm E
 $$
 
-## Interpretation
+$$
+CI =
+\begin{cases}
+\bar{x} \pm SE & \text{if population SD (}\sigma\text{) is known} \\
+\bar{x} \pm SE & \text{if population SD (}\sigma\text{) is unknown}
+\end{cases}
+$$
 
-- **How confident we are that the interval contains the true population parameter**  
+- [Standard Error ($SE$)](./standard-error.md): variability between sample means
+- Margion of Error ($E$): the maximum expected difference between the sample mean and the true population mean
+
+## 5. Interpretation and Visualization
+
+- How confident we are that the interval contains the true population parameter  
   有多少的信心 (機率) 此信賴區間包含真實的母體參數
-
-- Uses of confidence intervals:
-
-  - Estimate a **true population parameter**
-  - Compare the **difference between two groups** in a sample population
-
 - Wider intervals → lower precision (often due to smaller sample size or higher variability).
-
-- For a 95% confidence level:
-
-  - Z-score ≈ 1.96
-  - The lower and upper bounds correspond to the **2.5th and 97.5th percentiles** of the sampling distribution of the mean.
+- For a **95%** confidence level, Z-score ≈ 1.96. The lower and upper bounds correspond to the **2.5th** and **97.5th** percentiles of the sampling distribution of the mean.
 
 <p align="center">
   <img src="https://miro.medium.com/v2/resize:fit:1100/format:webp/1*zhq4V275F0YthnSLYRU0FA.jpeg" width="500" height="300">
 </p>
 
-## Python Example (Simulation)
+## 6. Python Examples
 
 從一個母體（population）中重複抽樣，每次抽取 50 個樣本，總共重複 1000 次。
 每次抽樣後都計算該樣本的平均值，得到 1000 個樣本平均（`sample means`）。
@@ -124,8 +112,6 @@ print(f"Sample Mean of Sampling Distribution: {sample_mean:.2f}")
 print(f"95% Confidence Interval: ({quantile_2_5:.2f}, {quantile_97_5:.2f})")
 ```
 
-## Python Example (Analytical)
-
 ```python
 import numpy as np
 from scipy import stats
@@ -139,9 +125,9 @@ ci = stats.t.interval(confidence, len(data)-1, loc=mean, scale=sem) # df = len(d
 print("95% confidence interval:", ci)
 ```
 
-## Summary
+## 7. Summary
 
 - Confidence intervals provide a range of plausible values for a parameter.
 - Confidence level (1 − α) sets the degree of certainty.
 - Narrower intervals indicate higher precision (larger n or lower variance).
-- Always report CIs alongside [p-values](./p-value.md) and [effect sizes](./power-effect-size.md#effect-size) for robust interpretation.
+- Always report CIs alongside [p-values](../hypothesis-testing/p-value.md) and [effect sizes](./effect-size.md) for robust interpretation.

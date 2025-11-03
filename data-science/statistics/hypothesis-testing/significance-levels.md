@@ -61,24 +61,7 @@ Visually, α represents the **shaded area(s)** in the distribution tail(s) used 
 
 ## Confidence Level (1 − α)
 
-The **confidence level** represents the degree of certainty that a particular estimate includes the true population parameter.  
-對這個『估計方法』有多少信心，若重複做很多次實驗，有這個比例的信賴區間會包含真實答案。
+The **confidence level** represents the degree of certainty that a particular estimate includes the true population parameter.
 
-### Definition
-
-- Confidence level = $1 − α$, where α is the significance level.
-- Common choices:
-  - 95% confidence level → α = 0.05
-  - 99% confidence level → α = 0.01
-- Interpretation:
-  - If we repeat the same study many times, approximately 95% (or 99%) of the calculated confidence intervals would contain the true parameter.
-  - It does **not** mean that there is a 95% probability the true parameter is in a specific interval (the parameter is fixed, the interval varies).
-    - 想像射箭 100 次，每次都畫一個區間（信賴區間）去「包住靶心」。95 次成功包到靶心表示方法的「信心」是 95%。但單看其中一個箭圈（某一次的區間）時，靶心不是「有 95% 機率在圈裡」，而是要嘛在裡面、要嘛不在裡面。
-
-### Confidence Interval of the Mean
-
-- Please refer to [confidence interval](confidence-interval.md)
-
-<p align="center">
-  <img src="https://miro.medium.com/v2/resize:fit:1100/format:webp/1*zhq4V275F0YthnSLYRU0FA.jpeg" width="500" height="300">
-</p>
+- Plase refer to [confidence level](../inferential-statistics/confidence-interval.md)
+- Please refer to [confidence interval](../inferential-statistics/confidence-interval.md)
