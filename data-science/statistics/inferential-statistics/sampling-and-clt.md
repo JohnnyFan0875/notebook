@@ -66,15 +66,15 @@ $$
 \bar{X} \sim N\!\left(\mu, \frac{\sigma}{\sqrt{n}}\right)
 $$
 
-- $ \mu $: population mean
-- $ \sigma / \sqrt{n} $: **standard error** — variability of sample means
-- As $ n $ increases → sampling distribution becomes narrower → estimates become more precise
+- $\mu$: population mean
+- $\sigma / \sqrt{n}$: **standard error** — variability of sample means
+- As $n$ increases → sampling distribution becomes narrower → estimates become more precise
 
 ## 4. Central Limit Theorem (CLT)
 
 ### 4.1 Definition
 
-The **Central Limit Theorem** states that the sampling distribution of the sample mean approaches a **normal distribution** as the sample size $ n $ increases (typically n ≥ 30) — regardless of the shape of the original population.
+The **Central Limit Theorem** states that the sampling distribution of the sample mean approaches a **normal distribution** as the sample size $n$ increases (typically n ≥ 30) — regardless of the shape of the original population.
 
 $$
 \bar{X} \xrightarrow{d} N(\mu, \frac{\sigma^2}{n}) \text{ as } n \to \infty
@@ -85,7 +85,7 @@ $$
 | Concept                 | Implication                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
 | **Inference**           | Enables use of normal (z) or t distributions even for non-normal populations |
-| **Standard Error**      | Justifies why $ SE = \frac{s}{\sqrt{n}} $ quantifies uncertainty             |
+| **Standard Error**      | Justifies why $SE = \frac{s}{\sqrt{n}}$ quantifies uncertainty             |
 | **Confidence Interval** | Validates construction of CIs using sample statistics                        |
 | **Hypothesis Testing**  | Allows test statistics to follow known distributions under H₀                |
 
