@@ -130,5 +130,3 @@ plt.show()
 - **Median** is robust; ideal for skewed data or when outliers exist.
 - **Mode** is appropriate for categorical or discrete variables.
 - When describing real data, it’s often useful to report **all three** to show distribution characteristics.
-
-**Next:** Explore [Variability](./variability.md) to understand how data spread complements the measures of center.
