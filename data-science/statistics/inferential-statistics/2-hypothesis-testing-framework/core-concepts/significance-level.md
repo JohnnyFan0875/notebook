@@ -1,7 +1,7 @@
 # Significance
 
 The **significance level (α)** is a threshold used in hypothesis testing to decide whether to reject the null hypothesis $H_0$.  
-接受多大的機率誤判。
+接受多大的機率誤判，其實也就是 **Type I Error rate**。
 
 ## Definition
 
