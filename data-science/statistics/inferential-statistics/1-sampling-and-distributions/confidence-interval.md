@@ -13,7 +13,7 @@ It reflects the degree of uncertainty around an estimate.
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | **Confidence Interval (CI)**                                               | Range of plausible values for a population parameter                  |
 | [**Confidence Level (1 − α)**](#3-confidence-level)                        | The proportion of repeated CIs expected to contain the true parameter |
-| [**Significance Level (α)**](../hypothesis-testing/significance-levels.md) | The complement of the confidence level (α = 1 − confidence level)     |
+| [**Significance Level (α)**](../2-hypothesis-testing-framework/core-concepts/significance-level.md) | The complement of the confidence level (α = 1 − confidence level)     |
 
 ## 2. Formula for the Mean
 
@@ -26,7 +26,7 @@ It reflects the degree of uncertainty around an estimate.
 - $σ$: population standard deviation
 - $s$: sample standard deviation
 - $n$: sample size
-- [**z / t**](../hypothesis-testing/t-z-score.md): critical value corresponding to the desired confidence level
+- [**z / t**](../2-hypothesis-testing-framework/core-concepts/t-z-score.md): critical value corresponding to the desired confidence level
 
 ## 3. Confidence Level
 
@@ -130,4 +130,4 @@ print("95% confidence interval:", ci)
 - Confidence intervals provide a range of plausible values for a parameter.
 - Confidence level (1 − α) sets the degree of certainty.
 - Narrower intervals indicate higher precision (larger n or lower variance).
-- Always report CIs alongside [p-values](../hypothesis-testing/p-value.md) and [effect sizes](./effect-size.md) for robust interpretation.
+- Always report CIs alongside [p-values](../2-hypothesis-testing-framework/core-concepts/p-value.md) and [effect sizes](../4-effect-size-and-power/effect-size.md) for robust interpretation.

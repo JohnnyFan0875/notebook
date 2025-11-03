@@ -9,7 +9,7 @@ It represents the **standard deviation of a sampling distribution** — that is,
 
 ## 1. Concept
 
-When we repeatedly take samples of size $ n $ from a population with mean $ \mu $ and standard deviation $ \sigma $, the sample means $ \bar{x} $ form a [**sampling distribution**](./sampling-and-clt.md#31-sampling-distribution-of-the-mean). The standard deviation of this distribution — the spread of the sample means — is called the **standard error**.
+When we repeatedly take samples of size $ n $ from a population with mean $ \mu $ and standard deviation $\sigma$, the sample means $\bar{x}$ form a [**sampling distribution**](./sampling-and-clt.md#31-sampling-distribution-of-the-mean). The standard deviation of this distribution — the spread of the sample means — is called the **standard error**.
 
 $$
 SE =
@@ -25,8 +25,8 @@ As sample size increases, $ SE $ decreases. Larger samples yield more stable and
 
 | Concept                     | Symbol                 | Represents                             | Depends on                | Typical Use            |
 | --------------------------- | ---------------------- | -------------------------------------- | ------------------------- | ---------------------- |
-| **Standard Deviation (SD)** | $ s $                  | Variability of individual observations | Population or sample data | Descriptive statistics |
-| **Standard Error (SE)**     | $ \frac{s}{\sqrt{n}} $ | Variability of sample means            | Sample size $ n $         | Inferential statistics |
+| **Standard Deviation (SD)** | $s$                  | Variability of individual observations | Population or sample data | Descriptive statistics |
+| **Standard Error (SE)**     | $\frac{s}{\sqrt{n}}$ | Variability of sample means            | Sample size $ n $         | Inferential statistics |
 
 ## 3. Connection to Sampling Distribution
 
