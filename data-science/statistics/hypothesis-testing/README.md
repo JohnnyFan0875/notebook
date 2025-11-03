@@ -7,7 +7,6 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 - **Null hypothesis (H₀):** No effect or no difference.
 - **Alternative hypothesis (Hₐ):** There is an effect or difference.
 - **Test statistic:** A standardized value (z, t, or F) used to compute the p-value.
-- **Central Limit Theorem (CLT)**: When the sample size is sufficiently large (typically n ≥ 30), the sampling distribution of the sample mean approximates a normal distribution, regardless of the population’s original shape.
 
 ## Type I and Type II Errors
 
@@ -22,7 +21,7 @@ Hypothesis testing is a framework to decide whether observed data provides enoug
 
 - **Randomness:** Samples are random subsets of larger populations
 - **Independence:** Each observation is independent (except paired tests)
-- **Sample size:** Large enough for the Central Limit Theorem (CLT) to apply
+- **Sample size:** Large enough for the [**Central Limit Theorem (CLT)**](../inferential-statistics/sampling-and-clt.md#4-central-limit-theorem-clt) to apply
 
 ## Basic Concepts
 

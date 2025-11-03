@@ -9,13 +9,7 @@ It represents the **standard deviation of a sampling distribution** — that is,
 
 ## 1. Concept
 
-When we repeatedly take samples of size $ n $ from a population with mean $ \mu $ and standard deviation $ \sigma $, the sample means $ \bar{x} $ form a **sampling distribution**:
-
-$$
-\bar{X} \sim N\!\left(\mu, \frac{\sigma}{\sqrt{n}}\right)
-$$
-
-The standard deviation of this distribution — the spread of the sample means — is called the **standard error**.
+When we repeatedly take samples of size $ n $ from a population with mean $ \mu $ and standard deviation $ \sigma $, the sample means $ \bar{x} $ form a [**sampling distribution**](./sampling-and-clt.md#31-sampling-distribution-of-the-mean). The standard deviation of this distribution — the spread of the sample means — is called the **standard error**.
 
 $$
 SE =
