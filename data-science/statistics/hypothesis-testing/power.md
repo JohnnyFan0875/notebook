@@ -37,7 +37,7 @@ $$
 \text{Power} = 1 - \Phi \!\left(z_{1-\alpha} - \frac{\delta \sqrt{n}}{\sigma}\right)
 $$
 
-where $ \Phi $ is the cumulative standard normal distribution.
+where $\Phi$ is the cumulative standard normal distribution.
 
 ## 4. Interpretation
 
