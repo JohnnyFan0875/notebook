@@ -56,18 +56,18 @@ Inferential statistics assume random sampling — non-probability methods limit 
 
 ## 3. Sampling Distribution
 
-A **sampling distribution** is the probability distribution of a statistic (e.g., mean, proportion, correlation) calculated from all possible samples of a given size $ n $ from a population.
+A **sampling distribution** is the probability distribution of a statistic (e.g., mean, proportion, correlation) calculated from all possible samples of a given size $n$ from a population.
 
 ### 3.1 Sampling Distribution of the Mean
 
-If we repeatedly sample from a population with mean $ \mu $ and standard deviation $ \sigma $:
+If we repeatedly sample from a population with mean $\mu$ and standard deviation $\sigma$:
 
 $$
 \bar{X} \sim N\!\left(\mu, \frac{\sigma}{\sqrt{n}}\right)
 $$
 
 - $\mu$: population mean
-- $\sigma / \sqrt{n}$: **standard error** — variability of sample means
+- $\frac{\sigma}{\sqrt{n}}$: **standard error** — variability of sample means
 - As $n$ increases → sampling distribution becomes narrower → estimates become more precise
 
 ## 4. Central Limit Theorem (CLT)
@@ -85,7 +85,7 @@ $$
 | Concept                 | Implication                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
 | **Inference**           | Enables use of normal (z) or t distributions even for non-normal populations |
-| **Standard Error**      | Justifies why $SE = \frac{s}{\sqrt{n}}$ quantifies uncertainty             |
+| **Standard Error**      | Justifies why $SE = \frac{s}{\sqrt{n}}$ quantifies uncertainty               |
 | **Confidence Interval** | Validates construction of CIs using sample statistics                        |
 | **Hypothesis Testing**  | Allows test statistics to follow known distributions under H₀                |
 
