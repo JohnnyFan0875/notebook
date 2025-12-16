@@ -67,7 +67,7 @@ $$
 $$
 
 - $\mu$: population mean
-- $\frac{\sigma}{\sqrt{n}}$: **standard error** — variability of sample means
+- $\frac{\sigma}{\sqrt{n}}$: [standard error](./standard-error.md) — variability of sample means
 - As $n$ increases → sampling distribution becomes narrower → estimates become more precise
 
 ## 4. Central Limit Theorem (CLT)
