@@ -1,0 +1,1 @@
+- [quality score](https://www.illumina.com/documents/products/technotes/technote_Q-Scores.pdf)
