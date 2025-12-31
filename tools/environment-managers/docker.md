@@ -36,7 +36,6 @@ docker images
 - Container Lifecycle
 
   ```mermaid
-  %%{init: {'theme': 'default'}}%%
   flowchart LR
       Image[Image]
       Created((Created))
@@ -64,7 +63,6 @@ docker images
 - Terminal Interaction
 
   ```mermaid
-  %%{init: {'theme': 'default'}}%%
   flowchart LR
       Terminal[Terminal]
       Attached[Attached Session]
