@@ -8,16 +8,51 @@ for creating containers.
 
 ```bash
 docker images          # List all images available on the local system.
-docker rmi <image_id>  # Remove image
 ```
 
-- use `docker ps -a` to check stopped containers if removal fails
+## Remove Images
+
+```bash
+docker rmi <image_id>  # Remove image
+docker image prune     # Remove dangling (untagged) images
+docker image prune -a  # Remove all images not referenced by any container
+```
+
+- Images referenced by **running** or **stopped** containers cannot be removed
+- Use docker `ps -a` to check for stopped containers if image removal fails
+- Remove containers first, or use `docker container prune`, before pruning images
+
+## Tag Images
+
+```bash
+docker tag <source_image>:<source_tag> <target_image>:<target_tag>
+```
+
+Note:
+
+- `docker tag` creates a new reference (tag) pointing to the same image
+- The original image and its tag are not modified or overwritten
+
+## Push / Pull Images
+
+```bash
+docker push <repository>:<tag>   # Push an image to a container registry
+docker pull <repository>:<tag>   # Pull an image from a container registry
+```
+
+Notes:
+
+- Tags are required to uniquely identify image versions
 
 ## Build Image (Standard Build)
 
 ```bash
 docker build .
 ```
+
+Note:
+
+- `-t`: Name and optionally a tag (format: "name:tag")
 
 - Build Cache Behavior
 
