@@ -41,7 +41,7 @@ Notes
   - Executed at container runtime
   - Defines the default command for the container
 
-> If CMD is not specified, Docker uses the CMD defined in the base image.
+> If CMD is not specified, Docker uses the CMD defined in the base image.  
 > If there is no base image and no CMD, the container will fail to start.
 
 ## Environment/Build-time Variables with ENV/ARG
