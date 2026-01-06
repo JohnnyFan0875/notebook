@@ -98,3 +98,12 @@ docker run -v SOURCE:TARGET:ro IMAGE
 | Anonymous Volume | ✅                | ❌                 | Yes\*            | Temporary container data   |
 
 - Removed automatically only when the container is run with `--rm`.
+
+## Other Operations
+
+```bash
+docker volume ls
+docker volume create VOL_NAME
+docker volume rm VOL_NAME
+docker volume prune # remove all unused volumes
+```
