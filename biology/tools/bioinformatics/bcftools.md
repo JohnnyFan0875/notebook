@@ -86,10 +86,21 @@ bcftools view -s sample1,sample2 input.vcf.gz -Oz -o subset.vcf.gz
 bcftools merge file1.vcf.gz file2.vcf.gz -Oz -o merged.vcf.gz
 ```
 
-## References
+### Query variant annotation (rsID)
 
----
+- Obtain dbSNP reference VCF from the NCBI FTP server: [Source](https://ftp.ncbi.nlm.nih.gov/snp/latest_release/VCF/)
+- dbSNP VCFs often use `RefSeq accessions` (e.g. NC_000011.9), while user VCFs may use `chr11` or `11`.
+  - Inspect chromosome naming: `bcftools view -h GCF_FILE | grep contig`
+  - If chromosome names are inconsistent, create a mapping file (`chrom_map.txt`) with the format:
+    ```bash
+    chr11   NC_000011.9
+    chr1    NC_000001.10
+    ```
 
-- [BCFtools GitHub](https://github.com/samtools/bcftools)
-- [VCF Specification](https://samtools.github.io/hts-specs/VCFv4.3.pdf)
-- [HTSlib Documentation](http://www.htslib.org/)
+```bash
+bgzip -c test.vcf > test.vcf.gz
+bcftools sort test.vcf.gz -Oz -o test.sorted.vcf.gz
+tabix -c vcf test.sorted.vcf.gz
+bcftools annotate --rename-chrs chrom_map.txt test.sorted.vcf.gz -Oz -o test.sorted.renamechr.vcf.gz # if required
+bcftools annotate -a GCF_FILE -c ID test.sorted.renamechr.vcf.gz
+```
