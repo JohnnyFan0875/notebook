@@ -189,18 +189,49 @@ print(f"Within ±2 SD: {within_2sd:.1%}")
 
 > ⚠️ These two are frequently confused. 這兩個非常容易搞混，務必區分清楚。
 
+**SE is the standard deviation of the sampling distribution** — not of the raw data. If you repeatedly drew samples of size n and computed the mean each time, those means would form a distribution. SE is _that_ distribution's standard deviation.
+
+$$SE = \begin{cases} \dfrac{\sigma}{\sqrt{n}} & \text{if population SD } \sigma \text{ is known} \\ \dfrac{s}{\sqrt{n}} & \text{if } \sigma \text{ is unknown (typical)} \end{cases}$$
+
 | Metric                      | Formula           | What It Describes                               | Use When                                     |
 | --------------------------- | ----------------- | ----------------------------------------------- | -------------------------------------------- |
 | **Standard Deviation (SD)** | √(Σ(xᵢ-x̄)²/(n-1)) | Spread of **individual data points**            | Describing how variable the data is          |
-| **Standard Error (SE)**     | SD / √n           | Precision of the **sample mean** as an estimate | Reporting how reliable your mean estimate is |
+| **Standard Error (SE)**     | s / √n            | Precision of the **sample mean** as an estimate | Reporting how reliable your mean estimate is |
 
 ```python
 se = std_sample / np.sqrt(len(values))
-print(f"SD: {std_sample:.4f}  ← spread of the data")
+print(f"SD: {std_sample:.4f}  ← spread of individual data points")
 print(f"SE: {se:.4f}  ← precision of the mean estimate")
 ```
 
-> 💡 SE decreases as sample size grows — a larger sample gives a more precise estimate of the population mean. SE 隨樣本數增加而縮小，代表估計越來越可靠。
+**Why SE connects to CLT, CI, and hypothesis testing:**
+
+- **CLT** tells us sample means are approximately normally distributed with spread = SE
+- **Confidence interval**: $\text{CI} = \bar{x} \pm t \times SE$ — smaller SE → narrower (more precise) interval
+- **t-test**: $t = (\bar{x} - \mu_0) / SE$ — smaller SE → larger t → easier to detect significant differences
+
+> 💡 SE 隨樣本數增加而縮小，代表估計越來越可靠。但 SD 不會因為 n 增加而改變——它描述的是資料本身的散佈，不是估計的精確度。
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Show how SE shrinks as n grows
+pop = np.random.normal(100, 15, 100_000)
+sample_sizes = [5, 10, 30, 100, 200]
+
+ses = []
+for n in sample_sizes:
+    means = [np.mean(np.random.choice(pop, n)) for _ in range(1000)]
+    ses.append(np.std(means, ddof=1))
+
+plt.plot(sample_sizes, ses, marker='o', color='steelblue')
+plt.xlabel('Sample Size (n)')
+plt.ylabel('Standard Error (SE)')
+plt.title('SE Decreases as Sample Size Increases')
+plt.grid(True, alpha=0.3)
+plt.show()
+```
 
 ---
 
