@@ -392,12 +392,12 @@ print(f"  Kurtosis: {col.kurt():.3f}  (excess)")
 
 ### C.6 Practical Guidelines
 
-| Condition           | Recommended Action                    |
-| ------------------- | ------------------------------------- | ----- | ----------------------------------------------------------------------- |
-|                     | Skewness                              | < 0.5 | Approximately symmetric — use mean + SD                                 |
-| 0.5 ≤               | Skewness                              | < 1   | Moderately skewed — report both mean and median                         |
-|                     | Skewness                              | ≥ 1   | Substantially skewed — prefer median + IQR; consider log transformation |
-| Excess Kurtosis > 2 | Heavy tails — be cautious of outliers |
+| Condition          | Metric   | Threshold | Recommended Action                                                 |
+| ------------------ | -------- | --------- | ------------------------------------------------------------------ |
+|                    | Skewness | < 0.5     | Approximately symmetric — use mean + SD                            |
+|                    | Skewness | 0.5–<1    | Moderately skewed — report both mean and median                    |
+|                    | Skewness | ≥ 1       | Substantially skewed — prefer median + IQR; consider log transform |
+| Excess Kurtosis >2 | —        | —         | Heavy tails — be cautious of outliers                              |
 
 ---
 
