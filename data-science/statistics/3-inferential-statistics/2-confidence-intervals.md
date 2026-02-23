@@ -60,7 +60,7 @@ So the interval is simply: $\text{CI} = \bar{x} \pm E$
 | 95%              | 0.05 | 1.960    |
 | 99%              | 0.01 | 2.576    |
 
-> 💡 Use **z** when n is large (n > 30) and σ is known or estimated well. Use **t** (from scipy) in practice — it converges to z as n grows, so it's always the safer choice.
+> 💡 Use **z** when n is large (n > 30) and σ is known or estimated well. Use **t** (from scipy) in practice — it converges to z as n grows, so it's always the safer choice. See [Section 2.7](#27-t-score-and-z-score) for a full comparison.
 
 ```python
 import numpy as np
@@ -243,7 +243,57 @@ plt.show()
 
 ---
 
-## 2.7 Key Takeaways
+## 2.7 t-score and z-score
+
+The CI formula $\bar{x} \pm \text{critical value} \times SE$ requires a critical value — either a **z** or **t**. Both measure the same thing: how many standard errors the sample mean is from the target value μ.
+
+> 📌 **核心**：z 和 t 結構相同，差別只在分母——z 用已知的母體標準差 σ，t 用樣本估計的 s。
+
+### Formulas
+
+|                  | z-score                                        | t-score                                   |
+| ---------------- | ---------------------------------------------- | ----------------------------------------- |
+| **Formula**      | $z = \dfrac{\bar{x} - \mu}{\sigma / \sqrt{n}}$ | $t = \dfrac{\bar{x} - \mu}{s / \sqrt{n}}$ |
+| **Denominator**  | Population SD σ (known)                        | Sample SD s (estimated)                   |
+| **Distribution** | Standard normal                                | t-distribution (heavier tails)            |
+| **Use when**     | n ≥ 30 and σ known                             | σ unknown — the typical case              |
+
+As $n \to \infty$, the t-distribution converges to the normal distribution, so t and z become interchangeable for large samples.
+
+> 💡 **Default: always use t.** σ is almost never known in practice, and t converges to z automatically as n grows.
+
+### Getting Critical Values
+
+**Two-tailed** (standard for CIs):
+
+```python
+from scipy import stats
+
+alpha = 0.05
+z_crit = stats.norm.ppf(1 - alpha / 2)      # ±1.96
+t_crit = stats.t.ppf(1 - alpha / 2, df=n-1) # slightly wider than z for small n
+```
+
+Common reference values for $z_{\alpha/2}$:
+
+| Confidence Level | α    | $z_{\alpha/2}$ |
+| ---------------- | ---- | -------------- |
+| 90%              | 0.10 | 1.645          |
+| 95%              | 0.05 | 1.960          |
+| 99%              | 0.01 | 2.576          |
+
+**One-tailed** (used in hypothesis testing, not CIs):
+
+```python
+z_right = stats.norm.ppf(1 - alpha)  # right-tailed: +1.645
+z_left  = stats.norm.ppf(alpha)      # left-tailed:  −1.645
+```
+
+> 👉 One-tailed tests are covered in [Section 3.2](./3-hypothesis-testing.md#32-null-and-alternative-hypotheses).
+
+---
+
+## 2.8 Key Takeaways
 
 | Concept                         | Key Point                                                                                 |
 | ------------------------------- | ----------------------------------------------------------------------------------------- |

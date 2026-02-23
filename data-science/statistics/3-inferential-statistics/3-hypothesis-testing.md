@@ -244,16 +244,16 @@ print(f"Cohen's d   = {d:.4f}  ({'large' if abs(d) >= 0.8 else 'medium' if abs(d
 
 A complete hypothesis test always follows these steps — skipping any step risks misleading conclusions.
 
-| Step | Action                                           | Example                                         |
-| ---- | ------------------------------------------------ | ----------------------------------------------- |
-| 1    | **State H₀ and H₁**                              | H₀: μ = 5.0 vs. H₁: μ ≠ 5.0                     |
-| 2    | **Set significance level α**                     | α = 0.05                                        |
-| 3    | **Check assumptions**                            | Normality, sample size, independence            |
-| 4    | **Choose and compute the test statistic**        | t = (x̄ − μ₀) / SE                               |
-| 5    | **Compute the p-value**                          | p = 0.023                                       |
-| 6    | **Make a decision: reject or fail to reject H₀** | p < α → Reject H₀                               |
-| 7    | **Report effect size and CI**                    | d = 0.72, 95% CI: [5.71, 5.97]                  |
-| 8    | **Interpret in context**                         | "Sepal lengths differ significantly by species" |
+| Step | Action                                           | Example                                                                                          |
+| ---- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| 1    | **State H₀ and H₁**                              | H₀: μ = 5.0 vs. H₁: μ ≠ 5.0                                                                      |
+| 2    | **Set significance level α**                     | α = 0.05                                                                                         |
+| 3    | **Check assumptions**                            | Normality, sample size, independence → see [Section 5](./5-assumption-checks.md)                 |
+| 4    | **Choose and compute the test statistic**        | t = (x̄ − μ₀) / SE → 見 [t-score vs. z-score](./2-confidence-intervals.md#27-t-score-and-z-score) |
+| 5    | **Compute the p-value**                          | p = 0.023                                                                                        |
+| 6    | **Make a decision: reject or fail to reject H₀** | p < α → Reject H₀                                                                                |
+| 7    | **Report effect size and CI**                    | d = 0.72, 95% CI: [5.71, 5.97]                                                                   |
+| 8    | **Interpret in context**                         | "Sepal lengths differ significantly by species"                                                  |
 
 ---
 
@@ -271,4 +271,5 @@ A complete hypothesis test always follows these steps — skipping any step risk
 ---
 
 **← Previous:** [Confidence Intervals](./2-confidence-intervals.md)  
-**Next:** [Common Statistical Tests →](./4-statistical-tests.md)
+**Next:** [Common Statistical Tests →](./4-statistical-tests.md)  
+**Related:** [Assumption Checks (Normality, Variance, Independence) →](./5-assumption-checks.md)

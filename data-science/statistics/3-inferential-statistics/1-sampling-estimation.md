@@ -8,12 +8,12 @@ Before testing any hypothesis, you need to understand **where your data comes fr
 
 ## 1.1 Population vs. Sample
 
-| Term                       | 中文   | Definition                                                          | Example                                  |
-| -------------------------- | ------ | ------------------------------------------------------------------- | ---------------------------------------- |
-| **Population (母體)**      | 母體   | The entire group you want to draw conclusions about                 | All adults in Taiwan                     |
-| **Sample (樣本)**          | 樣本   | A subset of the population actually observed                        | 1,000 adults surveyed in Taipei          |
-| **Parameter (參數)**       | 參數   | A numerical summary of the population (usually unknown)             | True population mean income μ            |
-| **Statistic (統計量)**     | 統計量 | A numerical summary computed from the sample                        | Sample mean income x̄                    |
+| Term                          | 中文     | Definition                                                       | Example                                        |
+| ----------------------------- | -------- | ---------------------------------------------------------------- | ---------------------------------------------- |
+| **Population (母體)**         | 母體     | The entire group you want to draw conclusions about              | All adults in Taiwan                           |
+| **Sample (樣本)**             | 樣本     | A subset of the population actually observed                     | 1,000 adults surveyed in Taipei                |
+| **Parameter (參數)**          | 參數     | A numerical summary of the population (usually unknown)          | True population mean income μ                  |
+| **Statistic (統計量)**        | 統計量   | A numerical summary computed from the sample                     | Sample mean income x̄                           |
 | **Sampling error (抽樣誤差)** | 抽樣誤差 | The difference between a sample statistic and the true parameter | x̄ ≠ μ simply because we didn't survey everyone |
 
 > 💡 We use **Roman letters** (x̄, s, p̂) for sample statistics and **Greek letters** (μ, σ, π) for population parameters. This distinction matters for formulas and interpretation.
@@ -22,13 +22,13 @@ Before testing any hypothesis, you need to understand **where your data comes fr
 
 ## 1.2 Sampling Methods
 
-| Method                       | 中文         | Description                                                          | Pros / Cons                                               |
-| ---------------------------- | ------------ | -------------------------------------------------------------------- | --------------------------------------------------------- |
-| **Simple random sampling**   | 簡單隨機抽樣 | Every individual has an equal probability of being selected          | ✅ Unbiased; ❌ Expensive if population is large/dispersed |
-| **Stratified sampling**      | 分層抽樣     | Divide into subgroups (strata), then randomly sample within each     | ✅ Ensures representation of subgroups; ❌ Requires strata info |
-| **Cluster sampling**         | 集群抽樣     | Randomly select whole clusters (e.g., schools), then sample within   | ✅ Cheaper for geographically spread populations; ❌ Higher variance |
-| **Systematic sampling**      | 系統抽樣     | Select every k-th individual from a list                             | ✅ Easy to implement; ❌ Periodic pattern can introduce bias |
-| **Convenience sampling**     | 便利抽樣     | Select whoever is easily accessible                                  | ✅ Fast and cheap; ❌ High risk of selection bias — avoid for inference |
+| Method                     | 中文         | Description                                                        | Pros / Cons                                                             |
+| -------------------------- | ------------ | ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| **Simple random sampling** | 簡單隨機抽樣 | Every individual has an equal probability of being selected        | ✅ Unbiased; ❌ Expensive if population is large/dispersed              |
+| **Stratified sampling**    | 分層抽樣     | Divide into subgroups (strata), then randomly sample within each   | ✅ Ensures representation of subgroups; ❌ Requires strata info         |
+| **Cluster sampling**       | 集群抽樣     | Randomly select whole clusters (e.g., schools), then sample within | ✅ Cheaper for geographically spread populations; ❌ Higher variance    |
+| **Systematic sampling**    | 系統抽樣     | Select every k-th individual from a list                           | ✅ Easy to implement; ❌ Periodic pattern can introduce bias            |
+| **Convenience sampling**   | 便利抽樣     | Select whoever is easily accessible                                | ✅ Fast and cheap; ❌ High risk of selection bias — avoid for inference |
 
 > ⚠️ **Bias vs. Variance tradeoff in sampling**: Random methods minimize bias (systematic error) but may have high variance (noise). Non-random methods are fast but introduce bias that no amount of analysis can fix.
 
@@ -38,12 +38,12 @@ Before testing any hypothesis, you need to understand **where your data comes fr
 
 A **point estimate** is a single-value guess for a population parameter, calculated from the sample.
 
-| Population Parameter | Symbol | Point Estimate       | Symbol |
-| -------------------- | ------ | -------------------- | ------ |
-| Population mean      | μ      | Sample mean          | x̄     |
-| Population variance  | σ²     | Sample variance      | s²     |
-| Population SD        | σ      | Sample SD            | s      |
-| Population proportion| π      | Sample proportion    | p̂     |
+| Population Parameter  | Symbol | Point Estimate    | Symbol |
+| --------------------- | ------ | ----------------- | ------ |
+| Population mean       | μ      | Sample mean       | x̄      |
+| Population variance   | σ²     | Sample variance   | s²     |
+| Population SD         | σ      | Sample SD         | s      |
+| Population proportion | π      | Sample proportion | p̂      |
 
 **Key limitation**: A point estimate is almost certainly not exactly equal to the true parameter. To communicate this uncertainty, we use **confidence intervals** (Section 2).
 
@@ -74,17 +74,18 @@ print(f"s²    = {s_sq:.4f}")
 
 The **Central Limit Theorem** is the theoretical backbone of inferential statistics.
 
-> **CLT Statement**: If you draw many random samples of size n from *any* population with mean μ and finite variance σ², the distribution of sample means (x̄) will approach a **Normal distribution** as n increases, regardless of the shape of the original population.
+> **CLT Statement**: If you draw many random samples of size n from _any_ population with mean μ and finite variance σ², the distribution of sample means (x̄) will approach a **Normal distribution** as n increases, regardless of the shape of the original population.
 
 $$\bar{x} \sim N\left(\mu,\ \frac{\sigma^2}{n}\right) \quad \text{as } n \to \infty$$
 
-| Condition                  | Practical Rule of Thumb                                          |
-| -------------------------- | ---------------------------------------------------------------- |
-| Population is normal       | CLT holds for any n                                              |
-| Population is mildly skewed| n ≥ 30 is usually sufficient                                     |
-| Population is heavily skewed | n ≥ 100 or more may be needed                                  |
+| Condition                    | Practical Rule of Thumb       |
+| ---------------------------- | ----------------------------- |
+| Population is normal         | CLT holds for any n           |
+| Population is mildly skewed  | n ≥ 30 is usually sufficient  |
+| Population is heavily skewed | n ≥ 100 or more may be needed |
 
 **What CLT enables:**
+
 - We can use z-tests and t-tests even when the original population isn't normal
 - The Normal distribution becomes our tool for computing probabilities about sample means
 
@@ -120,34 +121,34 @@ plt.show()
 
 $$SE_{\bar{x}} = \frac{s}{\sqrt{n}}$$
 
-| n (sample size) | SE behavior         | Implication                                     |
-| --------------- | ------------------- | ----------------------------------------------- |
-| Small           | Large SE            | Estimates are imprecise; wide confidence interval|
-| Large           | Small SE            | Estimates are precise; narrow confidence interval|
+| n (sample size) | SE behavior | Implication                                       |
+| --------------- | ----------- | ------------------------------------------------- |
+| Small           | Large SE    | Estimates are imprecise; wide confidence interval |
+| Large           | Small SE    | Estimates are precise; narrow confidence interval |
 
 ```python
 se = s / np.sqrt(n)
 print(f"Standard Error (SE) = {se:.4f}")
 ```
 
-> 💡 **SE vs. SD**: Standard Deviation (s) describes how spread out individual observations are. Standard Error (SE) describes how spread out *sample means* are. As n increases, SE decreases — SD does not change much.
+> 💡 **SE vs. SD**: Standard Deviation (s) describes how spread out individual observations are. Standard Error (SE) describes how spread out _sample means_ are. As n increases, SE decreases — SD does not change much.
 
-| Statistic           | What it describes                          | Changes with n? |
-| ------------------- | ------------------------------------------ | --------------- |
-| **SD (s)**          | Spread of individual data points           | Not much        |
-| **SE (s/√n)**       | Spread of sample means across many samples | Yes — decreases as n grows |
+| Statistic     | What it describes                          | Changes with n?            |
+| ------------- | ------------------------------------------ | -------------------------- |
+| **SD (s)**    | Spread of individual data points           | Not much                   |
+| **SE (s/√n)** | Spread of sample means across many samples | Yes — decreases as n grows |
 
 ---
 
 ## 1.6 Key Takeaways
 
-| Principle                       | Details                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------- |
-| **Sample ≠ Population**         | Statistics from samples always contain sampling error                              |
-| **Sampling method matters**     | Non-random samples introduce bias that invalidates inference                       |
-| **CLT is foundational**         | Enables use of Normal-based tests even when the population is non-normal           |
-| **SE quantifies precision**     | Larger n → smaller SE → more precise estimates                                     |
-| **Point estimates need context**| Always accompany point estimates with confidence intervals (Section 2)             |
+| Principle                        | Details                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------ |
+| **Sample ≠ Population**          | Statistics from samples always contain sampling error                    |
+| **Sampling method matters**      | Non-random samples introduce bias that invalidates inference             |
+| **CLT is foundational**          | Enables use of Normal-based tests even when the population is non-normal |
+| **SE quantifies precision**      | Larger n → smaller SE → more precise estimates                           |
+| **Point estimates need context** | Always accompany point estimates with confidence intervals (Section 2)   |
 
 ---
 

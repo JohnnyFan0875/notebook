@@ -32,6 +32,7 @@ This order matters because **hypothesis testing without understanding confidence
 | 2   | [**Confidence Intervals**](./2-confidence-intervals.md)                 | Core        | What range of values is the true parameter likely to fall in?  |
 | 3   | [**Hypothesis Testing Framework**](./3-hypothesis-testing.md)           | Core        | How do we decide if an effect is real or due to chance?        |
 | 4   | [**Common Statistical Tests**](./4-statistical-tests.md)               | Application | Which test do I use, and how do I run it in Python?            |
+| 5   | [**Assumption Checks**](./5-assumption-checks.md)                      | Application | How do I verify normality, equal variance, and independence?   |
 
 ---
 
@@ -59,6 +60,15 @@ This order matters because **hypothesis testing without understanding confidence
 - Significance level (α) and how to choose it
 - Type I error (false positive) and Type II error (false negative)
 - Statistical power and effect size
+
+### 5. Assumption Checks
+
+- Three core assumptions: independence, normality, equal variance
+- Normality: visual (histogram, Q–Q plot) + formal (Shapiro–Wilk, K–S, Anderson–Darling)
+- Variance: Levene's, Bartlett's, Brown–Forsythe — when to use each
+- Independence: Durbin–Watson (autocorrelation), Runs test (randomness)
+- t-score vs. z-score — when to use each and how to compute critical values
+- Full pre-test checklist
 
 ### 4. Common Statistical Tests
 

@@ -474,9 +474,11 @@ print(anova_table)
 
 ---
 
-## 4.9 Checking Normality Assumptions
+## 4.9 Checking Assumptions
 
-Most parametric tests assume approximate normality. Always check before running.
+Before running any parametric test, verify the three core assumptions: **independence**, **normality**, and **equal variance**. A full guide with all tests and remedies is in [Section 5 – Assumption Checks](./5-assumption-checks.md). Quick reference below.
+
+### Normality
 
 ```python
 import matplotlib.pyplot as plt
@@ -489,28 +491,44 @@ x = df['sepal length (cm)']
 
 fig, axes = plt.subplots(1, 3, figsize=(14, 4))
 
-# Histogram
 axes[0].hist(x, bins=20, color='steelblue', edgecolor='white')
 axes[0].set_title('Histogram')
 
-# Q-Q plot
 stats.probplot(x, dist='norm', plot=axes[1])
 axes[1].set_title('Q-Q Plot')
 
-# Boxplot
 axes[2].boxplot(x)
 axes[2].set_title('Boxplot')
 
 plt.tight_layout()
 plt.show()
 
-# Shapiro-Wilk test (best for n < 50; use with caution for large n)
+# Shapiro-Wilk (n ≤ 2000; prefer visual checks for large n)
 stat, p = stats.shapiro(x)
 print(f"Shapiro-Wilk: W={stat:.4f}, p={p:.4f}")
-print(f"Normality assumption: {'likely met' if p > 0.05 else 'may be violated — consider non-parametric test'}")
+print(f"Normality: {'likely met' if p > 0.05 else 'may be violated — consider non-parametric or transform'}")
 ```
 
-> ⚠️ **Large sample caution**: For large n (> 200), Shapiro-Wilk will almost always reject normality even for trivially small deviations. With large n, the CLT usually applies anyway — prioritize visual checks (histogram, Q-Q plot) over the formal test.
+> ⚠️ For n > 200, Shapiro–Wilk almost always rejects normality even for trivial deviations. With large n, CLT compensates — prioritize the Q–Q plot over the p-value. See also: [Kolmogorov–Smirnov and Anderson–Darling tests →](./5-assumption-checks.md#51-normality-tests)
+
+### Equal Variance
+
+Run a variance test before any two-group or multi-group comparison:
+
+```python
+from scipy import stats
+
+# Levene's test (robust default — works even without normality)
+stat, p = stats.levene(group1, group2)
+print(f"Levene's: stat={stat:.4f}, p={p:.4f}")
+# p ≤ 0.05 → variances unequal → use Welch's t-test / Welch's ANOVA
+
+# Bartlett's test (more powerful when data are confirmed normal)
+stat, p = stats.bartlett(group1, group2)
+print(f"Bartlett's: stat={stat:.4f}, p={p:.4f}")
+```
+
+> 💡 See [Section 5.2](./5-assumption-checks.md#52-variance-tests-homoscedasticity) for Levene's vs. Bartlett's vs. Brown–Forsythe comparison.
 
 ---
 
@@ -549,4 +567,5 @@ print(f"Normality assumption: {'likely met' if p > 0.05 else 'may be violated �
 
 **← Previous:** [Hypothesis Testing Framework](./3-hypothesis-testing.md)  
 **↑ Back to:** [Inferential Statistics – README](./README.md)  
+**Next:** [Assumption Checks →](./5-assumption-checks.md)  
 **Next module →:** Regression Analysis _(coming soon)_
