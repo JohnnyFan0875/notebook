@@ -167,3 +167,25 @@ print(data.groupby(['drug', 'dose']).size().unstack().isnull().any())
 ---
 
 **Next:** [Principles of Experimental Design →](./2-principles.md)
+
+# Experimental Design
+
+Experimental design is the framework for planning studies so that results are valid, reproducible, and interpretable.  
+It defines how participants/subjects are allocated, how treatments are assigned, and how confounding variables are minimized.
+
+## Key Terms
+
+- **Randomized Controlled Trial (RCT):**  
+  A type of experiment where participants are randomly assigned to an experimental group or a control group. Considered the gold standard for causal inference.
+
+- **Placebo:**  
+  A substance or treatment with no therapeutic effect, often used as a control to measure the true effectiveness of an intervention.
+
+- **Blinding:**
+
+  - **Single-blind:** Participants do not know their group assignment.
+  - **Double-blind:** Both participants and researchers are unaware of group assignments (reduces bias).
+
+- **Controlled Experiments:**  
+  Researchers manipulate one variable (independent) while controlling for confounders to study its effect on the dependent variable.
+

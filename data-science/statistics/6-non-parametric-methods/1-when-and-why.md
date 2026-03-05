@@ -1,3 +1,10 @@
+# 1. What are non-parametric tests?
+
+Non-parametric tests are used when data do **not meet the assumptions** of parametric tests (e.g., normality, homogeneity of variance).  
+They are based on **ranks** instead of raw values, making them more robust for skewed distributions, ordinal data, or small samples.
+
+---
+
 # 1. When & Why Non-parametric Methods
 
 The first and most important step is deciding **whether you actually need** a non-parametric method. This section gives you a systematic way to make that decision.
