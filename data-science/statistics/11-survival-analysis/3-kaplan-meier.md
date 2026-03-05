@@ -17,6 +17,13 @@ Where:
 - $d_i$ = number of events at time $t_i$
 - $n_i$ = number of subjects at risk just before time $t_i$ (the **risk set**)
 
+> 💡 **Conditional vs. Cumulative Survival** — two perspectives on the same estimate:
+>
+> - **Conditional survival** at $t_i$: the probability of surviving *that specific interval*, given survival up to its start → $p_i = 1 - d_i/n_i$. Example: "Of patients who survived past 2 months, 75% survived past 3 months."
+> - **Cumulative survival** $\hat{S}(t)$: the probability of surviving from time 0 all the way to $t$ → product of all $p_i$ up to that point. Example: "From study start, 60% of all patients survived past 3 months."
+>
+> The KM formula multiplies conditional survival probabilities to build the cumulative curve. 條件存活率是每個時間段的存活機率；累積存活率是從研究開始到該時間點的整體存活機率，兩者的關係就是連乘積。
+
 > 💡 **The risk set n_i** counts only subjects who are still under observation *just before* time $t_i$ — this automatically accounts for censoring. Subjects who were censored before $t_i$ are no longer in the risk set.  
 > 風險集（risk set）只包含在 t_i 時間點之前還在觀測中的個體。設限個體在其設限時間點之後就從風險集中移除，這就是 KM 正確處理設限的關鍵機制。
 
@@ -79,6 +86,27 @@ print(km_table)
 ---
 
 ## 3.3 KM Estimator with lifelines
+
+### R Example
+
+```r
+library(survival)
+library(survminer)
+
+data(lung)
+fit <- survfit(Surv(time, status) ~ sex, data = lung)
+
+ggsurvplot(fit,
+           data = lung,
+           pval = TRUE,
+           conf.int = TRUE,
+           risk.table = TRUE,
+           surv.median.line = "hv",
+           xlab = "Time (days)",
+           ylab = "Survival probability")
+```
+
+### Python Example
 
 ```python
 from lifelines import KaplanMeierFitter

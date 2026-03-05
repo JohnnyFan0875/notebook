@@ -41,6 +41,32 @@ The **hazard ratio** is the core output of a Cox model:
 
 ## 5.3 Fitting the Cox Model in Python
 
+### R Example
+
+```r
+library(survival)
+library(survminer)
+
+data(lung)
+cox_model <- coxph(Surv(time, status) ~ age + sex + ph.ecog, data = lung)
+summary(cox_model)
+# coef        → log hazard ratio (β)
+# exp(coef)   → hazard ratio (HR)
+# p-value     → significance of each covariate
+# Concordance → C-index (model discriminative ability)
+
+# Check proportional hazards assumption
+cox.zph(cox_model)
+
+# Visualize adjusted survival curves
+ggadjustedcurves(cox_model, data = lung, variable = "sex")
+
+# Forest plot of hazard ratios
+ggforest(cox_model, data = lung)
+```
+
+### Python Example
+
 ```python
 from lifelines import CoxPHFitter
 from lifelines.datasets import load_rossi
@@ -243,7 +269,20 @@ print(f"\nNote: 'race' is now a stratification variable — no HR is estimated f
 
 ---
 
-## 5.8 Key Takeaways
+## 5.8 Model Extensions
+
+Beyond the standard Cox model, several extensions handle more complex settings:
+
+| Extension | Purpose |
+|---|---|
+| **Penalized Cox (LASSO / Ridge)** | Handle high-dimensional covariates (e.g., genomics); LASSO performs variable selection by shrinking coefficients to zero, Ridge shrinks without elimination |
+| **Multistate Cox models** | Model transitions between multiple states (e.g., healthy → disease → death) |
+| **Competing risks (Fine-Gray)** | Model cause-specific events when multiple event types are possible |
+| **Frailty models** | Account for unobserved heterogeneity or clustered data (random effects for Cox) |
+
+---
+
+## 5.9 Key Takeaways
 
 | Concept                      | Key Point                                                                     |
 | ---------------------------- | ----------------------------------------------------------------------------- |

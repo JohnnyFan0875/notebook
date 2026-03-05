@@ -37,6 +37,8 @@ This is not missing data — it is **partial information**. Discarding censored 
 | **Interval censoring**  | 區間設限     | Event occurred somewhere between two known time points              | Tumor regrowth detected at routine scan              |
 | **Administrative censoring** | 行政設限 | Study ends on a fixed date; survivors are censored at that date    | All patients enrolled are censored at study cutoff   |
 | **Loss to follow-up**   | 失聯         | Subject withdraws, moves, or becomes unreachable                    | Patient stops attending clinic visits                |
+| **Type I censoring**    | 固定時間設限 | Study stops after a pre-specified duration; survivors are censored at that fixed time | 5-year clinical trial: all patients still alive at 5 years are censored |
+| **Type II censoring**   | 固定事件數設限 | Study continues until a target number of events has occurred; remaining subjects are censored | Reliability test runs until 5 of 10 machines fail; remaining 5 are censored |
 
 > ⚠️ **Non-informative censoring assumption**: Standard survival methods assume that censoring is **non-informative** — the reason someone is censored is unrelated to their underlying risk of the event. If patients who are doing poorly drop out (informative censoring), estimates will be biased. Always investigate why subjects were censored.  
 > 標準方法假設設限原因與事件風險無關。若高風險個體更容易退出研究，估計結果就會偏誤。
@@ -178,6 +180,8 @@ print(f"\nEvent rate: {df['event'].mean():.1%}")
 | Mixing competing risks without modeling them | Can severely overestimate cumulative incidence | Use competing risks methods (Fine-Gray model)        |
 
 > 💡 **Competing risks**: When multiple types of events can occur and experiencing one prevents the other (e.g., dying from cancer vs. dying from heart disease), standard survival analysis overestimates cumulative incidence. The **Fine-Gray subdistribution hazard model** handles this correctly. 競爭風險是進階主題，但在現實資料中非常常見，特別是醫學研究。
+
+> 💡 **Handling non-right censoring**: The Kaplan–Meier estimator and Cox model handle **right censoring** natively. For **left** and **interval censoring**, specialized methods are required: the **Turnbull estimator** generalizes KM for interval-censored data, while **parametric survival models** use likelihood-based estimation to incorporate all censoring types. 左設限和區間設限需要用 Turnbull estimator 或參數模型處理，不能直接套用 KM 或 Cox。
 
 ---
 

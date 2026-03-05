@@ -1,7 +1,12 @@
-# Interpretation of Survival Analysis Results
+# 8. Interpretation of Survival Analysis Results
 
 Interpreting survival analysis results requires understanding both **statistical meaning** (e.g., hazard ratios, survival probabilities) and **clinical or biological context**.  
-This section summarizes how to interpret key outcomes from Kaplan–Meier curves, Cox models, and related analyses.
+This section summarizes how to interpret key outputs from Kaplan–Meier curves, Cox models, and related analyses — and how to communicate findings clearly.
+
+> 📌 **結果解讀三層次**：先描述性（KM 曲線），再比較性（log-rank test），最後模型化（Cox HR）。三個層次互相補充，缺一不可。Statistical significance 必須搭配 clinical/biological plausibility 才有意義。
+
+---
+
 
 ## 1. Kaplan–Meier Survival Curves
 
@@ -110,3 +115,9 @@ Example:
 - Summarize findings with clear, quantitative statements (HR, CI, p-value, and clinical context).
 
 > Effective interpretation bridges statistical rigor and biological insight — turning numbers into meaningful conclusions.
+
+
+---
+
+**← Previous:** [Parametric Models](./7-parametric-models.md)  
+**Next:** [Visualization →](./9-visualization.md)

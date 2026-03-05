@@ -32,6 +32,19 @@ Where $O_{1j}$ and $E_{1j}$ are observed and expected events in group 1 at time 
 
 ## 4.3 Two-Group Log-Rank Test in Python
 
+### R Example
+
+```r
+library(survival)
+
+fit <- survdiff(Surv(time, status) ~ sex, data = lung)
+fit
+# Output: chi-square statistic and p-value
+# p < 0.05 → significant difference in survival distributions
+```
+
+### Python Example
+
 ```python
 from lifelines.statistics import logrank_test
 from lifelines.datasets import load_rossi

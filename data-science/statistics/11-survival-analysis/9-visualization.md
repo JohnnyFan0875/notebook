@@ -1,9 +1,14 @@
-# Visualization in Survival Analysis
+# 9. Visualization in Survival Analysis
 
 Visualization is a key component of survival analysis.  
 It transforms statistical estimates into interpretable graphics — enabling researchers to evaluate survival patterns, check model assumptions, and communicate findings effectively.
 
-This section introduces the most common visualization techniques used in clinical and biomedical survival studies, with examples in **R** and **Python**.
+> 📌 **視覺化不是裝飾**：KM 曲線是所有存活分析的起點；log-log plot 是 PH 假設的目視檢查；Forest plot 是 Cox 結果的標準呈現方式。每一種圖都有特定的診斷或溝通目的。
+
+This section covers the most common visualization techniques used in clinical and biomedical survival studies, with examples in **R** and **Python**.
+
+---
+
 
 ## 1. Kaplan–Meier Curves
 
@@ -198,3 +203,9 @@ They are particularly useful in **omics-driven** or **multi-cohort** survival an
 - **Calibration and heatmaps**: communicate predictive accuracy and subgroup effects.
 
 > Effective visualization bridges statistical modeling and clinical interpretation — transforming numerical results into insights that guide real-world decisions.
+
+
+---
+
+**← Previous:** [Interpretation](./8-interpretation.md)  
+**↑ Back to:** [README](./README.md)

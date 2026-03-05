@@ -257,7 +257,24 @@ for fitter, name, _ in fitters:
 
 ---
 
-## 2.6 Key Takeaways
+## 2.6 Summary Measures
+
+Beyond the functions themselves, several scalar summaries are routinely reported:
+
+| Measure | Formula | Interpretation | Typical Use |
+|---|---|---|---|
+| **Median survival** | $\hat{S}(t) = 0.5$ | Time when half of subjects have experienced the event | Simple, robust summary; does not require full follow-up |
+| **Mean survival** | $E[T] = \int_0^{\infty} S(t)\,dt$ | Expected event-free time | Rarely estimable due to incomplete follow-up |
+| **RMST(τ)** | $\int_0^{\tau} S(t)\,dt$ | Average survival up to a fixed horizon τ | Alternative to median when curves cross or median is undefined |
+| **Fixed-time survival** | $\hat{S}(t^*)$ | Probability of surviving beyond a specified time $t^*$ | 1-year, 3-year, 5-year survival rates |
+| **Cumulative hazard** | $H(t) = -\ln S(t)$ | Accumulated risk up to time t | Diagnostic plots; Nelson-Aalen estimator |
+
+> 💡 Median survival and RMST describe **absolute** survival experience; hazard ratios from Cox models describe **relative** risk. Reporting both gives a complete picture of survival outcomes.  
+> 中位存活時間和 RMST 是絕對量度，HR 是相對量度。兩者搭配才能完整描述存活結果。
+
+---
+
+## 2.7 Key Takeaways
 
 | Concept              | Key Point                                                                   |
 | -------------------- | --------------------------------------------------------------------------- |
@@ -266,6 +283,8 @@ for fitter, name, _ in fitters:
 | **H(t)**             | Accumulated risk up to t; H(t) = −ln S(t); useful for model checking       |
 | **One determines all** | S(t), h(t), H(t) are algebraically interchangeable                      |
 | **Constant hazard**  | Implies exponential distribution — the "memoryless" special case            |
+| **Median survival**  | Where S(t) = 0.5; the most common scalar summary of survival                |
+| **RMST(τ)**          | Area under S(t) up to τ; preferred when median is undefined or curves cross |
 | **Parametric vs. non-parametric** | Parametric models are more efficient when the distributional form is correct; non-parametric (KM) makes no distributional assumption |
 
 ---

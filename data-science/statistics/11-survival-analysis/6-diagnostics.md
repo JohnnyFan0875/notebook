@@ -269,7 +269,48 @@ print(f"\nC-index from model summary: {cph.concordance_index_:.4f}")
 
 ---
 
-## 6.7 Complete Diagnostic Workflow
+## 6.7 Calibration and Validation
+
+Model validation ensures that predictions generalize beyond the training dataset.
+
+| Type | Description | Method |
+|---|---|---|
+| **Internal validation** | Tests reproducibility using bootstrap or cross-validation | `bootcov()` in R, resampling in Python |
+| **External validation** | Apply model to an independent cohort | Check C-index, calibration, and AUC on new data |
+| **Calibration plots** | Compare predicted vs. observed survival; ideally close to the 45° line | `rms::calibrate()` in R; `scikit-survival` in Python |
+
+> ⚠️ A high C-index does not guarantee calibration. A model can rank subjects correctly but still systematically over- or under-estimate absolute survival probabilities. Always check both discrimination (C-index) and calibration.  
+> 高 C-index 不代表模型校準良好。辨別力（discrimination）和校準（calibration）是兩個獨立的面向，都需要檢查。
+
+### Cook's Distance and Overall Influence
+
+For a broader measure of each observation's overall influence on the model fit (beyond per-coefficient dfbeta):
+
+```python
+# Deviance residuals identify poorly fitted subjects
+deviance_resid = cph.compute_residuals(rossi, kind='deviance')
+
+import matplotlib.pyplot as plt
+plt.figure(figsize=(8, 4))
+plt.scatter(range(len(deviance_resid)), deviance_resid['deviance'],
+            alpha=0.5, s=20, color='#3B82F6')
+plt.axhline(2, color='red', linestyle='--', linewidth=1, label='±2 threshold')
+plt.axhline(-2, color='red', linestyle='--', linewidth=1)
+plt.xlabel('Subject Index')
+plt.ylabel('Deviance Residual')
+plt.title('Deviance Residuals — Identifying Outliers')
+plt.legend()
+plt.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+# |deviance| > 2 suggests an outlier or poorly fitted observation
+```
+
+> 💡 In R, `residuals(cox_model, type = "dfbeta")` gives per-coefficient influence, while `residuals(cox_model, type = "deviance")` and Cook's distance give overall influence measures.
+
+---
+
+## 6.8 Complete Diagnostic Workflow
 
 ```python
 # Complete post-fitting diagnostic checklist
@@ -302,7 +343,7 @@ print("  (see Section 5.5 for code)")
 
 ---
 
-## 6.8 Key Takeaways
+## 6.9 Key Takeaways
 
 | Concept                        | Key Point                                                                     |
 | ------------------------------ | ----------------------------------------------------------------------------- |
