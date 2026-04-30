@@ -194,5 +194,3 @@ Is the data ordinal (e.g., Likert scale)?
 | **Ordinal data → non-parametric** | Ordinal variables should never be analyzed with parametric means and SD          |
 
 ---
-
-**Next:** [One-Sample & Paired Tests →](./2-one-sample-and-paired.md)

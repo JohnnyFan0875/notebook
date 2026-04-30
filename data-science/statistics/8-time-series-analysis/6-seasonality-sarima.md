@@ -278,6 +278,3 @@ plt.show()
 | **Prophet for multiple seasons**  | When data has daily + weekly + yearly seasonality, SARIMA is impractical          |
 
 ---
-
-**← Previous:** [ARIMA Models](./5-arima.md)  
-**Next:** [Forecast Evaluation →](./7-forecast-evaluation.md)

@@ -233,5 +233,3 @@ print(f"Middle 95% of Standard Normal: [{lower:.4f}, {upper:.4f}]")
 | **Inverse CDF (.ppf)** | Given a probability, find the corresponding value — essential for critical values |
 
 ---
-
-**Next:** [Discrete Distributions →](./3-discrete-distributions.md)

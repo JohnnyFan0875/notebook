@@ -199,6 +199,3 @@ plt.show()
 | **Always run a prior predictive check** | Simulate data from your prior to verify it generates plausible outcomes |
 
 ---
-
-**← Previous:** [Core Concepts & Bayes' Theorem](./1-bayes-theorem.md)  
-**Next:** [Likelihood & Conjugate Priors →](./3-likelihood-conjugate.md)

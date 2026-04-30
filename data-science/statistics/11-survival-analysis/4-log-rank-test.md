@@ -230,6 +230,3 @@ print("Tarone-Ware:          p =", f"{result_tw.p_value:.4f}")
 | **No covariate adjustment** | Use Cox model when confounders need to be controlled                        |
 
 ---
-
-**← Previous:** [Kaplan-Meier Estimator](./3-kaplan-meier.md)  
-**Next:** [Cox Proportional Hazards Model →](./5-cox-ph-model.md)

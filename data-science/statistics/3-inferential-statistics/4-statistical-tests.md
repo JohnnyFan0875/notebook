@@ -388,89 +388,28 @@ print(f"Odds Ratio = {oddsratio:.3f}, p-value = {p_value:.4f}")
 
 ---
 
-## 4.8 ANOVA — Three or More Groups
+## 4.8 ANOVA Guide
 
-**Question**: Do three or more independent groups have different population means?
+Use ANOVA when the outcome is numerical and you need to compare **three or more means**.
 
-**H₀**: μ₁ = μ₂ = … = μₖ  
-**H₁**: At least one group mean differs
+> 📌 **中文重點**：ANOVA 只回答「至少有一組不同嗎？」若結果顯著，還要做 post-hoc test 才知道是哪幾組不同。
 
-> ⚠️ ANOVA tells you _that_ a difference exists — not _which_ groups differ. Always follow up with post-hoc tests.
+| Situation | Use | Details |
+| --------- | --- | ------- |
+| 3+ independent groups, one factor | One-way ANOVA | [ANOVA Section 5.1](../5-anova/1-one-way-anova.md) |
+| Two categorical factors | Two-way ANOVA | [ANOVA Section 5.2](../5-anova/2-two-way-anova.md) |
+| Same subject measured repeatedly | Repeated-measures ANOVA | [ANOVA Section 5.3](../5-anova/3-repeated-measures.md) |
+| Need group-by-group differences | Post-hoc tests | [ANOVA Section 5.4](../5-anova/4-post-hoc-effect-size.md) |
 
-**Test statistic (F-test):**
+**Must-know formula:**
 
 $$F = \frac{MS_{\text{between}}}{MS_{\text{within}}}$$
 
-| F value | Meaning                                                           |
-| ------- | ----------------------------------------------------------------- |
-| F ≈ 1   | Group means are similar — variance between groups ≈ within groups |
-| F >> 1  | Between-group variance much larger — evidence against H₀          |
-
-**Assumptions:**
-
-| Assumption                    | If Violated                    |
-| ----------------------------- | ------------------------------ |
-| Independence of observations  | Redesign study                 |
-| Normality within each group   | Use Kruskal–Wallis (Section 6) |
-| Equal variances across groups | Use Welch's ANOVA              |
-
-```python
-from scipy import stats
-import pandas as pd
-import pingouin as pg
-
-group_1 = [23, 21, 19, 22, 20, 23, 21, 20, 22, 21]
-group_2 = [30, 28, 29, 32, 31, 30, 33, 29, 30, 32]
-group_3 = [25, 24, 23, 26, 25, 27, 24, 23, 22, 25]
-
-# One-way ANOVA
-f_stat, p_value = stats.f_oneway(group_1, group_2, group_3)
-print(f"F = {f_stat:.4f}, p = {p_value:.4f}")
-
-# With pingouin (includes effect size η²)
-data = group_1 + group_2 + group_3
-groups = ['G1']*10 + ['G2']*10 + ['G3']*10
-df = pd.DataFrame({'value': data, 'group': groups})
-print(pg.anova(data=df, dv='value', between='group'))
-```
-
-### Post-hoc Tests
-
-When ANOVA is significant, run pairwise comparisons with correction for multiple testing:
-
-```python
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
-
-tukey = pairwise_tukeyhsd(df['value'], df['group'], alpha=0.05)
-print(tukey)
-```
-
-| Method          | When to Use                                       |
-| --------------- | ------------------------------------------------- |
-| **Tukey's HSD** | Equal group sizes; controls familywise error rate |
-| **Bonferroni**  | More conservative; flexible for unequal groups    |
-
-### Effect Size in ANOVA
-
-| Measure                | Formula                            | Use In                                     | Small / Medium / Large |
-| ---------------------- | ---------------------------------- | ------------------------------------------ | ---------------------- |
-| **η² (eta²)**          | SS_between / SS_total              | One-way ANOVA                              | 0.01 / 0.06 / 0.14     |
-| **η²ₚ (partial eta²)** | SS_effect / (SS_effect + SS_error) | Two-way ANOVA (controls for other factors) | 0.01 / 0.06 / 0.14     |
-
-### Two-Way ANOVA
-
-Tests two independent variables simultaneously, and whether they **interact**.
-
-```python
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
-
-model = ols('score ~ C(treatment) * C(gender)', data=df).fit()
-anova_table = sm.stats.anova_lm(model, typ=2)
-print(anova_table)
-```
-
-> 💡 The interaction term tests whether the effect of one factor **depends on the level of the other**. Always inspect the interaction before interpreting main effects.
+| If Assumption Fails | Use Instead |
+| ------------------- | ----------- |
+| Equal variance fails | Welch's ANOVA |
+| Normality fails badly | Kruskal-Wallis |
+| Independence fails | Repeated-measures ANOVA or mixed model |
 
 ---
 
@@ -564,8 +503,3 @@ print(f"Bartlett's: stat={stat:.4f}, p={p:.4f}")
 | **Always report effect size**       | p-value alone is insufficient — always pair with Cohen's d, η², Cramér's V, or similar |
 
 ---
-
-**← Previous:** [Hypothesis Testing Framework](./3-hypothesis-testing.md)  
-**↑ Back to:** [Inferential Statistics – README](./README.md)  
-**Next:** [Assumption Checks →](./5-assumption-checks.md)  
-**Next module →:** Regression Analysis _(coming soon)_

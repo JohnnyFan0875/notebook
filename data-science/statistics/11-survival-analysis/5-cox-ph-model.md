@@ -295,6 +295,3 @@ Beyond the standard Cox model, several extensions handle more complex settings:
 | **Stratified Cox**           | Controls for PH violations without estimating the stratifying variable's HR   |
 
 ---
-
-**← Previous:** [Log-Rank Test](./4-log-rank-test.md)  
-**Next:** [Model Diagnostics & Violations →](./6-diagnostics.md)

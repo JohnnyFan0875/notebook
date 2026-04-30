@@ -19,7 +19,7 @@ $$\text{logit}(p) = \ln\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 X_1 + \cdo
 | $\frac{p}{1-p}$| 勝算     | Odds — ratio of probability of success to failure     |
 | $\ln\left(\frac{p}{1-p}\right)$ | 對數勝算 | Log-odds (logit) — the left-hand side is linear in X |
 
-### The Sigmoid Function (Back to Probability)
+### Sigmoid Function
 
 $$p = \frac{1}{1 + e^{-(\beta_0 + \beta_1 X)}}$$
 
@@ -332,6 +332,3 @@ lr_balanced = LogisticRegression(class_weight='balanced', random_state=42)
 | **Sample size**          | Needs sufficient events per variable — rule of thumb: ≥ 10–20 events per predictor |
 
 ---
-
-**← Previous:** [Multiple Linear Regression](./2-multiple-linear-regression.md)  
-**↑ Back to:** [Regression Analysis – README](./README.md)

@@ -384,5 +384,3 @@ Poisson(λ) ─ time between events ─▶  Exponential(λ)
 | **Uniform** | Every value equally likely; simplest distribution |
 
 ---
-
-**Next:** [Sampling Distributions & CLT →](./5-sampling-distributions.md)

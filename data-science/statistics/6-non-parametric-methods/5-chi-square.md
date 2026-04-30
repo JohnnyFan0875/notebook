@@ -272,6 +272,3 @@ plt.show()
 | **Independence of obs.**        | Each subject must appear in exactly one cell — cannot be violated              |
 
 ---
-
-**← Previous:** [Multiple Groups: Kruskal-Wallis](./4-kruskal-wallis.md)  
-**Next:** [Rank Correlation: Spearman & Kendall →](./6-rank-correlation.md)

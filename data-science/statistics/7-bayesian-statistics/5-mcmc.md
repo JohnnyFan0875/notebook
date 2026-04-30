@@ -248,6 +248,3 @@ Before reporting results, verify all of the following:
 | **Divergences = red flag**     | Any divergences indicate a problematic geometry — don't ignore them                |
 
 ---
-
-**← Previous:** [Posterior Inference](./4-posterior-inference.md)  
-**Next:** [Bayesian vs Frequentist →](./6-bayesian-vs-frequentist.md)

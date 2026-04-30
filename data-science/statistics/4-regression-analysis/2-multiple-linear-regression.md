@@ -77,6 +77,16 @@ $$R^2_{\text{adj}} = 1 - \frac{(1 - R^2)(n - 1)}{n - k - 1}$$
 
 R² favors Model 2 (0.85 > 0.80), but Adjusted R² correctly identifies Model 1 (0.79 > 0.75) as the better, more generalizable model.
 
+> 📌 **中文重點**：回歸不要只看 p-value。係數大小、信賴區間、R²/Adjusted R²、殘差診斷都要一起看。
+
+| Output | What It Answers |
+| ------ | --------------- |
+| Coefficient | Direction and size of association |
+| 95% CI | Precision of the coefficient estimate |
+| p-value | Evidence against no association |
+| R² / Adjusted R² | Overall explanatory power |
+| Residual plots | Whether model assumptions look reasonable |
+
 ```python
 print(f"R²:          {model.rsquared:.4f}")
 print(f"Adjusted R²: {model.rsquared_adj:.4f}")
@@ -274,6 +284,3 @@ plt.show()
 | **Assumptions**         | Linearity, independence, homoscedasticity, normality of residuals, no multicollinearity |
 
 ---
-
-**← Previous:** [Simple Linear Regression](./1-simple-linear-regression.md)  
-**→ Next:** [Logistic Regression](./3-logistic-regression.md)

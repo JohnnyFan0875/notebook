@@ -288,6 +288,3 @@ Beyond the functions themselves, several scalar summaries are routinely reported
 | **Parametric vs. non-parametric** | Parametric models are more efficient when the distributional form is correct; non-parametric (KM) makes no distributional assumption |
 
 ---
-
-**← Previous:** [Core Concepts & Censoring](./1-core-concepts.md)  
-**Next:** [Kaplan-Meier Estimator →](./3-kaplan-meier.md)

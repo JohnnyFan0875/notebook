@@ -148,5 +148,3 @@ $$P(D) = \int P(D | \theta) \cdot P(\theta) \, d\theta$$
 | **P(D) is just a normalizer**      | Often skipped; sampling methods handle it without computing it directly          |
 
 ---
-
-**Next:** [Prior Distributions →](./2-prior-distributions.md)

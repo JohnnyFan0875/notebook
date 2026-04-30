@@ -93,6 +93,3 @@ Before fitting any regression model, you should already have done **descriptive 
 > Always visualize your data first, check assumptions after fitting, and remember that a good R² does not guarantee a good model.
 
 ---
-
-**← Previous:** [Inferential Statistics](../3-inferential-statistics/)  
-**→ Next:** [ANOVA](../5-anova/)

@@ -284,6 +284,3 @@ print(f"Variance retained: {pca_pre.explained_variance_ratio_.sum()*100:.1f}%")
 | **Fit only on training data**    | Never fit-transform on the test set — transform only                             |
 
 ---
-
-**← Previous:** [Multivariate EDA](./1-multivariate-eda.md)  
-**Next:** [Clustering →](./3-clustering.md)

@@ -169,5 +169,3 @@ print(ct_norm)
 | **Cross-tabulation**   | Describes relationship between two categorical variables                |
 
 ---
-
-**Next:** [Univariate Analysis – Numerical Data →](./3-univariate-numerical.md)

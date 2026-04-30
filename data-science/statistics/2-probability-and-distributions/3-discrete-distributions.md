@@ -255,5 +255,3 @@ print(f"P(X ≥ 3)  = {1 - hypergeom.cdf(2, N, K, n):.4f}")
 | **Binomial → Normal** | When n is large and p is moderate, Normal approximation works |
 
 ---
-
-**Next:** [Continuous Distributions →](./4-continuous-distributions.md)

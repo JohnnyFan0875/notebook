@@ -332,6 +332,3 @@ plt.show()
 | **Always profile clusters**          | Cluster labels are meaningless without describing what characterizes each group   |
 
 ---
-
-**← Previous:** [Principal Component Analysis](./2-pca.md)  
-**Next:** [Multiple Linear Regression →](./4-multiple-regression.md)

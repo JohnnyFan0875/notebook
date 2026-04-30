@@ -297,6 +297,3 @@ print(f"Improvement:         {sn_mape - mape:.2f} percentage points")
 | **Residuals must be white noise** | Patterns in residuals = unused structure = room to improve the model              |
 
 ---
-
-**← Previous:** [Seasonality & SARIMA](./6-seasonality-sarima.md)  
-**↑ Back to:** [Time Series Analysis — README](./README.md)

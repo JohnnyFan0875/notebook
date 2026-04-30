@@ -140,7 +140,43 @@ print(f"Standard Error (SE) = {se:.4f}")
 
 ---
 
-## 1.6 Key Takeaways
+## 1.6 Bootstrap
+
+**Bootstrapping** estimates uncertainty by repeatedly resampling from the observed sample with replacement.
+
+> 📌 **中文重點**：Bootstrap 的直覺是「把手上的樣本當成近似母體」，重複抽樣來看統計量會怎麼變動。當公式很難推導時，它很實用。
+
+| Use | What It Estimates |
+| --- | ----------------- |
+| Standard error | Variability of a statistic |
+| Confidence interval | Plausible range without analytic formula |
+| Model stability | How sensitive results are to sample changes |
+
+```python
+import numpy as np
+
+np.random.seed(42)
+sample = df['sepal length (cm)'].to_numpy()
+
+boot_means = [
+    np.random.choice(sample, size=len(sample), replace=True).mean()
+    for _ in range(5000)
+]
+
+ci_low, ci_high = np.percentile(boot_means, [2.5, 97.5])
+print(f"Bootstrap 95% CI: ({ci_low:.3f}, {ci_high:.3f})")
+```
+
+| Step | Action |
+| ---- | ------ |
+| 1 | Resample the original sample with replacement |
+| 2 | Compute the statistic for that resample |
+| 3 | Repeat many times |
+| 4 | Use the bootstrap distribution for SE or CI |
+
+---
+
+## 1.7 Key Takeaways
 
 | Principle                        | Details                                                                  |
 | -------------------------------- | ------------------------------------------------------------------------ |
@@ -148,8 +184,7 @@ print(f"Standard Error (SE) = {se:.4f}")
 | **Sampling method matters**      | Non-random samples introduce bias that invalidates inference             |
 | **CLT is foundational**          | Enables use of Normal-based tests even when the population is non-normal |
 | **SE quantifies precision**      | Larger n → smaller SE → more precise estimates                           |
+| **Bootstrap is practical**       | Resampling can estimate uncertainty when formulas are hard               |
 | **Point estimates need context** | Always accompany point estimates with confidence intervals (Section 2)   |
 
 ---
-
-**Next:** [Confidence Intervals →](./2-confidence-intervals.md)

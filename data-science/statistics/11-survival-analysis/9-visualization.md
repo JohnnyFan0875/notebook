@@ -206,6 +206,3 @@ They are particularly useful in **omics-driven** or **multi-cohort** survival an
 
 
 ---
-
-**← Previous:** [Interpretation](./8-interpretation.md)  
-**↑ Back to:** [README](./README.md)

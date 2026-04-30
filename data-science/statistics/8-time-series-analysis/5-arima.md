@@ -257,6 +257,3 @@ print(comparison.to_string(index=False))
 | **Forecast intervals widen fast** | ARIMA is most reliable for short horizons (≤ 12 periods ahead)                  |
 
 ---
-
-**← Previous:** [Autocorrelation: ACF & PACF](./4-autocorrelation.md)  
-**Next:** [Seasonality & SARIMA →](./6-seasonality-sarima.md)

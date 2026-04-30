@@ -211,5 +211,3 @@ print(f"P(disease | positive test) = {p_disease_given_positive:.4f}")  # ~16%
 | **Bayes' Theorem** | Prior belief + new evidence → updated belief; base rate matters enormously |
 
 ---
-
-**Next:** [Random Variables →](./2-random-variables.md)

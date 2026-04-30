@@ -30,6 +30,7 @@ This order matters because **data type determines which statistics are valid**. 
 | 2   | [**Univariate – Categorical Data**](./2-univariate-categorical.md) | Single variable | How are categories distributed? What's the most common? |
 | 3   | [**Univariate – Numerical Data**](./3-univariate-numerical.md)     | Single variable | Where is the center? How spread out? What shape?        |
 | 4   | [**Bivariate Analysis**](./4-bivariate.md)                         | Two variables   | Are these two variables related? How strongly?          |
+| 5   | [**Data Quality**](./5-data-quality.md)                            | Preparation     | Are missing values, outliers, and invalid values handled? |
 
 ---
 
@@ -68,6 +69,15 @@ Organized by data type combinations:
 | Numerical × Categorical   | Group comparison, boxplot by group             |
 | Multiple variables        | Correlation matrix, heatmap, pairplot          |
 
+### 5. Data Quality
+
+| Check | Why It Matters |
+| ----- | -------------- |
+| Missing data | Can bias summaries and reduce power |
+| Outliers | Can distort means, SD, correlation, and regression |
+| Duplicates | Can overweight repeated records |
+| Invalid values | Can create impossible or misleading results |
+
 ---
 
 ## Visualization Quick Reference
@@ -81,6 +91,7 @@ Organized by data type combinations:
 | Scatter plot | Relationship between two numerical variables | Numerical × Numerical |
 | Q–Q plot     | Visual normality check                       | Numerical             |
 | Heatmap      | Correlation matrix overview                  | Numerical × Numerical |
+| Missingness matrix | Pattern of missing data                 | Any dataset           |
 
 ---
 

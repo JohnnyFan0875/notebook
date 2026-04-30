@@ -222,5 +222,3 @@ plt.show()
 | **Visual inspection first**    | Always plot raw series before choosing transformations or models                  |
 
 ---
-
-**Next:** [Decomposition →](./2-decomposition.md)

@@ -329,6 +329,3 @@ plt.show()
 | **Silhouette confirms cluster quality** | Always validate cluster solutions — don't trust visual inspection alone          |
 
 ---
-
-**← Previous:** [Logistic Regression & LDA](./5-logistic-lda.md)  
-**↑ Back to:** [Multivariate Analysis — README](./README.md)

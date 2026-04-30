@@ -286,5 +286,3 @@ plt.show()
 | **Simpson's Paradox is real**  | Aggregate relationships can be completely opposite to within-group relationships    |
 
 ---
-
-**Next:** [Principal Component Analysis →](./2-pca.md)

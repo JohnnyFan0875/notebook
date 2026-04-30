@@ -222,6 +222,3 @@ print(lb_result)
 | **Ljung-Box after fitting**  | Check residual ACF is white noise — if not, the model is misspecified            |
 
 ---
-
-**← Previous:** [Stationarity](./3-stationarity.md)  
-**Next:** [ARIMA Models →](./5-arima.md)

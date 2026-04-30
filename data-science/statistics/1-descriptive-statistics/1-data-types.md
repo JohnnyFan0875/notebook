@@ -97,5 +97,3 @@ Common pandas dtype mappings:
 | **Watch for coded variables** | Numbers don't always mean numerical scale — check context                    |
 
 ---
-
-**Next:** [Univariate Analysis – Categorical Data →](./2-univariate-categorical.md)

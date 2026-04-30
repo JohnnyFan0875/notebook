@@ -217,7 +217,3 @@ The CLT is the reason why most parametric tests work. Here's how it connects:
 | **Why it matters** | CLT is the foundation of virtually all parametric inferential methods |
 
 ---
-
-**← Previous:** [Continuous Distributions](./4-continuous-distributions.md)  
-**↑ Back to:** [Probability & Distributions – README](./README.md)  
-**→ Next Section:** Inferential Statistics

@@ -225,10 +225,6 @@ A fourth principle sometimes listed alongside the original three is **local cont
 | **Local control** | Within-group extraneous variation   | Protocol standardization (not statistical)|
 
 ---
-
-**← Previous:** [Core Concepts & Terminology](./1-core-concepts.md)  
-**Next:** [Common Experimental Designs →](./3-designs.md)
-
 ## Randomization Methods
 
 Randomization reduces **selection bias** and balances both known and unknown confounding variables across groups.
@@ -240,7 +236,11 @@ Randomization reduces **selection bias** and balances both known and unknown con
   - **Uneven sample sizes** → resolved with **block randomization**.
   - **Imbalance in covariates** → resolved with **stratified randomization**.
 
-![Image](https://www.scribbr.com/wp-content/uploads/2023/02/random-sample-vs-random-assignment.webp)
+| Concept | Meaning |
+| ------- | ------- |
+| Random sampling | Randomly choose people/items from a population |
+| Random assignment | Randomly assign sampled participants to treatment groups |
+| Why it matters | Sampling supports generalization; assignment supports causality |
 
 ```python
 # Example: split dataset randomly into two groups
@@ -267,7 +267,11 @@ Steps:
 2. Randomly assign within each block.
 3. Each block maintains balanced allocation.
 
-![Image](https://discovery.cs.illinois.edu/static/learn/Blocking-WebG.png)
+| Block | Treatment A | Treatment B |
+| ----- | ----------- | ----------- |
+| Block 1 | Random subset | Random subset |
+| Block 2 | Random subset | Random subset |
+| Block 3 | Random subset | Random subset |
 
 ```python
 participants = [i for i in range(1, 11)]
@@ -291,7 +295,12 @@ blocked_random_df = pd.DataFrame({
 - **Covariate:** A variable controlled for in a model, may or may not distort the true relationship.
 - **Confounder:** A variable that **distorts the causal relationship** between independent and dependent variables.
 
-![Image](https://www.scribbr.com/wp-content/uploads/2020/09/stratified-sample-7-2048x863.png)
+| Stratum | Sample Within Stratum |
+| ------- | --------------------- |
+| Under 50, Female | Randomly sample or assign |
+| Under 50, Male | Randomly sample or assign |
+| 50+, Female | Randomly sample or assign |
+| 50+, Male | Randomly sample or assign |
 
 ```python
 df = pd.DataFrame({
@@ -340,4 +349,3 @@ df_strat = df.groupby(['Age', 'Gender']).apply(assign_treatment)
 | Stratified Randomization | Control for covariates/confounders       | Even distribution within strata | Needs stratification data    |
 | Randomized Block Design  | Reduce confounder effect at design level | Blocking units                  | Limited to known confounders |
 | Factorial Designs        | Study multiple factors + interactions    | Efficient exploration           | Costly if many factors       |
-

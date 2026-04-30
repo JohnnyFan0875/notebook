@@ -118,6 +118,3 @@ Example:
 
 
 ---
-
-**← Previous:** [Parametric Models](./7-parametric-models.md)  
-**Next:** [Visualization →](./9-visualization.md)

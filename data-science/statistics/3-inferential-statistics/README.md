@@ -45,6 +45,7 @@ This order matters because **hypothesis testing without understanding confidence
 - Point estimates and why they're never exactly right
 - The Central Limit Theorem — why sample means are normally distributed
 - Standard Error (SE): how much estimates vary across samples
+- Bootstrap: estimating uncertainty by resampling
 
 ### 2. Confidence Intervals
 
@@ -93,6 +94,7 @@ Organized by data type and number of groups:
 | Power curve               | Showing trade-off between sample size and power       |
 | p-value distribution plot | Understanding null hypothesis behavior                |
 | Sampling distribution     | Illustrating Central Limit Theorem                    |
+| Bootstrap distribution    | Showing uncertainty from resampling                   |
 
 ---
 
@@ -106,6 +108,7 @@ Organized by data type and number of groups:
 | Standard Error        | SE      | How much a sample statistic varies from sample to sample        |
 | Effect size           | d, r, η²| Magnitude of the effect, independent of sample size             |
 | Statistical power     | 1 − β   | Probability of detecting a real effect when it exists           |
+| Bootstrap             | —       | Repeated resampling to estimate uncertainty                     |
 
 ---
 
@@ -115,6 +118,3 @@ Organized by data type and number of groups:
 > Always pair a p-value with an effect size and confidence interval — a result can be statistically significant but practically meaningless (or vice versa).
 
 ---
-
-**← Previous module:** [Descriptive Statistics](../descriptive-statistics/README.md)  
-**Next module →:** Regression Analysis *(coming soon)*

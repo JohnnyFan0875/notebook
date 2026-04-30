@@ -130,6 +130,8 @@ If **statistic > critical value** at a given significance level → reject H₀.
 
 Equal variance (homoscedasticity) means variance is constant across groups. Required by Student's t-test and one-way ANOVA.
 
+> 📌 **中文重點**：這一步也常被稱為 **homogeneity of variance（變異數同質性）檢查**。若各組變異差很多，傳統 t-test 或 ANOVA 的 p-value 可能不可靠。
+
 **Hypotheses:**
 - **H₀**: Variances across all groups are equal.
 - **Hₐ**: At least one group has a different variance.
@@ -190,6 +192,7 @@ print(result)
 
 - For two groups → use **Welch's t-test** (`equal_var=False` in scipy)
 - For three or more groups → use **Welch's ANOVA** (`pingouin.welch_anova`)
+- For post-hoc comparisons after unequal-variance ANOVA → use **Games-Howell**
 
 ---
 
@@ -348,6 +351,3 @@ t_crit = stats.t.ppf(1 - alpha/2, df=29)  # for n=30, two-tailed
 > **Core message**: Checking assumptions is not a formality — it is what makes your conclusions valid. A test that doesn't meet its assumptions may still produce a p-value, but that p-value cannot be trusted.
 
 ---
-
-**← Previous:** [Common Statistical Tests](./4-statistical-tests.md)  
-**↑ Back to:** [Inferential Statistics – README](./README.md)

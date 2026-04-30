@@ -307,6 +307,3 @@ print(f"Required n per group: {int(np.ceil(n_prop))}")
 | **Report CIs, not post-hoc power** | A wide CI communicates under-precision without the logical circularity |
 
 ---
-
-**← Previous:** [Confounding, Bias & Validity](./4-confounding-bias.md)  
-**↑ Back to:** [Experimental Design — README](./README.md)

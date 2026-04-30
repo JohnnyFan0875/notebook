@@ -185,6 +185,3 @@ plt.show()
 | **Framework choice = problem choice** | Match the framework to the question, not the other way around                  |
 
 ---
-
-**← Previous:** [MCMC](./5-mcmc.md)  
-**↑ Back to:** [Bayesian Statistics — README](./README.md)

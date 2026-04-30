@@ -261,6 +261,3 @@ Visually inspect ACF — should decay quickly
 | **Spurious regression is real**   | Regressing two non-stationary series produces meaningless R² — always test first |
 
 ---
-
-**← Previous:** [Decomposition](./2-decomposition.md)  
-**Next:** [Autocorrelation: ACF & PACF →](./4-autocorrelation.md)

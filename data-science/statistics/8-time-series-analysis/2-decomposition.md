@@ -202,6 +202,3 @@ print(f"Residual std:  {resid.std():.4f}")
 | **Residuals should be white noise** | Patterns in residuals mean the decomposition missed structure                    |
 
 ---
-
-**← Previous:** [Time Series Fundamentals](./1-fundamentals.md)  
-**Next:** [Stationarity →](./3-stationarity.md)

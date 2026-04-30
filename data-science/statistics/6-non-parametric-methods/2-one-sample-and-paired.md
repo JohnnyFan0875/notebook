@@ -213,6 +213,3 @@ plt.show()
 | **Visualize first**          | Paired line plots show individual trajectories; difference histograms show symmetry |
 
 ---
-
-**← Previous:** [When & Why Non-parametric](./1-when-and-why.md)  
-**Next:** [Two Independent Samples →](./3-two-independent-samples.md)

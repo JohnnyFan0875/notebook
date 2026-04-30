@@ -477,5 +477,3 @@ plt.show()
 | **Visual first**            | Always plot before interpreting numbers                           |
 
 ---
-
-**Next:** [Bivariate Analysis →](./4-bivariate.md)

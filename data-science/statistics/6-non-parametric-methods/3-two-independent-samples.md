@@ -175,6 +175,3 @@ plt.show()
 | **Not strictly a median test**  | Technically tests stochastic dominance — shape matters too                  |
 
 ---
-
-**← Previous:** [One-Sample & Paired Tests](./2-one-sample-and-paired.md)  
-**Next:** [Multiple Groups: Kruskal-Wallis →](./4-kruskal-wallis.md)

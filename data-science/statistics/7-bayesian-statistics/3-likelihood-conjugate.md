@@ -232,6 +232,3 @@ plt.show()
 | **Conjugacy is a special case**  | Most real models aren't conjugate — conjugacy builds intuition, MCMC does the rest  |
 
 ---
-
-**← Previous:** [Prior Distributions](./2-prior-distributions.md)  
-**Next:** [Posterior Inference →](./4-posterior-inference.md)

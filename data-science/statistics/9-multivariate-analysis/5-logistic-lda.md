@@ -301,6 +301,3 @@ print(f"LDA 5-fold CV Accuracy: {cv_scores.mean():.3f} ± {cv_scores.std():.3f}"
 | **LDA vs PCA**                       | PCA ignores class labels; LDA uses them — prefer LDA when labels exist            |
 
 ---
-
-**← Previous:** [Multiple Linear Regression](./4-multiple-regression.md)  
-**Next:** [Model Assumptions & Diagnostics →](./6-assumptions-diagnostics.md)

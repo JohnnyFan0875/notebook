@@ -356,10 +356,6 @@ How many factors?
 | Split-Plot  | ✅ (whole-plot)     | ✅ Yes                | ❌                          |
 
 ---
-
-**← Previous:** [Principles of Experimental Design](./2-principles.md)  
-**Next:** [Confounding, Bias & Validity →](./4-confounding-bias.md)
-
 # Study Designs in Epidemiology and Clinical Research
 
 ## Study Designs
@@ -411,7 +407,9 @@ Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
 - **Strengths:** Clear temporal sequence, less recall bias.
 - **Weaknesses:** Time- and cost-intensive.
 
-![Image](https://www.scribbr.com/wp-content/uploads/2023/06/prospective-cohort-study.webp)
+```text
+Exposure measured now -> Follow forward -> Outcome observed later
+```
 
 #### b. Retrospective Cohort
 
@@ -420,7 +418,9 @@ Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
 - **Strengths:** Faster, less expensive.
 - **Weaknesses:** Data quality limits, missing confounders.
 
-![Image](https://www.scribbr.co.uk/wp-content/uploads/2023/06/retrospective-cohort-study.webp)
+```text
+Existing records -> Reconstruct exposure -> Link to later outcome
+```
 
 ### 1.2 Case–Control Studies
 
@@ -464,7 +464,10 @@ Includes **Cohort**, **Case–Control**, and **Cross-Sectional** studies.
 - Attrition bias (participants dropping out).
 - Requires strong data management and follow-up.
 
-![Image](https://www.questionpro.com/blog/wp-content/uploads/2018/06/cross-sectional-study-vs-longitudinal-study-min-scaled-1.jpg)
+| Design | Timing | Best For |
+| ------ | ------ | -------- |
+| Cross-sectional | One time point | Prevalence and snapshots |
+| Longitudinal | Repeated time points | Change over time and temporal order |
 
 ## 2. Experimental Studies
 
@@ -477,7 +480,9 @@ Researchers intervene and randomly assign participants to groups.
 - **Strengths:** Gold standard for causal inference, minimizes bias.
 - **Weaknesses:** Expensive, ethical constraints, may lack generalizability.
 
-![Image](https://www.simplypsychology.org/wp-content/uploads/randomized-controlled-trial-1536x894.jpeg)
+```text
+Eligible participants -> Random assignment -> Treatment / Control -> Compare outcomes
+```
 
 ### 2.2 Experimental Design
 

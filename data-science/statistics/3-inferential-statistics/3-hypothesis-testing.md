@@ -242,6 +242,21 @@ print(f"Cohen's d   = {d:.4f}  ({'large' if abs(d) >= 0.8 else 'medium' if abs(d
 
 ## 3.7 The Steps of Hypothesis Testing
 
+### Multiple Comparisons
+
+When you run many tests, the chance of at least one false positive increases. Adjust p-values when testing many hypotheses at once.
+
+> 📌 **中文重點**：如果你同時做很多次檢定，即使每次 α = 0.05，也更容易「剛好」出現假陽性。多重比較校正是為了控制整體錯誤率。
+
+| Situation | Common Correction | Notes |
+| --------- | ----------------- | ----- |
+| Few planned comparisons | Bonferroni | Simple but conservative |
+| Many pairwise tests | Holm | Good default; less conservative |
+| Exploratory many-feature testing | FDR / Benjamini-Hochberg | Controls expected false discoveries |
+| After ANOVA | Tukey or Games-Howell | Use ANOVA-specific post-hoc tests |
+
+---
+
 A complete hypothesis test always follows these steps — skipping any step risks misleading conclusions.
 
 | Step | Action                                           | Example                                                                                          |
@@ -253,7 +268,8 @@ A complete hypothesis test always follows these steps — skipping any step risk
 | 5    | **Compute the p-value**                          | p = 0.023                                                                                        |
 | 6    | **Make a decision: reject or fail to reject H₀** | p < α → Reject H₀                                                                                |
 | 7    | **Report effect size and CI**                    | d = 0.72, 95% CI: [5.71, 5.97]                                                                   |
-| 8    | **Interpret in context**                         | "Sepal lengths differ significantly by species"                                                  |
+| 8    | **Adjust for multiple tests if needed**          | Holm, Tukey, or FDR                                                                               |
+| 9    | **Interpret in context**                         | "Sepal lengths differ significantly by species"                                                  |
 
 ---
 
@@ -267,9 +283,4 @@ A complete hypothesis test always follows these steps — skipping any step risk
 | **Two types of error**          | Type I (false positive) controlled by α; Type II (false negative) controlled by β     |
 | **Power matters**               | Underpowered studies miss real effects — calculate sample size before collecting data |
 | **Effect size is required**     | Statistical significance ≠ practical significance; always report both                 |
-
----
-
-**← Previous:** [Confidence Intervals](./2-confidence-intervals.md)  
-**Next:** [Common Statistical Tests →](./4-statistical-tests.md)  
-**Related:** [Assumption Checks (Normality, Variance, Independence) →](./5-assumption-checks.md)
+| **Multiple testing matters**    | Many tests increase false positives; adjust p-values when needed                      |

@@ -292,6 +292,3 @@ plt.show()
 | **Evaluate on test set**             | Training R² is optimistic; test R² tells you how well the model generalizes        |
 
 ---
-
-**← Previous:** [Clustering](./3-clustering.md)  
-**Next:** [Logistic Regression & LDA →](./5-logistic-lda.md)

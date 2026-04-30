@@ -262,6 +262,3 @@ plt.show()
 | **Group comparison**               | Use boxplot or violin plot when comparing a numerical variable across categories |
 
 ---
-
-**← Previous:** [Univariate Analysis – Numerical Data](./3-univariate-numerical.md)  
-**↑ Back to:** [Descriptive Statistics – README](./README.md)

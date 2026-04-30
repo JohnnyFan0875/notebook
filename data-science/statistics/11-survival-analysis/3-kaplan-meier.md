@@ -282,6 +282,3 @@ print(f"Difference: {rmst_aid - rmst_no_aid:.2f} weeks event-free")
 | **RMST as alternative summary**  | More robust than median when curves cross or median is undefined            |
 
 ---
-
-**← Previous:** [Survival & Hazard Functions](./2-survival-hazard-functions.md)  
-**Next:** [Log-Rank Test →](./4-log-rank-test.md)

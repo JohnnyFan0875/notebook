@@ -166,8 +166,6 @@ print(data.groupby(['drug', 'dose']).size().unstack().isnull().any())
 
 ---
 
-**Next:** [Principles of Experimental Design →](./2-principles.md)
-
 # Experimental Design
 
 Experimental design is the framework for planning studies so that results are valid, reproducible, and interpretable.  

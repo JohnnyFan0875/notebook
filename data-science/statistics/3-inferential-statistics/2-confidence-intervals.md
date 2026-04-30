@@ -304,6 +304,3 @@ z_left  = stats.norm.ppf(alpha)      # left-tailed:  −1.645
 | **CI vs. p-value**              | Equivalent mathematically; CI gives more information about practical significance         |
 
 ---
-
-**← Previous:** [Sampling & Estimation](./1-sampling-estimation.md)  
-**Next:** [Hypothesis Testing Framework →](./3-hypothesis-testing.md)

@@ -257,6 +257,3 @@ plt.show()
 | **Report the full posterior**  | A single point estimate discards all uncertainty information                      |
 
 ---
-
-**← Previous:** [Likelihood & Conjugate Priors](./3-likelihood-conjugate.md)  
-**Next:** [MCMC →](./5-mcmc.md)

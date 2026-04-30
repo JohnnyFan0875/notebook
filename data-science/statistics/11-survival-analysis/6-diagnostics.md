@@ -356,6 +356,3 @@ print("  (see Section 5.5 for code)")
 | **dfbeta residuals**           | Detect influential observations that may be driving your results              |
 
 ---
-
-**← Previous:** [Cox Proportional Hazards Model](./5-cox-ph-model.md)  
-**↑ Back to:** [Survival Analysis — README](./README.md)

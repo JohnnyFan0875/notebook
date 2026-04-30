@@ -233,6 +233,3 @@ if p < 0.05:
 | **Visualize by group**        | Boxplots or violin plots are essential for communicating group differences     |
 
 ---
-
-**← Previous:** [Two Independent Samples](./3-two-independent-samples.md)  
-**Next:** [Categorical Association: Chi-Square →](./5-chi-square.md)

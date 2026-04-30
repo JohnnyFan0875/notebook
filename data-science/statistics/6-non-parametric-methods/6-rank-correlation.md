@@ -244,6 +244,3 @@ plt.show()
 | **Correlation ≠ Causation**      | Applies equally to rank correlations                                         |
 
 ---
-
-**← Previous:** [Categorical Association: Chi-Square](./5-chi-square.md)  
-**↑ Back to:** [Non-parametric Methods – README](./README.md)

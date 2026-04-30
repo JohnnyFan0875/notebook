@@ -197,5 +197,3 @@ print(f"\nEvent rate: {df['event'].mean():.1%}")
 | **Define the event first** | Ambiguous event definitions make results uninterpretable                           |
 
 ---
-
-**Next:** [Survival & Hazard Functions →](./2-survival-hazard-functions.md)

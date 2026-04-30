@@ -243,6 +243,3 @@ Combined:       Treatment 50.9% vs Control 83.0%
 | **Simpson's Paradox**     | Always stratify by important subgroups; aggregated trends can be misleading|
 
 ---
-
-**← Previous:** [Common Experimental Designs](./3-designs.md)  
-**Next:** [Sample Size & Statistical Power →](./5-sample-size-power.md)

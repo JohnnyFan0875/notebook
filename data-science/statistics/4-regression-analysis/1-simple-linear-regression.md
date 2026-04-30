@@ -242,5 +242,3 @@ for sl, pl in zip(new_data['sepal_length'], predictions):
 | **Causation**            | Regression ≠ causation — association only                                     |
 
 ---
-
-**Next:** [Multiple Linear Regression →](./2-multiple-linear-regression.md)
