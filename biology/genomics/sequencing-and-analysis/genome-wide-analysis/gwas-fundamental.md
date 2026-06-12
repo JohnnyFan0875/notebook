@@ -1,1 +1,0 @@
-- [GWAS](https://stanford.edu/class/gene210/files/lectures/2011/4_Salari_AnalyzingGWASData.pdf)

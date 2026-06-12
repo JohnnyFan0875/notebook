@@ -1,1 +1,0 @@
-- [VQSR, hard-filtering](https://huangshujia.com/2018/03/2018-03-23-wgs-best-practics-2/)

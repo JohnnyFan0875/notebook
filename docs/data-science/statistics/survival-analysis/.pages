@@ -1,0 +1,11 @@
+nav:
+  - README.md
+  - core-concepts.md
+  - cox-ph-model.md
+  - diagnostics.md
+  - interpretation.md
+  - kaplan-meier.md
+  - log-rank-test.md
+  - parametric-models.md
+  - survival-hazard-functions.md
+  - visualization.md

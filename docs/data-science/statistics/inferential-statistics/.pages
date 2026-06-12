@@ -1,0 +1,12 @@
+nav:
+  - README.md
+  - anova-overview.md
+  - assumption-checks.md
+  - confidence-intervals.md
+  - hypothesis-testing.md
+  - one-way-anova.md
+  - two-way-anova.md
+  - repeated-measures-anova.md
+  - post-hoc-effect-size.md
+  - sampling-estimation.md
+  - statistical-tests.md

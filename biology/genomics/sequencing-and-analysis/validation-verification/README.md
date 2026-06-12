@@ -1,1 +1,0 @@
-- [validation](https://www.amp.org/AMP/assets/File/resources/AssayValidation_Final.pdf?pass=34)

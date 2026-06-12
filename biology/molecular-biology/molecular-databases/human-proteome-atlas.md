@@ -1,1 +1,0 @@
-[resource](https://www.proteinatlas.org/humanproteome/tissue)

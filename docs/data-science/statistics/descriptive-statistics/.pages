@@ -1,0 +1,7 @@
+nav:
+  - README.md
+  - data-types.md
+  - univariate-categorical.md
+  - univariate-numerical.md
+  - bivariate.md
+  - data-quality.md

@@ -1,0 +1,5 @@
+nav:
+  - README.md
+  - logistic-regression.md
+  - multiple-linear-regression.md
+  - simple-linear-regression.md

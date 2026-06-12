@@ -1,3 +1,19 @@
-tree.txt
 merge_content.sh
 merge_*.txt
+repomix-output.xml
+old/
+
+# MkDocs build output
+site/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS / editor noise
+.DS_Store

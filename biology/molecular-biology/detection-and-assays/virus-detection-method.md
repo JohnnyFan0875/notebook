@@ -1,1 +1,0 @@
-- [method](https://www.acebiolab.com/EN/news/39)

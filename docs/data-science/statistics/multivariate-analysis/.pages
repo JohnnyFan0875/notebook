@@ -1,0 +1,8 @@
+nav:
+  - README.md
+  - assumptions-diagnostics.md
+  - clustering.md
+  - logistic-lda.md
+  - multiple-regression.md
+  - multivariate-eda.md
+  - pca.md
