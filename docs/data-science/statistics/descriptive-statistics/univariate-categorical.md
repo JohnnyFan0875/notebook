@@ -6,12 +6,12 @@ This section covers how to describe a **single categorical variable** (Nominal o
 
 A frequency table is the foundation of categorical description. It shows how often each category appears.
 
-| Metric | Description |
+| Metric                 | Description                                      |
 | ---------------------- | ------------------------------------------------ |
-| **Frequency (n)** | Raw count of each category |
-| **Relative Frequency** | Proportion = count ÷ total |
-| **Percentage (%)** | Relative frequency × 100 |
-| **Cumulative %** | Running total — most useful for **ordinal** data |
+| **Frequency (n)**      | Raw count of each category                       |
+| **Relative Frequency** | Proportion = count ÷ total                       |
+| **Percentage (%)**     | Relative frequency × 100                         |
+| **Cumulative %**       | Running total — most useful for **ordinal** data |
 
 ```python
 import pandas as pd
@@ -175,29 +175,29 @@ A cross-tabulation (contingency table) shows the joint frequency of **two catego
 
 **Raw count output:**
 
-| Gender | No | Yes | Total |
+| Gender | No  | Yes | Total |
 | ------ | --- | --- | ----- |
-| Female | 1 | 2 | 3 |
-| Male | 2 | 1 | 3 |
-| Total | 3 | 3 | 6 |
+| Female | 1   | 2   | 3     |
+| Male   | 2   | 1   | 3     |
+| Total  | 3   | 3   | 6     |
 
 **Row-normalized (survival rate per gender):**
 
-| Gender | No | Yes |
+| Gender | No    | Yes   |
 | ------ | ----- | ----- |
 | Female | 0.333 | 0.667 |
-| Male | 0.667 | 0.333 |
+| Male   | 0.667 | 0.333 |
 
 ## Key Takeaways
 
-| Concept | Key Point |
+| Concept                | Key Point                                                               |
 | ---------------------- | ----------------------------------------------------------------------- |
-| **Frequency table** | Always the starting point for categorical description |
-| **Relative frequency** | Prefer over raw counts when comparing groups of different sizes |
-| **Ordinal data** | Explicitly define category order — don't let pandas sort alphabetically |
-| **Bar chart** | Default visualization for categorical data |
-| **Pie chart** | Only when ≤ 5 categories and part-of-whole is the message |
-| **Cross-tabulation** | Describes relationship between two categorical variables |
+| **Frequency table**    | Always the starting point for categorical description                   |
+| **Relative frequency** | Prefer over raw counts when comparing groups of different sizes         |
+| **Ordinal data**       | Explicitly define category order — don't let pandas sort alphabetically |
+| **Bar chart**          | Default visualization for categorical data                              |
+| **Pie chart**          | Only when ≤ 5 categories and part-of-whole is the message               |
+| **Cross-tabulation**   | Describes relationship between two categorical variables                |
 
 ## Rare Categories and Grouping
 
