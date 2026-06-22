@@ -1,0 +1,6 @@
+nav:
+  - README.md
+  - introduction-to-network-analysis.md
+  - bipartite-and-evolving-networks.md
+  - directed-networks-and-structural-metrics.md
+  - network-analysis-case-studies.md

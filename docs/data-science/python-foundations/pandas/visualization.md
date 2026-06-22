@@ -30,6 +30,22 @@ plt.show()
 - `kind='bar'`: vertical bar plot.
 - `kind='line'`: default plot (line graph).
 
+For time series, it is often better to set the date column as the index first:
+
+```python
+prices = pd.DataFrame({
+    "Date": pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03"]),
+    "Close": [100, 102, 101]
+})
+
+prices = prices.set_index("Date")
+prices.plot(y="Close", title="Close Price Over Time")
+plt.show()
+```
+
+- A datetime index makes time-order plots more natural.
+- This pattern is especially common in finance, where the x-axis is almost always a trading date.
+
 ## Scatter Plot (Multiple Columns)
 
 ```python

@@ -16,6 +16,14 @@ if __name__ == "__main__":
 - When a script is run directly, `__name__` is set to `'__main__'`.
 - When a script is imported as a module, `__name__` is set to the module's name.
 
+## Why It Matters in Data Science
+
+分析腳本常常一開始只是 notebook 旁邊的小工具，但之後很容易演變成可以被其他模組重用的資料清理、訓練或匯出程式。把執行入口包在 `main()` 裡，能讓程式同時保有：
+
+- 可直接執行
+- 可被匯入重用
+- 較容易測試
+
 ### Example with Additional Functions
 
 ```python
@@ -57,8 +65,17 @@ This pattern is useful when writing:
 - Unit tests inside the same file
 - CLI (command-line interface) tools
 
+## Recommended Pattern
+
+```python
+def main():
+    ...
+
+
+if __name__ == "__main__":
+    main()
+```
+
+這樣做的好處是：真正的邏輯放在函式裡，可測試、可重用；入口條件只負責決定何時執行。
+
 > **Tip**: Always use this pattern when writing Python scripts that might be reused elsewhere as modules.
-
-```
-
-```

@@ -1,5 +1,7 @@
 # Pandas: Sorting
 
+Sorting 看起來簡單，但在資料清理與輸出報表時非常重要。特別是多欄位排序與 MultiIndex 排序，常直接影響你後續閱讀、比對與 join 的正確性。
+
 ## Example Dataset
 
 ```python
@@ -27,6 +29,8 @@ df.sort_values("age", ascending=False)   # Descending
 df.sort_values(["age", "weight_kg"])
 df.sort_values(["age", "weight_kg"], ascending=[True,False])
 ```
+
+多欄位排序時，第二個欄位只會在第一個欄位相同的情況下作為 tie-breaker。
 
 ## Sorting by Index
 
@@ -78,3 +82,8 @@ df.sort_values("age", inplace=True) # df is modified in-place, and nothing is re
 ```
 
 > Be careful: `inplace=True` changes the original object and cannot be undone unless you saved a copy beforehand.
+
+## Practical Advice
+
+- 在分析流程中，通常優先用回傳新物件的寫法，比 `inplace=True` 更清楚也更安全。
+- 若你只是想看排序結果，可以直接 `df.sort_values(...).head()`，不用先改原資料。

@@ -14,6 +14,12 @@
 - Computationally more expensive than [PCA](pca.md).
 - Requires tuning of hyperparameters (notably `perplexity` and `learning_rate`).
 
+## PCA vs. t-SNE
+
+- PCA is better when you want a stable linear summary that preserves more of the global variance structure.
+- t-SNE is better when you mainly care about local neighborhoods and visual cluster separation.
+- A t-SNE plot can make groups look more separated than they truly are in the original space, so do not read the axes or inter-cluster distances too literally.
+
 ## Example: Visualizing the Iris Dataset with t-SNE
 
 ```python

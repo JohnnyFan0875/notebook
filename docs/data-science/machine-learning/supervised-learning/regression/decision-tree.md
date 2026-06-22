@@ -1,16 +1,20 @@
 # Decision Tree (Regression)
 
-[Decision Tree](../classification/decision-tree.md)s can also be applied to **regression** tasks. In [scikit-learn](../../packages/scikit-learn/README.md), this is implemented as:
+[Decision Tree](../classification/decision-tree.md)s 也可以用在回歸問題。和線性回歸不同，回歸樹不是擬合一條平滑直線，而是把特徵空間切成多個區塊，讓每個區塊輸出一個常數預測值。
 
-- `DecisionTreeRegressor`
+在 [scikit-learn](../../packages/scikit-learn/README.md) 中，對應類別是 `DecisionTreeRegressor`。
 
-They split the data to minimize error metrics such as Mean Squared Error ([MSE](../../evaluation/mse-rmse.md)).
+## Core Idea
+
+- 反覆選擇切分點，讓每個節點內的目標值更一致。
+- 常見目標是最小化 Mean Squared Error ([MSE](../../evaluation/mse-rmse.md)) 或其他回歸損失。
+- 最終預測通常呈現階梯狀，而不是平滑曲線。
 
 ## Key Parameters
 
-- **`max_depth`**: Controls tree depth, prevents [overfitting](../../foundations/overfitting-underfitting.md).
-- **`min_samples_split`** and **`min_samples_leaf`**: Control minimum samples for splits and leaves.
-- **`criterion`**: Split quality metric (`squared_error`, `absolute_error`, `friedman_mse`, `poisson`).
+- **`max_depth`**: controls tree depth and helps prevent [overfitting](../../foundations/overfitting-underfitting.md)
+- **`min_samples_split`** and **`min_samples_leaf`**: require enough samples before splitting or keeping a leaf
+- **`criterion`**: split quality metric (`squared_error`, `absolute_error`, `friedman_mse`, `poisson`)
 
 ## Example: Regression
 
@@ -35,11 +39,23 @@ r2 = r2_score(y_test, y_pred_reg)
 print(f"MSE: {mse}, R2: {r2}")
 ```
 
+## How to Interpret Results
+
+- 如果資料中有明顯非線性或交互作用，回歸樹常比單純線性模型更容易抓到結構。
+- 如果預測曲線看起來非常鋸齒或在訓練集超準，通常代表樹太深了。
+- 單棵樹的解釋性高，但預測穩定性通常不如 ensemble。
+
 ## Critical Notes
 
-- **[Overfitting](../../foundations/overfitting-underfitting.md) risk**: Trees can overfit noisy regression data without constraints.
-- **Interpretability**: Still interpretable, but regression trees may produce step-like predictions.
-- **Better alternatives**: For continuous outcomes, ensembles like [Random Forest](../ensemble/random-forest.md) Regressor or [Gradient Boosting](../ensemble/gradient-boosting.md) Regressor often perform better.
+- **[Overfitting](../../foundations/overfitting-underfitting.md) risk**: trees can overfit noisy regression data without constraints
+- **Interpretability**: still interpretable, but predictions are step-like rather than smooth
+- **Better alternatives**: ensembles like [Random Forest](../ensemble/random-forest.md) or [Gradient Boosting](../ensemble/gradient-boosting.md) often perform better on tabular data
+
+## Common Pitfalls
+
+- 沒有限制樹深度或 leaf 大小。
+- 把單棵回歸樹的高訓練分數誤認為泛化能力。
+- 忽略樹模型對資料微小變動可能相當敏感。 
 
 ## Related Concepts
 

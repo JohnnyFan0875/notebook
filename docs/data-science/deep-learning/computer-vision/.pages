@@ -1,0 +1,4 @@
+nav:
+  - README.md
+  - image-classification-workflow.md
+  - convolutional-neural-networks.md

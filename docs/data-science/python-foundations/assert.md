@@ -1,6 +1,6 @@
 # Python `assert`
 
-The `assert` statement in Python is used for **debugging and testing assumptions** in code. It helps ensure that a condition holds true at runtime. If the condition evaluates to `False`, an `AssertionError` is raised.
+The `assert` statement in Python is used for debugging and testing assumptions in code. It is most useful when a condition should always be true if the program is correct. If the condition evaluates to `False`, Python raises an `AssertionError`.
 
 ## Basic Syntax
 
@@ -50,6 +50,13 @@ print(divide(10, 0))  # AssertionError
 - **Testing**: to validate function inputs or outputs
 - **Documentation**: makes expected conditions explicit in code
 
+## A Good Mental Model
+
+Use `assert` for programmer errors, not user errors. In other words:
+
+- "This internal helper should only ever receive a sorted list" -> `assert`
+- "The user may forget to upload a file" -> normal exception handling
+
 ## When _Not_ to Use
 
 - **Production-critical checks**: Assertions can be globally disabled with the `-O` (optimize) flag when running Python:
@@ -62,6 +69,12 @@ print(divide(10, 0))  # AssertionError
 
 - **User input validation**: Use exceptions (`if` + `raise`) instead, since those should not be skipped.
 
+## Common Pitfalls
+
+- Using `assert` to validate external data or API input
+- Putting side effects inside assertions
+- Forgetting that `python -O` disables assertions
+
 ## Best Practices
 
 - Use assertions for conditions that should **always be true** if the program is correct.
@@ -73,4 +86,4 @@ print(divide(10, 0))  # AssertionError
 - `assert` is a lightweight way to check assumptions.
 - Raises `AssertionError` when condition fails.
 - Good for debugging and testing, but not for handling user errors.
-- Can be disabled with the `-O` flag — don’t rely on it for product
+- Can be disabled with the `-O` flag, so do not rely on it for production-critical validation.

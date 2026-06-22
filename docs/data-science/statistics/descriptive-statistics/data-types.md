@@ -26,6 +26,22 @@ Before applying any statistical method, you need to know **what kind of data you
 | **Categorical** (Qualitative) | Nominal, Ordinal | What group does this belong to? |
 | **Numerical** (Quantitative)  | Interval, Ratio  | How much / how many?            |
 
+## Representation Also Matters
+
+Before you even reach measurement scale, it helps to ask how the data is represented.
+
+| Representation | Typical form | Practical implication |
+| --- | --- | --- |
+| Structured | Tables with rows, columns, labels, and consistent fields | Easier to filter, summarize, and analyze directly |
+| Unstructured | Text, images, audio, video, free-form documents | Richer context, but usually needs preprocessing before statistical analysis |
+
+Examples:
+
+- structured: sales records, attendance logs, weather tables
+- unstructured: interviews, images, videos, free-text notes
+
+Key point: A dataset can be valuable and still be hard to analyze. Unstructured data often contains important context, but it usually needs extraction, labeling, or transformation before standard statistical workflows apply.
+
 Numerical data is further split into:
 
 | Type           | Description                              | Example                                            |
@@ -72,6 +88,17 @@ Common pandas dtype mappings:
 | `datetime64`       | Special            | Use time series methods                                              |
 
 Warning: Common trap: Coded categorical variables (e.g., 1 = Strongly Disagree, 5 = Strongly Agree; Likert scale) may appear as int64 in pandas, but they are Ordinal, not numerical. Always check the data dictionary.
+
+Another common trap: metadata and identifiers may look like ordinary variables but should not be analyzed as measurements.
+
+Examples:
+
+- customer ID
+- encounter number
+- file path
+- timestamp stored as raw text
+
+Tip: Always ask whether a column represents a measured attribute, a category, a key, or supporting metadata.
 
 ## Key Takeaways
 

@@ -15,4 +15,10 @@ Classification predicts a discrete label such as spam / not spam, churn / no chu
 - Use KNN and SVM when scaling and distance behavior matter.
 - Use trees when interpretability and non-linear splits are useful.
 
+## Beginner Reminders
+
+- Classification models often output scores or probabilities before they become decisions.
+- Accuracy alone is usually not enough, especially with imbalanced classes.
+- Think about [thresholds](../../evaluation/classification-thresholds-and-calibration.md) together with the model, not after the fact.
+
 [Back to Supervised Learning](../README.md)

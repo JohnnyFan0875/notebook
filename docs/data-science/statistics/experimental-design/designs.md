@@ -115,6 +115,68 @@ print(anova_lm(model, typ=2))
 
 Tip: In RCBD the interaction between block and treatment cannot be estimated when there is only one observation per cell — this is a deliberate tradeoff. If you need to estimate the interaction, add replicates within each cell (a Generalized RCBD).
 
+### How To Think About Block Effects
+
+Blocking is worthwhile when there is meaningful between-block variation that would otherwise inflate the residual error term.
+
+Useful practical questions:
+
+- are units inside each block more similar to each other than to units in other blocks?
+- does each treatment appear within every block?
+- is the main goal to control nuisance variation rather than estimate many interactions?
+
+Key point: RCBD is not mainly about creating more groups. It is about protecting treatment comparisons from noise caused by a known nuisance variable.
+
+## Balanced Incomplete Block Design (BIBD)
+
+A **Balanced Incomplete Block Design** is used when blocking is still important, but each block cannot feasibly contain **all** treatments.
+
+This happens when:
+
+- there are too many treatments to fit into one block
+- each block has a hard capacity limit
+- experimental units within a block must remain comparable
+
+The design is:
+
+- **balanced**: each pair of treatments appears together equally often
+- **incomplete**: not every treatment appears in every block
+- **blocked**: units are still grouped to control nuisance variation
+
+This makes BIBD a useful compromise between two competing goals:
+
+1. preserve the precision benefit of blocking
+2. avoid impractically large blocks
+
+### When To Prefer BIBD Over RCBD
+
+Use BIBD when a standard RCBD would make each block too crowded, expensive, or logistically impossible.
+
+Typical examples:
+
+- tasting panels where each judge can only evaluate a subset of products
+- field trials with many candidate varieties but limited plot space per block
+- educational or clinical settings where each site can only administer a subset of treatments
+
+### A Quick Feasibility Check
+
+For a BIBD, a common parameterization is:
+
+- `t`: number of treatments
+- `k`: number of treatments per block
+- `r`: number of replications per treatment
+- `lambda`: number of times each treatment pair appears together
+
+These quantities are linked by:
+
+\[
+\lambda = \frac{r(k - 1)}{t - 1}
+\]
+
+If `lambda` is not a whole number, that exact BIBD is not feasible with the chosen `t`, `k`, and `r`.
+
+Warning: BIBD is not just "leave some treatments out of some blocks." The missingness must be structured so that treatment comparisons remain balanced across the full design.
+
 ## Factorial Design
 
 A factorial design varies **two or more factors simultaneously**. Every combination of factor levels is tested.
@@ -188,6 +250,63 @@ Tip: In an interaction plot, parallel lines suggest little or no interaction, wh
 | **Significant interaction** | Main effects alone are misleading — must interpret jointly |
 
 Warning: When an interaction is significant, do not interpret main effects alone. Report and visualize the interaction.
+
+### A Practical Starting Point For Interactions
+
+Before running the formal model, it often helps to inspect the cell means directly.
+
+Useful displays include:
+
+- a pivot table of mean responses for each factor combination
+- an interaction plot
+- a heatmap when there are many combinations
+
+Key point: A significant interaction means the factors do not act independently. Once that happens, statements like "Factor A is better on average" can be incomplete or misleading without naming the level of Factor B.
+
+### 2^k Factorial Designs
+
+A **2^k factorial design** is a special case where:
+
+- there are `k` factors
+- each factor has exactly **2 levels**
+- the full design contains `2^k` treatment combinations
+
+Examples:
+
+- `2^2` design: 2 factors, 4 combinations
+- `2^3` design: 3 factors, 8 combinations
+- `2^4` design: 4 factors, 16 combinations
+
+These designs are especially common in engineering, manufacturing, and screening experiments because they give a compact way to estimate:
+
+- main effects
+- two-way interactions
+- higher-order interactions if the full design is run
+
+Tip: The main practical appeal of `2^k` designs is not the notation itself. It is that two-level factors make effect coding, interaction interpretation, and screening workflows much simpler.
+
+### Fractional Factorial Designs
+
+When a full factorial becomes too expensive, a **fractional factorial design** deliberately runs only a subset of all combinations.
+
+Why use it:
+
+- the number of factors is large
+- running every combination is too costly
+- the main goal is screening for the most important factors first
+
+The tradeoff is **aliasing**: some effects become confounded with others by design.
+
+Key point: Fractional factorial designs buy efficiency by assuming that higher-order interactions are small enough to ignore, at least in the initial screening stage.
+
+## Factorial vs. RCBD
+
+These two designs are often confused because both organize structure before analysis, but they solve different problems.
+
+| Design | Best when | Main payoff | Main tradeoff |
+| --- | --- | --- | --- |
+| Factorial | You want to study multiple treatments or conditions at once | Detects main effects and interactions | Can require more cells, more subjects, and more interpretation effort |
+| RCBD | You want to control one known nuisance source of variability | Reduces within-block variance and improves precision | Usually gives up interaction estimation if there is only one observation per treatment-block cell |
 
 ## Latin Square Design
 

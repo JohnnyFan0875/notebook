@@ -14,6 +14,12 @@ Unlike [K-Means](kmeans.md), they provide **soft cluster assignments**.
 - Clusters can have different shapes and covariance structures
 - Probabilistic assignments are useful when cluster membership is uncertain
 
+## 與 K-Means 的差別
+
+- K-Means 會把每個點硬分到單一群。
+- GMM 會輸出每個點屬於各群的機率，因此更適合邊界模糊、群之間有重疊的情況。
+- 若資料真的近似高斯混合，GMM 往往比 K-Means 更有彈性。
+
 ## Example
 
 ```python
@@ -35,6 +41,12 @@ probs = gmm.predict_proba(X_scaled)
 - Standardization is often helpful.
 - Compare multiple `n_components` values.
 - Use with caution when clusters are not approximately Gaussian.
+
+## Common Pitfalls
+
+- 把機率分群解讀成絕對真實群別。
+- 只因為 `n_components` 變多、訓練似然更高就覺得模型更好。
+- 忽略 covariance type 對群形狀假設的影響。
 
 ## Related Concepts
 

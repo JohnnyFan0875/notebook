@@ -6,6 +6,7 @@
 - Each **principal component (PC)** is a linear combination of the original features.
   - **PC1**: direction of maximum variance in the data.
   - **PC2**: direction of the second-highest variance, and so on.
+- The principal components are orthogonal to each other, so PCA removes linear correlation in the transformed space.
 
 ## Simple Example (Iris Dataset)
 
@@ -61,6 +62,41 @@ plt.show()
 
 - `pca.explained_variance_ratio_`: `[0.9246, 0.0531]` → PC1 explains ~92.5% variance, PC2 explains ~5.3%.
 - `loadings_df`: shows how strongly each feature contributes to each principal component (positive or negative correlation).
+
+## Choosing the Number of Components
+
+- You can set a fixed count such as `n_components=2` when visualization is the goal.
+- You can also set a variance target such as `n_components=0.9` to keep enough components to explain 90% of the variance.
+- Plotting `explained_variance_ratio_` or its cumulative sum helps show where additional components stop adding much information.
+
+## PCA in a Modeling Pipeline
+
+- Fit scaling and PCA only on the training data to avoid leakage.
+- In `scikit-learn`, a `Pipeline` is the safest way to combine `StandardScaler`, `PCA`, and a downstream estimator.
+- High explained variance does not automatically mean better predictive performance, so always compare validation results.
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = Pipeline([
+    ("scaler", StandardScaler()),
+    ("reducer", PCA(n_components=0.9)),
+    ("classifier", RandomForestClassifier(random_state=42))
+])
+
+pipe.fit(X_train, y_train)
+score = pipe.score(X_test, y_test)
+retained_variance = pipe["reducer"].explained_variance_ratio_.sum()
+```
+
+## Practical Reminders
+
+- PCA is a feature extraction method, not feature selection, because the output variables are new components.
+- If two variables are almost duplicates, simple correlation-based pruning may be easier to explain than PCA.
+- PCA is often useful before clustering or visualization, but you should still inspect whether the transformed representation helps the downstream task.
 
 ## Related Concepts
 

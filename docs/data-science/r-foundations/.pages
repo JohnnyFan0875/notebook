@@ -1,0 +1,10 @@
+nav:
+  - README.md
+  - vectors.md
+  - data-frames.md
+  - categorical-data.md
+  - lists.md
+  - datetime.md
+  - control-flow.md
+  - functions.md
+  - apply-family.md

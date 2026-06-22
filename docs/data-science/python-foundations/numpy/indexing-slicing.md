@@ -1,6 +1,6 @@
 # NumPy Indexing and Slicing
 
-This section covers indexing and slicing in NumPy arrays.
+This section covers indexing and slicing in NumPy arrays. 這是最常用、也最容易因 shape 搞混的地方。
 
 ## Example Arrays
 
@@ -59,6 +59,15 @@ matrix[0, 2]
 
 - Use `matrix[row, col]` format for clarity and performance.
 
+## Boolean Indexing
+
+```python
+arr[arr % 2 == 0]
+# [0 2 4 6 8]
+```
+
+布林索引在資料清理與條件篩選時非常常用，但要注意條件陣列的 shape 必須對得上。
+
 ## Shape Property
 
 ```python
@@ -67,6 +76,12 @@ matrix.shape
 ```
 
 - Shape gives the dimensions (rows, columns).
+
+## Common Pitfalls
+
+- 忘記切片上限不包含結尾索引。
+- 把 `matrix[0][2]` 和 `matrix[0, 2]` 混用而不理解差異。
+- 布林條件 shape 不一致，導致 indexing error。
 
 ## Summary
 

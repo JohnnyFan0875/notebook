@@ -28,6 +28,13 @@ The **linkage method** determines how distances between clusters are calculated:
 - **Average linkage**: Average distance between all pairs of points across clusters
 - **Ward’s method**: Minimizes the variance within clusters
 
+### When Each Linkage Tends To Help
+
+- **Single linkage** can connect elongated structures, but it is prone to chaining effects.
+- **Complete linkage** prefers tighter, more compact clusters.
+- **Average linkage** is often a middle ground when single and complete give very different answers.
+- **Ward's method** is a strong default when Euclidean distance is appropriate and compact clusters are expected.
+
 ![Image](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*7d7DTLiwe0MJEQfPl0PLXw.png)
 
 ## Python Example
@@ -72,6 +79,19 @@ plt.show()
 - Use **Ward’s linkage** when clusters are expected to be spherical
 - Scale features before clustering
 - For large datasets, consider **agglomerative clustering with truncated linkage** or alternatives like **[K-Means](kmeans.md) / [DBSCAN](dbscan.md)**
+
+### Reading a Dendrogram
+
+- A dendrogram shows how clusters merge as the allowed distance increases.
+- You can cut it at a chosen height if you want a distance-based rule.
+- You can also convert the tree into a fixed number of clusters with tools such as `fcluster(..., criterion="maxclust")`.
+- Large vertical jumps before a merge often suggest more clearly separated groups.
+
+### Two Common Ways To Cut the Tree
+
+- Cut by **height** when you want clusters to obey a distance threshold.
+- Cut by **number of clusters** when you already know how many groups you want to compare.
+- These two choices can produce different partitions, so be explicit about which rule you are using.
 
 ## Related Concepts
 

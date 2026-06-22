@@ -93,6 +93,28 @@ td = timedelta(days=1, seconds=1)
 new_date = dates + td
 ```
 
+Comparing datetimes is also straightforward:
+
+```python
+asian_crisis = datetime(1997, 7, 2)
+world_mini_crash = datetime(1997, 10, 27)
+
+asian_crisis < world_mini_crash   # True
+asian_crisis == world_mini_crash  # False
+```
+
+Creating relative dates should use `timedelta`, not manual day arithmetic:
+
+```python
+dt = datetime(2019, 1, 14)
+
+# Safe
+one_week_ago = dt - timedelta(days=7)
+
+# Unsafe near month boundaries
+# datetime(dt.year, dt.month, dt.day - 15)
+```
+
 ## Timezones
 
 Using `timezone` with `timedelta`:
@@ -130,3 +152,4 @@ last = datetime(2017, 12, 30, 15, 9, 3, tzinfo=et)
 - Use `datetime.utcnow().replace(tzinfo=timezone.utc)` or `datetime.now(timezone.utc)` for consistent UTC timestamps.
 - Prefer `dateutil.tz` for named timezones (`America/New_York`, `Asia/Taipei`) instead of fixed offsets.
 - Use `timedelta` for safe date arithmetic instead of manually adjusting year, month, or day.
+- If you compare datetimes from strings, parse them first with `strptime()` so the comparison happens on true datetime values.

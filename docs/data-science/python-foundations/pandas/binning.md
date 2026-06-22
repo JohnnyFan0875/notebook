@@ -47,6 +47,13 @@ iris['petal_length_group'].value_counts()
 - Ensures roughly equal number of samples per bin.
 - Useful for splitting skewed distributions.
 
+## When to Use `cut` vs `qcut`
+
+| Method | Best for | Main tradeoff |
+| --- | --- | --- |
+| `pd.cut()` | bins with business meaning, such as age groups or lab thresholds | groups may have very uneven counts |
+| `pd.qcut()` | equal-frequency grouping for exploration or modeling | cut points may be less intuitive |
+
 ## Inspect Categories
 
 ```python
@@ -61,3 +68,9 @@ iris['sepal_length_cat'].value_counts()
 - **`pd.qcut()`**: quantile-based binning (equal-sized groups).
 - Binning converts continuous values into categories, making patterns easier to interpret.
 - Useful in **EDA** and **feature engineering**.
+
+## Common Pitfalls
+
+- 用太多 bins，結果每箱樣本太少。
+- 把分箱後的類別誤當成有真實線性距離的數值。
+- 在建模前先做分箱，卻沒有確認是否真的比保留原始連續資訊更好。

@@ -1,11 +1,19 @@
 nav:
+  - README.md
+  - understanding-data-science.md
+  - data-communication
+  - data-engineering
   - statistics
+  - operations-research
+  - network-analysis
   - python-foundations
+  - r-foundations
+  - data-manipulation-and-eda
   - machine-learning
+  - marketing-analytics
+  - ai-strategy-and-governance
   - deep-learning
   - databases
   - finance
   - llm
-  - visualization
   - web-scraping
-  - data-manipulation-and-eda

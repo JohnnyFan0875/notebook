@@ -1,0 +1,8 @@
+nav:
+  - README.md
+  - foundations
+  - prompting
+  - agents
+  - rag
+  - operations
+  - integration

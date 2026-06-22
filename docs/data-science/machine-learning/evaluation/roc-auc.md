@@ -1,11 +1,9 @@
 # ROC curve, AUC
 
 - **ROC curve**: Receiver Operating Characteristic Curve
-- **AUC**: Area Under the Curve, ranges between [0, 1]
+- **AUC**: Area Under the Curve, ranges between `0` and `1`
 
-## Purpose
-
-- Evaluates **binary [classification](../supervised-learning/classification/README.md) model performance** across thresholds.
+ROC curve 用來看二元 [classification](../supervised-learning/classification/README.md) 模型在不同 threshold 下，真陽性率與假陽性率如何一起變化。它適合回答「模型有沒有把正例排得比負例前面」這類辨識能力問題。
 
 ## Axes
 
@@ -14,27 +12,37 @@
 - **y-axis**: TPR (True Positive Rate, Sensitivity)
   \( TPR = \frac{TP}{TP + FN} \)
 
+## How to Read the Curve
+
+- 曲線越靠左上角越好，代表在維持較低 FPR 的同時能拿到較高 TPR。
+- 對角線代表隨機猜測基準。
+- 若兩模型 ROC 曲線交叉，只看 AUC 可能還不夠，還要考慮實際可接受的 FPR 區間。
+
+![Example ROC curve](assets/roc-curve-example.png)
+
 ## Construction
 
-- Based on different thresholds → get corresponding FPR & TPR → each pair is a point in the ROC curve.
-
-## Evaluation
-
-- **Threshold selection**: Use **Youden index** (TPR − FPR) to find optimal cutoff.
-- **Comparing models**: Compare **AUC values**.
+把模型機率輸出從高到低掃過不同 cutoff，每個 threshold 都會對應一組 `(FPR, TPR)`，連起來就是 ROC curve。
 
 ## AUC Interpretation
 
-- **AUC = 0.5**: Classifier performs no better than random guessing (diagonal line).
-- **AUC > 0.5**: Model has predictive power.
-- **AUC = 1.0**: Perfect classifier (no FP or FN).
+- **AUC = 0.5**: classifier performs no better than random guessing
+- **AUC > 0.5**: model has predictive power
+- **AUC = 1.0**: perfect ranking between positive and negative classes
 
-## References:
+## When ROC/AUC Is Useful
 
-- [haosquare ROC curve guide](https://haosquare.com/roc-curve/)
-- [Best cutoff point](https://haosquare.com/roc-curve-best-cutoff/)
+- 你關心模型的整體排序能力，而不是單一 cutoff。
+- 你還沒決定 threshold，但想先比較不同模型。
+- 正負樣本不完全平衡，但你仍希望看 across-threshold 的辨識能力。
 
-## Examples:
+## Important Cautions
+
+- ROC/AUC 不會直接告訴你哪個 threshold 最符合業務目標。
+- 在極度不平衡資料中，PR curve 有時比 ROC 更敏感。
+- AUC 高不代表 calibration 好，也不代表實際 precision 一定高。
+
+## Example
 
 ```python
 from sklearn.datasets import make_classification
@@ -73,13 +81,8 @@ print("Best threshold (Youden):", best_threshold)
 
 - ROC curve evaluates a model across thresholds instead of at one cutoff.
 - AUC summarizes overall discrimination ability.
-- **Youden index** helps select the optimal cutoff point.
+- **Youden index** can be a useful heuristic cutoff, but it should not replace cost-based decision design.
 - Useful when class distribution is [imbalanced](class-imbalance.md).
-
-See also:
-
-- [Classification Thresholds and Calibration](classification-thresholds-and-calibration.md)
-- [Confusion Matrix](confusion-metrics.md)
 
 ## Related Concepts
 

@@ -1,5 +1,6 @@
 nav:
   - README.md
+  - ab-testing.md
   - confounding-bias.md
   - core-concepts.md
   - designs.md

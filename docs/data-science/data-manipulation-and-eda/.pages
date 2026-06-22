@@ -1,0 +1,7 @@
+nav:
+  - README.md
+  - eda-workflow.md
+  - data-profiling.md
+  - cohort-analysis.md
+  - missing-data.md
+  - visualization

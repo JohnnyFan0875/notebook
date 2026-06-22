@@ -1,5 +1,7 @@
 # NumPy Reshape and Concatenate
 
+`reshape` 與 `concatenate` 是把陣列重新整理成模型或函式需要格式的基本功。遇到維度錯誤時，先回頭看 shape，通常就能找到原因。
+
 ## Example Arrays
 
 ```python
@@ -33,6 +35,14 @@ arr.reshape(3, 2)
 ```
 
 - Changes shape into 3 rows and 2 columns. The total number of elements must remain the same.
+
+```python
+arr.reshape(2, -1)
+# [[1 2 3]
+#  [4 5 6]]
+```
+
+- `-1` lets NumPy infer one dimension automatically.
 
 ## Transpose
 
@@ -105,4 +115,15 @@ np.concatenate((arr, np.array(Z).reshape(1, 2)), axis=0)
 - **`T` (transpose)**: flip rows and columns.
 - **`concatenate`**: join arrays along rows or columns.
 - **`vstack` / `hstack`**: shortcuts for stacking vertically or horizontally.
-- Be careful with \*\*dimension alignment
+- Be careful with dimension alignment.
+
+## Practical Habit
+
+在串接前先檢查：
+
+```python
+print(a.shape)
+print(b.shape)
+```
+
+很多 `ValueError` 都只是因為你以為兩個陣列對得上，但實際上 axis 長度不同。

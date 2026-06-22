@@ -1,6 +1,6 @@
 # NumPy Package Documentation
 
-This folder contains structured notes and cheat sheets for commonly used **NumPy** methods.
+NumPy 是 Python 科學計算的基礎層。只要你在做向量化運算、矩陣處理、抽樣模擬，或想理解 pandas / scikit-learn 背後怎麼吃資料，NumPy 幾乎都在場。
 
 ## Table of Contents
 
@@ -101,6 +101,12 @@ This folder contains structured notes and cheat sheets for commonly used **NumPy
 
 ## Usage
 
-- Each file contains **examples with output** and short **explanations**.
-- Use this as a quick reference when working with NumPy for data science, statistics, or linear algebra tasks.
-- For related conversions (e.g., array → DataFrame), see **[Data Type Transformation](../data-type-transformation.md)**.
+- Each file contains examples with output and short explanations.
+- Use this as a quick reference when working with arrays for data science, statistics, or linear algebra tasks.
+- For related conversions (e.g., array -> DataFrame), see [Data Type Transformation](../data-type-transformation.md).
+
+## 先掌握的三件事
+
+1. `shape` 與 `axis` 的意義。
+2. slicing 與 broadcasting 如何改變運算結果。
+3. 何時該用向量化，而不是 Python `for` 迴圈。

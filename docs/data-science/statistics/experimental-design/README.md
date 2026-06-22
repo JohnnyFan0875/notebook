@@ -33,6 +33,7 @@ A poorly designed experiment produces data that cannot answer your question — 
 | -------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------ |
 | [**Core Concepts & Terminology**](./core-concepts.md) | Foundation | What are variables, treatments, controls, and experimental units? |
 | [**Principles of Experimental Design**](./principles.md) | Foundation | What makes an experiment valid? Randomization, replication, blocking. |
+| [**A/B Testing**](./ab-testing.md) | Applied | How do I run product experiments without common instrumentation and inference mistakes? |
 | [**Common Experimental Designs**](./designs.md) | Core | Which design structure fits my situation? |
 | [**Confounding, Bias & Validity**](./confounding-bias.md) | Core | What can go wrong, and how do I prevent it? |
 | [**Sample Size & Statistical Power**](./sample-size-power.md) | Applied | How many observations do I need? |
@@ -68,6 +69,14 @@ Organized by complexity and use case:
 | Latin Square | Two blocking factors simultaneously |
 | Crossover Design | Each subject receives all treatments |
 | Split-Plot Design | Some factors harder to randomize than others |
+
+### A/B Testing
+
+- when randomized product experiments are the right tool
+- how to write testable product hypotheses
+- why the randomized unit and analysis unit must match
+- how metric type affects test choice
+- why peeking and weak instrumentation invalidate conclusions
 
 ### Confounding, Bias & Validity
 
@@ -115,7 +124,8 @@ The most important progression in this module is:
 1. causal question clarity
 2. randomization and control
 3. blocking and nuisance variation
-4. effect size and power planning
+4. A/B testing workflow for modern product experiments
+5. effect size and power planning
 
 Tip: Good analysis after bad design is still bad evidence.
 
@@ -125,6 +135,7 @@ For most readers, this sequence works well:
 
 1. clarify the causal question and experimental unit
 2. learn randomization, replication, and blocking
-3. choose the design structure
-4. think through bias and validity threats
-5. finish with power and sample-size planning
+3. study [A/B Testing](./ab-testing.md) if you work on product or web experiments
+4. choose the design structure
+5. think through bias and validity threats
+6. finish with power and sample-size planning

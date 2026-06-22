@@ -1,0 +1,13 @@
+nav:
+  - README.md
+  - autocorrelation.md
+  - bond-valuation-and-interest-rate-risk.md
+  - credit-risk-modeling.md
+  - financial-data-ingestion-and-cleaning.md
+  - fundamental-financial-concepts.md
+  - insurance-and-annuity-valuation.md
+  - portfolio-analysis.md
+  - quantitative-risk-management.md
+  - stock-price-simulation-and-volatility.md
+  - trading-strategies-and-backtesting.md
+  - corporate-finance

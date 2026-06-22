@@ -1,0 +1,6 @@
+nav:
+  - README.md
+  - text-representations-and-embeddings.md
+  - sequence-models-for-text.md
+  - transformers-and-attention.md
+  - llm-fine-tuning.md

@@ -32,6 +32,17 @@ iris['species'].value_counts(sort=True)       # Frequency of each category
 iris['species'].value_counts(normalize=True)  # Proportion of each category
 ```
 
+For mixed-type datasets, `describe()` can be made more explicit:
+
+```python
+iris.describe(include='all')              # Include numeric and object/categorical columns
+iris.describe(include=['float', 'object'])
+iris.describe(percentiles=[0.1, 0.5, 0.9])
+```
+
+- `include='all'` is useful when you want one quick pass over the whole table.
+- Custom percentiles are especially helpful for skewed or time-series-like data.
+
 ## Basic Statistical Functions
 
 ```python
@@ -105,6 +116,7 @@ iris['expanding_mean'] = iris['sepal_length'].expanding().mean()
 ## Key Takeaways
 
 - Use `.describe()` and dataset overview methods for quick inspection.
+- Use `describe(include=...)` when the dataset mixes numeric and categorical columns.
 - `.nlargest()` and `.nsmallest()` are useful for quickly finding extremes.
 - `.diff()` and `.pct_change()` are useful for time-series or sequential comparisons.
 - `.corr()` and `.cov()` reveal relationships between variables.

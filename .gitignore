@@ -17,3 +17,5 @@ env/
 
 # OS / editor noise
 .DS_Store
+
+goal-prompt.txt
