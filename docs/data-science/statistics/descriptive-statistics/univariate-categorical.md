@@ -64,85 +64,93 @@ Warning: Without setting ordered=True and specifying categories, pandas will sor
 
 ### Vertical Bar Chart
 
-- Use when the main goal is to compare category counts.
-- Avoid it only when labels are too long or too numerous to fit comfortably.
+* Use when the main goal is to compare category counts.
+* Avoid it only when labels are too long or too numerous to fit comfortably.
 
 ??? example "Script"
 
-    ```python
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+````
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-    iris = sns.load_dataset("iris").copy()
+iris = sns.load_dataset("iris").copy()
 
-    sns.countplot(x="species", data=iris, hue="species", palette="Set2", legend=False)
-    plt.title('Species Distribution')
-    plt.xlabel('Species')
-    plt.ylabel('Count')
-    plt.show()
-    ```
+sns.countplot(x="species", data=iris, hue="species", palette="Set2", legend=False)
+plt.title('Species Distribution')
+plt.xlabel('Species')
+plt.ylabel('Count')
+plt.show()
+```
+````
 
-![Vertical bar chart](univariate-categorical-bar-vertical.png){ .img-center }
+![Vertical bar chart](../../../../.gitbook/assets/univariate-categorical-bar-vertical.png){ .img-center }
 
 ### Horizontal Bar Chart
 
-- Use when category labels are long or when you have many categories.
-- Prefer this over a vertical bar chart when readability becomes the main concern.
+* Use when category labels are long or when you have many categories.
+* Prefer this over a vertical bar chart when readability becomes the main concern.
 
 ??? example "Script"
 
-    ```python
-    species_counts = iris["species"].value_counts().sort_values()
+````
+```python
+species_counts = iris["species"].value_counts().sort_values()
 
-    species_counts.plot(kind="barh", color="steelblue")
-    plt.title("Species Distribution")
-    plt.xlabel("Count")
-    plt.ylabel("Species")
-    plt.show()
-    ```
+species_counts.plot(kind="barh", color="steelblue")
+plt.title("Species Distribution")
+plt.xlabel("Count")
+plt.ylabel("Species")
+plt.show()
+```
+````
 
-![Horizontal bar chart](univariate-categorical-bar-horizontal.png){ .img-center }
+![Horizontal bar chart](../../../../.gitbook/assets/univariate-categorical-bar-horizontal.png){ .img-center }
 
 ### Pie Chart
 
-- Use when the message is part-of-whole and the number of categories is small.
-- Avoid it when you need precise comparison across many categories.
+* Use when the message is part-of-whole and the number of categories is small.
+* Avoid it when you need precise comparison across many categories.
 
 ??? example "Script"
 
-    ```python
-    species_counts = iris["species"].value_counts()
+````
+```python
+species_counts = iris["species"].value_counts()
 
-    species_counts.plot(
-        kind="pie", autopct="%1.1f%%", startangle=90
-    )
-    plt.title("Species Proportion")
-    plt.ylabel("")
-    plt.show()
-    ```
+species_counts.plot(
+    kind="pie", autopct="%1.1f%%", startangle=90
+)
+plt.title("Species Proportion")
+plt.ylabel("")
+plt.show()
+```
+````
 
-![Pie chart](univariate-categorical-pie.png){ .img-center }
+![Pie chart](../../../../.gitbook/assets/univariate-categorical-pie.png){ .img-center }
 
 ### Ordered Bar Chart
 
-- Use for ordinal data, where category order carries meaning.
-- Define the order explicitly before plotting, otherwise the chart may be misleading.
+* Use for ordinal data, where category order carries meaning.
+* Define the order explicitly before plotting, otherwise the chart may be misleading.
 
 ??? example "Script"
 
-    ```python
-    tips = sns.load_dataset("tips").copy()
-    day_order = ["Thur", "Fri", "Sat", "Sun"]
-    tips["day"] = pd.Categorical(tips["day"], categories=day_order, ordered=True)
+````
+```python
+tips = sns.load_dataset("tips").copy()
+day_order = ["Thur", "Fri", "Sat", "Sun"]
+tips["day"] = pd.Categorical(tips["day"], categories=day_order, ordered=True)
 
-    sns.countplot(x="day", data=tips, order=day_order, color="coral")
-    plt.title("Tips Dataset Day Distribution")
-    plt.xlabel("Day")
-    plt.ylabel("Count")
-    plt.show()
-    ```
+sns.countplot(x="day", data=tips, order=day_order, color="coral")
+plt.title("Tips Dataset Day Distribution")
+plt.xlabel("Day")
+plt.ylabel("Count")
+plt.show()
+```
+````
 
-![Ordered bar chart](univariate-categorical-bar-ordered.png){ .img-center }
+![Ordered bar chart](../../../../.gitbook/assets/univariate-categorical-bar-ordered.png){ .img-center }
 
 Tip: Rule of thumb: Default to bar charts. Use a pie chart only when the part-of-whole message is the main point and the number of categories is small.
 
@@ -152,34 +160,36 @@ A cross-tabulation (contingency table) shows the joint frequency of **two catego
 
 ??? example "Script"
 
-    ```python
-    import pandas as pd
+````
+```python
+import pandas as pd
 
-    data = pd.DataFrame({
-        'Gender':   ['Male', 'Female', 'Male', 'Female', 'Male', 'Female'],
-        'Survived': ['No',   'Yes',    'Yes',  'Yes',    'No',   'No']
-    })
+data = pd.DataFrame({
+    'Gender':   ['Male', 'Female', 'Male', 'Female', 'Male', 'Female'],
+    'Survived': ['No',   'Yes',    'Yes',  'Yes',    'No',   'No']
+})
 
-    # Raw counts with row/column totals
-    ct = pd.crosstab(data['Gender'], data['Survived'], margins=True)
-    print(ct)
+# Raw counts with row/column totals
+ct = pd.crosstab(data['Gender'], data['Survived'], margins=True)
+print(ct)
 
-    # Proportions within each row (e.g., survival rate by gender)
-    ct_norm = pd.crosstab(data['Gender'], data['Survived'], normalize='index').round(3)
-    print(ct_norm)
+# Proportions within each row (e.g., survival rate by gender)
+ct_norm = pd.crosstab(data['Gender'], data['Survived'], normalize='index').round(3)
+print(ct_norm)
 
-    # normalize='index' → row proportions (most common: "what % of each group did X?")
-    # normalize='columns' → column proportions
-    # normalize='all' → proportions of grand total
-    ```
+# normalize='index' → row proportions (most common: "what % of each group did X?")
+# normalize='columns' → column proportions
+# normalize='all' → proportions of grand total
+```
+````
 
 **Raw count output:**
 
-| Gender | No  | Yes | Total |
-| ------ | --- | --- | ----- |
-| Female | 1   | 2   | 3     |
-| Male   | 2   | 1   | 3     |
-| Total  | 3   | 3   | 6     |
+| Gender | No | Yes | Total |
+| ------ | -- | --- | ----- |
+| Female | 1  | 2   | 3     |
+| Male   | 2  | 1   | 3     |
+| Total  | 3  | 3   | 6     |
 
 **Row-normalized (survival rate per gender):**
 

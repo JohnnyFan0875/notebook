@@ -39,8 +39,8 @@ git push  # Subsequent pushes
 
 Temporarily store changes in working directory that are not ready to be committed. It helps keep workspace clean without discarding your modifications.
 
-- Saves uncommitted changes (both staged and unstaged) into a special stash stack.
-- Reverts working directory to the last committed state (clean working tree).
+* Saves uncommitted changes (both staged and unstaged) into a special stash stack.
+* Reverts working directory to the last committed state (clean working tree).
 
 ```bash
 git stash
@@ -53,22 +53,22 @@ git stash pop # restores the most recent stash and removes it from the list.
 git stash clear # Clear all stashes
 ```
 
-- Example
+*   Example
 
-  - Need to switch branches but have uncommitted changes
+    * Need to switch branches but have uncommitted changes
 
-  ```bash
-  git stash
-  git checkout feature/new-branch
-  ```
+    ```bash
+    git stash
+    git checkout feature/new-branch
+    ```
 
-  - Pull updates without losing local modifications
+    * Pull updates without losing local modifications
 
-  ```bash
-  git stash
-  git pull
-  git stash pop
-  ```
+    ```bash
+    git stash
+    git pull
+    git stash pop
+    ```
 
 ## Branching
 
@@ -156,8 +156,7 @@ git log --oneline --graph --all --decorate --color # Graph view of branching
 
 ## Merge commit
 
-![Image](../../old/reference/git_merge_rebase.jpg)
-Reference: [https://bytebytego.com/guides/git-merge-vs-git-rebate/](https://bytebytego.com/guides/git-merge-vs-git-rebate/)
+&#x20;Reference: [https://bytebytego.com/guides/git-merge-vs-git-rebate/](https://bytebytego.com/guides/git-merge-vs-git-rebate/)
 
 ## Git Worktree
 
@@ -183,39 +182,30 @@ git worktree list
 Git uses the `git config` command to configure settings that control how Git works.
 
 1. `--system`
-
-   - Applies to all users on the system.
-   - Linux/macOS: `/etc/gitconfig`
-     Windows: `C:\ProgramData\Git\config`
-   - `git config --system user.name "Your Name"`
-
+   * Applies to all users on the system.
+   * Linux/macOS: `/etc/gitconfig` Windows: `C:\ProgramData\Git\config`
+   * `git config --system user.name "Your Name"`
 2. `--global`
-
-   - Applies to the current user.
-   - Linux/macOS: `~/.gitconfig`
-     Windows: `C:\Users\<Username>\.gitconfig`
-   - `git config --global user.email "your.email@example.com"`
-
+   * Applies to the current user.
+   * Linux/macOS: `~/.gitconfig` Windows: `C:\Users\<Username>\.gitconfig`
+   * `git config --global user.email "your.email@example.com"`
 3. `--local`
-   - Applies only to a specific Git repository.
-   - `<repo>/.git/config`
-   - `git config --local core.editor "vim"`
+   * Applies only to a specific Git repository.
+   * `<repo>/.git/config`
+   * `git config --local core.editor "vim"`
 
-- Precedence Order
+*   Precedence Order
 
-  **local > global > system**
+    **local > global > system**
+* View Configuration `git config --list --show-origin`
+*   Common Settings
 
-- View Configuration
-  `git config --list --show-origin`
-
-- Common Settings
-
-  ```bash
-  git config --global user.name "Jane Doe"
-  git config --global user.email "jane@example.com"
-  git config --global core.editor "code --wait"
-  git config --global merge.tool "meld"
-  ```
+    ```bash
+    git config --global user.name "Jane Doe"
+    git config --global user.email "jane@example.com"
+    git config --global core.editor "code --wait"
+    git config --global merge.tool "meld"
+    ```
 
 ## FAQ
 
@@ -223,11 +213,11 @@ Git uses the `git config` command to configure settings that control how Git wor
 
 Git is easiest to reason about when you separate three states:
 
-| Area | Meaning |
-| --- | --- |
-| Working directory | Files you are currently editing |
-| Staging area | Changes selected for the next commit |
-| Repository history | Committed snapshots |
+| Area               | Meaning                              |
+| ------------------ | ------------------------------------ |
+| Working directory  | Files you are currently editing      |
+| Staging area       | Changes selected for the next commit |
+| Repository history | Committed snapshots                  |
 
 This is why `git add` and `git commit` are different operations. Staging is the review and selection step; committing records a snapshot.
 
@@ -235,9 +225,9 @@ This is why `git add` and `git commit` are different operations. Staging is the 
 
 Branches allow parallel work without immediately affecting the main line of development.
 
-- `main` usually represents the stable integration branch.
-- Feature branches isolate work on a task or fix.
-- Branches reduce conflicts by letting changes mature before integration.
+* `main` usually represents the stable integration branch.
+* Feature branches isolate work on a task or fix.
+* Branches reduce conflicts by letting changes mature before integration.
 
 Typical flow:
 
@@ -254,16 +244,16 @@ git merge feature/my-change
 
 Both commands integrate changes from one line of history into another, but they produce different history shapes.
 
-| Command | What it does | Main benefit | Main caution |
-| --- | --- | --- | --- |
-| `git merge` | Combines histories with a merge commit when needed | Preserves branch structure | History can become noisier |
-| `git rebase` | Replays commits onto a new base | Produces a linear history | Rewrites commit history |
+| Command      | What it does                                       | Main benefit               | Main caution               |
+| ------------ | -------------------------------------------------- | -------------------------- | -------------------------- |
+| `git merge`  | Combines histories with a merge commit when needed | Preserves branch structure | History can become noisier |
+| `git rebase` | Replays commits onto a new base                    | Produces a linear history  | Rewrites commit history    |
 
 Practical rule:
 
-- Use `merge` when preserving exact collaboration history matters.
-- Use `rebase` to keep a private feature branch up to date or to clean up local history before merging.
-- Avoid rebasing shared public branches unless the team explicitly expects it.
+* Use `merge` when preserving exact collaboration history matters.
+* Use `rebase` to keep a private feature branch up to date or to clean up local history before merging.
+* Avoid rebasing shared public branches unless the team explicitly expects it.
 
 ## Interactive Rebase
 
@@ -275,9 +265,9 @@ git rebase -i HEAD~3
 
 Common uses:
 
-- squash small fix commits
-- reorder local commits
-- rewrite commit messages
+* squash small fix commits
+* reorder local commits
+* rewrite commit messages
 
 Because it rewrites history, it is safest on local branches that others have not based work on.
 
@@ -287,47 +277,47 @@ Conflicts happen when Git cannot decide how two changes should be combined autom
 
 Good habits:
 
-- Pull or rebase regularly on active branches
-- Keep commits focused and small
-- Resolve conflicts with the final intended code in mind, not by blindly choosing one side
-- Run tests after resolving conflicts
+* Pull or rebase regularly on active branches
+* Keep commits focused and small
+* Resolve conflicts with the final intended code in mind, not by blindly choosing one side
+* Run tests after resolving conflicts
 
 ### Create a New Branch not from HEAD
 
-- Create a new branch starting from a specific commit or tag, instead of the current `HEAD`
+* Create a new branch starting from a specific commit or tag, instead of the current `HEAD`
 
-1. git log --oneline
+1.  git log --oneline
 
-   ```bash
-   f3e1bcd (HEAD -> master) Add login functionality
-   a7c9e2d Fix homepage bug
-   9a1b3c2 Add README file
-   e2b56ac Initial commit
-   ```
-
-2. Create a branch from the Add README file commit:
-   `git branch old-readme-version 9a1b3c2`
+    ```bash
+    f3e1bcd (HEAD -> master) Add login functionality
+    a7c9e2d Fix homepage bug
+    9a1b3c2 Add README file
+    e2b56ac Initial commit
+    ```
+2. Create a branch from the Add README file commit: `git branch old-readme-version 9a1b3c2`
 
 ### Will Committing and Pushing a Broken Shared File Affect Other Branches?
 
 If you commit and push a broken file (e.g. `utils.py`) to your own branch (like `test`), and this file is also used in other branches (like `main` or `dev`), other users are NOT affected as long as:
 
-- You do not merge your branch into the shared branches.
-- Other users do not switch to or pull from your branch.
+* You do not merge your branch into the shared branches.
+* Other users do not switch to or pull from your branch.
 
 Git branches are isolated by design. Your broken code will remain in your branch unless explicitly shared.
 
 ✅ Safe Scenario:
 
-- You pushed broken code to `test`
-- No one merges or checks out `test`
-  > Other branches like `main` remain unaffected
+* You pushed broken code to `test`
+*   No one merges or checks out `test`
+
+    > Other branches like `main` remain unaffected
 
 ⚠️ Risk Scenario:
 
-- Someone merges or rebases your `test` branch
-- Someone pulls directly from `test`
-  > Now they will get the broken file
+* Someone merges or rebases your `test` branch
+*   Someone pulls directly from `test`
+
+    > Now they will get the broken file
 
 ### Show Git Branch in Terminal Prompt
 
@@ -344,4 +334,4 @@ Reload: `source ~/.bashrc`
 
 ## Reference
 
-- [GIT CHEAT SHEET](https://education.github.com/git-cheat-sheet-education.pdf)
+* [GIT CHEAT SHEET](https://education.github.com/git-cheat-sheet-education.pdf)

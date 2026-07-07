@@ -6,25 +6,25 @@ Key point: Why this step is the most important: the whole premise of inferential
 
 ## Population vs. Sample
 
-| Term | Definition | Example |
-| ----------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
-| **Population** | The entire group you want to draw conclusions about | All adults in Taiwan |
-| **Sample** | A subset of the population actually observed | 1,000 adults surveyed in Taipei |
-| **Parameter** | A numerical summary of the population (usually unknown) | True population mean income μ |
-| **Statistic** | A numerical summary computed from the sample | Sample mean income x̄ |
+| Term               | Definition                                                       | Example                                         |
+| ------------------ | ---------------------------------------------------------------- | ----------------------------------------------- |
+| **Population**     | The entire group you want to draw conclusions about              | All adults in Taiwan                            |
+| **Sample**         | A subset of the population actually observed                     | 1,000 adults surveyed in Taipei                 |
+| **Parameter**      | A numerical summary of the population (usually unknown)          | True population mean income μ                   |
+| **Statistic**      | A numerical summary computed from the sample                     | Sample mean income x̄                           |
 | **Sampling error** | The difference between a sample statistic and the true parameter | x̄ ≠ μ simply because we didn't survey everyone |
 
 Tip: We use Roman letters (x̄, s, p̂) for sample statistics and Greek letters (μ, σ, π) for population parameters. This distinction matters for formulas and interpretation.
 
 ## Sampling Methods
 
-| Method | Description | Pros / Cons |
-| -------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| **Simple random sampling** | Every individual has an equal probability of being selected | ✅ Unbiased; ❌ Expensive if population is large/dispersed |
-| **Stratified sampling** | Divide into subgroups (strata), then randomly sample within each | ✅ Ensures representation of subgroups; ❌ Requires strata info |
-| **Cluster sampling** | Randomly select whole clusters (e.g., schools), then sample within | ✅ Cheaper for geographically spread populations; ❌ Higher variance |
-| **Systematic sampling** | Select every k-th individual from a list | ✅ Easy to implement; ❌ Periodic pattern can introduce bias |
-| **Convenience sampling** | Select whoever is easily accessible | ✅ Fast and cheap; ❌ High risk of selection bias — avoid for inference |
+| Method                     | Description                                                        | Pros / Cons                                                           |
+| -------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| **Simple random sampling** | Every individual has an equal probability of being selected        | ✅ Unbiased; ❌ Expensive if population is large/dispersed              |
+| **Stratified sampling**    | Divide into subgroups (strata), then randomly sample within each   | ✅ Ensures representation of subgroups; ❌ Requires strata info         |
+| **Cluster sampling**       | Randomly select whole clusters (e.g., schools), then sample within | ✅ Cheaper for geographically spread populations; ❌ Higher variance    |
+| **Systematic sampling**    | Select every k-th individual from a list                           | ✅ Easy to implement; ❌ Periodic pattern can introduce bias            |
+| **Convenience sampling**   | Select whoever is easily accessible                                | ✅ Fast and cheap; ❌ High risk of selection bias — avoid for inference |
 
 Warning: Bias vs. Variance tradeoff in sampling: Random methods minimize bias (systematic error) but may have high variance (noise). Non-random methods are fast but introduce bias that no amount of analysis can fix.
 
@@ -32,12 +32,12 @@ Warning: Bias vs. Variance tradeoff in sampling: Random methods minimize bias (s
 
 A **point estimate** is a single-value guess for a population parameter, calculated from the sample.
 
-| Population Parameter | Symbol | Point Estimate | Symbol |
+| Population Parameter  | Symbol | Point Estimate    | Symbol |
 | --------------------- | ------ | ----------------- | ------ |
-| Population mean | μ | Sample mean | x̄ |
-| Population variance | σ² | Sample variance | s² |
-| Population SD | σ | Sample SD | s |
-| Population proportion | π | Sample proportion | p̂ |
+| Population mean       | μ      | Sample mean       | x̄     |
+| Population variance   | σ²     | Sample variance   | s²     |
+| Population SD         | σ      | Sample SD         | s      |
+| Population proportion | π      | Sample proportion | p̂     |
 
 **Key limitation**: A point estimate is almost certainly not exactly equal to the true parameter. To communicate this uncertainty, we use **confidence intervals**.
 
@@ -68,20 +68,18 @@ The **Central Limit Theorem** is the theoretical backbone of inferential statist
 
 CLT Statement: If you draw many random samples of size n from _any_ population with mean μ and finite variance σ², the distribution of sample means (x̄) will approach a Normal distribution as n increases, regardless of the shape of the original population.
 
-\[
-\bar{x} \sim N\left(\mu,\ \frac{\sigma^2}{n}\right) \quad \text{as } n \to \infty
-\]
+\[ \bar{x} \sim N\left(\mu,\ \frac{\sigma^2}{n}\right) \quad \text{as } n \to \infty ]
 
-| Condition | Practical Rule of Thumb |
+| Condition                    | Practical Rule of Thumb       |
 | ---------------------------- | ----------------------------- |
-| Population is normal | CLT holds for any n |
-| Population is mildly skewed | n ≥ 30 is usually sufficient |
+| Population is normal         | CLT holds for any n           |
+| Population is mildly skewed  | n ≥ 30 is usually sufficient  |
 | Population is heavily skewed | n ≥ 100 or more may be needed |
 
 **What CLT enables:**
 
-- We can use z-tests and t-tests even when the original population isn't normal
-- The Normal distribution becomes our tool for computing probabilities about sample means
+* We can use z-tests and t-tests even when the original population isn't normal
+* The Normal distribution becomes our tool for computing probabilities about sample means
 
 ```python
 import numpy as np
@@ -107,7 +105,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![Sampling distribution example](./sampling-distribution-mean-salaries.png)
+![Sampling distribution example](../../../../.gitbook/assets/sampling-distribution-mean-salaries.png)
 
 The chart above is a helpful teaching bridge from the source materials: once you repeatedly re-sample, the "mean salary" stops being one number and becomes a distribution. That distribution is exactly what inferential statistics works with.
 
@@ -115,14 +113,12 @@ The chart above is a helpful teaching bridge from the source materials: once you
 
 **Standard Error** measures how much the sample statistic (e.g., x̄) varies from sample to sample. It is the **standard deviation of the sampling distribution**.
 
-\[
-SE_{\bar{x}} = \frac{s}{\sqrt{n}}
-\]
+\[ SE\_{\bar{x\}} = \frac{s}{\sqrt{n\}} ]
 
-| n (sample size) | SE behavior | Implication |
+| n (sample size) | SE behavior | Implication                                       |
 | --------------- | ----------- | ------------------------------------------------- |
-| Small | Large SE | Estimates are imprecise; wide confidence interval |
-| Large | Small SE | Estimates are precise; narrow confidence interval |
+| Small           | Large SE    | Estimates are imprecise; wide confidence interval |
+| Large           | Small SE    | Estimates are precise; narrow confidence interval |
 
 ```python
 se = s / np.sqrt(n)
@@ -131,19 +127,19 @@ print(f"Standard Error (SE) = {se:.4f}")
 
 Tip: SE vs. SD: Standard Deviation (s) describes how spread out individual observations are. Standard Error (SE) describes how spread out _sample means_ are. As n increases, SE decreases — SD does not change much.
 
-| Statistic | What it describes | Changes with n? |
+| Statistic     | What it describes                          | Changes with n?            |
 | ------------- | ------------------------------------------ | -------------------------- |
-| **SD (s)** | Spread of individual data points | Not much |
+| **SD (s)**    | Spread of individual data points           | Not much                   |
 | **SE (s/√n)** | Spread of sample means across many samples | Yes — decreases as n grows |
 
 ## Repeated Sampling vs. Bootstrap
 
 These two ideas are easy to mix up:
 
-| Idea | Where samples come from | Main purpose |
-| ---- | ----------------------- | ------------ |
-| **Repeated sampling** | Hypothetical fresh samples from the population | Define the true sampling distribution |
-| **Bootstrap** | Resamples from the one dataset you already observed | Approximate that sampling distribution in practice |
+| Idea                  | Where samples come from                             | Main purpose                                       |
+| --------------------- | --------------------------------------------------- | -------------------------------------------------- |
+| **Repeated sampling** | Hypothetical fresh samples from the population      | Define the true sampling distribution              |
+| **Bootstrap**         | Resamples from the one dataset you already observed | Approximate that sampling distribution in practice |
 
 Repeated sampling is usually the **theoretical object** behind formulas like `SE = s / sqrt(n)`. Bootstrap is the **practical workaround** when the theoretical formula is unavailable or inconvenient.
 
@@ -173,11 +169,11 @@ Tip: The median is a good example because its standard error is less convenient 
 
 Key point: Bootstrap treats the observed sample as a stand-in for the population, then repeatedly resamples it to see how the statistic changes. It is especially useful when the analytic formula for uncertainty is difficult to derive.
 
-| Use | What It Estimates |
-| --- | ----------------- |
-| Standard error | Variability of a statistic |
-| Confidence interval | Plausible range without analytic formula |
-| Model stability | How sensitive results are to sample changes |
+| Use                 | What It Estimates                           |
+| ------------------- | ------------------------------------------- |
+| Standard error      | Variability of a statistic                  |
+| Confidence interval | Plausible range without analytic formula    |
+| Model stability     | How sensitive results are to sample changes |
 
 ```python
 import numpy as np
@@ -194,20 +190,20 @@ ci_low, ci_high = np.percentile(boot_means, [2.5, 97.5])
 print(f"Bootstrap 95% CI: ({ci_low:.3f}, {ci_high:.3f})")
 ```
 
-| Action |
-| ------ |
+| Action                                        |
+| --------------------------------------------- |
 | Resample the original sample with replacement |
-| Compute the statistic for that resample |
-| Repeat many times |
-| Use the bootstrap distribution for SE or CI |
+| Compute the statistic for that resample       |
+| Repeat many times                             |
+| Use the bootstrap distribution for SE or CI   |
 
 ## Key Takeaways
 
-| Principle | Details |
+| Principle                        | Details                                                                  |
 | -------------------------------- | ------------------------------------------------------------------------ |
-| **Sample ≠ Population** | Statistics from samples always contain sampling error |
-| **Sampling method matters** | Non-random samples introduce bias that invalidates inference |
-| **CLT is foundational** | Enables use of Normal-based tests even when the population is non-normal |
-| **SE quantifies precision** | Larger n → smaller SE → more precise estimates |
-| **Bootstrap is practical** | Resampling can estimate uncertainty when formulas are hard |
-| **Point estimates need context** | Always accompany point estimates with confidence intervals |
+| **Sample ≠ Population**          | Statistics from samples always contain sampling error                    |
+| **Sampling method matters**      | Non-random samples introduce bias that invalidates inference             |
+| **CLT is foundational**          | Enables use of Normal-based tests even when the population is non-normal |
+| **SE quantifies precision**      | Larger n → smaller SE → more precise estimates                           |
+| **Bootstrap is practical**       | Resampling can estimate uncertainty when formulas are hard               |
+| **Point estimates need context** | Always accompany point estimates with confidence intervals               |

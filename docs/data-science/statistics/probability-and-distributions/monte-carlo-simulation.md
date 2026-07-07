@@ -6,12 +6,12 @@ Key point: Monte Carlo does not replace probability theory. It complements it. T
 
 ## When It Helps
 
-| Situation | Why Monte Carlo is useful |
-| --------- | ------------------------- |
-| Exact formula is messy | Simulation is often easier to write than derive |
+| Situation                          | Why Monte Carlo is useful                             |
+| ---------------------------------- | ----------------------------------------------------- |
+| Exact formula is messy             | Simulation is often easier to write than derive       |
 | You want to understand variability | It produces a whole distribution, not just one number |
-| You need a risk estimate | Tail probabilities can be approximated directly |
-| You want to validate a result | Simulated answers can sanity-check analytic work |
+| You need a risk estimate           | Tail probabilities can be approximated directly       |
+| You want to validate a result      | Simulated answers can sanity-check analytic work      |
 
 ## Core Workflow
 
@@ -40,10 +40,10 @@ Tip: Monte Carlo error shrinks roughly at the rate of `1 / sqrt(n_sim)`. To cut 
 
 These ideas are related, but they answer different questions.
 
-| Method | What gets resampled? | Typical goal |
-| ------ | -------------------- | ------------ |
-| **Monte Carlo simulation** | Data generated from a probability model | Estimate probabilities, outcomes, or risk |
-| **Bootstrap** | The observed sample itself, with replacement | Estimate uncertainty of a statistic |
+| Method                     | What gets resampled?                         | Typical goal                              |
+| -------------------------- | -------------------------------------------- | ----------------------------------------- |
+| **Monte Carlo simulation** | Data generated from a probability model      | Estimate probabilities, outcomes, or risk |
+| **Bootstrap**              | The observed sample itself, with replacement | Estimate uncertainty of a statistic       |
 
 Bootstrap is best thought of as a **special resampling-based application** of simulation.
 
@@ -70,7 +70,7 @@ print(f"Observed mean:     {sample.mean():.2f}")
 print(f"Bootstrap 95% CI: ({ci_low:.2f}, {ci_high:.2f})")
 ```
 
-![Bootstrap distribution of simulated means](./monte-carlo-bootstrap-distribution.png)
+![Bootstrap distribution of simulated means](../../../../.gitbook/assets/monte-carlo-bootstrap-distribution.png)
 
 The histogram above highlights a useful mental model: once you simulate many resamples, the single sample mean turns into a **distribution of plausible means**.
 
@@ -98,18 +98,18 @@ This is the style of question where closed-form formulas are often less convenie
 
 ## Limitations
 
-| Limitation | Why it matters |
-| ---------- | -------------- |
-| Garbage-in, garbage-out | A bad probability model produces misleading results |
-| Rare events need many runs | Tail probabilities are noisy unless `n_sim` is large |
-| Simulation is approximate | Results should be reported with tolerance, not fake precision |
+| Limitation                   | Why it matters                                                   |
+| ---------------------------- | ---------------------------------------------------------------- |
+| Garbage-in, garbage-out      | A bad probability model produces misleading results              |
+| Rare events need many runs   | Tail probabilities are noisy unless `n_sim` is large             |
+| Simulation is approximate    | Results should be reported with tolerance, not fake precision    |
 | Dependence can be overlooked | Assuming independence when it is false can badly understate risk |
 
 ## Key Takeaways
 
-| Concept | Key point |
-| ------- | --------- |
-| **Monte Carlo** | Repeated random sampling used to approximate probabilities or outcomes |
-| **Bootstrap** | Resampling the observed data to quantify uncertainty of a statistic |
-| **Simulation output** | Usually a full empirical distribution, not just one estimate |
-| **More runs** | Reduces Monte Carlo noise, but does not fix a wrong model |
+| Concept               | Key point                                                              |
+| --------------------- | ---------------------------------------------------------------------- |
+| **Monte Carlo**       | Repeated random sampling used to approximate probabilities or outcomes |
+| **Bootstrap**         | Resampling the observed data to quantify uncertainty of a statistic    |
+| **Simulation output** | Usually a full empirical distribution, not just one estimate           |
+| **More runs**         | Reduces Monte Carlo noise, but does not fix a wrong model              |

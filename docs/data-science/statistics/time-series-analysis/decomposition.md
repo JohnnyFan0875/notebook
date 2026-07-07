@@ -1,6 +1,6 @@
 # Decomposition
 
-**Decomposition** separates a time series into its structural components — trend, seasonality, and residual — so that each can be analyzed, modeled, or visualized independently. It is one of the most powerful tools for understanding *why* a series behaves the way it does.
+**Decomposition** separates a time series into its structural components — trend, seasonality, and residual — so that each can be analyzed, modeled, or visualized independently. It is one of the most powerful tools for understanding _why_ a series behaves the way it does.
 
 Key point: Why decompose first: Directly modeling sequences containing trends and seasonality is equivalent to allowing the model to learn multiple patterns of different properties at the same time. Decomposing it first allows you to identify which components the model needs to handle and makes it easier to spot anomalies or structural changes in the data.
 
@@ -8,9 +8,9 @@ Key point: Why decompose first: Directly modeling sequences containing trends an
 
 The choice between these two models depends on how the seasonal variation behaves as the overall level changes.
 
-| Model | Formula | When to Use |
-| ------------------ | ------------------------------------ | ---------------------------------------------------- |
-| **Additive** | Yₜ = Tₜ + Sₜ + Rₜ | Seasonal amplitude is **constant** regardless of level |
+| Model              | Formula           | When to Use                                            |
+| ------------------ | ----------------- | ------------------------------------------------------ |
+| **Additive**       | Yₜ = Tₜ + Sₜ + Rₜ | Seasonal amplitude is **constant** regardless of level |
 | **Multiplicative** | Yₜ = Tₜ × Sₜ × Rₜ | Seasonal amplitude **grows proportionally** with level |
 
 Tip: Quick visual check: Plot the raw series. If the peaks and troughs get larger as the overall level rises (like a megaphone shape), use multiplicative. If they stay roughly the same height throughout, use additive.
@@ -22,6 +22,7 @@ Tip: Log trick: A multiplicative model can always be converted to an additive mo
 The classical method uses **centered moving averages** to estimate the trend, then separates out the seasonal component.
 
 <details>
+
 <summary>Show STL decomposition script</summary>
 
 ```python
@@ -56,18 +57,19 @@ plt.show()
 
 **Limitations of classical decomposition:**
 
-| Limitation | Impact |
-| ------------------------------------- | ----------------------------------------------- |
-| Trend estimate missing at endpoints | First and last ~m/2 periods have NaN trend |
-| Seasonal pattern assumed fixed | Cannot change over time |
-| Sensitive to outliers | One extreme value distorts nearby trend values |
-| Only handles one seasonal period | Can't handle daily + weekly + yearly at once |
+| Limitation                          | Impact                                         |
+| ----------------------------------- | ---------------------------------------------- |
+| Trend estimate missing at endpoints | First and last \~m/2 periods have NaN trend    |
+| Seasonal pattern assumed fixed      | Cannot change over time                        |
+| Sensitive to outliers               | One extreme value distorts nearby trend values |
+| Only handles one seasonal period    | Can't handle daily + weekly + yearly at once   |
 
 ## STL Decomposition
 
 **STL (Seasonal-Trend decomposition using Loess)** is the modern alternative. It uses locally-weighted regression (LOESS) to fit each component, making it far more flexible and robust.
 
 <details>
+
 <summary>Show STL plotting script</summary>
 
 ```python
@@ -89,27 +91,27 @@ plt.show()
 
 </details>
 
-![STL decomposition](./decomposition-stl.png){ .img-center }
+![STL decomposition](../../../../.gitbook/assets/decomposition-stl.png){ .img-center }
 
 **Key STL parameters:**
 
-| Parameter | Description | Recommended Setting |
-| ----------- | -------------------------------------------------------- | ----------------------------- |
-| `period` | The seasonal period (m=12 for monthly, 7 for daily) | Required — must specify |
-| `robust` | Use robust LOESS to downweight outliers | `True` when outliers expected |
-| `seasonal` | Smoothness of seasonal component (must be odd) | Larger = smoother season |
-| `trend` | Smoothness of trend component (must be odd, > period) | Larger = smoother trend |
+| Parameter  | Description                                           | Recommended Setting           |
+| ---------- | ----------------------------------------------------- | ----------------------------- |
+| `period`   | The seasonal period (m=12 for monthly, 7 for daily)   | Required — must specify       |
+| `robust`   | Use robust LOESS to downweight outliers               | `True` when outliers expected |
+| `seasonal` | Smoothness of seasonal component (must be odd)        | Larger = smoother season      |
+| `trend`    | Smoothness of trend component (must be odd, > period) | Larger = smoother trend       |
 
 ## Comparing Classical vs STL
 
-| Feature | Classical Decomposition | STL |
-| -------------------------------- | ----------------------- | --------------------------- |
-| **Trend at endpoints** | ❌ Missing (NaN) | ✅ Available |
-| **Seasonal pattern over time** | ❌ Fixed | ✅ Can evolve |
-| **Outlier robustness** | ❌ Sensitive | ✅ Robust option available |
-| **Multiple seasonalities** | ❌ One period only | ❌ One period (use MSTL) |
-| **Multiplicative support** | ✅ Direct | Via log transform |
-| **Ease of use** | ✅ Simple | Slightly more parameters |
+| Feature                        | Classical Decomposition | STL                       |
+| ------------------------------ | ----------------------- | ------------------------- |
+| **Trend at endpoints**         | ❌ Missing (NaN)         | ✅ Available               |
+| **Seasonal pattern over time** | ❌ Fixed                 | ✅ Can evolve              |
+| **Outlier robustness**         | ❌ Sensitive             | ✅ Robust option available |
+| **Multiple seasonalities**     | ❌ One period only       | ❌ One period (use MSTL)   |
+| **Multiplicative support**     | ✅ Direct                | Via log transform         |
+| **Ease of use**                | ✅ Simple                | Slightly more parameters  |
 
 Tip: Default choice: Use STL with `robust=True` for most practical applications. Use classical decomposition only for quick exploratory checks or when teaching the concept. STL is the first choice for practice, especially when the data may contain outliers.
 
@@ -156,12 +158,12 @@ Tip: Seasonally adjusted series are what you see in official economic statistics
 
 Decomposition is often the start of the workflow, not the end.
 
-| What you observe | Likely next step |
-| ---------------- | ---------------- |
-| Strong trend, weak seasonality | differencing or trend model |
-| Strong seasonality | seasonal differencing, SARIMA, or STL + ARIMA |
-| Large residual spikes | investigate anomalies or intervention effects |
-| Residual autocorrelation | move to ARIMA-family modeling |
+| What you observe               | Likely next step                              |
+| ------------------------------ | --------------------------------------------- |
+| Strong trend, weak seasonality | differencing or trend model                   |
+| Strong seasonality             | seasonal differencing, SARIMA, or STL + ARIMA |
+| Large residual spikes          | investigate anomalies or intervention effects |
+| Residual autocorrelation       | move to ARIMA-family modeling                 |
 
 Tip: Decomposition helps you decide which structure the forecasting model still needs to learn.
 
@@ -201,13 +203,13 @@ print(f"Residual std:  {resid.std():.4f}")
 
 ## Key Takeaways
 
-| Concept | Key Point |
-| --------------------------------- | ----------------------------------------------------------------------------------- |
-| **Additive vs multiplicative** | Check if seasonal amplitude grows with level — if yes, use multiplicative (or log) |
-| **STL > classical in practice** | More robust, trend at endpoints, evolving seasonality |
-| **Seasonally adjusted = deseasonalized** | Removing seasonal component reveals underlying trend |
-| **Measure component strength** | Quantify how dominant trend and seasonality are before choosing a model |
-| **Residuals should be white noise** | Patterns in residuals mean the decomposition missed structure |
+| Concept                                  | Key Point                                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| **Additive vs multiplicative**           | Check if seasonal amplitude grows with level — if yes, use multiplicative (or log) |
+| **STL > classical in practice**          | More robust, trend at endpoints, evolving seasonality                              |
+| **Seasonally adjusted = deseasonalized** | Removing seasonal component reveals underlying trend                               |
+| **Measure component strength**           | Quantify how dominant trend and seasonality are before choosing a model            |
+| **Residuals should be white noise**      | Patterns in residuals mean the decomposition missed structure                      |
 
 ## What Decomposition Can and Cannot Do
 

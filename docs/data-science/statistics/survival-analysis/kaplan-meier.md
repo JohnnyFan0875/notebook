@@ -8,15 +8,13 @@ Key point: KM is the starting point of survival analysis: almost every survival 
 
 KM estimates the survival function:
 
-\[
-S(t) = P(T > t)
-\]
+\[ S(t) = P(T > t) ]
 
 This means:
 
-- the probability the event has **not** happened by time `t`
-- not the average survival time
-- not the hazard
+* the probability the event has **not** happened by time `t`
+* not the average survival time
+* not the hazard
 
 Tip: Many learners first read a KM curve like a declining probability line, which is good. The next step is remembering that every downward step is triggered by an observed event, while censoring changes the risk set without causing a step down.
 
@@ -24,25 +22,24 @@ Tip: Many learners first read a KM curve like a declining probability line, whic
 
 At each time point where an event occurs, KM updates the survival estimate:
 
-\[
-\hat{S}(t) = \prod_{t_i \leq t} \left(1 - \frac{d_i}{n_i}\right)
-\]
+\[ \hat{S}(t) = \prod\_{t\_i \leq t} \left(1 - \frac{d\_i}{n\_i}\right) ]
 
 Where:
-- $t_i$ = the distinct event times (only times when events actually occur)
-- $d_i$ = number of events at time $t_i$
-- $n_i$ = number of subjects at risk just before time $t_i$ (the **risk set**)
 
-Tip: Conditional survival describes the chance of surviving a specific interval given that the subject made it to the start of that interval, $p_i = 1 - d_i/n_i$. Cumulative survival, $\hat{S}(t)$, multiplies those interval-specific probabilities together to describe survival from time 0 all the way to time $t$.
+* $t\_i$ = the distinct event times (only times when events actually occur)
+* $d\_i$ = number of events at time $t\_i$
+* $n\_i$ = number of subjects at risk just before time $t\_i$ (the **risk set**)
 
-Tip: The risk set $n_i$ includes only subjects still under observation just before time $t_i$. Subjects censored before $t_i$ are removed from the risk set, which is exactly how KM handles censoring correctly.
+Tip: Conditional survival describes the chance of surviving a specific interval given that the subject made it to the start of that interval, $p\_i = 1 - d\_i/n\_i$. Cumulative survival, $\hat{S}(t)$, multiplies those interval-specific probabilities together to describe survival from time 0 all the way to time $t$.
+
+Tip: The risk set $n\_i$ includes only subjects still under observation just before time $t\_i$. Subjects censored before $t\_i$ are removed from the risk set, which is exactly how KM handles censoring correctly.
 
 ## Why KM Is a Step Function
 
 The KM curve changes only when an event is observed:
 
-- **event occurs** → the curve steps downward
-- **censoring occurs** → no vertical drop, but the risk set shrinks afterward
+* **event occurs** → the curve steps downward
+* **censoring occurs** → no vertical drop, but the risk set shrinks afterward
 
 This is why censor marks matter visually. They show where information about future follow-up ends for specific subjects.
 
@@ -91,14 +88,14 @@ print(km_table)
 
 **Output:**
 
-| n_at_risk | events (d) | 1 - d/n | S(t) |
-| --------- | ---------- | ------- | ------ |
-| 8 | 1 | 0.8750 | 0.8750 |
-| 6 | 1 | 0.8333 | 0.7292 |
-| 4 | 1 | 0.7500 | 0.5469 |
-| 2 | 2 | 0.0000 | 0.0000 |
+| n\_at\_risk | events (d) | 1 - d/n | S(t)   |
+| ----------- | ---------- | ------- | ------ |
+| 8           | 1          | 0.8750  | 0.8750 |
+| 6           | 1          | 0.8333  | 0.7292 |
+| 4           | 1          | 0.7500  | 0.5469 |
+| 2           | 2          | 0.0000  | 0.0000 |
 
-At t=5: one subject was censored at t=5 (not an event), so n_at_risk drops by both the event at t=3 and the censored subject, giving n=6.
+At t=5: one subject was censored at t=5 (not an event), so n\_at\_risk drops by both the event at t=3 and the censored subject, giving n=6.
 
 ## KM Estimator with lifelines
 
@@ -146,6 +143,7 @@ print(kmf.survival_function_.head(10))
 ### Plotting the KM Curve
 
 <details>
+
 <summary>Show plotting script</summary>
 
 ```python
@@ -188,7 +186,7 @@ plt.show()
 
 </details>
 
-![Kaplan-Meier survival curve](./kaplan-meier-curve.png){ .img-center }
+![Kaplan-Meier survival curve](../../../../.gitbook/assets/kaplan-meier-curve.png){ .img-center }
 
 ### Adding a Risk Table
 
@@ -262,19 +260,17 @@ Warning: Visual comparison is not a formal test. Two curves can look different w
 
 Sometimes the survival curve never drops below 0.5 during observed follow-up. In that case:
 
-- median survival is undefined
-- this does **not** mean survival is infinite
-- it means fewer than half the subjects experienced the event in the observed window
+* median survival is undefined
+* this does **not** mean survival is infinite
+* it means fewer than half the subjects experienced the event in the observed window
 
 That is a common reason to report **RMST** or a fixed-time survival estimate instead.
 
 ## Confidence Intervals for KM
 
-The `lifelines` default confidence interval uses **Greenwood's formula** with log transformation — this ensures the CI stays within [0, 1] and performs better in the tails.
+The `lifelines` default confidence interval uses **Greenwood's formula** with log transformation — this ensures the CI stays within \[0, 1] and performs better in the tails.
 
-\[
-\text{Var}[\hat{S}(t)] = \hat{S}(t)^2 \sum_{t_i \leq t} \frac{d_i}{n_i(n_i - d_i)}
-\]
+\[ \text{Var}\[\hat{S}(t)] = \hat{S}(t)^2 \sum\_{t\_i \leq t} \frac{d\_i}{n\_i(n\_i - d\_i)} ]
 
 ```python
 # Print KM estimate with confidence intervals at specific time points
@@ -295,13 +291,11 @@ print(summary)
 
 The **RMST** is the area under the KM curve up to a specified time horizon τ — the average event-free time up to τ. It is an alternative summary to the median that:
 
-- Is always defined (unlike median, which requires S(t) to cross 0.5)
-- Has a clear interpretation: expected time event-free up to τ
-- Is directly comparable between groups
+* Is always defined (unlike median, which requires S(t) to cross 0.5)
+* Has a clear interpretation: expected time event-free up to τ
+* Is directly comparable between groups
 
-\[
-\text{RMST}(\tau) = \int_0^\tau \hat{S}(t)\, dt
-\]
+\[ \text{RMST}(\tau) = \int\_0^\tau \hat{S}(t), dt ]
 
 ```python
 from lifelines.utils import restricted_mean_survival_time
@@ -320,20 +314,20 @@ Tip: Use RMST when the median is undefined (S(t) never crosses 0.5) or when comp
 
 ## Common Interpretation Mistakes
 
-| Mistake | Why it is wrong |
-| ------- | --------------- |
-| Reading censoring as an event | censoring means follow-up ended, not that the event happened |
-| Overinterpreting the tail | late estimates may be unstable because few subjects remain |
-| Treating visible separation as proof | formal comparison still needs a statistical test |
-| Reporting median only | misses uncertainty and alternative summaries like RMST |
+| Mistake                              | Why it is wrong                                              |
+| ------------------------------------ | ------------------------------------------------------------ |
+| Reading censoring as an event        | censoring means follow-up ended, not that the event happened |
+| Overinterpreting the tail            | late estimates may be unstable because few subjects remain   |
+| Treating visible separation as proof | formal comparison still needs a statistical test             |
+| Reporting median only                | misses uncertainty and alternative summaries like RMST       |
 
 ## Key Takeaways
 
-| Concept | Key Point |
-| -------------------------------- | --------------------------------------------------------------------------- |
-| **KM is non-parametric** | Makes no assumption about the distribution of T; lets data speak |
-| **Risk set shrinks over time** | Both events and censorings remove subjects from the risk set |
-| **Median survival time** | Where the KM curve crosses 0.5; undefined if curve stays above 0.5 |
-| **CI widens at tails** | Fewer at-risk subjects → unreliable estimates → check risk table |
-| **Group comparison ≠ significance** | Use the log-rank test for formal statistical comparison |
-| **RMST as alternative summary** | More robust than median when curves cross or median is undefined |
+| Concept                             | Key Point                                                          |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| **KM is non-parametric**            | Makes no assumption about the distribution of T; lets data speak   |
+| **Risk set shrinks over time**      | Both events and censorings remove subjects from the risk set       |
+| **Median survival time**            | Where the KM curve crosses 0.5; undefined if curve stays above 0.5 |
+| **CI widens at tails**              | Fewer at-risk subjects → unreliable estimates → check risk table   |
+| **Group comparison ≠ significance** | Use the log-rank test for formal statistical comparison            |
+| **RMST as alternative summary**     | More robust than median when curves cross or median is undefined   |

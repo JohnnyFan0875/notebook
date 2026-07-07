@@ -8,10 +8,10 @@ Key point: Why is Bayesian statistics important: Frequent statistics can only an
 
 Before deriving Bayes' theorem, it's essential to understand what "probability" even means. There are two fundamentally different interpretations:
 
-| View | Probability Represents | Example Statement |
-| ----------------- | ------------------------------ | --------------------------------------------------------- |
-| **Frequentist** | Long-run frequency of an event | "A fair coin lands heads 50% of the time in many flips" |
-| **Bayesian** | Degree of belief or uncertainty | "I am 70% confident this coin is fair" |
+| View            | Probability Represents          | Example Statement                                       |
+| --------------- | ------------------------------- | ------------------------------------------------------- |
+| **Frequentist** | Long-run frequency of an event  | "A fair coin lands heads 50% of the time in many flips" |
+| **Bayesian**    | Degree of belief or uncertainty | "I am 70% confident this coin is fair"                  |
 
 Tip: The Bayesian view allows us to assign probabilities to one-time events and to model parameters — things a frequentist treats as fixed unknown constants, not as random variables.
 
@@ -21,30 +21,24 @@ Bayes' theorem follows directly from the definition of conditional probability.
 
 ### Derivation
 
-\[
-P(A \cap B) = P(A|B) \cdot P(B) = P(B|A) \cdot P(A)
-\]
+\[ P(A \cap B) = P(A|B) \cdot P(B) = P(B|A) \cdot P(A) ]
 
 Rearranging:
 
-\[
-\boxed{P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)}}
-\]
+\[ \boxed{P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)\}} ]
 
 ### In Statistical Inference Context
 
 Replace generic events with **parameter θ** and **data D**:
 
-\[
-\boxed{P(\theta | D) = \frac{P(D | \theta) \cdot P(\theta)}{P(D)}}
-\]
+\[ \boxed{P(\theta | D) = \frac{P(D | \theta) \cdot P(\theta)}{P(D)\}} ]
 
-| Term | Name | Meaning |
-| ------------------------ | -------------- | ------------------------------------------------ |
-| $P(\theta \mid D)$ | posterior distribution | Belief about θ **after** seeing data |
-| $P(D \mid \theta)$ | likelihood | How probable is this data given parameter θ? |
-| $P(\theta)$ | **Prior** | Belief about θ **before** seeing data |
-| $P(D)$ | **Evidence** | Normalizing constant — ensures posterior sums to 1 |
+| Term               | Name                   | Meaning                                            |
+| ------------------ | ---------------------- | -------------------------------------------------- |
+| $P(\theta \mid D)$ | posterior distribution | Belief about θ **after** seeing data               |
+| $P(D \mid \theta)$ | likelihood             | How probable is this data given parameter θ?       |
+| $P(\theta)$        | **Prior**              | Belief about θ **before** seeing data              |
+| $P(D)$             | **Evidence**           | Normalizing constant — ensures posterior sums to 1 |
 
 Tip: The practical shorthand is Posterior ∝ Likelihood × Prior. Because $P(D)$ is just a constant that does not depend on θ, we often work with the unnormalized form $P(\theta \mid D) \propto P(D \mid \theta) \cdot P(\theta)$.
 
@@ -58,17 +52,18 @@ Prior Belief → [Observe Data] → Posterior Belief → [Observe More Data] →
 
 This is how beliefs rationally evolve with accumulating evidence. Crucially:
 
-- **Strong priors** require more data to overcome
-- **Weak (vague) priors** let the data dominate quickly
-- **More data** → Posterior concentrates around the true value regardless of prior choice
+* **Strong priors** require more data to overcome
+* **Weak (vague) priors** let the data dominate quickly
+* **More data** → Posterior concentrates around the true value regardless of prior choice
 
 ## Worked Example: Coin Flipping
 
 Suppose we want to estimate θ = probability of heads for a coin we suspect might be biased.
 
 **Setup:**
-- Prior: We believe θ is probably near 0.5 (fair coin), but we're uncertain → Beta(2, 2)
-- We flip 10 times and observe 7 heads
+
+* Prior: We believe θ is probably near 0.5 (fair coin), but we're uncertain → Beta(2, 2)
+* We flip 10 times and observe 7 heads
 
 ```python
 import numpy as np
@@ -111,9 +106,10 @@ plt.show()
 ```
 
 **Reading the plot:**
-- The **prior** (gray dashed) reflects our initial belief — symmetric, centered at 0.5
-- The **likelihood** (blue dotted) peaks at 0.7, driven purely by data
-- The **posterior** (red solid) is a compromise — pulled toward 0.7 by data, but moderated by the prior
+
+* The **prior** (gray dashed) reflects our initial belief — symmetric, centered at 0.5
+* The **likelihood** (blue dotted) peaks at 0.7, driven purely by data
+* The **posterior** (red solid) is a compromise — pulled toward 0.7 by data, but moderated by the prior
 
 Tip: With only 10 flips, the prior still has visible influence. With 1000 flips at the same rate, the posterior would nearly coincide with the likelihood. Data dominates as n grows. The larger the amount of data, the smaller the influence of the prior, and the closer the posterior is to the maximum likelihood estimate (MLE). This also explains why frequentist statistics and Bayesian statistics tend to reach similar conclusions when using large samples.
 
@@ -121,13 +117,13 @@ Tip: With only 10 flips, the prior still has visible influence. With 1000 flips 
 
 One of the biggest learning jumps in Bayesian statistics is recognizing that these three objects play different roles:
 
-| Object | Question it answers |
-| ------ | ------------------- |
-| **Prior** | What did I believe before seeing the data? |
+| Object         | Question it answers                                      |
+| -------------- | -------------------------------------------------------- |
+| **Prior**      | What did I believe before seeing the data?               |
 | **Likelihood** | Which parameter values make the observed data plausible? |
-| **Posterior** | What should I believe now after combining both? |
+| **Posterior**  | What should I believe now after combining both?          |
 
-![Posterior density example](./bayes-posterior-density-example.png)
+![Posterior density example](../../../../.gitbook/assets/bayes-posterior-density-example.png)
 
 In the source material, this type of plot is useful because it makes Bayesian updating tangible: the posterior is not just "a formula result", but a reshaped belief distribution. In practice, when you read a posterior density plot, look for:
 
@@ -166,18 +162,16 @@ This sequential view is part of what makes Bayesian methods attractive in experi
 
 The denominator $P(D)$ is the **marginal likelihood** — the probability of observing the data averaged over all possible parameter values:
 
-\[
-P(D) = \int P(D | \theta) \cdot P(\theta) \, d\theta
-\]
+\[ P(D) = \int P(D | \theta) \cdot P(\theta) , d\theta ]
 
 Warning: This integral is often analytically intractable for complex models, which is why MCMC methods exist. In practice, we often work with Posterior ∝ Likelihood × Prior and let sampling methods handle the normalization constant implicitly.
 
 ## Key Takeaways
 
-| Concept | Key Point |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
+| Concept                            | Key Point                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------- |
 | **Probability = degree of belief** | In Bayesian stats, parameters have distributions — they are not fixed constants |
-| **Bayes' theorem** | Posterior ∝ Likelihood × Prior — the complete update formula |
-| **The update cycle** | Each posterior can become the prior for the next round of data |
-| **Prior influence shrinks** | As n → ∞, the posterior is dominated by the likelihood regardless of prior |
-| **P(D) is just a normalizer** | Often skipped; sampling methods handle it without computing it directly |
+| **Bayes' theorem**                 | Posterior ∝ Likelihood × Prior — the complete update formula                    |
+| **The update cycle**               | Each posterior can become the prior for the next round of data                  |
+| **Prior influence shrinks**        | As n → ∞, the posterior is dominated by the likelihood regardless of prior      |
+| **P(D) is just a normalizer**      | Often skipped; sampling methods handle it without computing it directly         |
