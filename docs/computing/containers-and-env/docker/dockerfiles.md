@@ -41,8 +41,69 @@ Notes
   - Executed at container runtime
   - Defines the default command for the container
 
+- Dockerfile instructions usually create image layers by changing the image filesystem or metadata
+- Build cache is matched instruction by instruction, so changing one layer typically invalidates the cache for the layers after it
+
 > If CMD is not specified, Docker uses the CMD defined in the base image.
 > If there is no base image and no CMD, the container will fail to start.
+
+## Layering and Cache-Aware Ordering
+
+- Put rarely changing steps earlier, such as installing OS packages
+- Put frequently changing steps later, such as copying application source code
+- Combine related download, extract, and cleanup work into a single `RUN` instruction when the intermediate files are not needed later
+
+```dockerfile
+RUN curl -L https://example.com/archive.zip -o /tmp/archive.zip \
+    && unzip /tmp/archive.zip -d /opt/app \
+    && rm /tmp/archive.zip
+```
+
+This pattern keeps temporary files out of later image layers and helps reduce final image size.
+
+## Multi-stage Builds
+
+Multi-stage builds keep the final image small by separating build tools from runtime artifacts.
+
+```dockerfile
+FROM golang:1.22 AS build
+WORKDIR /src
+COPY . .
+RUN go build -o /final/app ./cmd/app
+
+FROM debian:bookworm-slim
+COPY --from=build /final/app /usr/local/bin/app
+CMD ["app"]
+```
+
+Notes:
+
+- Each `FROM` starts a new build stage
+- `COPY --from=<stage>` copies artifacts from an earlier stage into the final image
+- Build dependencies can stay in the build stage and never reach the runtime image
+- This reduces image size and attack surface
+
+## WORKDIR and USER
+
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY . /app
+
+RUN useradd --create-home appuser
+USER appuser
+
+CMD ["python", "main.py"]
+```
+
+Notes:
+
+- `WORKDIR` sets the default working directory for the following `RUN`, `COPY`, `ADD`, `CMD`, and `ENTRYPOINT` behavior
+- If the directory does not exist yet, Docker creates it
+- Overriding the container command at `docker run` time still starts from the configured `WORKDIR`
+- `USER` changes the user for subsequent build steps and for the container's default runtime user
+- A common pattern is to do privileged setup first as `root`, then switch to a less-privileged user near the end of the Dockerfile
 
 ## Environment/Build-time Variables with ENV/ARG
 

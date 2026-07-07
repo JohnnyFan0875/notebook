@@ -219,6 +219,79 @@ Git uses the `git config` command to configure settings that control how Git wor
 
 ## FAQ
 
+## Git Workflow Mental Model
+
+Git is easiest to reason about when you separate three states:
+
+| Area | Meaning |
+| --- | --- |
+| Working directory | Files you are currently editing |
+| Staging area | Changes selected for the next commit |
+| Repository history | Committed snapshots |
+
+This is why `git add` and `git commit` are different operations. Staging is the review and selection step; committing records a snapshot.
+
+## Branching Basics
+
+Branches allow parallel work without immediately affecting the main line of development.
+
+- `main` usually represents the stable integration branch.
+- Feature branches isolate work on a task or fix.
+- Branches reduce conflicts by letting changes mature before integration.
+
+Typical flow:
+
+```bash
+git checkout -b feature/my-change
+# edit files
+git add .
+git commit -m "Implement my change"
+git checkout main
+git merge feature/my-change
+```
+
+## Merge vs Rebase
+
+Both commands integrate changes from one line of history into another, but they produce different history shapes.
+
+| Command | What it does | Main benefit | Main caution |
+| --- | --- | --- | --- |
+| `git merge` | Combines histories with a merge commit when needed | Preserves branch structure | History can become noisier |
+| `git rebase` | Replays commits onto a new base | Produces a linear history | Rewrites commit history |
+
+Practical rule:
+
+- Use `merge` when preserving exact collaboration history matters.
+- Use `rebase` to keep a private feature branch up to date or to clean up local history before merging.
+- Avoid rebasing shared public branches unless the team explicitly expects it.
+
+## Interactive Rebase
+
+Interactive rebase lets you rewrite a series of local commits.
+
+```bash
+git rebase -i HEAD~3
+```
+
+Common uses:
+
+- squash small fix commits
+- reorder local commits
+- rewrite commit messages
+
+Because it rewrites history, it is safest on local branches that others have not based work on.
+
+## Conflict Resolution Mindset
+
+Conflicts happen when Git cannot decide how two changes should be combined automatically.
+
+Good habits:
+
+- Pull or rebase regularly on active branches
+- Keep commits focused and small
+- Resolve conflicts with the final intended code in mind, not by blindly choosing one side
+- Run tests after resolving conflicts
+
 ### Create a New Branch not from HEAD
 
 - Create a new branch starting from a specific commit or tag, instead of the current `HEAD`

@@ -43,6 +43,38 @@ docker pull <repository>:<tag>   # Pull an image from a container registry
 Notes:
 
 - Tags are required to uniquely identify image versions
+- For private registries, image names usually start with the registry host, such as `registry.example.com/myapp:1.0`
+- Pushing to a private registry often requires retagging the local image so the repository name includes the registry host
+
+### Authenticate to a Registry
+
+```bash
+docker login <registry-host>
+```
+
+Notes:
+
+- `docker login` is commonly required before pushing to or pulling from a private registry
+- A typical flow is: tag the image with the registry host, authenticate, then push
+
+```bash
+docker tag myapp:1.0 registry.example.com/myteam/myapp:1.0
+docker login registry.example.com
+docker push registry.example.com/myteam/myapp:1.0
+```
+
+## Save / Load Images as Files
+
+```bash
+docker save -o myapp.tar myapp:1.0
+docker load -i myapp.tar
+```
+
+Notes:
+
+- `docker save` exports an image to a tar archive
+- `docker load` imports an archive back into the local Docker image store
+- This is useful when moving images between environments without direct registry access
 
 ## Build Image (Standard Build)
 
@@ -64,6 +96,26 @@ Note:
 - Best practices:
   - Place rarely changed steps (system dependencies) earlier
   - Place frequently changed code later
+
+## Inspect Image Metadata and Layers
+
+```bash
+docker image inspect <image>
+```
+
+Notes:
+
+- `docker image inspect` returns detailed JSON metadata for an image
+- The `RootFS.Layers` section shows the image layers recorded for that image
+
+With `jq`, it is easier to query specific parts of the metadata:
+
+```bash
+docker image inspect <image> | jq '.[0] | .RootFS'
+docker image inspect <image> | jq '.[0] | {LayerCount: .RootFS.Layers | length}'
+```
+
+- This is useful when checking how many layers an image has or debugging image structure
 
 ## Build Image with Docker Buildx
 

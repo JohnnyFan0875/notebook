@@ -5,6 +5,7 @@ Production machine learning 不是把 `model.pkl` 存起來就結束，而是要
 ## 主題
 
 - [Deployment and Monitoring](deployment-and-monitoring.md)
+- [MLflow](mlflow.md)
 - [MLOps Overview](mlops-overview.md)
 
 ## 這一章的核心問題

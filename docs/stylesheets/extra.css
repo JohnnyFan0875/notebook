@@ -62,6 +62,22 @@
   line-height: 1.75;
 }
 
+@media screen and (min-width: 60em) {
+  .md-sidebar--secondary,
+  [data-md-type="toc"] {
+    display: none !important;
+  }
+
+  .md-content {
+    flex-grow: 1;
+    max-width: none;
+  }
+
+  .md-content__inner {
+    max-width: none;
+  }
+}
+
 @media screen and (min-width: 76.25em) {
   :root {
     --page-gutter-left: 1.2rem;
@@ -87,6 +103,7 @@
   }
 
   .md-content__inner {
+    max-width: none;
     margin: 0 var(--content-inner-x) 3rem;
   }
 

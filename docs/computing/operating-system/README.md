@@ -9,3 +9,4 @@ Operating system and shell usage notes for daily command-line work.
 - [Windows](windows.md)
 - [Regex and Wildcards](regex-wildcard.md)
 - [Shell Scripting](shell-scripting.md)
+- [Command-Line Data Processing](command-line-data-processing.md)
