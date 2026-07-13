@@ -20,6 +20,20 @@ Stacking combines predictions from multiple base models and feeds them into a me
 - Easy to leak information if out-of-fold predictions are not used correctly
 - Harder to interpret and maintain
 
+## Blending vs Stacking
+
+這兩個詞在競賽環境裡很常一起出現，但不是同一件事。
+
+- blending: 直接對多個模型的最終 predictions 做平均或加權平均
+- stacking: 先產生 out-of-fold predictions，再訓練第二層 meta-model
+
+所以：
+
+- blending 比較簡單、實作成本低
+- stacking 比較強，但也更容易因為 OOF 流程錯誤而 leakage
+
+如果單模型與 validation 流程都還不穩，通常先 blending 比較實際。
+
 ## Example
 
 ```python

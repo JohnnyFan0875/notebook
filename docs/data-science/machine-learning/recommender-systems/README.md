@@ -5,6 +5,8 @@
 ## Sections
 
 - [Foundations](foundations.md): recommendation problem framing, user-item matrix, sparsity, and cold start
+- [Content-Based Filtering](content-based-filtering.md): item vectors, TF-IDF, user profiles, and metadata-driven recommendation
+- [Memory-Based Collaborative Filtering](memory-based-collaborative-filtering.md): pivot matrices, mean-centering, cosine similarity, and KNN intuition
 - [Collaborative Filtering and ALS](collaborative-filtering-and-als.md): matrix factorization and PySpark ALS workflow
 - [Explicit vs. Implicit Feedback](explicit-vs-implicit-feedback.md): ratings, clicks, plays, and confidence weighting
 - [Evaluation and Serving](evaluation-and-serving.md): offline metrics, filtering seen items, and practical output shaping

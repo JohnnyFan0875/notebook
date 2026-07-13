@@ -10,6 +10,7 @@ nav:
   - microsoft-fabric-environment-design-and-deployment.md
   - semantic-models-and-power-bi.md
   - spark-and-pyspark.md
+  - sparklyr.md
   - databricks-foundations.md
   - databricks-data-management.md
   - databricks-sql.md

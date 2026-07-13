@@ -97,6 +97,45 @@ Twitter 案例很清楚地展示了一個重點: edge 常常不是直接存在�
 
 這很重要，因為如果把它們混成同一張圖，後面的 centrality、community 與 influence interpretation 就會變得模糊。
 
+延伸一點看，Twitter interaction graph 常至少有三種 directed ties:
+
+- retweet
+- quote
+- reply
+
+它們都能表示成 `source -> target`，但社會語意不同：
+
+- retweet 比較接近擴散與放大
+- quote 比較接近帶評論的引用
+- reply 比較接近對話與互動回應
+
+如果研究問題和 edge meaning 有關，最好分開建圖，而不是先全部合併。
+
+## Building Directed Interaction Graphs From Edge Lists
+
+當 sender-target pairs 已經整理成欄位後，Twitter 互動圖其實很適合直接從 edge list 建起來。
+
+在 Python / NetworkX 裡，一個很自然的模式是：
+
+```python
+import networkx as nx
+
+G_rt = nx.from_pandas_edgelist(
+    tweets,
+    source="user-screen_name",
+    target="retweeted_status-user-screen_name",
+    create_using=nx.DiGraph(),
+)
+```
+
+quote graph 與 reply graph 也可以用同樣方式建立，只是 target 欄位不同。
+
+這個模式值得保留，因為它把 network construction 拆得很清楚：
+
+1. 先把原始事件整理成 sender-target columns。
+2. 再決定 graph 應該是 `Graph` 還是 `DiGraph`。
+3. 最後才開始做 centrality 或 visualization。
+
 ## Vertex Creation Sometimes Happens On The Fly
 
 Twitter 案例還有一個很實用的工程細節: 被提及或被 retweet 的帳號，不一定先出現在作者清單裡。
@@ -123,6 +162,31 @@ Twitter 案例還有一個很實用的工程細節: 被提及或被 retweet 的�
 - construction 和 cleaning 通常是一個連續流程
 
 如果你不先清掉孤立點、重複邊或明顯噪音，後面的社群與視覺化結果很容易被干擾。
+
+## Comparing Interaction Types Across Graphs
+
+同一批使用者在 retweet graph 和 reply graph 中，角色可能完全不同。
+
+一個很實用的分析方式，是先對不同互動圖各自算 degree，再合併比較：
+
+```python
+degree_rt = pd.DataFrame(list(G_rt.in_degree()), columns=["screen_name", "degree"])
+degree_reply = pd.DataFrame(list(G_reply.in_degree()), columns=["screen_name", "degree"])
+
+ratio = degree_rt.merge(
+    degree_reply,
+    on="screen_name",
+    suffixes=("_rt", "_reply"),
+)
+ratio["ratio"] = ratio["degree_reply"] / ratio["degree_rt"]
+```
+
+這種比較能回答的不是「誰最重要」這種單一問題，而是：
+
+- 某個帳號比較常被轉發，還是比較常被直接回覆？
+- 擴散型影響力和對話型影響力是否來自不同 nodes？
+
+這也再次提醒我們，network metric 的意義永遠依賴 edge meaning。
 
 ## Community Detection Is Better As A Comparison Than A Single Answer
 

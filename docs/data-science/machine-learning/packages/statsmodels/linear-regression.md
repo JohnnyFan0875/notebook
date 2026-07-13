@@ -33,7 +33,7 @@ print(intercept, slope)
 ```
 
 - `params`: estimated [regression](../../supervised-learning/regression/README.md) coefficients (intercept and slope).
-- Interpretation: a one-unit increase in `x` multiplies the odds of `y=1` by `exp(slope)`.
+- Interpretation: a one-unit increase in `x` is associated with an additive change of `slope` units in `y`, under the fitted linear model.
 
 ## Model Summary
 

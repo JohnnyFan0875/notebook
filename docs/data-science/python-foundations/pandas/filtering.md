@@ -56,6 +56,14 @@ temp[temp['species_str'].str.contains('^v')]
 - `.str.contains()`, `.str.startswith()`, `.str.endswith()` are useful for string-based filtering.
 - Regex patterns can be passed to `.str.contains()` for complex matching.
 
+If the source column may contain missing values, prefer being explicit about how to handle them:
+
+```python
+temp[temp['species_str'].str.contains('osa', na=False)]
+```
+
+`na=False` turns missing entries into `False` for the match result, which is often the safest choice when you are building a boolean mask.
+
 ## Advanced Conditions
 
 ```python

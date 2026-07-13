@@ -110,6 +110,22 @@ Spark 的一個實務優點，是 local 與 cluster 的工作方式相對連續�
 - `sc` 比較偏 RDD 世界
 - `spark` 比較偏 DataFrame / SQL 世界
 
+一個最常見的起手式是：
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("MySparkApp").getOrCreate()
+```
+
+可以先這樣理解：
+
+- `.builder`: 開始設定 session
+- `.appName(...)`: 幫這次應用命名
+- `.getOrCreate()`: 若已有 session 就重用，沒有就建立新的
+
+Tip: 初學時常會看到 `getOrCreate()`。它的重點不是特別高深，而是避免同一環境重複建立 session。
+
 ## RDD: The Lower-Level Abstraction
 
 RDD 是 `Resilient Distributed Dataset`。
@@ -249,6 +265,14 @@ DataFrame 也同樣有 transformations 與 actions。
 
 對大多數 data engineering workflow 來說，DataFrame API 通常比直接玩 RDD 更接近實際任務。
 
+其中有一個特別值得提醒的 action 是 `collect()`：
+
+- 它會把分散式結果拉回 driver
+- 適合小結果、除錯或少量檢查
+- 不適合直接對大表使用
+
+Warning: `collect()` 很方便，但如果結果其實很大，它等於把 Spark 好不容易分散處理的資料一次搬回單機記憶體，常常會直接變成新的瓶頸。
+
 ### Data Cleaning with DataFrames
 
 在 Spark 裡做資料清理，通常不是另外一套工具，而是把 schema、DataFrame transformations 與輸出格式串成穩定流程。
@@ -266,6 +290,21 @@ DataFrame 也同樣有 transformations 與 actions。
 - `select()`
 - `withColumn()`
 - `drop()`
+
+處理缺值時，`df.na` 這組 helper 很常用：
+
+- `df.na.drop()`: 丟掉含 null 的列
+- `df.na.fill({"age": 0})`: 用指定值補某欄位的 null
+
+如果只是想保留某欄不為 null 的資料，也常會看到：
+
+```python
+from pyspark.sql.functions import col
+
+df_cleaned = df.where(col("columnName").isNotNull())
+```
+
+Key point: 在 Spark 裡做 missing-data cleaning，盡量保持在 DataFrame expression 裡完成，不要太早把資料拉回 Python 端逐列處理。
 
 如果任務是整理表格資料，這通常會比先轉成 Python list 再逐列處理更符合 Spark 的工作方式。
 

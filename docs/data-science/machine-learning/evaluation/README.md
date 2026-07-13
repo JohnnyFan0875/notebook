@@ -7,6 +7,7 @@
 - [MSE and RMSE](mse-rmse.md): 連續目標的誤差量測。
 - [Confusion Metrics](confusion-metrics.md): 分類問題的 precision、recall、specificity 與 F1。
 - [ROC Curve and AUC](roc-auc.md): 觀察不同 threshold 下的辨識能力。
+- [Cumulative Gains and Lift Curves](gains-and-lift-curves.md): 把排序能力翻成 top-list coverage 與 hit-rate efficiency。
 - [Classification Thresholds and Calibration](classification-thresholds-and-calibration.md): 把分數轉成決策時最關鍵的一步。
 - [Class Imbalance](class-imbalance.md): 當正負樣本差很多時，如何避免被 accuracy 誤導。
 - [Baselines and Error Analysis](baselines-and-error-analysis.md): 建立比較基準，並回頭看模型在哪些切片失敗。

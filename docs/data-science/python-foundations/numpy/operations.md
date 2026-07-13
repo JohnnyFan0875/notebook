@@ -28,6 +28,46 @@ a / b    # [0.25 0.4 0.5]
 np_li_m = np.array([1, 2, 3]) * 2  # [2 4 6] → Multiplying by a scalar scales every element
 ```
 
+### Why NumPy Feels Different from Python Lists
+
+很多人第一次學 NumPy，真正的轉折點不是語法，而是發現 array 的算術語意和 list 不一樣。
+
+```python
+height = [1.73, 1.68, 1.71]
+weight = [65.4, 59.2, 63.6]
+
+# weight / height  # TypeError
+```
+
+普通 Python `list` 不支援這種 element-wise 數值運算；但 NumPy array 可以：
+
+```python
+np_height = np.array(height)
+np_weight = np.array(weight)
+
+bmi = np_weight / np_height ** 2
+```
+
+Key point: Python `list` 是通用容器，NumPy `ndarray` 是數值陣列。當你需要整批數值一起算，array 才是自然抽象。
+
+## Interview Fast Comparison: `list` vs `ndarray`
+
+如果面試官直接問 list 和 NumPy array 的差別，最值得先講的是：
+
+- `list` 是 general-purpose container
+- `ndarray` 是 numerical array
+
+然後再補三個高頻差異：
+
+- array 通常要求較一致、較具體的 `dtype`
+- array 支援 element-wise numeric operations
+- array 在大量數值運算時通常更有效率
+
+也可以補一句容易拿分的對照：
+
+- 如果你要裝 heterogeneous Python objects，`list` 比較自然
+- 如果你要做向量化計算，`ndarray` 比較自然
+
 ## Negative, Add, Subtract, Multiply, Divide
 
 ```python
@@ -87,6 +127,15 @@ for i in np.nditer(b):
 ```
 
 - Multi-dimensional arrays can be iterated manually with nested loops or flattened using `nditer`.
+
+### Another Interview Angle: Indexing Style
+
+list 和 array 還有一個很常被追問的差異是多維索引方式：
+
+- nested list 常寫成 `x[i][j]`
+- NumPy array 常直接寫成 `x[i, j]`
+
+這不只是語法差異，也反映 NumPy 把多維資料當成單一陣列物件來處理，而不是「list 裡面再放 list」。
 
 ## Boolean Operations
 
@@ -156,3 +205,4 @@ For transformations (log, sqrt, Box-Cox), see [statistics.md](statistics.md#tran
 - **Boolean operations**: filtering and condition checking.
 - **Logical operators**: `logical_or`, `logical_and` for combining conditions.
 - **Boolean indexing in pandas**: integrate seamlessly with NumPy logic.
+- 面試若問 `list` vs `ndarray`，先講 `dtype`、vectorization、efficiency，再講 indexing style。

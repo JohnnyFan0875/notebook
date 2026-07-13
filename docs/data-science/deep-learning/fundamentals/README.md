@@ -5,6 +5,7 @@
 ## Topics
 
 - [Tensors](tensors.md)
+- [TensorFlow and Keras Basics](tensorflow-and-keras-basics.md)
 - [Linear Layer](linear-layer.md)
 - [Activation Functions](activation-functions.md)
 - [Loss Functions](loss-functions.md)
@@ -14,8 +15,9 @@
 ## Suggested Order
 
 1. tensors
-2. linear layer
-3. activation functions
-4. loss functions
-5. backpropagation
-6. weight initialization
+2. tensorflow and keras basics
+3. linear layer
+4. activation functions
+5. loss functions
+6. backpropagation
+7. weight initialization

@@ -7,9 +7,10 @@ pandas 是資料科學最常用的表格資料工具，建立在 NumPy 之上，
 - Data creation: `creating-data.md`
 - Indexing and filtering: `indexing-slicing.md`, `filtering.md`
 - Updating and reshaping: `updating.md`, `reshape-merge.md`
+- Performance patterns: `performance.md`
 - Grouped analysis: `groupby.md`, `statistics.md`
 - Missing data and dtypes: `missing-data.md`, `dtypes-strings.md`, `categorical.md`
-- Time-related work: `datetime.md`
+- Time-related work: `datetime.md`, `time-series-visualization.md`
 - Structure management: `adding-removing.md`, `index-multiindex.md`
 - Sampling and duplicates: `sampling-duplicates.md`
 - Ordering and binning: `sorting.md`, `binning.md`

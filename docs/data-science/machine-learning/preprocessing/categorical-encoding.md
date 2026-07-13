@@ -31,6 +31,16 @@ iris_encoded = pd.concat([iris, encoded_df], axis=1)
 - Suitable for algorithms that don’t assume order.
 - Can increase dimensionality when categories are many (high-cardinality).
 
+在很多 basetable workflow 裡，這其實就是把 business category 轉成 dummy variables。
+
+```python
+dummies_segment = pd.get_dummies(basetable["segment"], drop_first=True)
+basetable = pd.concat([basetable, dummies_segment], axis=1)
+del basetable["segment"]
+```
+
+`drop_first=True` 常用在 linear / logistic regression，因為它可以少一欄、降低完全共線性的風險。
+
 ## Ordinal Encoding
 
 Assigns integer values to categories. Useful when categories have a natural order.
@@ -122,6 +132,7 @@ iris_binary = encoder.fit_transform(iris[['species']])
 - **Frequency / Mean Target Encoding** → Powerful but risk leakage; must be computed within training folds.
 - **Hashing / Binary Encoding** → Useful for high-cardinality features.
 - Always apply encoding **within [cross-validation](../workflow/cross-validation.md) folds** or training set only to avoid leakage.
+- 如果類別值來自 slowly changing dimension，也要確認取的是 reference date 當下有效的 category，而不是最新狀態。
 
 ## Related Concepts
 
@@ -129,5 +140,6 @@ iris_binary = encoder.fit_transform(iris[['species']])
 - [Data Leakage](../foundations/data-leakage.md)
 - [Pipeline Basics](../workflow/pipeline-basic.md)
 - [Class Imbalance](../evaluation/class-imbalance.md)
+- [Basetable and Time-Aware Feature Engineering](../foundations/basetable-and-time-aware-feature-engineering.md)
 
 [Back to Preprocessing](README.md)

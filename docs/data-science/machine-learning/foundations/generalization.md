@@ -39,6 +39,18 @@ Generalization is the ability of a model to perform well on new, unseen data rat
 - Improve feature quality rather than only increasing model complexity
 - Match evaluation design to the real prediction setting
 
+## Interview Fast Answer
+
+如果面試官直接問 generalization 是什麼，一個夠好的短答通常是：
+
+- 模型不只在 training data 上表現好
+- 在 unseen data 上也能維持合理表現
+
+再補一句就很完整：
+
+- train metrics 和 validation / test metrics 不應該差太遠
+- 過度擬合的模型通常 generalize 不好
+
 ## Practical Rule
 
 Always ask whether the validation setup resembles the conditions under which the model will actually be used.

@@ -14,6 +14,7 @@ These notes cover the concepts that shape almost every machine learning decision
 - [Sampling and Representativeness](sampling-and-representativeness.md)
 - [Evaluation Mindset](evaluation-mindset.md)
 - [Feature Engineering Principles](feature-engineering-principles.md)
+- [Basetable and Time-Aware Feature Engineering](basetable-and-time-aware-feature-engineering.md)
 
 ## What to Understand First
 
@@ -36,5 +37,6 @@ These notes cover the concepts that shape almost every machine learning decision
 8. [Sampling and Representativeness](sampling-and-representativeness.md)
 9. [Evaluation Mindset](evaluation-mindset.md)
 10. [Feature Engineering Principles](feature-engineering-principles.md)
+11. [Basetable and Time-Aware Feature Engineering](basetable-and-time-aware-feature-engineering.md)
 
 [Back to Machine Learning](../README.md)

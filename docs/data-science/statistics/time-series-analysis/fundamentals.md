@@ -112,6 +112,75 @@ df_monthly = df.resample('MS').mean()   # monthly average
 df_annual  = df.resample('YS').mean()   # annual average
 ```
 
+Tip: Resampling is not just for finance or macro data. It is also the core cleanup step for sensor and IoT data, where different devices often report at different cadences.
+
+## Sensor and IoT Tables Often Start as Event Logs
+
+Many real-world time series do not begin as a clean, evenly spaced matrix. They often start as event-style records such as:
+
+- `timestamp`
+- `device`
+- `value`
+
+That means the first task is often to convert a long event table into a time-indexed structure that is easier to analyze.
+
+For example, device timestamps may arrive as Unix milliseconds:
+
+```python
+df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+```
+
+Then a long table can be pivoted into a wide sensor matrix:
+
+```python
+wide = pd.pivot_table(
+    data=df,
+    index="timestamp",
+    columns="device",
+    values="value",
+)
+```
+
+Key point: Before modeling or plotting, decide whether your real analysis unit is:
+
+- one device over time
+- many devices at the same timestamp
+- one derived aggregate across devices
+
+That choice determines whether wide format, long format, or a grouped panel structure is the most natural representation.
+
+## Aligning Series with Different Sampling Frequencies
+
+IoT and operational data often combine sources with mismatched frequencies. One sensor may report every hour, another every 30 minutes, and an event counter may only update when something happens.
+
+If you concatenate them directly, missing values will appear even when nothing is wrong. The real question is whether those gaps mean:
+
+- no reading was produced
+- the signal is unchanged and can reasonably be carried forward
+- the data should first be resampled to a shared clock
+
+Two common patterns are:
+
+```python
+environ = pd.concat([temp, sun], axis=1)
+
+agg_dict = {"temperature": "max", "sunshine": "sum"}
+env1h = environ.resample("1h").agg(agg_dict)
+```
+
+and:
+
+```python
+env30min = environ.ffill()
+```
+
+These encode different assumptions:
+
+- `resample(...).agg(...)` defines a target frequency and how each variable should summarize within a bin
+- forward fill assumes the last known reading remains valid until a new observation arrives
+
+Warning: `ffill()` is reasonable for state-like measurements, but much less safe for cumulative counters or bursty event counts.
+
 ### Rolling Statistics
 
 Compute statistics over a sliding window — useful for smoothing and detecting local trends.

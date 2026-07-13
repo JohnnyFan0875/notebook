@@ -13,6 +13,29 @@ import seaborn as sns
 iris = sns.load_dataset("iris")
 ```
 
+## `.plot()` as the Fastest First Pass
+
+當你只是想快速看資料型態與大致趨勢，`DataFrame.plot()` 和 `Series.plot()` 通常是最快的第一步。
+
+它的心智模型很簡單：
+
+- 資料還在 pandas 裡
+- 先不要急著切去 Matplotlib / Seaborn
+- 直接用 `kind=` 指定圖型，快速檢查 pattern
+
+常見 `kind` 包括：
+
+- `line`
+- `bar`
+- `barh`
+- `hist`
+- `box`
+- `kde` / `density`
+- `area`
+- `pie`
+- `scatter`
+- `hexbin`
+
 ## Bar and Line Plots (Single Column)
 
 If the DataFrame has only an index and one column:
@@ -29,6 +52,8 @@ plt.show()
 
 - `kind='bar'`: vertical bar plot.
 - `kind='line'`: default plot (line graph).
+
+如果你已經把資料整理成合適的 index 和欄位，pandas `.plot()` 往往比手寫 `plt.plot(...)` 更省力。
 
 For time series, it is often better to set the date column as the index first:
 
@@ -55,6 +80,22 @@ plt.show()
 
 - `x` and `y`: specify columns.
 - `title`: add a title directly.
+
+## Choosing Between pandas, Matplotlib, and Seaborn
+
+可以把三者分成不同層級：
+
+- pandas `.plot()`: 最快的 EDA 起手式
+- Matplotlib: 需要更細的 figure / axes 控制時
+- Seaborn: 需要較高階統計視覺化與預設美觀樣式時
+
+也就是說，pandas `.plot()` 很適合回答：
+
+- 這欄大概長什麼樣？
+- 幾個欄位之間趨勢有沒有明顯異常？
+- 這個欄位比較像該畫 line、bar 還是 hist？
+
+當你需要更細緻的圖例、分面、回歸線或主題樣式，再往下切到 Matplotlib 或 Seaborn 會比較自然。
 
 ## Box Plot
 

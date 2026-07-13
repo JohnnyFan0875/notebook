@@ -24,6 +24,48 @@ The fitted (predicted) values drop the error term:
 \hat{Y} = \hat{\beta}_0 + \hat{\beta}_1 X
 \]
 
+## Interview Fast Answer
+
+如果面試官問 linear regression 是什麼，通常不需要一開始就展開 OLS 推導。
+
+先講到這個程度通常就夠高訊號：
+
+- linear regression 用一條線描述 `X` 和連續型 `Y` 的關係
+- `β₁` 表示 `X` 每增加一單位，`Y` 平均改變多少
+- 它回答的是 association / prediction，不自動代表 causation
+
+常見追問則是：
+
+- assumptions 有哪些
+- `R²` 在說什麼
+- 係數的正負與大小怎麼解讀
+
+## What "Linear" Actually Means
+
+In regression, **linear** means **linear in the parameters** (`\beta_0`, `\beta_1`, ...), not necessarily that the raw input-output relationship always looks like a perfect straight line before any feature engineering.
+
+These are still linear models:
+
+\[
+Y = \beta_0 + \beta_1 X + \varepsilon
+\]
+
+\[
+Y = \beta_0 + \beta_1 X + \beta_2 X^2 + \varepsilon
+\]
+
+because the coefficients enter additively and are not multiplied by each other.
+
+This is **not** linear in the parameters:
+
+\[
+Y = \beta_0 + e^{\beta_1 X}
+\]
+
+because the coefficient is inside a nonlinear transformation.
+
+Key point: A polynomial regression can still belong to the linear-model family if it is linear in the coefficients. This matters because many linear-model tools and interpretations extend to transformed features.
+
 ## Ordinary Least Squares (OLS)
 
 OLS finds the line that **minimizes the sum of squared residuals (SSR)**:
@@ -124,6 +166,14 @@ R^2 = 1 - \frac{\text{SSR}}{\text{SST}} = 1 - \frac{\sum(Y_i - \hat{Y}_i)^2}{\su
 
 Tip: R² tells you proportion of variance explained — it does not tell you if the model assumptions are met or if the model is appropriate. A perfect R² with assumption violations is worthless.
 
+### Interview Prompt: How Do You Explain R-squared?
+
+一個很穩的短答可以是：
+
+- `R²` 是模型解釋了多少 `Y` 的變異
+- 它是 fit 指標，不是因果強度指標
+- `R²` 高不代表模型就合理，還要看 residual diagnostics 和外部驗證
+
 ## Assumptions of Linear Regression
 
 These assumptions apply to the **residuals** (ε), not the raw data.
@@ -137,6 +187,13 @@ These assumptions apply to the **residuals** (ε), not the raw data.
 | **No influential outliers** | Cook's Distance; leverage plots |
 
 Key point: Mnemonic: LINE (Linearity, Independence, Normality, Equal variance)
+
+## Common Interview Traps
+
+- 把 regression coefficient 解讀成 causation
+- 只報 `R²`，不檢查 residual pattern
+- 說 assumptions 是對 `X` 或 `Y` 原始值本身，而不是對 residuals
+- 以為 p-value 小就代表模型一定好用
 
 ## Diagnostic Plots
 
@@ -248,6 +305,75 @@ for sl, pl in zip(new_data['sepal_length'], predictions):
 ```
 
 Warning: Extrapolation warning: Do not use the model to predict Y for X values ​​far outside the range of your training data.
+
+## R Workflow: `lm()`, `predict()`, `fitted()`, `residuals()`
+
+If you are working in R, the basic simple-regression workflow is compact and very teachable:
+
+```r
+mdl_mass_vs_length <- lm(mass_g ~ length_cm, data = bream)
+
+predict(mdl_mass_vs_length, newdata = explanatory_data)
+fitted(mdl_mass_vs_length)
+residuals(mdl_mass_vs_length)
+```
+
+Useful mental model:
+
+- `predict()`: predictions for new rows
+- `fitted()`: predictions for the original training rows
+- `residuals()`: observed minus fitted on the training rows
+
+This identity is worth remembering:
+
+```text
+response = fitted value + residual
+```
+
+In other words, the model splits each observed value into:
+
+- the part explained by the line
+- the leftover part the line did not explain
+
+## R Workflow: `broom`
+
+`summary(lm_object)` is useful, but `broom` becomes more practical once you want tidy outputs that can be piped or joined.
+
+```r
+library(broom)
+
+tidy(mdl_mass_vs_length)
+glance(mdl_mass_vs_length)
+augment(mdl_mass_vs_length)
+```
+
+Typical roles:
+
+- `tidy()`: coefficient table
+- `glance()`: one-row model summary such as `r.squared`, `adj.r.squared`, `sigma`, `AIC`, `BIC`
+- `augment()`: row-level diagnostics like `.fitted`, `.resid`, `.cooksd`, `.std.resid`
+
+This is often the cleanest R-native bridge between "fit a model" and "analyze the model output as data".
+
+## Residual Standard Error in Practice
+
+R reports the residual scale in `summary(lm_object)` as the residual standard error, and `broom::glance()` exposes the same idea through `sigma`.
+
+Key point: `R²` tells you explained variance, while residual standard error tells you the typical size of the leftover error in the outcome's original units.
+
+That distinction matters because two models can have similar `R²`, but very different practical error magnitudes depending on the scale of Y.
+
+## Regression to the Mean
+
+The course material is also a good reminder that the phrase "regression" historically points to **regression to the mean**, not only to fitting lines.
+
+Core idea:
+
+- extreme observations often contain a large random component
+- when measured again, they tend to move closer to the average
+- that movement can happen even without any intervention
+
+Warning: Do not confuse an apparent improvement after an extreme baseline with a real treatment effect. Sometimes you are only seeing regression to the mean.
 
 ## Influence and Leverage
 

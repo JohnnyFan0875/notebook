@@ -10,6 +10,7 @@ Workflow 是機器學習教材裡最值得反覆閱讀的部分。模型種類�
 4. [Pipeline Basics](pipeline-basic.md): 把前處理與模型包成單一流程，降低人為錯誤。
 5. [Hyperparameter Tuning](hyperparameter-tuning.md): 在正確驗證框架下比較參數，而不是靠直覺反覆試。
 6. [Model Lifecycle](model-lifecycle.md): 把模型視為會持續演進的系統，而不是一次性產物。
+7. [Kaggle Competition Workflow](kaggle-competition-workflow.md): 把 baseline、local validation、submission 與 ensemble 串成競賽式實驗流程。
 
 ## 這一章最重要的觀念
 

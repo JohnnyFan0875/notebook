@@ -86,6 +86,59 @@ unstacked = stacked.unstack()
 
 - MultiIndex integrates well with grouping and reshaping operations.
 
+## Stack / Unstack Mental Model
+
+- `stack()`：把 column level 壓回 row index。
+- `unstack()`：把 row index 的某一層翻成 columns。
+
+```python
+stacked = iris.set_index(['species', 'sepal_length']).stack()
+unstacked = stacked.unstack()
+```
+
+如果資料有多層 index / columns，可以指定 level：
+
+```python
+cars.unstack(level=[0, 1])
+cars.unstack(level=['brand', 'model'])
+cars_unstacked.stack(level=['year', 'brand'])
+```
+
+### Missing Values After Unstack
+
+`unstack()` 很常產生缺值，因為不是每個 index 組合都一定存在。
+
+```python
+animals.unstack(level='class')
+animals.unstack(level='class', fill_value='No')
+```
+
+- 先接受 reshape 後會出現 `NaN` 是正常現象。
+- 如果業務語意允許，再用 `fill_value=` 或後續 `fillna()` 補值。
+
+### `stack(dropna=...)`
+
+```python
+flowers.stack(dropna=True)
+flowers.stack(dropna=False)
+flowers.stack(dropna=False).fillna(0)
+```
+
+- `dropna=True` 會省略空值組合。
+- `dropna=False` 會把空值組合也保留。
+
+這會直接影響後續 groupby、計數與對齊結果，所以在 reshape 後最好確認一下資料列數是否符合預期。
+
+### Rearranging Levels
+
+```python
+cars.swaplevel(0, 2)
+cars.swaplevel(0, 2).unstack()
+cars.unstack().swaplevel(0, 1, axis=1)
+```
+
+當 MultiIndex 的層級順序不利於分析或展示時，`swaplevel()` 常常比重建 index 更簡潔。
+
 ## Key Takeaways
 
 - Use `.set_index()` and `.reset_index()` to control the DataFrame index.

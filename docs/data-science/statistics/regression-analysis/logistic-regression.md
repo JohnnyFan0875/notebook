@@ -45,6 +45,18 @@ plt.show()
 
 Tip: The sigmoid function squashes any real number into the range (0, 1), making it perfect for probability output. The decision boundary is at p = 0.5, which corresponds to log-odds = 0.
 
+## Interview Fast Answer
+
+如果面試官直接問 logistic regression 和 linear regression 差在哪，最穩的回答通常是：
+
+- linear regression 用來預測連續型 `Y`
+- logistic regression 用來建模 binary outcome 的機率
+- 它不是直接對 probability 畫直線，而是對 log-odds 建立線性模型
+
+如果想再補一句高訊號的：
+
+- logistic regression 的係數先解讀在 log-odds 空間，再常轉成 odds ratio 講人話
+
 ## Logistic Regression as a Generalized Linear Model
 
 The source GLM materials are a good reminder that logistic regression is not an isolated trick. It is a **generalized linear model (GLM)** with:
@@ -206,6 +218,16 @@ for thr in thresholds:
 
 Tip: Lowering the threshold usually increases recall and decreases precision. Raising it does the opposite. This trade-off is often more important than the coefficient table when the model is used for triage or screening.
 
+### Interview Prompt: Precision vs Recall
+
+這也是高頻題。
+
+可以很快回答成：
+
+- precision: 被判成 positive 的裡面，有多少真的 positive
+- recall: 所有真的 positive 裡面，抓到了多少
+- 要選哪個，取決於 false positive 和 false negative 哪個成本更高
+
 ## Model Evaluation
 
 ### Confusion Matrix
@@ -253,6 +275,86 @@ print(classification_report(y_test, y_pred,
 ```
 
 Warning: Accuracy is misleading for imbalanced classes. If 95% of your data is class 0, a model that always predicts 0 achieves 95% accuracy but is completely useless. Prefer Precision, Recall, F1, or AUC-ROC.
+
+## R Workflow: `glm(..., family = binomial)`
+
+In R, logistic regression is usually fitted with `glm()` rather than `lm()`.
+
+```r
+mdl_recency <- glm(
+  has_churned ~ time_since_last_purchase,
+  data = churn,
+  family = binomial
+)
+```
+
+This is worth contrasting with:
+
+```r
+glm(has_churned ~ time_since_last_purchase, data = churn, family = gaussian)
+```
+
+The Gaussian version behaves like linear regression and can produce impossible probabilities below 0 or above 1. The binomial family fixes that by modeling log-odds instead.
+
+## R Prediction Scale: Link vs Response
+
+One of the most important practical details in R logistic regression is the prediction scale.
+
+```r
+predict(mdl_recency, newdata = explanatory_data)
+predict(mdl_recency, newdata = explanatory_data, type = "response")
+```
+
+Interpretation:
+
+- default `predict(glm)` for a binomial model returns **log-odds**
+- `type = "response"` returns **probabilities**
+
+This distinction matters a lot. If you forget `type = "response"`, you may think you are looking at probabilities when you are actually looking at the linear predictor.
+
+## From Probability to Odds in R
+
+If you already have predicted probabilities, you can convert them into odds and log-odds directly:
+
+```r
+prediction_data <- explanatory_data %>%
+  mutate(
+    has_churned = predict(mdl_recency, explanatory_data, type = "response"),
+    odds_ratio = has_churned / (1 - has_churned),
+    log_odds_ratio = log(odds_ratio)
+  )
+```
+
+This is a nice way to connect the three linked scales:
+
+- probability
+- odds
+- log-odds
+
+Key point: Probability is easiest to communicate, odds are common in interpretation, and log-odds are the scale where the model is actually linear.
+
+## Visualizing Logistic Fits in `ggplot2`
+
+For a quick visual fit in R, `geom_smooth()` can fit the logistic curve directly:
+
+```r
+ggplot(churn, aes(time_since_last_purchase, has_churned)) +
+  geom_point() +
+  geom_smooth(
+    method = "glm",
+    se = FALSE,
+    method.args = list(family = binomial)
+  )
+```
+
+This is often the fastest way to show why a straight line is inappropriate for a binary response.
+
+## Common Interview Traps
+
+- 把 logistic coefficient 直接當成 probability change 解讀
+- 把 `0.5` threshold 當成自然法則，而不是業務決策
+- 在 class imbalance 問題裡只報 accuracy
+- 只會背 confusion matrix 名詞，卻說不出 precision / recall 背後的成本取捨
 
 ### Choosing Between Precision and Recall
 
@@ -317,6 +419,20 @@ plt.show()
 Tip: AUC answers "Does the model rank positives above negatives?" Calibration answers "When the model says 0.80, do about 80% actually belong to class 1?" They are different qualities, and good ranking does not guarantee good probability estimates.
 
 Tip: AUC vs Accuracy: AUC measures how well the model ranks observations (separates 1s from 0s regardless of threshold). It is threshold-independent and better suited for imbalanced datasets.
+
+## R Workflow: Confusion Matrix with `yardstick`
+
+If you are evaluating a classification model in R, `yardstick` provides a clean confusion-matrix workflow.
+
+```r
+library(yardstick)
+
+confusion <- conf_mat(outcomes)
+autoplot(confusion)
+summary(confusion, event_level = "second")
+```
+
+This is useful because it turns model evaluation into tidy objects instead of making you manually count TP, FP, TN, and FN.
 
 ## Model Fit Statistics
 

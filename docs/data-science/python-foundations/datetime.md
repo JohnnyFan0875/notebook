@@ -78,6 +78,12 @@ print(datetime.fromtimestamp(ts))  # 2017-12-30 15:19:13
 dt_replace = dt.replace(minute=0)  # Replace only the minute
 ```
 
+常見用法是把時間截到整點或整分：
+
+```python
+dt_hr = dt.replace(minute=0, second=0, microsecond=0)
+```
+
 ## Date Calculations
 
 Perform arithmetic with `datetime` and `timedelta`:
@@ -145,6 +151,74 @@ et = tz.gettz('America/New_York')
 last = datetime(2017, 12, 30, 15, 9, 3, tzinfo=et)
 # 2017-12-30 15:09:03-05:00
 ```
+
+### Naive vs Aware Datetime
+
+- `naive datetime`：沒有 `tzinfo`，只表示某個時間字面值。
+- `aware datetime`：有 `tzinfo`，知道自己如何對齊 UTC。
+
+```python
+naive = datetime(2024, 1, 1, 9, 0, 0)
+aware = datetime(2024, 1, 1, 9, 0, 0, tzinfo=timezone.utc)
+```
+
+一個很重要的差別是：
+
+- `replace(tzinfo=...)` 只是在原本日期時間上「貼標籤」。
+- `astimezone(...)` 會真的把時間換算到另一個時區。
+
+```python
+utc_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+tw_time = utc_time.astimezone(tz.gettz("Asia/Taipei"))
+```
+
+如果你把 local time 誤用 `replace(tzinfo=timezone.utc)`，很容易造成時間偏移被靜默寫錯。
+
+## Pandas Datetime Workflow
+
+很多資料問題不是出在 `datetime` 本身，而是 CSV 讀進來時欄位仍是字串。
+
+### Parse Dates on Read
+
+```python
+import pandas as pd
+
+rides = pd.read_csv(
+    "capital-onebike.csv",
+    parse_dates=["Start date", "End date"],
+)
+```
+
+如果 `parse_dates` 沒成功，再明確轉型：
+
+```python
+rides["Start date"] = pd.to_datetime(rides["Start date"])
+rides["End date"] = pd.to_datetime(rides["End date"])
+```
+
+### Localize vs Convert
+
+pandas 與 Python 標準庫的觀念相同：
+
+- `.tz_localize()`：設定時區，但保留原本牆上時間。
+- `.tz_convert()`：換到新時區，會調整實際時間值。
+
+```python
+rides["Start date"] = (
+    rides["Start date"]
+    .dt.tz_localize("America/New_York")
+    .dt.tz_convert("UTC")
+)
+```
+
+### Typical Analysis Pattern
+
+```python
+rides["Duration"] = rides["End date"] - rides["Start date"]
+rides["Duration minutes"] = rides["Duration"].dt.total_seconds() / 60
+```
+
+這種寫法通常比手動拆 `year/month/day/hour` 更安全，也更容易和時區處理一起工作。
 
 ## Best Practices
 

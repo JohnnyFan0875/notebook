@@ -51,6 +51,55 @@ This works well because:
 
 Tip: A detector run directly on raw time-series values often rediscovers seasonality rather than true anomalies.
 
+## IoT and Sensor Anomalies Need Domain Semantics
+
+In IoT settings, an unusual point is not always the same thing as a meaningful operational anomaly.
+
+A strange value may come from:
+
+- a sensor glitch
+- packet loss or delayed transmission
+- a device reset
+- a real environmental or process change
+
+So anomaly detection in sensor data usually needs two questions, not one:
+
+- is this observation statistically unusual?
+- is it operationally meaningful?
+
+Key point: Many "anomalies" in telemetry are data quality events rather than business or engineering incidents.
+
+## Simple Outlier Rules Can Be Useful, But Limited
+
+A first pass might use a mean-and-standard-deviation rule or another simple threshold. That is often fine for triage, especially when you need to quickly inspect one sensor:
+
+```python
+temp_mean = data["temperature"].mean()
+temp_std = data["temperature"].std()
+```
+
+But in a time series, this approach is fragile because:
+
+- the baseline may drift over time
+- the variance may change by season or hour
+- autocorrelation makes consecutive observations dependent
+
+That is why a global z-score rule is often best treated as a screening tool, not the final anomaly logic.
+
+## Labels Turn Detection into Supervised Alerting
+
+Some operational datasets eventually include a `label` column that marks whether a window is normal or abnormal. Once those labels exist, the problem changes:
+
+- without labels: detect unusual behavior from structure alone
+- with labels: learn a classifier that predicts known alert states
+
+This distinction matters because a labeled anomaly dataset is no longer just an outlier-detection problem. It becomes a supervised learning problem with all the usual concerns:
+
+- label quality
+- class imbalance
+- train / test leakage across time
+- whether the label marks root cause, symptom, or only a downstream alarm
+
 ## Ensemble Thinking
 
 For difficult time series, practitioners often compare several detectors rather than trusting only one:

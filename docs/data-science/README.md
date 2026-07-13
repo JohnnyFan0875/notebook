@@ -11,13 +11,14 @@
 5. [Visualization](data-manipulation-and-eda/visualization/README.md): 在 EDA 脈絡下練習把探索結果轉成可解讀的圖表。
 6. [Data Communication](data-communication/README.md): 學會把模糊需求翻成可分析問題，並讓分析結果能回到決策。
 7. [Data Engineering](data-engineering/README.md): 了解資料如何被擷取、儲存、排程、轉換與交付，建立可長期運作的資料供應鏈觀念。
-8. [Statistics](statistics/README.md): 建立估計、不確定性、假設檢定、回歸與時間序列的判讀能力。
-9. [Operations Research](operations-research/README.md): 當問題變成在成本、容量與邏輯限制下「應該怎麼做」時，進入 optimization 與 prescriptive model 的世界。
-10. [Network Analysis](network-analysis/README.md): 當資料的重點在連結結構、路徑與群聚，而不只是單列特徵時，進入 graph thinking。
-11. [Machine Learning](machine-learning/README.md): 學會以 workflow 為中心的建模、評估、解釋與部署觀念。
-12. [Marketing Analytics](marketing-analytics/README.md): 把價格、促銷、品牌選擇與 customer response 轉成可量化的決策模型。
-13. [Deep Learning](deep-learning/README.md): 在理解模型訓練流程後，再進入神經網路與 PyTorch 實作。
-14. [LLM Applications and Systems](llm/README.md): 當你開始把模型接到檔案、知識庫、工具與工作流程時，再進入 LLM 應用系統設計。
+8. [Process Analytics](process-analytics/README.md): 當資料來自 event log、工單、訂單或醫療流程時，學會用 case、activity、trace 與 throughput 理解流程如何真實運作。
+9. [Statistics](statistics/README.md): 建立估計、不確定性、假設檢定、回歸與時間序列的判讀能力。
+10. [Operations Research](operations-research/README.md): 當問題變成在成本、容量與邏輯限制下「應該怎麼做」時，進入 optimization 與 prescriptive model 的世界。
+11. [Network Analysis](network-analysis/README.md): 當資料的重點在連結結構、路徑與群聚，而不只是單列特徵時，進入 graph thinking。
+12. [Machine Learning](machine-learning/README.md): 學會以 workflow 為中心的建模、評估、解釋與部署觀念。
+13. [Marketing Analytics](marketing-analytics/README.md): 把價格、促銷、品牌選擇與 customer response 轉成可量化的決策模型。
+14. [Deep Learning](deep-learning/README.md): 在理解模型訓練流程後，再進入神經網路與 PyTorch 實作。
+15. [LLM Applications and Systems](llm/README.md): 當你開始把模型接到檔案、知識庫、工具與工作流程時，再進入 LLM 應用系統設計。
 
 ## 章節地圖
 
@@ -30,6 +31,7 @@
 | [Visualization](data-manipulation-and-eda/visualization/README.md) | Matplotlib、Seaborn、圖表設計原則 | 我該用哪種圖？結果要怎麼說才不誤導？ |
 | [Data Communication](data-communication/README.md) | 問題定義、需求拆解、stakeholder 對齊、分析敘事起點 | 模糊的商業需求要怎麼翻成可回答的分析問題？ |
 | [Data Engineering](data-engineering/README.md) | pipelines、storage、batch/stream、scheduling | 資料如何穩定流進分析與模型流程，而不是每次手動整理？ |
+| [Process Analytics](process-analytics/README.md) | event logs、traces、resources、throughput、process variation | 真實流程是怎麼跑的？哪裡慢？哪些變體最常見？ |
 | [Statistics](statistics/README.md) | 描述統計、推論、回歸、時間序列、生存分析 | 這個差異或趨勢是否可靠？ |
 | [Operations Research](operations-research/README.md) | optimization、decision variables、constraints、network design、sensitivity analysis | 在需求、成本、容量與商業規則都存在時，最佳決策該怎麼求？ |
 | [Network Analysis](network-analysis/README.md) | graphs、centrality、paths、cliques、subgraphs | 當資料的核心是誰和誰相連時，我該如何分析重要節點、最短路徑與群體結構？ |

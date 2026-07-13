@@ -6,6 +6,7 @@ This section collects practical computing notes that were previously split acros
 
 - [Computer Science Foundations](computer-science-foundations/README.md)
 - [Cloud](cloud/README.md)
+- [Programming Languages](programming-languages/README.md)
 - [Containers and Environment Management](containers-and-env/README.md)
 - [DevOps](devops/README.md)
 - [Version Control](version-control/README.md)

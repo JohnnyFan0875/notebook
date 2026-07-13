@@ -7,4 +7,31 @@ nav:
   - datetime.md
   - control-flow.md
   - functions.md
+  - object-oriented-programming-s3-r6.md
+  - functional-programming-with-purrr.md
+  - functional-programming-with-purrr-advanced.md
+  - defensive-programming.md
+  - importing-data.md
+  - missing-data.md
+  - sas-to-r-mental-model.md
+  - tidyverse-workflow.md
+  - explanatory-modeling-in-r.md
+  - modeling-with-tidymodels.md
+  - data-table-joins-and-reshaping.md
+  - data-reshaping-with-tidyr.md
+  - joining-data-with-dplyr.md
+  - dplyr-programming-patterns.md
+  - writing-efficient-r-code.md
+  - rcpp-for-r-performance.md
+  - parallel-programming-in-r.md
+  - reporting-with-r-markdown.md
+  - web-scraping-in-r.md
+  - sampling-in-r.md
+  - regular-expressions.md
+  - string-distance-and-fuzzy-matching.md
+  - text-analysis.md
+  - package-development.md
+  - social-media-analysis.md
+  - survey-data-analysis.md
   - apply-family.md
+  - statistical-functions.md

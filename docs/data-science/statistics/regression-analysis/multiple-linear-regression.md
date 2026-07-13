@@ -66,6 +66,16 @@ print(model.summary())
 
 Adding more predictors **always increases R²**, even if the new variable is meaningless. Adjusted R² penalizes unnecessary predictors.
 
+## Interview Prompt: Why Adjusted R² Instead of Plain R²?
+
+這是 regression 面試裡很常見的追問。
+
+一個夠簡潔的回答通常是：
+
+- plain `R²` 幾乎只會往上，不適合比較 predictor 數量不同的模型
+- adjusted `R²` 會對沒貢獻的變數加上複雜度懲罰
+- 所以在多變數情境下，它通常比單看 `R²` 更誠實
+
 \[
 R^2_{\text{adj}} = 1 - \frac{(1 - R^2)(n - 1)}{n - k - 1}
 \]
@@ -120,6 +130,18 @@ where $R^2_j$ is the R² from regressing $X_j$ on all other predictors.
 | 5–10 | Moderate — investigate |
 | > 10 | High multicollinearity — take action |
 
+### Interview Prompt: Why Is Multicollinearity a Problem?
+
+面試裡最值得先講的一句話是：
+
+- multicollinearity 不一定會讓預測失效，但會讓 individual coefficients 變得不穩定、難解釋
+
+接著可以補：
+
+- standard error 可能變大
+- 係數符號可能變得反直覺
+- 顯著性判讀會變得不可靠
+
 ```python
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
@@ -169,6 +191,32 @@ If `target` has categories 0 (setosa), 1 (versicolor), 2 (virginica), and setosa
 
 Warning: Dummy variable trap: Including all $k$ dummies for a $k$-category variable causes perfect multicollinearity (the dummies sum to 1 = the intercept). Always use $k-1$ dummies. pandas and statsmodels handle this automatically.
 
+## R Formula Workflow for Categorical Predictors
+
+In R, categorical predictors are often easier to work with than people expect because the formula interface handles dummy coding automatically.
+
+```r
+lm(mass_g ~ species, data = fish)
+```
+
+By default, this uses one category as the reference group and estimates the others relative to it.
+
+If you intentionally remove the intercept:
+
+```r
+lm(mass_g ~ species + 0, data = fish)
+```
+
+then each coefficient becomes the mean for that category rather than a difference from a reference category.
+
+This is a very useful trick when your goal is:
+
+- direct group means
+- easier comparison with summary tables
+- avoiding mental translation from "baseline + difference"
+
+Key point: `+ 0` does not "fix" dummy coding. It changes the interpretation of the coefficients.
+
 ## Model Selection
 
 ### Information Criteria
@@ -213,6 +261,44 @@ print(final_model.summary())
 ```
 
 Tip: Automatic stepwise selection has limitations: it can produce unstable models and overfit. Prefer using domain knowledge + AIC/BIC comparison, or regularization methods (Ridge, Lasso) for high-dimensional data.
+
+## R Workflow: `broom` for Model Output
+
+If you want regression output that is easy to filter, plot, or compare across many models, `broom` is often the most ergonomic R workflow.
+
+```r
+library(broom)
+
+tidy(model)
+glance(model)
+augment(model)
+```
+
+A practical split:
+
+- `tidy()`: coefficient-level results
+- `glance()`: model-level fit statistics
+- `augment()`: observation-level fitted values and diagnostics
+
+This is especially handy once you start fitting many related models inside a loop or a nested-data workflow.
+
+## Transformed Predictors Can Still Be Linear Models
+
+The course examples also highlight a subtle but important point: you can transform predictors inside the formula and still stay within the linear-model family.
+
+```r
+lm(mass_g ~ I(length_cm ^ 3), data = perch)
+```
+
+This is still a linear model in the coefficient, even though the predictor has been transformed.
+
+Why this matters:
+
+- some biological or physical relationships are nonlinear on the raw scale
+- feature engineering can improve fit without leaving the `lm()` workflow
+- you keep standard linear-model diagnostics and interpretation structure
+
+Warning: A transformed predictor changes the meaning of the coefficient. Do not read it as if it were still the effect of a one-unit change in the original raw variable.
 
 ## Standardized Coefficients
 
@@ -259,6 +345,13 @@ If an omitted variable affects both:
 2. an included predictor
 
 then the coefficient of the included predictor can become biased.
+
+## Common Interview Traps
+
+- 用 `R²` 比較 predictor 數量差很多的模型
+- 把 multicollinearity 說成「模型不能跑」而不是「解釋變差」
+- 忽略 omitted variable bias，只盯著 p-value
+- 忘記 multiple regression 的係數解讀一定帶有「holding other variables constant」
 
 Tip: Regression can control only for variables that are actually measured and included. "Holding all else equal" is never stronger than the data and design allow.
 

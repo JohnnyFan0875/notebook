@@ -48,6 +48,27 @@ sapply(stock_list, FUN = class)
 
 這通常比 `lapply()` 更方便閱讀，但也因為自動簡化，結果型別有時會比預期更難掌控。
 
+## vapply
+
+`vapply()` 的用途是「我想要簡化結果，但不想把型別交給 R 猜」。
+
+```r
+vapply(stock_list, FUN = class, FUN.VALUE = character(1))
+```
+
+`FUN.VALUE` 是你對每次輸出的型別契約。例如：
+
+- `character(1)` 表示每次都應回傳長度 1 的字串
+- `numeric(1)` 表示每次都應回傳長度 1 的數值
+
+和 `sapply()` 相比，`vapply()` 的好處是：
+
+- 回傳型別更穩定
+- 若某次輸出不符合預期，會提早報錯
+- 在函數化分析流程中更容易除錯
+
+如果這份結果後面還要再接別的分析步驟，`vapply()` 往往比 `sapply()` 更安全。
+
 ## apply a Custom Summary
 
 對多欄數值資料做同一份摘要，是 `apply` 類函數的常見用法：
@@ -76,5 +97,6 @@ sapply(stock_return, FUN = simple_summary)
 
 - 對 data frame 使用 `apply()` 後，資料先被強制轉型成 matrix，造成型別意外改變。
 - 以為 `sapply()` 永遠回傳 vector，結果某些情況回傳 matrix 或 list。
+- 忘記 `vapply()` 的 `FUN.VALUE` 是契約，不符合時其實應該把它當成資料或邏輯錯誤訊號。
 - 把複雜副作用流程硬塞進 `apply`，反而比普通 loop 更難讀。
 - 沒先想清楚 input 與 output 結構，只是機械地把 loop 改寫成 `apply`。

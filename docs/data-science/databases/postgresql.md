@@ -39,6 +39,28 @@ psql -h 127.0.0.1 -p 5432 -U admin shopdb
 \copy customers FROM '/tmp/customers.csv' DELIMITER ',' CSV HEADER;
 ```
 
+## Create Database
+
+```sql
+CREATE DATABASE shopdb;
+CREATE DATABASE analytics_db;
+```
+
+資料庫名稱通常以英文字母或底線開頭。實務上盡量使用清楚、穩定、全小寫的命名。
+
+### Useful options
+
+```sql
+CREATE DATABASE analytics_db
+  OWNER analyst
+  TEMPLATE template0
+  ENCODING 'UTF8';
+```
+
+- `OWNER`: 指定資料庫擁有者
+- `TEMPLATE`: 從哪個 template 建立
+- `ENCODING`: 指定字元編碼，通常使用 `UTF8`
+
 ## DDL: Create/Alter/Drop
 
 ### Create table
@@ -101,6 +123,52 @@ ALTER SEQUENCE customers_customer_id_seq RESTART WITH 1000;
 DROP TABLE IF EXISTS sales_orders;
 DROP DATABASE IF EXISTS shopdb_archive;
 ```
+
+## Data Types: Selection Habits
+
+PostgreSQL 資料型別很多，但日常建模先把幾個核心選擇養成習慣最重要。
+
+### Text
+
+- `TEXT`: 不限制長度，通常是 PostgreSQL 最自然的字串型別
+- `VARCHAR(n)`: 需要長度上限時使用
+
+如果沒有業務上的長度限制，常可直接用 `TEXT`。
+
+### Numeric
+
+- `SMALLINT`: 小範圍整數
+- `INTEGER`: 一般整數預設選擇
+- `BIGINT`: 大範圍整數
+- `NUMERIC(p, s)`: 金額或要求精確小數時使用
+- `SERIAL`, `BIGSERIAL`: 自動遞增 surrogate key 的傳統寫法
+
+### Temporal
+
+- `DATE`: 只有日期
+- `TIMESTAMP`: 日期加時間
+- `TIMESTAMPTZ`: 需要時區語意時通常更安全
+
+### Boolean
+
+- `BOOLEAN`
+
+對應值常見為 `TRUE`, `FALSE`, `NULL`。
+
+### Type choice examples
+
+```sql
+CREATE TABLE people (
+  person_id   BIGSERIAL PRIMARY KEY,
+  full_name   TEXT NOT NULL,
+  birthday    DATE,
+  account_age INTEGER,
+  balance     NUMERIC(12,2),
+  is_active   BOOLEAN DEFAULT TRUE
+);
+```
+
+心智模型上，型別要優先服務正確性與可查詢性，不要把日期、金額、布林值都先存成文字。
 
 ## DML: Insert/Update/Delete (with conflict handling)
 
@@ -289,6 +357,60 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 SELECT uuid_generate_v4();
 ```
 
+## Roles, Users, and Access Control
+
+PostgreSQL 用 role 模型處理權限。`postgres` 是預設 superuser，但日常工作不應長期直接拿 superuser 帳號操作業務資料。
+
+### Create and modify users
+
+```sql
+CREATE USER analyst;
+CREATE USER analyst WITH PASSWORD 'change-me';
+ALTER USER analyst WITH PASSWORD 'new-secret';
+```
+
+### Grant object privileges
+
+```sql
+GRANT SELECT ON orders TO analyst;
+GRANT INSERT, UPDATE ON customers TO analyst;
+```
+
+### Revoke privileges
+
+```sql
+REVOKE UPDATE ON customers FROM analyst;
+REVOKE ALL PRIVILEGES ON orders FROM analyst;
+```
+
+### Change ownership
+
+```sql
+ALTER TABLE orders OWNER TO analyst;
+```
+
+ownership 與 privilege 不完全相同。擁有者可做的事情通常更多，因此變更 owner 前要先想清楚責任邊界。
+
+## Schemas
+
+schema 是資料庫內的 namespace，可用來隔離不同模組、不同人或不同用途的物件。
+
+```sql
+CREATE SCHEMA accounting;
+CREATE SCHEMA reporting;
+```
+
+如果要讓使用者能存取某個 schema，通常至少要先給 `USAGE`：
+
+```sql
+GRANT USAGE ON SCHEMA accounting TO analyst;
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON ALL TABLES IN SCHEMA accounting
+TO analyst;
+```
+
+這個模式比把所有東西都塞進 `public` 更容易管理。
+
 ## Handy snippets from the basics
 
 ```sql
@@ -312,3 +434,5 @@ DROP TABLE users;
 - Prefer `\copy` inside `psql` for CSV IO when you don’t want server-side file permissions.
 - `ON CONFLICT` requires a unique index or primary key on the target column(s).
 - Use `EXPLAIN (ANALYZE, BUFFERS)` when queries get slow (beyond this quick sheet).
+- `TEXT` 在 PostgreSQL 裡通常是很合理的預設字串型別，不必凡事先寫成 `VARCHAR(255)`.
+- 若不是管理任務，盡量不要長期使用 `postgres` superuser 帳號處理一般資料操作。

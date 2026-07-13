@@ -88,6 +88,25 @@ excel_file = pd.ExcelFile('iris.xlsx')
 df_excel_sheet = excel_file.parse('Sheet1')
 ```
 
+如果活頁簿有多個工作表，`ExcelFile` 很適合先檢查再逐張讀：
+
+```python
+workbook = pd.ExcelFile("fruit_tabs.xlsx")
+print(workbook.sheet_names)
+# ['price', 'color']
+
+price_df = workbook.parse("price")
+color_df = workbook.parse("color")
+```
+
+這個流程特別適合：
+
+- 不確定 workbook 裡有哪些 sheet
+- 不想一次把所有工作表都讀進來
+- 不同工作表稍後還要 merge / compare
+
+如果你已經知道目標工作表名稱，`read_excel(..., sheet_name=...)` 會比較短；如果你需要先探索 workbook 結構，`ExcelFile(...).sheet_names` 會更自然。
+
 ### From HTML
 
 ```python

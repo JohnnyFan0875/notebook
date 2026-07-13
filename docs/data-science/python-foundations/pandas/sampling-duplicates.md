@@ -54,6 +54,19 @@ iris.sample(frac=0.3, random_state=42)
 ```
 
 - `.sample()` selects random rows by count (`n`) or fraction (`frac`).
+- `random_state=` makes the sample reproducible.
+- choose `n=` when you want a fixed count, and `frac=` when you want a proportion of the dataset.
+
+### Sampling With Replacement
+
+```python
+iris.sample(n=5, replace=True, random_state=42)
+```
+
+- `replace=False` is the default and means each row can appear at most once.
+- `replace=True` allows the same row to be sampled multiple times.
+
+This is especially useful for bootstrap-style resampling.
 
 ## Group-wise Sampling
 
@@ -66,6 +79,49 @@ iris.groupby('species').sample(frac=0.4, random_state=42)
 ```
 
 - Grouped sampling is useful for stratified analysis.
+
+There are two common patterns:
+
+- proportional stratified sampling: `groupby(...).sample(frac=...)`
+- equal-count stratified sampling: `groupby(...).sample(n=...)`
+
+The first preserves group proportions more closely. The second forces balanced subgroup sizes, which can be useful for comparisons but changes the observed sample composition.
+
+## Weighted Sampling
+
+Pandas can also sample rows with unequal probabilities.
+
+```python
+weights = iris["species"].map({
+    "setosa": 2,
+    "versicolor": 1,
+    "virginica": 1,
+})
+
+iris.sample(frac=0.3, weights=weights, random_state=42)
+```
+
+- `weights=` changes the relative chance each row is drawn.
+- weights can be a Series or a column name.
+- this is useful when you intentionally want to oversample some rows or categories.
+
+Be careful: weighted sampling is a data collection choice, not automatically a population-correct inference method.
+
+## Systematic Sampling Pattern
+
+Pandas does not have a dedicated systematic sampling method, but the pattern is simple.
+
+```python
+k = 10
+systematic = iris.iloc[::k]
+```
+
+This is only safe when row order does not encode a hidden pattern. If rows are sorted by time, geography, or category, shuffle first:
+
+```python
+shuffled = iris.sample(frac=1, random_state=42)
+systematic = shuffled.iloc[::10]
+```
 
 ## Additional Tips
 

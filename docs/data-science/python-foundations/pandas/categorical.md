@@ -26,6 +26,57 @@ iris['species_cat'].cat.categories
 - Reduces memory usage.
 - Provides category-specific operations.
 
+Sometimes a useful workflow is:
+
+1. map raw labels to cleaner business labels
+2. then convert the result to a categorical column
+
+```python
+mapping = {
+    "0-15 Min": "short",
+    "16-30 Min": "medium",
+    "30+ Min": "long",
+}
+
+df["stop_length"] = df["stop_duration"].map(mapping)
+```
+
+This is helpful when the raw labels are verbose, inconsistent, or not in the order you actually want to analyze.
+
+This pattern is especially helpful for survey data, where raw response labels are often long, messy, or semantically ordered rather than alphabetic.
+
+```python
+likert_map = {
+    "Never": "never",
+    "Rarely": "rarely",
+    "Sometimes": "sometimes",
+    "Often": "often",
+    "Always": "always",
+}
+
+df["exercise_freq"] = df["exercise_freq_raw"].map(likert_map)
+```
+
+### When Category Saves Memory
+
+`category` 最適合「重複值很多、唯一值相對少」的欄位，例如：
+
+- country
+- product type
+- status
+- manufacturer
+
+```python
+used_cars["manufacturer_name"].astype("category")
+```
+
+這類欄位通常會比 `object` 省很多記憶體，因為底層是：
+
+- 一份 category 清單
+- 一份對應到 category 的整數 codes
+
+但如果欄位幾乎每列都不同，例如 ID、自由文字、URL，高 cardinality 時 category 的省記憶體效果就可能很有限，甚至不值得轉。
+
 ## Label Encoding
 
 ```python
@@ -84,6 +135,49 @@ iris['species_cat'] = iris['species_cat'].cat.reorder_categories(
 )
 ```
 
+`ordered=True` 不只是標記而已，它會影響排序、比較與某些 groupby 呈現順序。
+
+```python
+dogs["coat"] = dogs["coat"].cat.set_categories(
+    ["short", "medium", "long"],
+    ordered=True,
+)
+
+dogs.sort_values("coat")
+```
+
+如果 `ordered=False`，這個欄位仍然是 categorical，但不應該被解讀成有自然大小關係。
+
+一旦 category 被標成有序，就可以做有意義的比較與區間篩選：
+
+```python
+dogs["coat"] = dogs["coat"].cat.reorder_categories(
+    ["short", "medium", "long"],
+    ordered=True,
+)
+
+dogs[dogs["coat"] > "short"]
+```
+
+這種寫法只有在 category 順序本身有業務語意時才成立。
+
+Survey 裡的 Likert 題是最常見的例子：
+
+```python
+likert_order = ["never", "rarely", "sometimes", "often", "always"]
+
+df["exercise_freq"] = pd.Categorical(
+    df["exercise_freq"],
+    categories=likert_order,
+    ordered=True,
+)
+
+df["exercise_freq"].value_counts().sort_index()
+df[df["exercise_freq"] >= "often"]
+```
+
+Warning: 如果問卷把 Likert 題編成 `1` 到 `5`，它在 pandas 可能看起來像普通整數，但分析上仍然是 ordinal，不應直接當成等距連續數值。
+
 ### Rename Categories
 
 ```python
@@ -137,6 +231,29 @@ Output:
 
 - `.set_categories()` explicitly resets allowed categories, and any values not in the new set become `NaN`.
 - `.remove_unused_categories()` only cleans up unused categories without altering valid values.
+
+## Ordered Categories and GroupBy Output
+
+有序 category 不只影響 `sort_values()`，也常影響 groupby 結果的呈現順序，這在報表和視覺化前整理很有用。
+
+```python
+dogs["coat"] = dogs["coat"].cat.reorder_categories(
+    ["short", "medium", "long"],
+    ordered=True,
+)
+
+dogs.groupby("coat")["age"].mean()
+```
+
+這樣的輸出順序通常會跟 category 順序一致，而不是單純字母排序。
+
+如果你的目標是業務邏輯順序，例如：
+
+- `low`, `medium`, `high`
+- `bronze`, `silver`, `gold`
+- `S`, `M`, `L`, `XL`
+
+那先把 category 順序定好，通常比事後手動重排更穩定。
 
 ## Consistent Encoding Across Datasets
 

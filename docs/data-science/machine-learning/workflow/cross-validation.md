@@ -2,6 +2,30 @@
 
 Cross-validation is a resampling method used to evaluate machine learning models on a limited data sample. It helps reduce [overfitting](../foundations/overfitting-underfitting.md) and provides a more reliable estimate of model performance.
 
+## Interview Fast Answer
+
+如果面試官問「為什麼要做 cross-validation」，最穩的回答通常是：
+
+- 單一次 split 太不穩
+- cross-validation 能更可靠地估計 generalization
+- 對資料量有限時尤其重要
+
+可以再補一句：
+
+- cross-validation 是 model evaluation / model selection 的工具，不是 final test set 的替代品
+
+## Bootstrapping vs Cross-Validation
+
+這兩者很容易被一起問到。
+
+- **Cross-validation**: 重複切分資料，主要拿來估計模型在 unseen data 上的表現
+- **Bootstrapping**: 對資料做有放回抽樣，常拿來估計統計量不確定性，或作為 bagging 的資料來源
+
+簡單記法：
+
+- CV 比較偏 evaluation of predictive performance
+- bootstrap 比較偏 resampling-based uncertainty estimation 或 ensemble sampling
+
 ## K-Fold Cross-Validation
 
 - Splits dataset into **k equal-sized folds**.
@@ -161,6 +185,15 @@ print("Average StratifiedKFold accuracy:", np.mean(accuracies))
 - Always use **StratifiedKFold** for [classification](../supervised-learning/classification/README.md) to avoid biased folds.
 - Useful for small or **imbalanced datasets**.
 
+### Interview Prompt: Which CV Split Should I Use?
+
+常見的高訊號回答是：
+
+- classification: 優先考慮 `StratifiedKFold`
+- regression / general tabular task: `KFold`
+- time-ordered data: `TimeSeriesSplit`
+- extremely small data: 可能提高 `k`，但要考慮 variance 與 computation
+
 ## Time Series Split
 
 - Used for **time-dependent data**.
@@ -211,6 +244,13 @@ print("Average RMSE across folds:", np.mean(fold_scores))
 - **Time Series Split:** Use when data has a natural order over time.
 - Cross-validation improves [generalization](../foundations/generalization.md) but increases computational cost.
 - Preprocessing that learns from data should happen inside each fold, usually via a [pipeline](pipeline-basic.md).
+
+## Common Interview Traps
+
+- 把 CV score 當 final test performance
+- 先做 scaling / imputation / feature selection，再把處理後資料送進 CV
+- 在 class imbalance 問題上仍用普通 `KFold`
+- 在 time series 資料上 shuffle
 
 ## Related Concepts
 

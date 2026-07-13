@@ -10,20 +10,34 @@
 ## Standalone Topics
 
 - `argparse.md`
+- `api-http.md`
 - `assert.md`
 - `class.md`
 - `config-files.md`
+- `control-flow.md`
+- `core-data-types.md`
+- `database-access-sqlalchemy.md`
 - `data-type-transformation.md`
+- `dask.md`
 - `datetime.md`
+- `efficient-python.md`
 - `file-io.md`
 - `function.md`
 - `if-name-main.md`
+- `importing-data.md`
 - `iterator.md`
 - `multiprocessing.md`
+- `mongodb.md`
+- `polars.md`
+- `python-packages.md`
 - `python-snippets.md`
+- `software-engineering.md`
+- `regex.md`
 - `string-matching.md`
 - `subprocess.md`
+- `testing.md`
 - `try-except.md`
+- `web-scraping.md`
 
 ## 建議閱讀方式
 

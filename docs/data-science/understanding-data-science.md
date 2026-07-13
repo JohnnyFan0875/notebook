@@ -131,6 +131,41 @@ Teams commonly use Python to:
 - train machine learning models
 - automate repeatable analysis workflows
 
+## A First End-To-End Workflow
+
+Many introductory courses teach data science through a very small loop:
+
+1. load a table from a CSV file
+2. inspect the columns and a few example rows
+3. ask a simple question about one or two variables
+4. make a basic plot
+5. interpret what the plot suggests
+
+For example:
+
+```python
+import pandas as pd
+from matplotlib import pyplot as plt
+
+df = pd.read_csv("data.csv")
+
+print(df.head())
+print(df.dtypes)
+
+plt.scatter(df["age"], df["height"])
+plt.xlabel("Age")
+plt.ylabel("Height")
+plt.show()
+```
+
+This is a useful beginner workflow because it connects three ideas early:
+
+- imported files become tables you can inspect
+- table columns become inputs to analysis
+- plots are part of reasoning, not decoration
+
+The goal is not to make a perfect chart on the first pass. The goal is to shorten the distance between raw data and a testable observation.
+
 ## A Healthy Beginner Mental Model
 
 If you are new to data science, keep this order in mind:

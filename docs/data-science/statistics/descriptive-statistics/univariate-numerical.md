@@ -12,6 +12,25 @@ Key point: Always describe all three. Reporting only the mean without variabilit
 
 ## Central Tendency
 
+### Interview Fast Answer
+
+如果面試官問 mean、median、mode 差在哪，最穩的回答順序通常是：
+
+1. 先講三者各自在描述什麼中心
+2. 再講 outliers 和 skewness 會怎麼影響它們
+3. 最後講什麼情境該用哪一個
+
+可以先濃縮成：
+
+- mean: 用到全部資料，但容易被極端值拉動
+- median: 對 outliers 更 robust，偏態分布常比 mean 更穩
+- mode: 最常出現的值，對 categorical 或離散資料特別有用
+
+如果只能先講一句，通常先補上這句最有訊號：
+
+- symmetric distribution 常看 mean
+- skewed distribution 或有 outliers 時，median 往往更代表 typical value
+
 ### Mean
 
 The sum of all values divided by the number of observations.
@@ -100,6 +119,13 @@ print(f"Mode: {mode_val:.3f}")
 | Left-skewed (left tail is long)   | **Mean** < Median < Mode | Mean pulled down by low outliers |
 
 Tip: Quick check: If Mean > Median, suspect right skew (common in income, house price data). Report both.
+
+## Common Interview Traps
+
+- 把 mode 當成只存在於 categorical data；其實數值資料也可能有 mode
+- 看到平均數就直接報 mean，忽略分布偏斜與極端值
+- 用「mean 比 median 更準」這種沒有前提的說法
+- 忘記說明 mean、median、mode 的差異其實是在回答不同資料形狀下的代表性
 
 ## Variability / Spread
 

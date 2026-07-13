@@ -39,8 +39,10 @@ NumPy 是 Python 科學計算的基礎層。只要你在做向量化運算、矩
 
   - `reshape`
   - `transpose (T)`
+  - explicit axis reordering with `transpose(..., axes=...)`
   - `concatenate`
   - `vstack`, `hstack`
+  - `flip`, `split`, `stack`
 
 ### [Random Sampling](random-sampling.md)
 
@@ -110,3 +112,4 @@ NumPy 是 Python 科學計算的基礎層。只要你在做向量化運算、矩
 1. `shape` 與 `axis` 的意義。
 2. slicing 與 broadcasting 如何改變運算結果。
 3. 何時該用向量化，而不是 Python `for` 迴圈。
+4. 高維 array 裡每個 axis 代表什麼，不要只把它當成「更多括號」。

@@ -99,6 +99,23 @@ financial ratio analysis 是用財報欄位之間的關係，快速檢查公司�
 
 這些 ratio 的重點不只是公式，而是它們把原始財報數字轉成更容易比較的訊號。
 
+## A Useful Ratio Family Map
+
+把 ratio 先分家族，通常比一口氣背很多公式更有用：
+
+- liquidity ratios: 看短期義務撐不撐得住
+- leverage ratios: 看公司用多少 debt 與 equity 在撐資產
+- solvency ratios: 看整體財務結構是否過度脆弱
+- profitability ratios: 看收入最終能留下多少經濟成果
+
+這個分類的價值在於，你不會把所有 ratio 都混成「好像越高越好」。
+
+例如：
+
+- current ratio 太低可能危險，但太高也可能代表資產閒置
+- leverage ratio 偏高不一定錯，要看產業與資本密集度
+- profitability ratio 變高也要追問，是 pricing power、成本下降，還是一次性因素
+
 ## Liquidity Ratios
 
 liquidity ratios 關心的是公司短期內能不能履行義務。它們比較像「先撐得住嗎」的問題，而不是「長期值不值得投」。
@@ -126,6 +143,119 @@ acid-test ratio 又常叫 quick ratio。它比 current ratio 更保守，因為�
 - 如果不把較慢變現的項目算得太樂觀，公司短期流動性還夠不夠？
 
 因此當公司存貨占 current assets 很大時，acid-test 往往比 current ratio 更有警示力。
+
+### Operating Cash Flow Ratio
+
+有些流動性問題只看 balance sheet 還不夠，因為帳上 current assets 不等於真的能快速轉成可用現金。
+
+operating cash flow ratio 會直接把 core business 產生的 cash 拿來對照 current liabilities：
+
+```text
+operating cash flow ratio = cash flow from operating activities / current liabilities
+```
+
+它比較像在問：
+
+- 公司靠營運本身產生的現金，能不能支撐短期義務？
+
+如果 current ratio 看起來不差，但 operating cash flow ratio 長期偏弱，通常表示：
+
+- 帳面流動性還行
+- 但現金造血能力可能沒有那麼強
+
+## Leverage and Solvency Ratios
+
+除了 current ratio，還有幾個很常一起看的結構性 ratio：
+
+- debt-to-equity = total liabilities / shareholders' equity
+- equity multiplier = total assets / shareholders' equity
+- debt-to-assets = total liabilities / total assets
+
+可以用很粗略的方式理解：
+
+- debt-to-equity: 負債相對股東資本有多高
+- equity multiplier: 資產規模相對股東投入被放大多少
+- debt-to-assets: 整體資產有多少比例是用負債撐起來
+
+這些比率最好一起看，而不是分開單讀。因為它們都在描述同一件事的不同切面：
+
+- 公司資產結構有多仰賴外部債務
+- 權益緩衝夠不夠厚
+- 一旦景氣或現金流轉差，結構是否容易受壓
+
+## Profitability Ratios in a Monitoring Context
+
+在財報監控裡，profitability ratio 常常不是拿來做學術定義，而是拿來回答：
+
+- 核心產品還有沒有足夠 margin
+- 營收成長有沒有真的轉成經濟成果
+- 公司和同業相比，是高毛利低效率，還是低毛利高周轉
+
+很常見的入門組合包括：
+
+```text
+gross margin = (revenue - cost of goods sold) / revenue
+operating margin = (revenue - operating expenses) / revenue
+cash flow to net income ratio = cash flow from operating activities / net income
+```
+
+其中 `cash flow to net income ratio` 很值得和會計上的獲利指標一起看。它能幫助你判斷：
+
+- 帳上獲利有多少真的轉成營運現金
+- 利潤品質是否穩定
+- 獲利改善是不是主要靠 accrual 調整撐出來
+
+## Company View vs. Industry View
+
+單看一家公司的 ratio，很容易過度解讀。更穩健的做法通常是同時看兩個視角：
+
+- within-company trend: 自己和自己比，看時間序列是否改善或惡化
+- industry comparison: 和同業比，看目前水位是否異常
+
+例如某公司的 current ratio 從 `1.4` 升到 `1.8`，表面上看像改善；但如果同業平均一直在 `2.5` 左右，就可能只是從偏弱變成沒那麼弱。
+
+Key point: ratio 的資訊量，來自比較，不只來自公式。
+
+## A Practical Pandas Pattern for Ratio Monitoring
+
+把 ratio 做成可重複維護的 workflow，通常比手動算單一欄位更重要。
+
+常見做法是：
+
+1. 先把 statement lines 整理成欄位一致的 DataFrame。
+2. 用欄位間除法建立 ratio columns。
+3. 以 `groupby()` 或 `pivot_table()` 彙總 company、industry、year。
+4. 再把結果送去 bar chart 或 scatter plot 做比較。
+
+例如 current ratio 可以直接由 statement lines 算出：
+
+```python
+balance_sheet["current_ratio"] = (
+    balance_sheet["Total Current Assets"]
+    / balance_sheet["Total Current Liabilities"]
+)
+```
+
+如果你有多個 ratio 要重複計算，把 numerator / denominator / ratio name 抽成規則通常更容易維護，而不是每次手寫一行新除法。
+
+接著可以做 grouped summary：
+
+```python
+balance_sheet.groupby("comp_type")["current_ratio"].mean()
+balance_sheet.groupby(["Year", "comp_type"])["current_ratio"].mean()
+```
+
+或用 `pivot_table()` 整理 company 與 industry 平均：
+
+```python
+plot_dat.pivot_table(
+    index=["comp_type", "company"],
+    values=["Gross Margin", "Operating Margin", "Debt-to-equity", "Equity Multiplier"],
+    aggfunc="mean",
+).reset_index()
+```
+
+重點不是語法本身，而是這個流程能把 ratio analysis 從「一次性算表」變成「可反覆更新的 monitoring pipeline」。
 
 ### Inventory Turnover and Days in Inventory
 

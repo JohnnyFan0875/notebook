@@ -16,6 +16,7 @@ Key point: In real projects, most effort is not spent "calling an LLM." It is sp
 | [LLM Application Patterns](llm-application-patterns.md) | structured outputs, tool use, retries, moderation, and production-safe request handling |
 | [LLM Workflows in Python](llm-workflows-in-python.md) | model interfaces, tokenization, fine-tuning workflow, and evaluation metrics |
 | [Managed LLM Platforms](managed-llm-platforms.md) | multi-provider access, model onboarding, response handling, and runtime safeguards |
+| [Microsoft Copilot Productivity Workflows](microsoft-copilot-productivity-workflows.md) | Microsoft 365 copilots, email and meeting summaries, prompt gallery, and enterprise governance concerns |
 | [Multimodal OpenAI Workflows](multimodal-openai-workflows.md) | speech-to-text, translation, moderation, text-to-speech, and multi-step audio application design |
 | [OpenAI API Workflows](openai-api-workflows.md) | request structure, conversation state, parameter choices, and API-oriented prompt patterns |
 

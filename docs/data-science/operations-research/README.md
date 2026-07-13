@@ -6,6 +6,7 @@ Key point: operations research 的核心不是把數學寫得很複雜，而是�
 
 ## Topics
 
+- [Optimization in Python](optimization-in-python.md)
 - [Supply Chain Optimization](supply-chain-optimization.md)
 
 ## 這個模組回答什麼問題
@@ -18,4 +19,5 @@ Key point: operations research 的核心不是把數學寫得很複雜，而是�
 
 1. 先看 [Data Communication](../data-communication/README.md)，先把 business question 和 analytical question 分清楚。
 2. 再看 [Statistics](../statistics/README.md)，建立不確定性與輸入資料品質的基本感覺。
-3. 再看 [Supply Chain Optimization](supply-chain-optimization.md)，把 prescriptive model 的骨架與限制條件直覺建立起來。
+3. 再看 [Optimization in Python](optimization-in-python.md)，建立 objective、constraints 與 solver 的基本直覺。
+4. 再看 [Supply Chain Optimization](supply-chain-optimization.md)，把 prescriptive model 的骨架與限制條件直覺建立起來。

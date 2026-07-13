@@ -28,6 +28,79 @@ Tip: We use Roman letters (x̄, s, p̂) for sample statistics and Greek letters 
 
 Warning: Bias vs. Variance tradeoff in sampling: Random methods minimize bias (systematic error) but may have high variance (noise). Non-random methods are fast but introduce bias that no amount of analysis can fix.
 
+### Systematic Sampling
+
+Systematic sampling means choosing every `k`-th observation after a starting point.
+
+Example:
+
+- you have 10,000 rows
+- you want roughly 1,000 observations
+- set `k = 10` and take every 10th row
+
+This is operationally convenient, but it has one major caveat: if the row order contains a hidden pattern, systematic sampling can become biased.
+
+For example:
+
+- customer records sorted by region
+- manufacturing records sorted by machine cycle
+- web logs sorted by repeated periodic events
+
+If the periodicity in the data lines up with `k`, you may over- or under-sample certain patterns.
+
+Practical rule:
+
+- systematic sampling is acceptable when row order is already random-like
+- otherwise shuffle first, then apply systematic selection
+
+Once you shuffle rows first, systematic sampling behaves much more like simple random sampling.
+
+### Stratified vs. Cluster Sampling
+
+These two are easy to confuse because both start with groups, but their goals are different.
+
+| Method | What you do | Main goal |
+| ------ | ----------- | --------- |
+| **Stratified sampling** | sample from every subgroup | preserve subgroup representation |
+| **Cluster sampling** | sample some subgroups, then observe within them | reduce collection cost |
+
+Use stratified sampling when:
+
+- subgroup representation matters
+- groups differ meaningfully on the outcome
+- you want more stable estimates for subgroup comparisons
+
+Use cluster sampling when:
+
+- the population is geographically or operationally spread out
+- it is expensive to reach every subgroup
+- you can tolerate higher variance in exchange for lower collection cost
+
+Key mental model:
+
+- stratified sampling spreads effort across all important groups
+- cluster sampling concentrates effort inside a subset of groups
+
+### Weighted Sampling
+
+Sometimes not every row should have the same probability of being selected.
+
+Weighted sampling changes the relative selection probability of each observation.
+
+This is useful when:
+
+- some subgroups are rare but analytically important
+- you want to oversample a specific category for modeling or inspection
+- you are simulating a sampling scheme with unequal probabilities
+
+Important caution:
+
+- weighted sampling changes who enters the sample
+- it does **not** automatically make later estimates unbiased
+- if you oversample a subgroup, you often need weighting again at analysis time to recover population-level estimates
+
+This distinction matters because "sampling weights" and "analysis weights" are related but not interchangeable.
+
 ## Point Estimation
 
 A **point estimate** is a single-value guess for a population parameter, calculated from the sample.
@@ -132,6 +205,8 @@ Tip: SE vs. SD: Standard Deviation (s) describes how spread out individual obser
 | **SD (s)**    | Spread of individual data points           | Not much                   |
 | **SE (s/√n)** | Spread of sample means across many samples | Yes — decreases as n grows |
 
+As sample size grows, the sampling distribution of the mean gets narrower. This is why larger samples usually produce more stable point estimates and tighter confidence intervals.
+
 ## Repeated Sampling vs. Bootstrap
 
 These two ideas are easy to mix up:
@@ -196,6 +271,50 @@ print(f"Bootstrap 95% CI: ({ci_low:.3f}, {ci_high:.3f})")
 | Compute the statistic for that resample       |
 | Repeat many times                             |
 | Use the bootstrap distribution for SE or CI   |
+
+### What Bootstrap Can and Cannot Fix
+
+Bootstrap is powerful, but it is not magic.
+
+It can help approximate:
+
+- standard errors
+- confidence intervals
+- stability of a statistic
+
+It cannot fix:
+
+- selection bias
+- measurement bias
+- badly unrepresentative original samples
+
+If the original sample is biased, bootstrap usually just reproduces that bias many times.
+
+### Quantile vs. Standard-Error Confidence Intervals
+
+Two common bootstrap CI patterns are:
+
+1. quantile / percentile method
+2. standard-error method
+
+Percentile method:
+
+```python
+ci_low, ci_high = np.percentile(boot_means, [2.5, 97.5])
+```
+
+Standard-error method, normal approximation:
+
+```python
+boot_se = np.std(boot_means, ddof=1)
+ci_low = sample.mean() - 1.96 * boot_se
+ci_high = sample.mean() + 1.96 * boot_se
+```
+
+Rule of thumb:
+
+- percentile intervals are convenient and widely used
+- normal-approximation intervals are simpler, but rely more on the bootstrap distribution being reasonably symmetric
 
 ## Key Takeaways
 

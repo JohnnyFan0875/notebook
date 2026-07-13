@@ -28,6 +28,15 @@ dir_dt = pd.to_datetime(dir_str, errors='coerce')  # invalid formats become NaT
 - `errors='coerce'`: forces invalid parsing to `NaT` (Not a Time).
 - Ensures consistent datetime dtype.
 
+If date and time are stored in separate string columns, combine them first:
+
+```python
+combined = df["date"].str.cat(df["time"], sep=" ")
+df["date_and_time"] = pd.to_datetime(combined, errors="coerce")
+```
+
+This is a common cleanup step in event logs and transactional datasets.
+
 ## Extract Datetime Components
 
 ```python
@@ -39,6 +48,16 @@ iris['weekday'] = iris['measurement_date'].dt.day_name()
 
 - `.dt.year`, `.dt.month`, `.dt.day`: numeric components.
 - `.dt.day_name()`: string weekday name.
+
+If the datetime information lives in the index instead of a column, use the index attributes directly:
+
+```python
+df = df.set_index("measurement_date")
+df.index.month
+df.index.day_name()
+```
+
+Tip: `.dt` is for datetime-like Series. `DatetimeIndex` uses `.index.month`, `.index.day`, and similar accessors directly.
 
 ## Format Datetime to String
 
@@ -76,6 +95,19 @@ iris.groupby('measurement_date')['petal_length'].mean().resample('D').mean()
 
 - `.resample('D')`: resample to daily frequency.
 - Supports rules like 'W' (weekly), 'M' (monthly), 'Y' (yearly).
+
+There is an important difference between grouping by calendar components and resampling by true time periods:
+
+```python
+df.groupby(df.index.month)["value"].mean()
+df["value"].resample("M").mean()
+```
+
+- `groupby(df.index.month)` pools all Januaries, all Februaries, and so on across the whole dataset
+- `resample("M")` creates one result per actual month in chronological order
+
+Use `groupby(index.month)` for seasonal comparisons.
+Use `resample()` when you want a proper time series back.
 
 ## Key Takeaways
 

@@ -1,8 +1,10 @@
 nav:
   - README.md
-  - assumptions-diagnostics.md
-  - clustering.md
-  - logistic-lda.md
-  - multiple-regression.md
+  - linear-algebra-foundations.md
   - multivariate-eda.md
   - pca.md
+  - structural-equation-modeling-with-lavaan.md
+  - clustering.md
+  - multiple-regression.md
+  - logistic-lda.md
+  - assumptions-diagnostics.md

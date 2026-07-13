@@ -17,6 +17,7 @@ It makes validation scores look better than reality.
 - **Stratified split**: [classification](../supervised-learning/classification/README.md) tasks where [class balance](../evaluation/class-imbalance.md) matters.
 - **Group split**: when multiple rows belong to the same user, patient, device, or store.
 - **Time-based split**: forecasting or any problem with temporal order.
+- **Snapshot-aware split**: when multiple basetables are built from repeated reference dates for the same entities.
 
 ## Common Leakage Patterns
 
@@ -33,11 +34,18 @@ It makes validation scores look better than reality.
 - Validate feature availability at prediction time
 - For grouped data, split by entity rather than by row
 - For time data, train on the past and validate on the future
+- For stacked snapshots, avoid placing nearly identical snapshots of the same entity across train and validation unless that matches the deployment setting
 
 ## Mental Model
 
 Ask: "Would I truly know this value at the moment the prediction is made?"
 If not, the feature or preprocessing design may be leaking information.
+
+在 repeated-snapshot 問題裡，還要再多問一句：
+
+"我現在看到的 validation row，是否只是 train row 的隔月版本？"
+
+如果答案是 yes，分數可能仍然過度樂觀。
 
 ## Related Concepts
 
@@ -45,5 +53,6 @@ If not, the feature or preprocessing design may be leaking information.
 - [Train-Test Split](../preprocessing/train-test-split.md)
 - [Cross-Validation Methods](cross-validation.md)
 - [Pipeline Basics](pipeline-basic.md)
+- [Basetable and Time-Aware Feature Engineering](../foundations/basetable-and-time-aware-feature-engineering.md)
 
 [Back to Workflow](README.md)

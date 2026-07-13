@@ -74,6 +74,9 @@ star schema 通常偏向把分析常用的描述欄位保留在 dimension 內，
 
 如果目標是分析與報表，star schema 往往比較自然；如果目標是極致去重或高度正規化維護，snowflake 才比較可能有吸引力。
 
+在 Power BI 這類 BI 工具裡，這個偏好會更明顯：  
+Power BI 通常更偏好 star schema，而不是讓 dimension 之間再繼續連很多層。
+
 ## Slowly Changing Dimensions
 
 dimension 不會永遠不變，所以實務上要先決定歷史如何保留。
@@ -117,6 +120,13 @@ date dimension 幾乎是最常見的 conformed dimension，因為大多數 fact 
 - surrogate key 用 `YYYYMMDD` 整數格式
 - 預先提供 year、month、day 等分析欄位
 
+它的價值不只是把日期拆欄位而已，還包括：
+
+- 提供穩定 calendar
+- 降低複雜 date logic 分散在報表層
+- 支援 fiscal year 與 calendar year 並存
+- 讓 quarter / month / week slicing 更一致
+
 如果分析需要到一天中的時間粒度，則可以另外建立 time dimension。
 
 time dimension 常見做法：
@@ -124,6 +134,17 @@ time dimension 常見做法：
 - natural key 用 time data type
 - surrogate key 用 `HHMM` 或 `HHMMSS`
 - grain 視需求決定是分鐘還是秒
+
+time dimension 通常比 date dimension 少見。  
+很多分析只需要日期層級；只有在 call center、IoT、交易時段或其他高頻事件分析時，time dimension 才會變得特別重要。
+
+date dimension 的建立方式也不只一種。常見做法包括：
+
+- 在 database / warehouse 中集中維護
+- 以 file 形式提供
+- 在 Power BI / DAX 內直接建立
+
+如果多個服務會共用同一份 calendar，集中維護通常比較穩；如果只是單一模型快速建立，DAX 建 date table 也很實用。
 
 ## Conformed Dimensions
 
@@ -136,6 +157,9 @@ conformed dimensions 會被多個 fact table 共用。
 
 它的價值在於讓不同分析主題仍然維持一致的切分方式。若每個主題各自定義日期或產品維度，跨領域比較會很快失真。
 
+一個很實務的提醒是：dimension 比較理想的角色，是被多個 facts 重用，而不是彼此之間到處互連。  
+如果 dimension 之間關聯越來越複雜，很多 BI 報表的 filter behavior 也會開始變得難以預期。
+
 ## Role-Playing Dimensions
 
 有些 fact table 會多次引用同一張 dimension，但代表不同角色。
@@ -147,6 +171,9 @@ conformed dimensions 會被多個 fact table 共用。
 - delivery date
 
 這種情況下，不需要複製多份相同維度資料，而是讓同一個 dimension 在模型中扮演不同角色。
+
+這也是為什麼 date dimension 常常和 semantic model 裡的 multiple relationships 一起出現。  
+資料上仍然是同一張日期維度，但在分析語意上，它會同時代表不同事件時間。
 
 ## Multivalued Dimensions and Bridge Tables
 
@@ -177,6 +204,9 @@ bridge table 的用途是：
 - gold layer 的價值通常不是再做一次清理，而是把資料整理成可被穩定消費的分析模型。
 - SCD 選型如果太晚決定，後面補歷史通常很痛。
 - date dimension 幾乎永遠值得好好設計，因為它會被大量下游共用。
+- granularity 要先講成明確的 `by ...` 敘述，例如 `by customer, by product, by day`，不然後面 aggregation 很容易失真。
+- 從既有資料去做更細的 grain 通常不現實；往較粗 grain 聚合則常能換到更好的效能與更小的模型。
 - 若不同 fact tables 沒有共享 conformed dimensions，跨主題分析很容易失真。
+- 如果目標下游是 Power BI 或 semantic model，優先讓 fact / dimension 關係清楚，再考慮是否真的需要 snowflake 化。
 
 [Back to Data Engineering](README.md)

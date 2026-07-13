@@ -11,6 +11,8 @@ The sections follow a natural multivariate workflow:
 ```
 Understand correlation structure among all variables
         ↓
+Build matrix / vector intuition for high-dimensional data
+        ↓
 Reduce dimensions — find the fewest axes that capture most variance (PCA)
         ↓
 Find natural groupings in the data (Clustering)
@@ -39,8 +41,10 @@ This module is usually the right place when:
 
 | Section | Level | Key Questions Answered |
 | ------------------------------------------------------------------------------ | ------------ | ----------------------------------------------------------------------------- |
+| [**Linear Algebra Foundations**](./linear-algebra-foundations.md) | Foundation | How should I think about vectors, matrices, eigenvectors, and linear transformations? |
 | [**Multivariate EDA**](./multivariate-eda.md) | Foundation | How do I explore many variables at once? What patterns exist before modeling? |
 | [**Principal Component Analysis (PCA)**](./pca.md) | Dimension Reduction | How do I reduce many correlated variables into fewer independent axes? |
+| [**Structural Equation Modeling (SEM)**](./structural-equation-modeling-with-lavaan.md) | Latent Structure | How do I test confirmatory latent-variable models and relations among them? |
 | [**Clustering**](./clustering.md) | Unsupervised | How do I find natural groups in the data without labels? |
 | [**Multiple Linear Regression**](./multiple-regression.md) | Supervised | How do I model a continuous outcome from multiple predictors? |
 | [**Logistic Regression & LDA**](./logistic-lda.md) | Supervised | How do I classify observations or model a binary outcome? |
@@ -55,6 +59,13 @@ This module is usually the right place when:
 - Parallel coordinates and radar charts for high-dimensional profiles
 - Detecting multicollinearity before regression
 
+### Linear Algebra Foundations
+
+- Vectors as observations, directions, and linear combinations
+- Matrices as data containers and linear transformations
+- Matrix-vector equations and why solvability matters
+- Eigenvalues and eigenvectors as the bridge to PCA
+
 ### Principal Component Analysis (PCA)
 
 The core dimension reduction technique:
@@ -65,6 +76,13 @@ The core dimension reduction technique:
 | **Scree plot** | Visual guide for choosing number of components to keep |
 | **Loadings** | Which original variables drive each component |
 | **Biplot** | Observations and variable loadings in the same 2D space |
+
+### Structural Equation Modeling (SEM)
+
+- Manifest versus latent variables
+- Confirmatory factor analysis with `lavaan`
+- Fit indices such as CFI, TLI, RMSEA, and SRMR
+- Higher-order factors and Heywood cases
 
 ### Clustering
 
@@ -139,10 +157,11 @@ Multivariate analysis answers: "What is the structure hidden in many variables s
 
 The most useful study order here is:
 
-1. multivariate EDA
-2. dimensionality reduction
-3. clustering or classification structure
-4. diagnostics and interpretation
+1. linear algebra foundations
+2. multivariate EDA
+3. dimensionality reduction
+4. clustering or classification structure
+5. diagnostics and interpretation
 
 Tip: In multivariate work, preprocessing and visualization are often more important than the final algorithm choice.
 

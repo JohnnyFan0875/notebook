@@ -12,6 +12,8 @@ Key point: 很多分析失敗，不是因為模型不夠好，而是因為一開
 4. [Communicating Data Insights](./communicating-data-insights.md): 問題定義完成後，再把洞察整理成受眾看得懂、記得住、願意行動的內容。
 5. [Reports and Presentations](./reports-and-presentations.md): 當訊息已經清楚後，再把它包裝成合適的 written report 或 oral presentation。
 6. [Tableau](./tableau/README.md): 如果需要把資料連接、計算欄位與互動式 dashboard 落地到 BI 工具，可以再往下看 Tableau 工作流。
+7. [DataLab Workflow](./datalab-workflow.md): 如果需要在 notebook 裡混用 SQL、Python / R、檔案連接、chart 與 AI assistant，可以看 DataLab 的工作流心智模型。
+8. [Sigma Overview and Workflow](./sigma-overview-and-workflow.md): 如果需要 spreadsheet-style BI、warehouse-native workbook 與互動控制，也可以看 Sigma 的工作流心智模型。
 
 Tip: 如果你常遇到「需求很大、但不知道從哪個資料切入」，先回來檢查問題是否已經具備明確對象、衡量方式、時間範圍與可行的分析方法。
 
@@ -24,4 +26,6 @@ Tip: 如果你常遇到「需求很大、但不知道從哪個資料切入」，
 | [Data-Driven Decision Making](./data-driven-decision-making.md) | exploratory/explanatory/predictive framing、decision risk、stakeholder impact、automation boundaries | 這個分析是為了理解、解釋還是預測？結果又該如何安全地變成決策？ |
 | [Communicating Data Insights](./communicating-data-insights.md) | audience 分析、視覺化簡化、資料故事、訊息聚焦 | 有了分析結果之後，要怎麼說才能讓人理解、記住並採取行動？ |
 | [Reports and Presentations](./reports-and-presentations.md) | persona、finding selection、report 結構、reproducibility、簡報規劃 | 這份分析應該用什麼格式交付？報告和簡報要怎麼組織才清楚又可信？ |
+| [DataLab Workflow](./datalab-workflow.md) | workbook、SQL / Python / R cells、file connections、chart、AI assistant、scheduled runs | 如果想在 notebook 式環境裡快速接資料、查詢、視覺化並分享分析，DataLab 應該怎麼理解？ |
 | [Tableau](./tableau/README.md) | Tableau 工作流、資料連接、joins / unions、calculated fields、dashboard 組裝 | 如果要把分析轉成可互動、可交付的 BI 成品，Tableau 這類工具應該怎麼想？ |
+| [Sigma Overview and Workflow](./sigma-overview-and-workflow.md) | workbook、pivot / chart、lineage、controls、draft / publish workflow | 如果想在 cloud warehouse 上用更接近 spreadsheet 的方式做互動分析，Sigma 應該怎麼理解？ |

@@ -1,6 +1,7 @@
 # Data Types & Measurement Scales
 
-Before applying any statistical method, you need to know **what kind of data you're working with**. The data type determines which statistics are valid, which visualizations are appropriate, and which tests can be used later in inferential analysis.
+Before applying any statistical method, you need to know **what kind of data you're working with**.  
+The data type determines which statistics are valid, which visualizations are appropriate, and which tests can be used later in inferential analysis.
 
 ## The Four Measurement Scales (NOIR)
 
@@ -30,10 +31,10 @@ Before applying any statistical method, you need to know **what kind of data you
 
 Before you even reach measurement scale, it helps to ask how the data is represented.
 
-| Representation | Typical form | Practical implication |
-| --- | --- | --- |
-| Structured | Tables with rows, columns, labels, and consistent fields | Easier to filter, summarize, and analyze directly |
-| Unstructured | Text, images, audio, video, free-form documents | Richer context, but usually needs preprocessing before statistical analysis |
+| Representation | Typical form                                             | Practical implication                                                       |
+| -------------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Structured     | Tables with rows, columns, labels, and consistent fields | Easier to filter, summarize, and analyze directly                           |
+| Unstructured   | Text, images, audio, video, free-form documents          | Richer context, but usually needs preprocessing before statistical analysis |
 
 Examples:
 
@@ -46,7 +47,7 @@ Numerical data is further split into:
 
 | Type           | Description                              | Example                                            |
 | -------------- | ---------------------------------------- | -------------------------------------------------- |
-| **Continuous** | Any value in a range, including decimals | Height, Temperature, Price              |
+| **Continuous** | Any value in a range, including decimals | Height, Temperature, Price                         |
 | **Discrete**   | Only countable, whole values             | Number of children, Count of defects, Goals scored |
 
 ## Why It Matters — Decision Table

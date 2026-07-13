@@ -41,6 +41,21 @@ plt.show()
 - Vertical lines show confidence intervals (default = 95%).
 - `ci="sd"`: show standard deviation instead.
 
+如果你的資料已經先在 pandas 裡彙總好，例如每家店的總營收，就可以直接畫成 spreadsheet 風格的總計長條圖：
+
+```python
+totals = sales.groupby("store", as_index=False)["revenue"].sum()
+
+sns.barplot(x="store", y="revenue", data=totals)
+plt.show()
+```
+
+這裡的重點是：
+
+- `groupby(...).sum()` 先決定 summary table
+- `sns.barplot(...)` 再負責視覺化
+- `plt.show()` 在 script / notebook 外也常是明確的「把圖渲染出來」動作
+
 ## Box Plot
 
 ```python

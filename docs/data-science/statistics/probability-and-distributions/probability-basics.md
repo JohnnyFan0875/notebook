@@ -114,6 +114,21 @@ This reads: "The probability of A **given** that B has already occurred."
 
 Tip: Intuitive explanation: Conditional probability is to recalculate the probability of A after reducing the sample space under the premise that "B is known to occur". Think of it as "zooming in" on the subset of the sample space where B is true, then asking how often A also occurs within that subset.
 
+## Interview Fast Answer
+
+如果面試官直接問 conditional probability，是很適合先用一句話收斂的題目：
+
+- conditional probability 是「在已知 `B` 發生後，`A` 發生的機率」
+- 核心不是背公式，而是知道 sample space 已經改了
+- `P(A|B)` 和 `P(B|A)` 通常不一樣，這正是 Bayes' theorem 會出現的原因
+
+如果被追問 independence 和 mutual exclusivity 的差別，最穩的回答通常是：
+
+- independent: 知道 `B` 發生，不改變 `A` 的機率
+- mutually exclusive: `A` 和 `B` 根本不能同時發生
+
+Key point: 兩個有非零機率的 mutually exclusive events，不可能彼此 independent。
+
 ```python
 # Example: drawing cards
 # P(King | face card drawn)?
@@ -198,6 +213,23 @@ print(f"P(disease | positive test) = {p_disease_given_positive:.4f}")  # ~16%
 ```
 
 Tip: Surprising result: Even with a 95% accurate test, if the disease is rare (1%), a positive result only means ~16% chance of actually having it. This is why base rates matter enormously. The base rate of rare diseases is very low, which greatly reduces the posterior probability. This is the most important practical intuition of Bayes' Theorem.
+
+### Interview Prompt: Why Does Bayes Matter?
+
+這題高頻不是因為公式難，而是因為它很容易暴露是否真的理解 base rate。
+
+一個夠好的短答可以是：
+
+- Bayes 是用新證據更新舊信念
+- `P(A|B)` 不能只看 test accuracy，還要看 prior / base rate
+- 稀有事件即使測試看起來很準，posterior 也可能沒有想像中高
+
+## Common Interview Traps
+
+- 把 `P(A|B)` 和 `P(B|A)` 當成同一件事
+- 看到高 sensitivity 就忽略 false positive rate
+- 只談 likelihood，不談 base rate
+- 把 independent 和 mutually exclusive 混在一起
 
 ## From Formula to Simulation
 

@@ -69,6 +69,49 @@ iris['name_length'] = iris['species_str'].str.len()
 iris['has_virginica'] = iris['species_str'].str.contains('virginica')
 ```
 
+Case-insensitive matching is often useful for user-generated text:
+
+```python
+iris["has_virginica"] = iris["species_str"].str.contains(
+    "virginica",
+    case=False,
+    na=False,
+)
+```
+
+- `case=False` avoids missing matches due to capitalization.
+- `na=False` turns missing text into `False` instead of propagating nulls into the boolean mask.
+
+## Search Across Multiple Text Fields
+
+Semi-structured text data often spreads meaningful content across several columns, such as:
+
+- original text
+- expanded full text
+- quoted text
+- retweeted text
+
+In those cases, one column-level `.str.contains()` is not enough.
+
+```python
+apple = tweets["text"].str.contains("apple", case=False, na=False)
+
+for column in [
+    "extended_tweet-full_text",
+    "retweeted_status-text",
+    "retweeted_status-extended_tweet-full_text",
+]:
+    apple = apple | tweets[column].str.contains(
+        "apple",
+        case=False,
+        na=False,
+    )
+```
+
+This pattern is useful whenever the same concept may appear in several alternate fields.
+
+Key point: if the text schema varies by record type, build the boolean mask from all relevant fields first, then count or filter.
+
 ## Select Numeric Columns
 
 ```python

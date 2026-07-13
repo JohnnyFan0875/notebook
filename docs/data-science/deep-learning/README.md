@@ -14,6 +14,10 @@
 - [NumPy](../python-foundations/numpy/README.md): 張量 shape、broadcasting 與矩陣運算觀念會大量重用。
 - [Machine Learning Foundations](../machine-learning/foundations/README.md): 尤其是 loss、generalization、overfitting 與 regularization。
 
+## 補充說明
+
+- `Fundamentals` 除了觀念本身，也開始補上 TensorFlow/Keras 的基礎工作流，避免整個 deep learning 區只剩 PyTorch 視角。
+
 ## 章節設計原則
 
 - 以「觀念」與「任務」分類，而不是以套件名稱分類。

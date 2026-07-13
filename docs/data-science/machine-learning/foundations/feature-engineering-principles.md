@@ -51,6 +51,7 @@ row-level 也要檢查：
 - Extracting day-of-week or month from timestamps
 - Creating interaction features
 - Aggregating behavior over a past time window
+- Building one-row-per-entity basetables for a specific reference date
 
 也常見這些更直接的特徵構造：
 
@@ -96,6 +97,21 @@ row-level 也要檢查：
 
 很多 feature leakage 其實不是模型太複雜，而是時間邏輯被忽略。
 
+## Basetable Thinking Helps
+
+如果你的資料其實來自 event log、transaction log 或 user history，先把問題轉成 `basetable` 往往更清楚。
+
+實務上會先固定：
+
+- prediction unit
+- reference date
+- feature window
+- target window
+
+然後再問每個欄位能不能合法地進入模型。
+
+如果這個步驟沒有做好，後面的補值、編碼、scaling 都只是把錯的資料整理得更整齊而已。
+
 ## Practical Rule
 
 Ask whether the feature is informative, available at prediction time, and stable enough to maintain.
@@ -106,5 +122,6 @@ Ask whether the feature is informative, available at prediction time, and stable
 - [Feature Selection](../preprocessing/feature-selection.md)
 - [Categorical Encoding](../preprocessing/categorical-encoding.md)
 - [Pipeline Basics](../workflow/pipeline-basic.md)
+- [Basetable and Time-Aware Feature Engineering](basetable-and-time-aware-feature-engineering.md)
 
 [Back to Foundations](README.md)

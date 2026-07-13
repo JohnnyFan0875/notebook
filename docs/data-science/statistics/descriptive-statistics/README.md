@@ -1,11 +1,12 @@
 # Introduction
 
-**Descriptive statistics** summarize and organize data so that patterns, trends, and relationships can be easily understood. It provides the foundation for all later inferential methods by helping us explore and describe data before drawing conclusions.
+**Descriptive statistics** summarize and organize data so that patterns, trends, and relationships can be easily understood.  
+It provides the foundation for all later inferential methods by helping us explore and describe data before drawing conclusions.
 
-!!! tip "Key point"
+**Key point**
 
-    - Descriptive statistics is for describing and summarizing what the data looks like.
-    - Once you start generalizing beyond the observed data, you have moved into **inferential statistics**.
+- Descriptive statistics is for describing and summarizing what the data looks like.
+- Once you start generalizing beyond the observed data, you have moved into **inferential statistics**.
 
 ## Why This Order?
 

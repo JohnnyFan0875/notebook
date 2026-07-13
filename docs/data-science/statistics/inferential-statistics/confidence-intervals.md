@@ -8,11 +8,32 @@ Key point: Why confidence intervals are more useful than p-values: Confidence in
 
 This is one of the most commonly misunderstood ideas in statistics.
 
+## Interview Fast Answer
+
+如果面試官直接問 confidence interval 是什麼，一個夠穩的短答通常是：
+
+- confidence interval 是對母體參數的 plausible range
+- 它同時表達 point estimate 和 uncertainty
+- `95% CI` 的意思不是「這次區間裡有 95% 機率包含真值」
+- 正確說法是：如果重複抽樣並重複建構區間，長期下約 95% 的區間會包含真實參數
+
+如果被追問為什麼 CI 比只報 p-value 更有用，最值得先講的是：
+
+- p-value 偏向 yes/no decision
+- confidence interval 會同時交代 effect size 和 precision
+
 Why CIs work — the CLT connection: When we repeatedly draw samples of size n, the sample means $\bar{x}$ follow an approximately normal distribution (by the Central Limit Theorem). The CI is built from this sampling distribution — it marks the range where the center of that distribution plausibly lies.
 
 Correct interpretation: If we repeated the sampling process many times and constructed a CI each time, 95% of those intervals would contain the true population parameter.
 
 Warning: Incorrect interpretations (very common): - ❌ "There is a 95% probability that μ is in this specific interval." - ❌ "95% of the data falls within this interval." - ❌ "This interval will contain μ 95% of the time." The parameter μ is a fixed (unknown) value — it either is or isn't in any given interval. The probability refers to the _procedure_, not the specific interval.
+
+## Common Interview Traps
+
+- 把 CI 解讀成「資料有 95% 落在這裡」
+- 把 CI 解讀成「這個固定區間有 95% 機率含真值」
+- 只會背公式，不會解釋 interval width 為什麼會隨 `n`、`s`、confidence level 改變
+- 用兩組 CI 是否 overlap 直接判定差異是否顯著
 
 Two analogies for the same idea:
 

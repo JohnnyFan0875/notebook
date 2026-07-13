@@ -100,6 +100,57 @@ income statement 可以顯示公司「賺錢」，但 cash flow statement 才會
 
 如果模型 forecast 出高獲利，但現金長期為負，通常就表示 working capital、capex 或 financing 假設還沒有接好。
 
+## Accrual Profit vs. Cash Reality
+
+很多初學者第一次看三表時，最容易卡住的地方是：
+
+- income statement 為什麼說有 profit
+- cash flow statement 卻看起來沒那麼多 cash
+
+核心原因通常是 accrual accounting。交易在經濟事件發生時就會認列，而不是等到現金真的進出才記帳。
+
+這表示：
+
+- revenue 可能先認列，但現金還沒收回
+- expense 可能已經入帳，但現金尚未支付
+- net income 不能直接當成 period 內可動用的 cash
+
+Key point: income statement 比較像經濟活動的績效視角，cash flow statement 比較像資金移動的落地視角。
+
+## Direct Method vs. Indirect Method
+
+cash flow statement 常見有兩種整理方式：
+
+- direct method: 直接列出現金收支
+- indirect method: 從 net income 出發，再調整非現金項目與營運資金變化
+
+在實務上，很多公司與模型教學更常從 indirect method 理解，因為它最能清楚展示：
+
+- net income 如何連回 operating cash flow
+- depreciation、receivables、inventory、payables 等調整項目怎麼影響現金
+- accrual profit 和 cash generation 為什麼會不同
+
+如果 forecast model 只停在 net income，而沒有把這些橋接步驟接回 cash flow，模型通常還不算完整。
+
+## A Simple Three-Part Cash Flow Structure
+
+cash flow statement 通常拆成三段：
+
+- cash from operating activities
+- cash from investing activities
+- cash from financing activities
+
+可以把它們分別理解成：
+
+- operating: 核心業務本身有沒有產生現金
+- investing: 公司把錢投入了哪些長期資產或投資
+- financing: 公司如何向股東或債權人拿錢，或把錢還回去
+
+這個拆法對 forecasting 很重要，因為它可以幫你判斷：
+
+- 現金短缺是營運問題、投資擴張問題，還是融資結構問題
+- 一家公司是在靠 core operations 造血，還是靠外部融資撐住
+
 ## Fiscal Year, Quarters, and Reporting Periods
 
 forecasting 不能只看數值，也要看 period definition。很多公司不是用 calendar year，而是用 fiscal year。

@@ -19,6 +19,16 @@ Snowflake 是一個受管的 cloud data warehousing platform，常被用在歷�
 
 這種體驗讓團隊可以把心力放在 data modeling、permissions、performance 與 ingestion，而不是底層基礎設施維護。
 
+## Ways to Connect
+
+Snowflake 不只透過 web UI 使用，實務上常見的連線方式還包括：
+
+- `ODBC` / `JDBC`: 給 BI tools、Java 生態或一般資料庫整合使用
+- language connectors: 例如 Python、Spark 等
+- `SnowSQL` / Snowflake CLI: 適合 command-line workflow、腳本化操作與排錯
+
+這很重要，因為 Snowflake 往往不是孤立使用，而是被接進 ETL、BI、notebook 或 application pipeline。
+
 ## Core Architecture
 
 Snowflake 的平台結構可以粗分成三層：
@@ -135,6 +145,21 @@ Snowflake 很依賴 role-based access control。
 - 平台治理不只是 table permissions
 - account、user、role、warehouse 彼此之間是一起設計的
 - 敏感操作與監控資訊通常不會開給低權限角色
+
+## Object Hierarchy and Data Types
+
+使用 Snowflake 時，通常要同時理解兩種結構：
+
+- object hierarchy: `database -> schema -> table / view`
+- data types: 資料欄位實際怎麼被儲存與比較
+
+入門常見型別包括：
+
+- text/string: `VARCHAR`, `CHAR`, `TEXT`
+- numeric: `INTEGER`
+- boolean: `BOOLEAN`
+
+雖然這些型別看起來很基本，但它們會直接影響 schema design、casting、join behavior 與 downstream analytics。
 
 ## Marketplace and External Data
 

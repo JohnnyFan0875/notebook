@@ -39,6 +39,17 @@ print(summary)
 
 Tip: When to use relative frequency instead of raw count? When comparing two groups of different sizes, raw counts are misleading. For example, 30 complaints out of 100 customers is very different from 30 out of 1,000.
 
+In survey work, relative frequency is often the first summary to inspect because subgroup sizes are rarely perfectly balanced.
+
+```python
+summary = pd.DataFrame({
+    "Count": df["response"].value_counts(dropna=False),
+    "Proportion": df["response"].value_counts(dropna=False, normalize=True),
+})
+```
+
+Including `dropna=False` is often useful for questionnaires because skipped items can be analytically meaningful.
+
 ## Ordinal Data: Preserving Order Matters
 
 For ordinal variables (e.g., satisfaction ratings), the category order is meaningful and must be preserved in both tables and charts.
@@ -59,6 +70,27 @@ print(freq_ordered)
 ```
 
 Warning: Without setting ordered=True and specifying categories, pandas will sort alphabetically (Bad → Excellent → Good), which breaks the logical order.
+
+For Likert-style items, frequency tables are often more informative when they include both ordered counts and cumulative percentages.
+
+```python
+likert = pd.Series(pd.Categorical(
+    df["satisfaction"],
+    categories=["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"],
+    ordered=True,
+))
+
+freq = likert.value_counts().sort_index()
+prop = likert.value_counts(normalize=True).sort_index()
+
+likert_summary = pd.DataFrame({
+    "Count": freq,
+    "Proportion": prop,
+    "Cumulative %": (prop.cumsum() * 100).round(1),
+})
+```
+
+Key point: For ordinal survey responses, cumulative percentages are often easier to interpret than a mean score because they preserve rank without pretending the spacing between categories is equal.
 
 ## Visualization
 

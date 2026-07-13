@@ -84,6 +84,23 @@ print(weather_pick)
 dice_random_choice = np.random.choice(list(range(1,7)), size=10, replace=True)
 ```
 
+### Random Steps and Simple Simulation
+
+`np.random.choice()` 很常被拿來建立簡單 simulation，例如 random walk：
+
+```python
+np.random.seed(123)
+steps = np.random.choice([-1, 1], size=100, replace=True)
+walk = steps.cumsum()
+```
+
+這裡的直覺是：
+
+- 每一步不是 `-1` 就是 `+1`
+- `cumsum()` 把局部隨機步伐累積成整條路徑
+
+這種 pattern 常是 Monte Carlo、toy simulation 與 stochastic process 入門的第一步。
+
 ## Shuffle
 
 ```python

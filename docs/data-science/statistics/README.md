@@ -2,11 +2,11 @@
 
 This section covers core statistics topics, including descriptive statistics, probability, inference, regression, ANOVA, non-parametric methods, Bayesian statistics, time series, multivariate analysis, experimental design, and survival analysis.
 
-!!! tip "Key point"
+**Note:**
 
-    - Statistics is not just a collection of tests.
-    - A good workflow moves from understanding the data, to choosing an appropriate model, to checking assumptions, and finally to interpreting results in context.
-    - Many statistical mistakes happen because people jump straight to a favorite test. In practice, most good analysis starts with **data quality checks and visual exploration**.
+- Statistics is not just a collection of tests.
+- A good workflow moves from understanding the data, to choosing an appropriate model, to checking assumptions, and finally to interpreting results in context.
+- Many statistical mistakes happen because people jump straight to a favorite test. In practice, most good analysis starts with **data quality checks and visual exploration**.
 
 ## Modules
 

@@ -21,6 +21,17 @@ from sklearn.preprocessing import StandardScaler
 X, y = make_regression(n_samples=100, n_features=5, noise=0.1, random_state=42)
 ```
 
+If you only have **one feature**, remember that scikit-learn still expects `X` to be 2D:
+
+```python
+x_raw = np.array([1, 2, 3, 4, 5])
+y = np.array([2, 4, 5, 4, 5])
+
+X = x_raw.reshape(-1, 1)
+```
+
+Tip: `reshape(-1, 1)` means "treat this as one feature column with many rows." This is one of the most common beginner issues when fitting a simple regression with scikit-learn.
+
 ## 3. Train-Test Split
 
 ```python
@@ -63,6 +74,18 @@ model_intercept = model.intercept_
 
 - `model_coef`: the slope (effect size of each feature).
 - `model_intercept`: the [baseline](../../evaluation/baselines-and-error-analysis.md) prediction when all features = 0.
+
+For a single-feature model, the first coefficient is the slope of the fitted line:
+
+```python
+single_feature_model = LinearRegression()
+single_feature_model.fit(X, y)
+
+slope = single_feature_model.coef_[0]
+intercept = single_feature_model.intercept_
+```
+
+Key point: `coef_` and `intercept_` let you connect the machine-learning API back to the familiar regression equation `\hat{y} = \beta_0 + \beta_1 x`.
 
 ## 7. Evaluate Model Performance
 

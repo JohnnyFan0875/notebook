@@ -1,6 +1,7 @@
 nav:
   - README.md
   - cloud
+  - programming-languages
   - containers-and-env
   - editors
   - file-tools

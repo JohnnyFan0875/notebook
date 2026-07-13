@@ -20,6 +20,23 @@ arr_from_list = np.array([1, 2, 3])
 print(arr_from_list)  # [1 2 3]
 ```
 
+如果輸入是 list of lists，NumPy 會把它轉成 2D array：
+
+```python
+list_of_lists = [[2, 3], [9, 0], [1, 4]]
+arr = np.array(list_of_lists)
+
+print(arr)
+# [[2 3]
+#  [9 0]
+#  [1 4]]
+
+print(arr.shape)
+# (3, 2)
+```
+
+這是從一般 Python 容器進入「矩陣式思考」的常見起點。
+
 ## Ranges
 
 ```python
@@ -35,6 +52,14 @@ np.linspace(0, 1, 5)
 np.logspace(0.1, 1, 5)
 # Output: [1.25892541 2.11348904 3.54813389 5.95662144 10.        ]
 ```
+
+`np.arange(start, stop, step)` 的停止規則和 Python slice / `range()` 一樣，也是「包含起點、不包含終點」。
+
+```python
+np.arange(0, 2 * np.pi, 0.01)
+```
+
+這種寫法很常用在建立連續函數的 x 軸資料，例如畫 sine / cosine 曲線。
 
 ## Zeros, Ones, Identity
 
