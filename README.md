@@ -1,9 +1,9 @@
-# index
+# Notebook
 
-This site organizes notes across biology, computing, data science, frontend, and productivity.
+This repository organizes notes across biology, computing, data science, frontend, and productivity.
 
-* [Biology](docs/biology/bioinformatics-tools/)
-* [Computing](docs/computing/)
-* [Data Science](docs/data-science/statistics/)
-* [Frontend](docs/frontend/react/)
-* [Productivity](docs/productivity/)
+- [Biology](biology/README.md)
+- [Computing](computing/README.md)
+- [Data Science](data-science/README.md)
+- [Frontend](frontend/README.md)
+- [Productivity](productivity/README.md)
