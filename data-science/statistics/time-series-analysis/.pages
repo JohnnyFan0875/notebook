@@ -1,9 +1,0 @@
-nav:
-  - README.md
-  - arima.md
-  - autocorrelation.md
-  - decomposition.md
-  - forecast-evaluation.md
-  - fundamentals.md
-  - seasonality-sarima.md
-  - stationarity.md

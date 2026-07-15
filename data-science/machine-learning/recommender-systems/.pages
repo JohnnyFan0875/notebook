@@ -1,6 +1,0 @@
-nav:
-  - README.md
-  - foundations.md
-  - collaborative-filtering-and-als.md
-  - explicit-vs-implicit-feedback.md
-  - evaluation-and-serving.md

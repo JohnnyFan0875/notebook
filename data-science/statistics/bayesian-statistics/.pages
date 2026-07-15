@@ -1,8 +1,0 @@
-nav:
-  - README.md
-  - bayes-theorem.md
-  - bayesian-vs-frequentist.md
-  - likelihood-conjugate.md
-  - mcmc.md
-  - posterior-inference.md
-  - prior-distributions.md

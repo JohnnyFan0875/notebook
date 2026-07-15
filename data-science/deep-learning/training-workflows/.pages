@@ -1,5 +1,0 @@
-nav:
-  - README.md
-  - model-saving-loading.md
-  - transfer-learning.md
-  - efficient-training-and-scaling.md

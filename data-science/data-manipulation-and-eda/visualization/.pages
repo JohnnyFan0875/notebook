@@ -1,6 +1,0 @@
-nav:
-  - README.md
-  - chart-design-principles.md
-  - dashboard-design.md
-  - matplotlib
-  - seaborn

@@ -26,6 +26,8 @@ Normality tests assess whether a dataset is drawn from a normally distributed po
 
 Visual inspection should always precede formal tests — they reveal shape, skewness, and outliers that a single p-value can't communicate.
 
+Here, visual checks are used for **assumption checking before parametric inference**. For descriptive interpretation of distribution shape itself, see [Univariate Analysis (Numerical)](../descriptive-statistics/univariate-numerical.md).
+
 #### Histogram
 
 ```python

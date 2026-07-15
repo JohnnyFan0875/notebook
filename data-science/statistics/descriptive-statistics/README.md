@@ -20,8 +20,7 @@ Describe each variable individually (Univariate)
 Explore relationships between variables (Bivariate)
 ```
 
-This order matters because **data type determines which statistics are valid**.  
-Applying the wrong method to the wrong data type is one of the most common mistakes in practice.
+This order matters because **data type determines which statistics are valid**.   Applying the wrong method to the wrong data type is one of the most common mistakes in practice.
 
 ## Sections
 

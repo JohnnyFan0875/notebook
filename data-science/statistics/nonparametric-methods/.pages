@@ -1,8 +1,0 @@
-nav:
-  - README.md
-  - chi-square.md
-  - kruskal-wallis.md
-  - one-sample-and-paired.md
-  - rank-correlation.md
-  - two-independent-samples.md
-  - when-and-why.md

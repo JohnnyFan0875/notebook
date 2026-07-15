@@ -1,8 +1,0 @@
-nav:
-  - README.md
-  - tensors.md
-  - linear-layer.md
-  - activation-functions.md
-  - loss-functions.md
-  - backpropagation.md
-  - weight-initialization.md

@@ -30,11 +30,3 @@ This section covers core statistics topics, including descriptive statistics, pr
 | Visualize before testing            | Plots often reveal structure, outliers, skew, and design problems faster than p-values |
 | Check assumptions after fitting     | Most assumptions concern residuals, dependence, or model form, not just raw data       |
 | Report effect size with uncertainty | Statistical significance alone rarely answers whether the result is important          |
-
-## Recommended Routes
-
-1. If you are early in the workflow, start with [Descriptive Statistics](./descriptive-statistics/README.md) and [Probability & Distributions](./probability-and-distributions/README.md).
-2. If you need to compare groups or estimate uncertainty, continue into [Inferential Statistics](./inferential-statistics/README.md) and [Experimental Design](./experimental-design/README.md).
-3. If your question is predictive or explanatory, pair [Regression Analysis](./regression-analysis/README.md) with [Multivariate Analysis](./multivariate-analysis/README.md).
-4. If assumptions are weak, keep [Non-parametric Methods](./nonparametric-methods/README.md) nearby as a fallback path.
-5. If the data has time order or event timing, branch into [Time Series Analysis](./time-series-analysis/README.md) or [Survival Analysis](./survival-analysis/README.md).

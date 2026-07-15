@@ -37,9 +37,7 @@ print(summary)
 # virginica      50       0.333            33.3
 ```
 
-Tip: When to use relative frequency instead of raw count? When comparing two groups of different sizes, raw counts are misleading. For example, 30 complaints out of 100 customers is very different from 30 out of 1,000.
-
-In survey work, relative frequency is often the first summary to inspect because subgroup sizes are rarely perfectly balanced.
+Including `dropna=False` is often useful for questionnaires because skipped items can be analytically meaningful.
 
 ```python
 summary = pd.DataFrame({
@@ -48,7 +46,13 @@ summary = pd.DataFrame({
 })
 ```
 
-Including `dropna=False` is often useful for questionnaires because skipped items can be analytically meaningful.
+**When to use relative frequency instead of raw count?**
+
+When comparing two groups of different sizes, raw counts are misleading.
+
+For example, 30 complaints out of 100 customers is very different from 30 out of 1,000.
+
+In survey work, **relative frequency** is often the first summary to inspect because subgroup sizes are rarely perfectly balanced.
 
 ## Ordinal Data: Preserving Order Matters
 
@@ -69,7 +73,9 @@ print(freq_ordered)
 # Excellent    2
 ```
 
-Warning: Without setting ordered=True and specifying categories, pandas will sort alphabetically (Bad → Excellent → Good), which breaks the logical order.
+**Warning:**
+
+- Without setting `ordered=True` and specifying categories, pandas will sort <u>alphabetically</u> (Bad → Excellent → Good), which breaks the logical order.
 
 For Likert-style items, frequency tables are often more informative when they include both ordered counts and cumulative percentages.
 
@@ -90,18 +96,17 @@ likert_summary = pd.DataFrame({
 })
 ```
 
-Key point: For ordinal survey responses, cumulative percentages are often easier to interpret than a mean score because they preserve rank without pretending the spacing between categories is equal.
+**Key point:**
+
+- For <u>ordinal survey responses</u>, **cumulative percentages** are often easier to interpret than a mean score because they preserve rank without pretending the spacing between categories is equal.
 
 ## Visualization
 
 ### Vertical Bar Chart
 
-* Use when the main goal is to compare category counts.
-* Avoid it only when labels are too long or too numerous to fit comfortably.
+- Use when the main goal is to compare category counts.
+- Avoid it only when labels are too long or too numerous to fit comfortably.
 
-Example script:
-
-````
 ```python
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -114,18 +119,14 @@ plt.xlabel('Species')
 plt.ylabel('Count')
 plt.show()
 ```
-````
 
-![Vertical bar chart](univariate-categorical-bar-vertical.png)
+![Vertical bar chart](src/univariate-categorical-bar-vertical.png)
 
 ### Horizontal Bar Chart
 
-* Use when category labels are long or when you have many categories.
-* Prefer this over a vertical bar chart when readability becomes the main concern.
+- Use when category labels are long or when you have many categories.
+- Prefer this over a vertical bar chart when readability becomes the main concern.
 
-Example script:
-
-````
 ```python
 species_counts = iris["species"].value_counts().sort_values()
 
@@ -135,18 +136,14 @@ plt.xlabel("Count")
 plt.ylabel("Species")
 plt.show()
 ```
-````
 
-![Horizontal bar chart](univariate-categorical-bar-horizontal.png)
+![Horizontal bar chart](src/univariate-categorical-bar-horizontal.png)
 
 ### Pie Chart
 
-* Use when the message is part-of-whole and the number of categories is small.
-* Avoid it when you need precise comparison across many categories.
+- Use when the message is part-of-whole and the number of categories is small.
+- Avoid it when you need precise comparison across many categories.
 
-Example script:
-
-````
 ```python
 species_counts = iris["species"].value_counts()
 
@@ -157,18 +154,14 @@ plt.title("Species Proportion")
 plt.ylabel("")
 plt.show()
 ```
-````
 
-![Pie chart](univariate-categorical-pie.png)
+![Pie chart](src/univariate-categorical-pie.png)
 
 ### Ordered Bar Chart
 
-* Use for ordinal data, where category order carries meaning.
-* Define the order explicitly before plotting, otherwise the chart may be misleading.
+- Use for ordinal data, where category order carries meaning.
+- Define the order explicitly before plotting, otherwise the chart may be misleading.
 
-Example script:
-
-````
 ```python
 tips = sns.load_dataset("tips").copy()
 day_order = ["Thur", "Fri", "Sat", "Sun"]
@@ -180,55 +173,13 @@ plt.xlabel("Day")
 plt.ylabel("Count")
 plt.show()
 ```
-````
 
-![Ordered bar chart](univariate-categorical-bar-ordered.png)
+![Ordered bar chart](src/univariate-categorical-bar-ordered.png)
 
-Tip: Rule of thumb: Default to bar charts. Use a pie chart only when the part-of-whole message is the main point and the number of categories is small.
+**Tip:**
 
-## Cross-Tabulation
-
-A cross-tabulation (contingency table) shows the joint frequency of **two categorical variables**. While technically bivariate, it's introduced here as a natural extension of frequency tables.
-
-Example script:
-
-````
-```python
-import pandas as pd
-
-data = pd.DataFrame({
-    'Gender':   ['Male', 'Female', 'Male', 'Female', 'Male', 'Female'],
-    'Survived': ['No',   'Yes',    'Yes',  'Yes',    'No',   'No']
-})
-
-# Raw counts with row/column totals
-ct = pd.crosstab(data['Gender'], data['Survived'], margins=True)
-print(ct)
-
-# Proportions within each row (e.g., survival rate by gender)
-ct_norm = pd.crosstab(data['Gender'], data['Survived'], normalize='index').round(3)
-print(ct_norm)
-
-# normalize='index' → row proportions (most common: "what % of each group did X?")
-# normalize='columns' → column proportions
-# normalize='all' → proportions of grand total
-```
-````
-
-**Raw count output:**
-
-| Gender | No | Yes | Total |
-| ------ | -- | --- | ----- |
-| Female | 1  | 2   | 3     |
-| Male   | 2  | 1   | 3     |
-| Total  | 3  | 3   | 6     |
-
-**Row-normalized (survival rate per gender):**
-
-| Gender | No    | Yes   |
-| ------ | ----- | ----- |
-| Female | 0.333 | 0.667 |
-| Male   | 0.667 | 0.333 |
+- Default to bar charts.
+- Use a **pie chart** only when the part-of-whole message is the main point and the number of categories is small.
 
 ## Key Takeaways
 
@@ -239,10 +190,7 @@ print(ct_norm)
 | **Ordinal data**       | Explicitly define category order — don't let pandas sort alphabetically |
 | **Bar chart**          | Default visualization for categorical data                              |
 | **Pie chart**          | Only when ≤ 5 categories and part-of-whole is the message               |
-| **Cross-tabulation**   | Describes relationship between two categorical variables                |
 
 ## Rare Categories and Grouping
 
 Real-world categorical variables often contain many low-frequency levels. Before plotting or modeling, consider whether to keep them separate or group them into `Other`.
-
-Tip: This is not just a visualization choice. Rare-level handling affects chi-square tests, encoding quality, and model stability.
