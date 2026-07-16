@@ -34,11 +34,9 @@ $$
 P(X = k) = \binom{n}{k} p^k (1-p)^{n-k}
 $$
 
-| Parameter | Meaning                              |
-| --------- | ------------------------------------ |
-| n         | Number of trials                     |
-| k         | Number of successes                  |
-| p         | Probability of success on each trial |
+- `n`: Number of trials
+- `k`: Number of successes
+- `p`: Probability of success on each trial
 
 **Mean and Variance:**
 
@@ -49,8 +47,6 @@ $$
 <details>
 
 <summary>Derivation</summary>
-
-<div style="padding: 1rem; margin-top: 0.75rem; border: 1px solid #d0d7de; border-radius: 8px;">
 
 Let
 
@@ -83,16 +79,13 @@ $$
 By linearity of expectation:
 
 $$
-E(X) = E(X_1 + \cdots + X_n)
-= E(X_1) + \cdots + E(X_n)
-= np
+E(X) = E(X_1 + \cdots + X_n) = E(X_1) + \cdots + E(X_n) = np
 $$
 
 For variance, first note that for a Bernoulli variable:
 
 $$
-\operatorname{Var}(X_i)
-= E(X_i^2) - [E(X_i)]^2
+\text{Var}(X_i) = E(X_i^2) - [E(X_i)]^2
 $$
 
 Since \(X_i\) is only 0 or 1, we have \(X_i^2 = X_i\), so:
@@ -104,28 +97,18 @@ $$
 Therefore:
 
 $$
-\operatorname{Var}(X_i)
-= p-p^2
-= p(1-p)
+\text{Var}(X_i) = p - p^2 = p(1-p)
 $$
 
-Because binomial trials are independent:
+Because Binomial trials are independent:
 
 $$
-\operatorname{Var}(X)
-= \operatorname{Var}(X_1+\cdots+X_n)
-$$
-
-$$
-= \operatorname{Var}(X_1)+\cdots+\operatorname{Var}(X_n)
+\text{Var}(X) = \text{Var}(X_1 + \cdots + X_n)
+= \text{Var}(X_1) + \cdots + \text{Var}(X_n)
 = np(1-p)
 $$
 
-</div>
-
 </details>
-
-### Python Example
 
 ```python
 from scipy.stats import binom
@@ -157,25 +140,35 @@ plt.show()
 
 ### When Binomial Approaches Normal
 
-When n is large and p is not extreme (roughly: np ≥ 5 and n(1−p) ≥ 5), the Binomial distribution looks approximately Normal. This is an early preview of the Central Limit Theorem.
+When n is large and p is not extreme (roughly: $np ≥ 5$ and $n(1−p) ≥ 5$), the Binomial distribution looks approximately Normal. This is an early preview of the [Central Limit Theorem](./sampling-distributions.md#central-limit-theorem).
 
-### Binomial with a Built-in Dataset Mindset
-
-If you use a built-in dataset like `seaborn`'s `titanic`, each passenger's `survived` value is binary. Summing those binary outcomes within a fixed group size is exactly a Binomial-style counting setup.
+### Python Example
 
 ```python
-import seaborn as sns
+from scipy.stats import binom, norm
+import matplotlib.pyplot as plt
+import numpy as np
 
-titanic = sns.load_dataset("titanic").dropna(subset=["survived"])
+n, p = 50, 0.4
+x = np.arange(0, n + 1)
 
-# Example: among 50 randomly selected passengers,
-# how many survived?
-sample = titanic["survived"].sample(50, random_state=42)
-print(f"Observed survivors in sample of 50: {sample.sum()}")
-print(f"Estimated survival probability p-hat: {sample.mean():.3f}")
+pmf = binom.pmf(x, n, p)
+mu = n * p
+sigma = np.sqrt(n * p * (1 - p))
+pdf = norm.pdf(x, loc=mu, scale=sigma)
+
+plt.bar(x, pmf, width=0.85, color='steelblue', edgecolor='white', alpha=0.75, label='Binomial PMF')
+plt.plot(x, pdf, color='#c44e52', linewidth=2.2, label='Normal approximation')
+plt.xlabel('Number of Successes (k)')
+plt.ylabel('Probability / Density')
+plt.title('Binomial Approaches Normal (n=50, p=0.4)')
+plt.legend()
+plt.show()
 ```
 
-This kind of data is the bridge between Bernoulli outcomes (`0/1`) and Binomial counts (`number of 1s in n trials`).
+![Binomial Normal Approximation](./src/discrete-distributions-binomial-normal-approx.png)
+
+A Binomial count is obtained by summing multiple **Bernoulli** outcomes: each trial produces a 0 or 1, and their sum gives the total number of successes in $n$ trials.
 
 ## Poisson Distribution
 
@@ -186,26 +179,101 @@ This kind of data is the bridge between Bernoulli outcomes (`0/1`) and Binomial 
 - The **average rate (λ)** is constant
 - Two events cannot occur at exactly the same instant
 
-Tip: Examples: Number of emails per hour; number of accidents at an intersection per month; number of typos per page; number of customer arrivals per minute.
+**Examples:**
+
+- Number of emails per hour
+- Number of accidents at an intersection per month
+- Number of typos per page
+- Number of customer arrivals per minute
 
 ### Formula
 
-\[
+$$
 P(X = k) = \frac{e^{-\lambda} \lambda^k}{k!}, \quad k = 0, 1, 2, \ldots
-\]
+$$
 
-| Parameter  | Meaning                               |
-| ---------- | ------------------------------------- |
-| λ (lambda) | Average number of events per interval |
-| k          | Actual number of events observed      |
+- `λ (lambda)`: Average number of events per interval
+- `k`: Actual number of events observed
 
 **Mean and Variance — both equal λ:**
 
-\[
+$$
 E(X) = \lambda \qquad \text{Var}(X) = \lambda
-\]
+$$
 
-Tip: The fact that mean = variance is a useful diagnostic. If your count data has variance much larger than the mean, it may be overdispersed and Poisson may not be appropriate (consider Negative Binomial instead).
+<details>
+
+<summary>Derivation</summary>
+
+Start from the Poisson PMF:
+
+$$
+P(X = k) = \frac{e^{-\lambda}\lambda^k}{k!}, \qquad k = 0, 1, 2, \ldots
+$$
+
+For the mean:
+
+$$
+E(X) = \sum*{k=0}^{\infty} k \, P(X = k)
+= \sum*{k=1}^{\infty} k \frac{e^{-\lambda}\lambda^k}{k!}
+$$
+
+Since \(k / k! = 1 / (k-1)!\), this becomes:
+
+$$
+E(X) = \sum*{k=1}^{\infty} \frac{e^{-\lambda}\lambda^k}{(k-1)!}
+= \lambda \sum*{k=1}^{\infty} \frac{e^{-\lambda}\lambda^{k-1}}{(k-1)!}
+$$
+
+Let \(j = k-1\). Then:
+
+$$
+E(X) = \lambda \sum\_{j=0}^{\infty} \frac{e^{-\lambda}\lambda^j}{j!}
+= \lambda \cdot 1
+= \lambda
+$$
+
+For the variance, first compute \(E[X(X-1)]\):
+
+$$
+E[X(X-1)] = \sum*{k=0}^{\infty} k(k-1) P(X = k)
+= \sum*{k=2}^{\infty} k(k-1)\frac{e^{-\lambda}\lambda^k}{k!}
+$$
+
+Since \(k(k-1) / k! = 1 / (k-2)!\), we get:
+
+$$
+E[X(X-1)] = \sum*{k=2}^{\infty} \frac{e^{-\lambda}\lambda^k}{(k-2)!}
+= \lambda^2 \sum*{k=2}^{\infty} \frac{e^{-\lambda}\lambda^{k-2}}{(k-2)!}
+$$
+
+Let \(j = k-2\). Then:
+
+$$
+E[X(X-1)] = \lambda^2 \sum\_{j=0}^{\infty} \frac{e^{-\lambda}\lambda^j}{j!}
+= \lambda^2
+$$
+
+Now use:
+
+$$
+E(X^2) = E[X(X-1)] + E(X) = \lambda^2 + \lambda
+$$
+
+So:
+
+$$
+\text{Var}(X) = E(X^2) - [E(X)]^2
+= (\lambda^2 + \lambda) - \lambda^2
+= \lambda
+$$
+
+</details>
+
+**Tip:**
+
+- The fact that mean = variance is a useful diagnostic.
+- If your count data has variance much larger than the mean, it may be overdispersed and Poisson may not be appropriate (consider Negative Binomial instead).
 
 ### A Practical Diagnostic: Mean vs Variance
 
@@ -248,6 +316,8 @@ plt.title(f'Poisson Distribution (λ={lam})')
 plt.show()
 ```
 
+![Poisson Distribution Figure](./src/discrete-distributions-poisson.png)
+
 ### Poisson as Limit of Binomial
 
 When n is large and p is small (rare events), Binomial(n, p) ≈ Poisson(λ = np).
@@ -268,13 +338,13 @@ Tip: Examples: Number of cold calls until first sale; number of product tests un
 
 ### Formula (number of trials until first success)
 
-\[
+$$
 P(X = k) = (1-p)^{k-1} \cdot p, \quad k = 1, 2, 3, \ldots
-\]
+$$
 
-\[
+$$
 E(X) = \frac{1}{p} \qquad \text{Var}(X) = \frac{1-p}{p^2}
-\]
+$$
 
 Tip: Intuition: If the probability of success is 20%, it takes 1/0.2 = 5 attempts on average to succeed.
 
@@ -303,9 +373,9 @@ plt.show()
 
 The Geometric distribution has a unique property: **past failures don't change the probability of future success**.
 
-\[
+$$
 P(X > m + n \mid X > m) = P(X > n)
-\]
+$$
 
 Tip: If you've already failed 10 times, the probability of success on the next attempt is still p — the distribution "doesn't remember" past outcomes. This is analogous to the Exponential distribution for continuous data.
 
@@ -327,9 +397,9 @@ Tip: Examples: Drawing 5 cards from a deck and counting aces; inspecting 10 item
 
 ### Formula
 
-\[
+$$
 P(X = k) = \frac{\binom{K}{k}\binom{N-K}{n-k}}{\binom{N}{n}}
-\]
+$$
 
 | Parameter | Meaning                       |
 | --------- | ----------------------------- |
@@ -338,9 +408,9 @@ P(X = k) = \frac{\binom{K}{k}\binom{N-K}{n-k}}{\binom{N}{n}}
 | n         | Sample size drawn             |
 | k         | Observed successes in sample  |
 
-\[
+$$
 E(X) = \frac{nK}{N} \qquad \text{Var}(X) = n \cdot \frac{K}{N} \cdot \frac{N-K}{N} \cdot \frac{N-n}{N-1}
-\]
+$$
 
 Tip: The extra term $\frac{N-n}{N-1}$ is the finite population correction factor — as the sample approaches the full population, variance approaches 0 (if you sample everyone, there's no randomness left).
 
