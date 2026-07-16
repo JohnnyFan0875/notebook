@@ -1,30 +1,17 @@
 # Discrete Distributions
 
-A **discrete distribution** is a probability model for a discrete random variable — one that takes countable values (usually non-negative integers). Each distribution has a specific shape and assumptions. Choosing the right one depends on the nature of your data and the process generating it.
+A **discrete distribution** is a probability model for a discrete random variable — one that takes countable values (usually non-negative integers).
 
-Key point: Practical focus: You don't need to remember all the distribution formulas, but you need to be able to identify "What situation was this data generated in?" and then map it to the correct distribution model.
-
-## From Story to Distribution
-
-A useful habit is to translate the problem statement into a generative story:
-
-| Question in plain language | Likely model |
-| -------------------------- | ------------ |
-| "How many successes out of a fixed number of trials?" | Binomial |
-| "How many events happen in a time/space interval?" | Poisson |
-| "How many attempts until the first success?" | Geometric |
-| "How many successes when drawing from a finite pool without replacement?" | Hypergeometric |
-
-Tip: The distribution is usually determined more by the **data-generating process** than by the fact that the outcome happens to be an integer.
+Each distribution has a specific shape and assumptions. Choosing the right one depends on the nature of your data and the process generating it.
 
 ## Distribution Selection Guide
 
-| Distribution | Key Question | Typical Scenario |
-| ------------- | ------------- | ----------------- |
-| **Binomial** | How many successes in n trials? | Defect count, survey responses (yes/no) |
-| **Poisson** | How many events in a fixed interval? | Website visits per hour, typos per page |
-| **Geometric** | How many trials until first success? | Waiting for first sale, first failure |
-| **Hypergeometric** | How many successes when sampling without replacement? | Quality control, card drawing |
+| Distribution       | Key Question                                          | Typical Scenario                        |
+| ------------------ | ----------------------------------------------------- | --------------------------------------- |
+| **Binomial**       | How many successes in n trials?                       | Defect count, survey responses (yes/no) |
+| **Poisson**        | How many events in a fixed interval?                  | Website visits per hour, typos per page |
+| **Geometric**      | How many trials until first success?                  | Waiting for first sale, first failure   |
+| **Hypergeometric** | How many successes when sampling without replacement? | Quality control, card drawing           |
 
 ## Binomial Distribution
 
@@ -35,25 +22,108 @@ Tip: The distribution is usually determined more by the **data-generating proces
 - Probability of success **p** is constant across trials
 - Trials are **independent** of each other
 
-Tip: Examples: Number of defective items in a batch of 20; number of customers who click an ad out of 100 shown; number of heads in 10 coin flips.
+**Examples:**
+
+- Number of defective items in a batch of 20
+- Number of customers who click an ad out of 100 shown
+- Number of heads in 10 coin flips.
 
 ### Formula
 
-\[
+$$
 P(X = k) = \binom{n}{k} p^k (1-p)^{n-k}
-\]
+$$
 
-| Parameter | Meaning |
-| ----------- | --------- |
-| n | Number of trials |
-| k | Number of successes |
-| p | Probability of success on each trial |
+| Parameter | Meaning                              |
+| --------- | ------------------------------------ |
+| n         | Number of trials                     |
+| k         | Number of successes                  |
+| p         | Probability of success on each trial |
 
 **Mean and Variance:**
 
-\[
+$$
 E(X) = np \qquad \text{Var}(X) = np(1-p)
-\]
+$$
+
+<details>
+
+<summary>Derivation</summary>
+
+<div style="padding: 1rem; margin-top: 0.75rem; border: 1px solid #d0d7de; border-radius: 8px;">
+
+Let
+
+$$
+X = X_1 + X_2 + \cdots + X_n
+$$
+
+where each \(X_i\) is a Bernoulli random variable:
+
+$$
+X_i =
+\begin{cases}
+1, & \text{if trial } i \text{ is a success} \\
+0, & \text{if trial } i \text{ is a failure}
+\end{cases}
+$$
+
+with
+
+$$
+P(X_i = 1) = p, \qquad P(X_i = 0) = 1-p
+$$
+
+So for each trial:
+
+$$
+E(X_i) = 1 \cdot p + 0 \cdot (1-p) = p
+$$
+
+By linearity of expectation:
+
+$$
+E(X) = E(X_1 + \cdots + X_n)
+= E(X_1) + \cdots + E(X_n)
+= np
+$$
+
+For variance, first note that for a Bernoulli variable:
+
+$$
+\operatorname{Var}(X_i)
+= E(X_i^2) - [E(X_i)]^2
+$$
+
+Since \(X_i\) is only 0 or 1, we have \(X_i^2 = X_i\), so:
+
+$$
+E(X_i^2) = E(X_i) = p
+$$
+
+Therefore:
+
+$$
+\operatorname{Var}(X_i)
+= p-p^2
+= p(1-p)
+$$
+
+Because binomial trials are independent:
+
+$$
+\operatorname{Var}(X)
+= \operatorname{Var}(X_1+\cdots+X_n)
+$$
+
+$$
+= \operatorname{Var}(X_1)+\cdots+\operatorname{Var}(X_n)
+= np(1-p)
+$$
+
+</div>
+
+</details>
 
 ### Python Example
 
@@ -82,6 +152,8 @@ plt.ylabel('P(X = k)')
 plt.title(f'Binomial Distribution (n={n}, p={p})')
 plt.show()
 ```
+
+![Binomial Distribution Figure](./src/discrete-distributions-binomial.png)
 
 ### When Binomial Approaches Normal
 
@@ -122,10 +194,10 @@ Tip: Examples: Number of emails per hour; number of accidents at an intersection
 P(X = k) = \frac{e^{-\lambda} \lambda^k}{k!}, \quad k = 0, 1, 2, \ldots
 \]
 
-| Parameter | Meaning |
-| ----------- | --------- |
+| Parameter  | Meaning                               |
+| ---------- | ------------------------------------- |
 | λ (lambda) | Average number of events per interval |
-| k | Actual number of events observed |
+| k          | Actual number of events observed      |
 
 **Mean and Variance — both equal λ:**
 
@@ -180,10 +252,10 @@ plt.show()
 
 When n is large and p is small (rare events), Binomial(n, p) ≈ Poisson(λ = np).
 
-| Condition | Use |
-| ----------- | ----- |
-| n is moderate, p is known | Binomial |
-| n is very large, p is very small, λ = np is moderate | Poisson |
+| Condition                                            | Use      |
+| ---------------------------------------------------- | -------- |
+| n is moderate, p is known                            | Binomial |
+| n is very large, p is very small, λ = np is moderate | Poisson  |
 
 ## Geometric Distribution
 
@@ -259,12 +331,12 @@ Tip: Examples: Drawing 5 cards from a deck and counting aces; inspecting 10 item
 P(X = k) = \frac{\binom{K}{k}\binom{N-K}{n-k}}{\binom{N}{n}}
 \]
 
-| Parameter | Meaning |
-| ----------- | --------- |
-| N | Total population size |
-| K | Total successes in population |
-| n | Sample size drawn |
-| k | Observed successes in sample |
+| Parameter | Meaning                       |
+| --------- | ----------------------------- |
+| N         | Total population size         |
+| K         | Total successes in population |
+| n         | Sample size drawn             |
+| k         | Observed successes in sample  |
 
 \[
 E(X) = \frac{nK}{N} \qquad \text{Var}(X) = n \cdot \frac{K}{N} \cdot \frac{N-K}{N} \cdot \frac{N-n}{N-1}
@@ -278,11 +350,11 @@ Tip: The extra term $\frac{N-n}{N-1}$ is the finite population correction factor
 
 These two are easy to mix up because both count "number of successes".
 
-| Feature | Binomial | Hypergeometric |
-| ------- | -------- | -------------- |
-| Sampling scheme | With replacement / effectively infinite population | Without replacement from finite population |
-| Trial independence | Yes | No |
-| Success probability | Constant across draws | Changes after each draw |
+| Feature             | Binomial                                           | Hypergeometric                             |
+| ------------------- | -------------------------------------------------- | ------------------------------------------ |
+| Sampling scheme     | With replacement / effectively infinite population | Without replacement from finite population |
+| Trial independence  | Yes                                                | No                                         |
+| Success probability | Constant across draws                              | Changes after each draw                    |
 
 Tip: If drawing one success changes the probability of the next success, you are no longer in a Binomial setup.
 
@@ -321,23 +393,23 @@ print(f"P(X ≥ 3)  = {1 - hypergeom.cdf(2, N, K, n):.4f}")
 
 ## Comparing All Four Distributions
 
-|  | **Binomial** | **Poisson** | **Geometric** | **Hypergeometric** |
-| -- | ------------ | ----------- | ------------- | ----------------- |
-| **What X counts** | Successes in n trials | Events in fixed interval | Trials until 1st success | Successes in sample |
-| **Population** | Infinite / with replacement | Events over time/space | Infinite | Finite |
-| **Replacement** | With replacement | N/A | With replacement | Without replacement |
-| **Parameters** | n, p | λ | p | N, K, n |
-| **Mean** | np | λ | 1/p | nK/N |
-| **Variance** | np(1−p) | λ | (1−p)/p² | (complex) |
-| **Key Assumption** | Fixed n, constant p | Constant rate λ | Independent trials | Finite population |
+|                    | **Binomial**                | **Poisson**              | **Geometric**            | **Hypergeometric**  |
+| ------------------ | --------------------------- | ------------------------ | ------------------------ | ------------------- |
+| **What X counts**  | Successes in n trials       | Events in fixed interval | Trials until 1st success | Successes in sample |
+| **Population**     | Infinite / with replacement | Events over time/space   | Infinite                 | Finite              |
+| **Replacement**    | With replacement            | N/A                      | With replacement         | Without replacement |
+| **Parameters**     | n, p                        | λ                        | p                        | N, K, n             |
+| **Mean**           | np                          | λ                        | 1/p                      | nK/N                |
+| **Variance**       | np(1−p)                     | λ                        | (1−p)/p²                 | (complex)           |
+| **Key Assumption** | Fixed n, constant p         | Constant rate λ          | Independent trials       | Finite population   |
 
 ## Key Takeaways
 
-| Concept | Key Point |
-| --------- | ----------- |
-| **Binomial** | Fixed trials, binary outcome, with replacement — the workhorse of discrete distributions |
-| **Poisson** | Count of rare events per interval; mean = variance is a diagnostic check |
-| **Geometric** | Waiting time until first success; memoryless property |
-| **Hypergeometric** | Sampling without replacement from finite population |
-| **Binomial → Poisson** | When n is large and p is small, Poisson is a good approximation |
-| **Binomial → Normal** | When n is large and p is moderate, Normal approximation works |
+| Concept                | Key Point                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| **Binomial**           | Fixed trials, binary outcome, with replacement — the workhorse of discrete distributions |
+| **Poisson**            | Count of rare events per interval; mean = variance is a diagnostic check                 |
+| **Geometric**          | Waiting time until first success; memoryless property                                    |
+| **Hypergeometric**     | Sampling without replacement from finite population                                      |
+| **Binomial → Poisson** | When n is large and p is small, Poisson is a good approximation                          |
+| **Binomial → Normal**  | When n is large and p is moderate, Normal approximation works                            |

@@ -30,7 +30,7 @@ $$
 
 - Each probability is between 0 and 1
 - All probabilities sum to exactly 1
-  - $ΣP(X = x) = 1$\)$
+  - $ΣP(X = x) = 1$
 
 ```python
 import numpy as np
@@ -103,7 +103,8 @@ $$
 
 - Works for **both** discrete and continuous variables
 - Always increases from 0 to 1
-- Very useful for computing interval probabilities: $P(a ≤ X ≤ b) = F(b) − F(a)$
+- Very useful for computing interval probabilities
+  - $P(a ≤ X ≤ b) = F(b) − F(a)$
 
 ```python
 from scipy.stats import norm
