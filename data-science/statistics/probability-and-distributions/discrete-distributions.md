@@ -50,7 +50,7 @@ Derivation
 >
 > $$X = X_1 + X_2 + \cdots + X_n$$
 >
-> where each \(X_i\) is a Bernoulli random > variable:
+> where each $X_i$ is a Bernoulli random > variable:
 >
 > $$X_i =
 > \begin{cases}
@@ -74,7 +74,7 @@ Derivation
 >
 > $$\text{Var}(X_i) = E(X_i^2) - [E(X_i)]^2$$
 >
-> Since \(X_i\) is only 0 or 1, we have \(X_i^2 = > X_i\), so:
+> Since $X_i$ is only 0 or 1, we have $X_i^2 = > X_i$, so:
 >
 > $$E(X_i^2) = E(X_i) = p$$
 >
