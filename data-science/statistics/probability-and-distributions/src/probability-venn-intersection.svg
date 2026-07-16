@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220" viewBox="0 0 360 220">
+  <defs>
+    <clipPath id="clipA">
+      <circle cx="145" cy="110" r="58"/>
+    </clipPath>
+    <clipPath id="clipB">
+      <circle cx="215" cy="110" r="58"/>
+    </clipPath>
+  </defs>
+  <rect width="360" height="220" fill="#ffffff"/>
+  <rect x="25" y="25" width="310" height="170" rx="8" fill="none" stroke="#333" stroke-width="2"/>
+  <circle cx="145" cy="110" r="58" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <circle cx="215" cy="110" r="58" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <g clip-path="url(#clipA)">
+    <circle cx="215" cy="110" r="58" fill="#4c956c" fill-opacity="0.9"/>
+  </g>
+  <text x="118" y="110" font-family="Arial, sans-serif" font-size="22" fill="#222">A</text>
+  <text x="235" y="110" font-family="Arial, sans-serif" font-size="22" fill="#222">B</text>
+  <text x="30" y="20" font-family="Arial, sans-serif" font-size="18" fill="#222">S</text>
+  <text x="140" y="215" font-family="Arial, sans-serif" font-size="18" fill="#222">A ∩ B</text>
+</svg>

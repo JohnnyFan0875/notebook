@@ -2,39 +2,39 @@
 
 **Probability** is a number between 0 and 1 that expresses how likely an event is to occur. It is the mathematical language for reasoning under uncertainty.
 
-Key point: Why should we learn the basics of probability? p-value, confidence interval, hypothesis testing...the bottom layer of these statistical concepts is probability. Without an intuition of probability, it is easy to misunderstand the meaning of these tools.
-
 ## Three Interpretations of Probability
 
-| Interpretation | Definition | Example |
-| --------------- | ----------- | --------- |
-| **Classical** | Equal likelihood — count favorable outcomes / total outcomes | Probability of rolling a 3 on a fair die = 1/6 |
-| **Frequentist** | Long-run relative frequency of an event over many repeated trials | Flip a coin 10,000 times; heads appears ~50% |
-| **Subjective** | Degree of personal belief, based on available evidence | "I think there's a 70% chance it will rain tomorrow" |
+| Interpretation  | Definition                                                        | Example                                              |
+| --------------- | ----------------------------------------------------------------- | ---------------------------------------------------- |
+| **Classical**   | Equal likelihood — count favorable outcomes / total outcomes      | Probability of rolling a 3 on a fair die = 1/6       |
+| **Frequentist** | Long-run relative frequency of an event over many repeated trials | Flip a coin 10,000 times; heads appears ~50%         |
+| **Subjective**  | Degree of personal belief, based on available evidence            | "I think there's a 70% chance it will rain tomorrow" |
 
-Tip: In practice, most statistics you'll encounter uses the frequentist interpretation — probability is defined by what would happen if you repeated an experiment many times.
+In practice, most statistics you'll encounter uses the **frequentist** interpretation — probability is defined by what would happen if you repeated an experiment many times.
 
 ## Core Terminology
 
-| Term | Definition | Example |
-| ------ | ----------- | --------- |
-| **Experiment** | Any process with uncertain outcome | Rolling a die |
-| **Sample Space (S)** | Set of all possible outcomes | S = {1, 2, 3, 4, 5, 6} |
-| **Event (E)** | A subset of the sample space | E = {2, 4, 6} (rolling even) |
-| **Probability P(E)** | Likelihood of event E occurring | P(even) = 3/6 = 0.5 |
-| **Complement (Eᶜ)** | All outcomes NOT in E | Eᶜ = {1, 3, 5} |
+| Term                 | Definition                         | Example                      |
+| -------------------- | ---------------------------------- | ---------------------------- |
+| **Experiment**       | Any process with uncertain outcome | Rolling a die                |
+| **Sample Space (S)** | Set of all possible outcomes       | S = {1, 2, 3, 4, 5, 6}       |
+| **Event (E)**        | A subset of the sample space       | E = {2, 4, 6} (rolling even) |
+| **Probability P(E)** | Likelihood of event E occurring    | P(even) = 3/6 = 0.5          |
+| **Complement (Eᶜ)**  | All outcomes NOT in E              | Eᶜ = {1, 3, 5}               |
 
 **Basic probability rules:**
 
-\[
+$$
 0 \leq P(E) \leq 1
-\]
-\[
+$$
+
+$$
 P(S) = 1
-\]
-\[
+$$
+
+$$
 P(E^c) = 1 - P(E)
-\]
+$$
 
 ```python
 # Simple probability calculation
@@ -52,50 +52,55 @@ print(f"P(odd)  = {p_odd:.3f}")
 
 ### Union and Intersection
 
-| Operation | Symbol | Meaning | Example |
-| ----------- | -------- | --------- | --------- |
-| **Union** | A ∪ B | A **or** B occurs (at least one) | Rolling even **or** rolling > 4 |
-| **Intersection** | A ∩ B | A **and** B both occur | Rolling even **and** rolling > 4 |
-| **Complement** | Aᶜ | A does **not** occur | Not rolling even |
+| Operation        | Symbol | Meaning                          | Example                          |
+| ---------------- | ------ | -------------------------------- | -------------------------------- |
+| **Union**        | A ∪ B  | A **or** B occurs (at least one) | Rolling even **or** rolling > 4  |
+| **Intersection** | A ∩ B  | A **and** B both occur           | Rolling even **and** rolling > 4 |
+| **Complement**   | Aᶜ     | A does **not** occur             | Not rolling even                 |
+
+| Union                                           | Intersection                                                  | Complement                                                |
+| ----------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
+| ![Union venn](./src/probability-venn-union.svg) | ![Intersection venn](./src/probability-venn-intersection.svg) | ![Complement venn](./src/probability-venn-complement.svg) |
 
 ### Addition Rule
 
-\[
+$$
 P(A \cup B) = P(A) + P(B) - P(A \cap B)
-\]
-
-Tip: We subtract the intersection to avoid double-counting outcomes that belong to both A and B.
+$$
 
 **Special case — Mutually Exclusive Events:**
 If A and B cannot both happen, then P(A ∩ B) = 0, so:
 
-\[
+$$
 P(A \cup B) = P(A) + P(B)
-\]
+$$
+
+![Mutually exclusive venn diagram](./src/probability-venn-mutually-exclusive.svg)
 
 ```python
 # Example: die rolling
 # A = rolling even {2,4,6}, B = rolling > 4 {5,6}
 p_A   = 3/6   # P(even)
 p_B   = 2/6   # P(> 4)
-p_AandB = 1/6 # P(even AND > 4) = {6} only
 
-p_AorB = p_A + p_B - p_AandB
-print(f"P(A or B) = {p_AorB:.3f}")  # 4/6 = 0.667
+p_AandB = 1/6 # 1/6 {6}
+p_AorB = p_A + p_B - p_AandB # 4/6 {2,4,5,6}
 ```
 
 ### Multiplication Rule
 
-\[
+$$
 P(A \cap B) = P(A) \times P(B|A)
-\]
+$$
+
+- $P(B|A)$: After A has happened, what is the probability that B also happens.
 
 **Special case — Independent Events:**
 If A and B are independent (one doesn't affect the other):
 
-\[
+$$
 P(A \cap B) = P(A) \times P(B)
-\]
+$$
 
 ```python
 # Two independent coin flips
@@ -106,28 +111,15 @@ print(f"P(HH) = {p_two_heads:.3f}")  # 0.25
 
 ## Conditional Probability
 
-\[
+The probability of A **given** that B has already occurred.
+
+$$
 P(A|B) = \frac{P(A \cap B)}{P(B)}
-\]
+$$
 
-This reads: "The probability of A **given** that B has already occurred."
+**Tip:**
 
-Tip: Intuitive explanation: Conditional probability is to recalculate the probability of A after reducing the sample space under the premise that "B is known to occur". Think of it as "zooming in" on the subset of the sample space where B is true, then asking how often A also occurs within that subset.
-
-## Interview Fast Answer
-
-如果面試官直接問 conditional probability，是很適合先用一句話收斂的題目：
-
-- conditional probability 是「在已知 `B` 發生後，`A` 發生的機率」
-- 核心不是背公式，而是知道 sample space 已經改了
-- `P(A|B)` 和 `P(B|A)` 通常不一樣，這正是 Bayes' theorem 會出現的原因
-
-如果被追問 independence 和 mutual exclusivity 的差別，最穩的回答通常是：
-
-- independent: 知道 `B` 發生，不改變 `A` 的機率
-- mutually exclusive: `A` 和 `B` 根本不能同時發生
-
-Key point: 兩個有非零機率的 mutually exclusive events，不可能彼此 independent。
+- Conditional probability is to recalculate the probability of A after reducing the sample space under the premise that "B is known to occur". Think of it as "zooming in" on the subset of the sample space where B is true, then asking how often A also occurs within that subset.
 
 ```python
 # Example: drawing cards
@@ -144,12 +136,10 @@ print(f"P(King | Face card) = {p_king_given_face:.3f}")  # 0.333
 
 ### Independence vs Mutual Exclusivity
 
-Warning: These two concepts are often confused.
-
-| Concept | Definition | Implication |
-| --------- | ----------- | ------------- |
-| **Independent** | P(A\ | B) = P(A) — B gives no information about A | They CAN happen at the same time |
-| **Mutually Exclusive** | P(A ∩ B) = 0 — they cannot both happen | Knowing B occurred means A definitely did NOT occur |
+| Concept                | Definition                                             | Implication                     |
+| ---------------------- | ------------------------------------------------------ | ------------------------------- |
+| **Independent**        | $P(A \mid B)=P(A)$<br>B provides no information about A | They can occur at the same time |
+| **Mutually Exclusive** | $P(A \cap B)=0$<br>they cannot both occur               | If B occurs, A did not occur    |
 
 If two events are mutually exclusive and both have non-zero probability, they cannot be independent — knowing one happened tells you the other didn't.
 
@@ -157,11 +147,9 @@ If two events are mutually exclusive and both have non-zero probability, they ca
 
 If events B₁, B₂, ..., Bₙ are mutually exclusive and cover the entire sample space:
 
-\[
+$$
 P(A) = \sum_{i=1}^{n} P(A|B_i) \cdot P(B_i)
-\]
-
-Tip: Intuition: Divide complex events into several mutually exclusive situations, calculate them separately, and then add them together. Think of it as: "A can happen in several different scenarios — compute the probability of A in each scenario, weighted by how likely each scenario is."
+$$
 
 ```python
 # Example: Factory quality control
@@ -177,18 +165,18 @@ print(f"P(defect) = {p_defect:.4f}")  # 0.0320
 
 ## Bayes' Theorem
 
-\[
+$$
 P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)}
-\]
+$$
 
 Bayes' Theorem allows you to **update a prior belief** when new evidence arrives.
 
-| Term | Meaning |
-| ------ | --------- |
-| **P(A)** | Your initial belief about A before seeing evidence |
-| **P(B\ | Likelihood | How likely you'd see B if A were true |
-| **P(B)** | Overall probability of observing B |
-| **P(A\ | Posterior probability (Posterior) | Updated belief about A after seeing evidence B |
+| Term        | Meaning               | Description                                        |
+| ----------- | --------------------- | -------------------------------------------------- |
+| **P(A)**    | Prior probability     | Your initial belief about A before seeing evidence |
+| **P(B\|A)** | Likelihood            | How likely you'd see B if A were true              |
+| **P(B)**    | Evidence              | Overall probability of observing B                 |
+| **P(A\|B)** | Posterior probability | Updated belief about A after seeing evidence B     |
 
 **Classic Example — Medical Test:**
 
@@ -202,34 +190,21 @@ p_positive_given_no_disease = 0.05 # false positive rate
 p_no_disease       = 1 - p_disease
 
 # P(positive) using total probability law
-p_positive = (p_positive_given_disease * p_disease +
-              p_positive_given_no_disease * p_no_disease)
+p_true_positive  = p_positive_given_disease * p_disease
+p_false_positive = p_positive_given_no_disease * p_no_disease
+p_positive       = p_true_positive + p_false_positive
 
 # Bayes' Theorem
-p_disease_given_positive = (p_positive_given_disease * p_disease) / p_positive
+p_disease_given_positive = p_true_positive / p_positive
 
 print(f"P(positive)                = {p_positive:.4f}")
 print(f"P(disease | positive test) = {p_disease_given_positive:.4f}")  # ~16%
 ```
 
-Tip: Surprising result: Even with a 95% accurate test, if the disease is rare (1%), a positive result only means ~16% chance of actually having it. This is why base rates matter enormously. The base rate of rare diseases is very low, which greatly reduces the posterior probability. This is the most important practical intuition of Bayes' Theorem.
+**Note:**
 
-### Interview Prompt: Why Does Bayes Matter?
-
-這題高頻不是因為公式難，而是因為它很容易暴露是否真的理解 base rate。
-
-一個夠好的短答可以是：
-
-- Bayes 是用新證據更新舊信念
-- `P(A|B)` 不能只看 test accuracy，還要看 prior / base rate
-- 稀有事件即使測試看起來很準，posterior 也可能沒有想像中高
-
-## Common Interview Traps
-
-- 把 `P(A|B)` 和 `P(B|A)` 當成同一件事
-- 看到高 sensitivity 就忽略 false positive rate
-- 只談 likelihood，不談 base rate
-- 把 independent 和 mutually exclusive 混在一起
+- Even with a 95% accurate test, if the disease is rare (1%), a positive result only means ~16% chance of actually having it.
+- This is why **base rates** matter.
 
 ## From Formula to Simulation
 
@@ -237,9 +212,9 @@ Probability rules give the exact answer when the sample space is simple. When th
 
 Example: the probability of getting at least one head in three fair coin flips is
 
-\[
+$$
 1 - P(\text{all tails}) = 1 - \left(\frac{1}{2}\right)^3 = \frac{7}{8} = 0.875
-\]
+$$
 
 ```python
 import numpy as np
@@ -259,12 +234,12 @@ Tip: This "simulate first, derive second" loop is a fast way to debug intuition.
 
 ## Key Takeaways
 
-| Concept | Key Point |
-| --------- | ----------- |
-| **Probability range** | Always between 0 and 1; P(S) = 1 |
-| **Complement rule** | P(Aᶜ) = 1 − P(A) — often easier than computing P(A) directly |
-| **Addition rule** | Don't forget to subtract the intersection to avoid double-counting |
-| **Multiplication rule** | For independent events only: P(A∩B) = P(A)×P(B) |
-| **Conditional probability** | P(A\ | B) updates the sample space — B is now the new "universe" |
-| **Independence ≠ Mutual exclusivity** | These are opposite concepts — don't confuse them |
-| **Bayes' Theorem** | Prior belief + new evidence → updated belief; base rate matters enormously |
+| Concept                               | Key Point                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| **Probability range**                 | Always between 0 and 1; \(P(S)=1\)                                         |
+| **Complement rule**                   | \(P(A^c)=1-P(A)\) — often easier than computing \(P(A)\) directly          |
+| **Addition rule**                     | Subtract the intersection to avoid double-counting                         |
+| **Multiplication rule**               | For independent events: \(P(A \cap B)=P(A)\times P(B)\)                    |
+| **Conditional probability**           | \(P(A\mid B)\) updates the sample space — \(B\) becomes the new “universe” |
+| **Independence ≠ Mutual exclusivity** | These are opposite concepts — don't confuse them                           |
+| **Bayes' Theorem**                    | Prior belief + new evidence → updated belief; base rate matters enormously |

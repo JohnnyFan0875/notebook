@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220" viewBox="0 0 360 220">
+  <defs>
+    <mask id="holeA">
+      <rect width="360" height="220" fill="white"/>
+      <circle cx="180" cy="110" r="60" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="360" height="220" fill="#ffffff"/>
+  <rect x="25" y="25" width="310" height="170" rx="8" fill="#4c956c" fill-opacity="0.85" mask="url(#holeA)" stroke="#333" stroke-width="2"/>
+  <circle cx="180" cy="110" r="60" fill="#ffffff" stroke="#333" stroke-width="2"/>
+  <text x="175" y="115" font-family="Arial, sans-serif" font-size="22" text-anchor="middle" fill="#222">A</text>
+  <text x="30" y="20" font-family="Arial, sans-serif" font-size="18" fill="#222">S</text>
+  <text x="168" y="215" font-family="Arial, sans-serif" font-size="18" fill="#222">Aᶜ</text>
+</svg>

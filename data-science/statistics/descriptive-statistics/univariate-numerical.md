@@ -414,12 +414,8 @@ Kurtosis has two common definitions:
   - Normal distribution = **3**
 
 - **Excess kurtosis (Fisher kurtosis)**
-  - Defined as:
-
-  $$
-  \text{Excess kurtosis}= \text{Raw kurtosis}-3
-  $$
   - Normal distribution = **0**
+  - Excess kurtosis= Raw kurtosis - 3
 
 | Excess Kurtosis | Interpretation                      |
 | --------------: | ----------------------------------- |
