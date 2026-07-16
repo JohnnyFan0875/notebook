@@ -136,8 +136,8 @@ print(f"P(King | Face card) = {p_king_given_face:.3f}")  # 0.333
 
 ### Independence vs Mutual Exclusivity
 
-| Concept                | Definition                                             | Implication                     |
-| ---------------------- | ------------------------------------------------------ | ------------------------------- |
+| Concept                | Definition                                              | Implication                     |
+| ---------------------- | ------------------------------------------------------- | ------------------------------- |
 | **Independent**        | $P(A \mid B)=P(A)$<br>B provides no information about A | They can occur at the same time |
 | **Mutually Exclusive** | $P(A \cap B)=0$<br>they cannot both occur               | If B occurs, A did not occur    |
 
@@ -165,11 +165,11 @@ print(f"P(defect) = {p_defect:.4f}")  # 0.0320
 
 ## Bayes' Theorem
 
+Bayes' Theorem allows you to **update a prior belief** when new evidence arrives.
+
 $$
 P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)}
 $$
-
-Bayes' Theorem allows you to **update a prior belief** when new evidence arrives.
 
 | Term        | Meaning               | Description                                        |
 | ----------- | --------------------- | -------------------------------------------------- |
@@ -230,14 +230,14 @@ print(f"Simulated P(at least one head) = {p_at_least_one_head:.4f}")
 print("Exact probability              = 0.8750")
 ```
 
-Tip: This "simulate first, derive second" loop is a fast way to debug intuition. If the simulation and the formula disagree, one of your assumptions is probably wrong.
+This is the basic idea of **Monte Carlo simulation**: estimate a probability by repeated random sampling. For a fuller treatment, see [Monte Carlo Simulation](./monte-carlo-simulation.md).
 
 ## Key Takeaways
 
 | Concept                               | Key Point                                                                  |
 | ------------------------------------- | -------------------------------------------------------------------------- |
 | **Probability range**                 | Always between 0 and 1; \(P(S)=1\)                                         |
-| **Complement rule**                   | \(P(A^c)=1-P(A)\) — often easier than computing \(P(A)\) directly          |
+| **Complement rule**                   | \(P(A^c)=1-P(A)\) often easier than computing \(P(A)\) directly          |
 | **Addition rule**                     | Subtract the intersection to avoid double-counting                         |
 | **Multiplication rule**               | For independent events: \(P(A \cap B)=P(A)\times P(B)\)                    |
 | **Conditional probability**           | \(P(A\mid B)\) updates the sample space — \(B\) becomes the new “universe” |
