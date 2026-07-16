@@ -45,41 +45,69 @@ E(X) = np \qquad \text{Var}(X) = np(1-p)
 $$
 
 <details>
+
 <summary>Derivation</summary>
-```math
-\begin{aligned}
-&\text{Let } X = X_1 + X_2 + \cdots + X_n, \text{ where each } X_i \text{ is a Bernoulli random variable:} \\[6pt]
-&X_i =
+
+Let
+
+$$
+X = X_1 + X_2 + \cdots + X_n
+$$
+
+where each \(X_i\) is a Bernoulli random variable:
+
+$$
+X_i =
 \begin{cases}
 1, & \text{if trial } i \text{ is a success} \\
 0, & \text{if trial } i \text{ is a failure}
 \end{cases}
-\qquad \text{with} \qquad P(X_i = 1) = p, \;\; P(X_i = 0) = 1-p \\[10pt]
-&\textbf{Mean} \\
-&E(X_i) = 1 \cdot p + 0 \cdot (1-p) = p \\
-&E(X) = E(X_1 + \cdots + X_n) = E(X_1) + \cdots + E(X_n) = np
-\qquad \text{(linearity of expectation)} \\[10pt]
-&\textbf{Variance} \\
-&\text{Var}(X_i) = E(X_i^2) - [E(X_i)]^2, \quad \text{and since } X_i^2 = X_i, \quad E(X_i^2) = E(X_i) = p \\
-&\text{Var}(X_i) = p - p^2 = p(1-p) \\
-&\text{Because Binomial trials are independent:} \\
-&\text{Var}(X) = \text{Var}(X_1 + \cdots + X_n) = \text{Var}(X_1) + \cdots + \text{Var}(X_n) = np(1-p)
-\end{aligned}
-```
- 
-```python
-# Numerical check: simulate n Bernoulli trials and compare to the formulas above
-import numpy as np
- 
-rng = np.random.default_rng(0)
-n, p = 20, 0.3
-trials = rng.binomial(1, p, size=(100_000, n))  # 100,000 simulated experiments
-X = trials.sum(axis=1)                          # each row sums to a Binomial(n, p) draw
- 
-print(f"Simulated E(X)   = {X.mean():.3f}   (theory np      = {n * p:.3f})")
-print(f"Simulated Var(X) = {X.var():.3f}   (theory np(1-p) = {n * p * (1 - p):.3f})")
-```
- 
+$$
+
+with
+
+$$
+P(X_i = 1) = p, \qquad P(X_i = 0) = 1-p
+$$
+
+So for each trial:
+
+$$
+E(X_i) = 1 \cdot p + 0 \cdot (1-p) = p
+$$
+
+By linearity of expectation:
+
+$$
+E(X) = E(X_1 + \cdots + X_n) = E(X_1) + \cdots + E(X_n) = np
+$$
+
+For variance, first note that for a Bernoulli variable:
+
+$$
+\text{Var}(X_i) = E(X_i^2) - [E(X_i)]^2
+$$
+
+Since \(X_i\) is only 0 or 1, we have \(X_i^2 = X_i\), so:
+
+$$
+E(X_i^2) = E(X_i) = p
+$$
+
+Therefore:
+
+$$
+\text{Var}(X_i) = p - p^2 = p(1-p)
+$$
+
+Because Binomial trials are independent:
+
+$$
+\text{Var}(X) = \text{Var}(X_1 + \cdots + X_n)
+= \text{Var}(X_1) + \cdots + \text{Var}(X_n)
+= np(1-p)
+$$
+
 </details>
 
 ```python
