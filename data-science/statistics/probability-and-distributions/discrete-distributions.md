@@ -44,43 +44,7 @@ $$
 E(X) = np \qquad \text{Var}(X) = np(1-p)
 $$
 
-Derivation
-
-> Let
->
-> $$X = X_1 + X_2 + \cdots + X_n$$
->
-> where each $X_i$ is a Bernoulli random variable:
->
-> $$X_i =\begin{cases} 1, & \text{if trial } i \text{ is a success} \\ 0, & \text{if trial } i \text{ is a failure} \end{cases} $$
->
-> with
->
-> $$P(X_i = 1) = p \qquad P(X_i = 0) = 1-p$$
->
-> So for each trial:
->
-> $$E(X_i) = 1 \cdot p + 0 \cdot (1-p) = p$$
->
-> By linearity of expectation:
->
-> $$E(X) = E(X_1 + \cdots + X_n) = E(X_1) + \cdots + E(X_n) = np$$
->
-> For variance, first note that for a Bernoulli variable:
->
-> $$\text{Var}(X_i) = E(X_i^2) - [E(X_i)]^2$$
->
-> Since $X_i$ is only 0 or 1, we have $X_i^2 = X_i$, so:
->
-> $$E(X_i^2) = E(X_i) = p$$
->
-> Therefore:
->
-> $$\text{Var}(X_i) = p - p^2 = p(1-p)$$
->
-> Because Binomial trials are independent:
->
-> $$\text{Var}(X) = \text{Var}(X_1 + \cdots + X_n) = \text{Var}(X_1) + \cdots + \text{Var}(X_n) = np(1-p)$$
+For the full derivation, see [Binomial mean and variance derivation](./src/discrete-distributions-binomial-derivation.md).
 
 ```python
 from scipy.stats import binom
@@ -173,74 +137,7 @@ $$
 E(X) = \lambda \qquad \text{Var}(X) = \lambda
 $$
 
-<details>
-
-<summary>Derivation</summary>
-
-Start from the Poisson PMF:
-
-$$
-P(X = k) = \frac{e^{-\lambda}\lambda^k}{k!}, \qquad k = 0, 1, 2, \ldots
-$$
-
-For the mean:
-
-$$
-E(X) = \sum*{k=0}^{\infty} k \, P(X = k)
-= \sum*{k=1}^{\infty} k \frac{e^{-\lambda}\lambda^k}{k!}
-$$
-
-Since \(k / k! = 1 / (k-1)!\), this becomes:
-
-$$
-E(X) = \sum*{k=1}^{\infty} \frac{e^{-\lambda}\lambda^k}{(k-1)!}
-= \lambda \sum*{k=1}^{\infty} \frac{e^{-\lambda}\lambda^{k-1}}{(k-1)!}
-$$
-
-Let \(j = k-1\). Then:
-
-$$
-E(X) = \lambda \sum\_{j=0}^{\infty} \frac{e^{-\lambda}\lambda^j}{j!}
-= \lambda \cdot 1
-= \lambda
-$$
-
-For the variance, first compute \(E[X(X-1)]\):
-
-$$
-E[X(X-1)] = \sum*{k=0}^{\infty} k(k-1) P(X = k)
-= \sum*{k=2}^{\infty} k(k-1)\frac{e^{-\lambda}\lambda^k}{k!}
-$$
-
-Since \(k(k-1) / k! = 1 / (k-2)!\), we get:
-
-$$
-E[X(X-1)] = \sum*{k=2}^{\infty} \frac{e^{-\lambda}\lambda^k}{(k-2)!}
-= \lambda^2 \sum*{k=2}^{\infty} \frac{e^{-\lambda}\lambda^{k-2}}{(k-2)!}
-$$
-
-Let \(j = k-2\). Then:
-
-$$
-E[X(X-1)] = \lambda^2 \sum\_{j=0}^{\infty} \frac{e^{-\lambda}\lambda^j}{j!}
-= \lambda^2
-$$
-
-Now use:
-
-$$
-E(X^2) = E[X(X-1)] + E(X) = \lambda^2 + \lambda
-$$
-
-So:
-
-$$
-\text{Var}(X) = E(X^2) - [E(X)]^2
-= (\lambda^2 + \lambda) - \lambda^2
-= \lambda
-$$
-
-</details>
+For the full derivation, see [Poisson mean and variance derivation](./src/discrete-distributions-poisson-derivation.md).
 
 **Tip:**
 
@@ -292,12 +189,12 @@ plt.show()
 
 ### Poisson as Limit of Binomial
 
-When n is large and p is small (rare events), Binomial(n, p) ≈ Poisson(λ = np).
+When $n$ is large and $p$ is small (rare events), $Binomial(n, p) ≈ Poisson(λ = np)$.
 
 | Condition                                            | Use      |
 | ---------------------------------------------------- | -------- |
-| n is moderate, p is known                            | Binomial |
-| n is very large, p is very small, λ = np is moderate | Poisson  |
+| $n$ is moderate, $p$ is known                            | Binomial |
+| $n$ is very large, $p$ is very small, $λ = np$ is moderate | Poisson  |
 
 ## Geometric Distribution
 
