@@ -22,14 +22,15 @@ A **random variable** is a variable whose value is determined by the outcome of 
 
 The **Probability Mass Function (PMF)** gives the probability of each specific outcome for a discrete random variable.
 
-\[
+$$
 P(X = x)
-\]
+$$
 
 **Properties:**
 
 - Each probability is between 0 and 1
-- All probabilities sum to exactly 1: Σ P(X = x) = 1
+- All probabilities sum to exactly 1
+  - $ΣP(X = x) = 1$\)$
 
 ```python
 import numpy as np
@@ -64,9 +65,9 @@ plt.show()
 
 For continuous variables, probability at any exact point is technically 0. Instead, we use the **Probability Density Function (PDF)** — the probability is the **area under the curve** over an interval.
 
-\[
+$$
 P(a \leq X \leq b) = \int_a^b f(x)\, dx
-\]
+$$
 
 ```python
 import numpy as np
@@ -96,9 +97,9 @@ print(f"P(-1 ≤ X ≤ 1) = {prob:.4f}")  # ≈ 0.6827
 
 The **CDF** gives the probability that X is **less than or equal to** some value x.
 
-\[
+$$
 F(x) = P(X \leq x)
-\]
+$$
 
 - Works for **both** discrete and continuous variables
 - Always increases from 0 to 1
@@ -128,7 +129,7 @@ print(f"P(X ≤ 2) for Binom(3,0.5) = {binom.cdf(2, n=3, p=0.5):.4f}")  # 0.875
 
 ## Expected Value
 
-The **expected value** \(E(X)\) is the long-run average of a random variable — the "center of gravity" of its distribution.
+The **expected value** $E(X)$ is the long-run average of a random variable — the "center of gravity" of its distribution.
 
 **Discrete:**
 
@@ -159,23 +160,23 @@ print(f"E(X) = {dist.mean():.1f}")  # 5.0
 
 **Key properties of Expected Value:**
 
-| Property                  | Formula                    | Example                                  |
-| ------------------------- | -------------------------- | ---------------------------------------- |
-| **Linearity**             | \(E(aX + b) = a·E(X) + b\) | If E(X)=3, then E(2X+1) = 7              |
-| **Sum of variables**      | \(E(X + Y) = E(X) + E(Y)\) | Always holds, even if X, Y are dependent |
-| **Product (independent)** | \(E(XY) = E(X)·E(Y)\)      | Only when X and Y are independent        |
+| Property                  | Formula                  | Example                                  |
+| ------------------------- | ------------------------ | ---------------------------------------- |
+| **Linearity**             | $E(aX + b) = a·E(X) + b$ | If E(X)=3, then E(2X+1) = 7              |
+| **Sum of variables**      | $E(X + Y) = E(X) + E(Y)$ | Always holds, even if X, Y are dependent |
+| **Product (independent)** | $E(XY) = E(X)·E(Y)$      | Only when X and Y are independent        |
 
 ## Variance and Standard Deviation of a Distribution
 
 **Variance** of a random variable measures how spread out its distribution is around the mean.
 
-\[
+$$
 \text{Var}(X) = E[(X - \mu)^2] = E(X^2) - [E(X)]^2
-\]
+$$
 
-\[
+$$
 \text{SD}(X) = \sqrt{\text{Var}(X)}
-\]
+$$
 
 ```python
 # Manual calculation
@@ -192,17 +193,17 @@ print(f"SD(X)  = {SD_X:.3f}")
 
 **Key properties of Variance:**
 
-| Property              | Formula                          | Note                                    |
-| --------------------- | -------------------------------- | --------------------------------------- |
-| **Scale**             | \(Var(aX) = a²·Var(X)\)          | Variance scales by the square           |
-| **Shift**             | \(Var(X + b) = Var(X)\)          | Adding a constant doesn't change spread |
-| **Sum (independent)** | \(Var(X + Y) = Var(X) + Var(Y)\) | Only when X, Y are independent          |
+| Property              | Formula                        | Note                                    |
+| --------------------- | ------------------------------ | --------------------------------------- |
+| **Scale**             | $Var(aX) = a²·Var(X)$          | Variance scales by the square           |
+| **Shift**             | $Var(X + b) = Var(X)$          | Adding a constant doesn't change spread |
+| **Sum (independent)** | $Var(X + Y) = Var(X) + Var(Y)$ | Only when X, Y are independent          |
 
 ## Percentiles and the Inverse CDF (Quantile Function)
 
-The **inverse CDF** (quantile function) answers the reverse question: given a probability p, what value x satisfies \(P(X ≤ x) = p\) ?
+The **inverse CDF** (quantile function) answers the reverse question: given a probability p, what value x satisfies $P(X ≤ x) = p$ ?
 
-- In other words, it finds the cutoff value \(x\) such that a proportion \(p\) of the distribution lies to its left.
+- In other words, it finds the cutoff value $x$ such that a proportion $p$ of the distribution lies to its left.
 
 ```python
 from scipy.stats import norm
