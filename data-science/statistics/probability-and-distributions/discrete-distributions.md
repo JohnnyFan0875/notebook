@@ -191,9 +191,9 @@ plt.show()
 
 When $n$ is large and $p$ is small (rare events), $Binomial(n, p) ≈ Poisson(λ = np)$.
 
-| Condition                                            | Use      |
-| ---------------------------------------------------- | -------- |
-| $n$ is moderate, $p$ is known                            | Binomial |
+| Condition                                                  | Use      |
+| ---------------------------------------------------------- | -------- |
+| $n$ is moderate, $p$ is known                              | Binomial |
 | $n$ is very large, $p$ is very small, $λ = np$ is moderate | Poisson  |
 
 ## Geometric Distribution
@@ -203,9 +203,12 @@ When $n$ is large and $p$ is small (rare events), $Binomial(n, p) ≈ Poisson(λ
 - Counting the **number of trials until the first success**
 - Each trial is independent with success probability **p**
 
-Tip: Examples: Number of cold calls until first sale; number of product tests until first failure; number of attempts until a machine produces a good item.
+**Examples:**
 
-### Formula (number of trials until first success)
+- Number of product tests until first failure
+- Number of attempts until a machine produces a good item.
+
+### Formula
 
 $$
 P(X = k) = (1-p)^{k-1} \cdot p, \quad k = 1, 2, 3, \ldots
@@ -215,7 +218,9 @@ $$
 E(X) = \frac{1}{p} \qquad \text{Var}(X) = \frac{1-p}{p^2}
 $$
 
-Tip: Intuition: If the probability of success is 20%, it takes 1/0.2 = 5 attempts on average to succeed.
+For the full derivation, see [Geometric mean and variance derivation](./src/discrete-distributions-geometric-derivation.md).
+
+### Python Example
 
 ```python
 from scipy.stats import geom
@@ -238,6 +243,8 @@ plt.title(f'Geometric Distribution (p={p})')
 plt.show()
 ```
 
+![Geometric Distribution Figure](./src/discrete-distributions-geometric.png)
+
 ### Memoryless Property
 
 The Geometric distribution has a unique property: **past failures don't change the probability of future success**.
@@ -246,23 +253,23 @@ $$
 P(X > m + n \mid X > m) = P(X > n)
 $$
 
-Tip: If you've already failed 10 times, the probability of success on the next attempt is still p — the distribution "doesn't remember" past outcomes. This is analogous to the Exponential distribution for continuous data.
-
 ### Geometric vs. Negative Binomial
 
-The Geometric distribution is the special case "wait until the first success". If you generalize that to "wait until the r-th success", you get the **Negative Binomial** family.
-
-This is useful conceptually because many count models are really different versions of a waiting-time story.
+- wait until the **first** success: Geometric distribution
+- wait until the **r-th** success: Negative Binomial
 
 ## Hypergeometric Distribution
 
 ### When to Use
 
 - Sampling **without replacement** from a finite population
+  - Binomial assumes sampling with replacement (or infinite population)
 - Population contains two types: "successes" (K) and "failures" (N−K)
 - You draw n items and count how many are successes
 
-Tip: Examples: Drawing 5 cards from a deck and counting aces; inspecting 10 items from a batch of 100 (of which 15 are defective); selecting 3 people from a team of 8 (of which 3 are senior). vs Binomial: Binomial assumes sampling with replacement (or infinite population). Hypergeometric is for sampling without replacement from a finite population.
+**Examples:**
+
+- Drawing 5 cards from a deck and counting aces
 
 ### Formula
 
@@ -270,36 +277,29 @@ $$
 P(X = k) = \frac{\binom{K}{k}\binom{N-K}{n-k}}{\binom{N}{n}}
 $$
 
-| Parameter | Meaning                       |
-| --------- | ----------------------------- |
-| N         | Total population size         |
-| K         | Total successes in population |
-| n         | Sample size drawn             |
-| k         | Observed successes in sample  |
+- `N`: Total population size
+- `K`: Total successes in population
+- `n`: Sample size drawn
+- `k`: Observed successes in sample
 
 $$
 E(X) = \frac{nK}{N} \qquad \text{Var}(X) = n \cdot \frac{K}{N} \cdot \frac{N-K}{N} \cdot \frac{N-n}{N-1}
 $$
 
-Tip: The extra term $\frac{N-n}{N-1}$ is the finite population correction factor — as the sample approaches the full population, variance approaches 0 (if you sample everyone, there's no randomness left).
+Note:
 
-## A Comparison That Often Causes Confusion
+- The extra term $\frac{N-n}{N-1}$ is the finite population correction factor
+- As the sample approaches the full population, variance approaches 0
 
 ### Binomial vs. Hypergeometric
 
-These two are easy to mix up because both count "number of successes".
-
-| Feature             | Binomial                                           | Hypergeometric                             |
-| ------------------- | -------------------------------------------------- | ------------------------------------------ |
-| Sampling scheme     | With replacement / effectively infinite population | Without replacement from finite population |
-| Trial independence  | Yes                                                | No                                         |
-| Success probability | Constant across draws                              | Changes after each draw                    |
-
-Tip: If drawing one success changes the probability of the next success, you are no longer in a Binomial setup.
+| Feature             | Binomial                                               | Hypergeometric                                 |
+| ------------------- | ------------------------------------------------------ | ---------------------------------------------- |
+| Sampling scheme     | **With** replacement / effectively infinite population | **Without** replacement from finite population |
+| Trial independence  | Yes                                                    | No                                             |
+| Success probability | Constant across draws                                  | Changes after each draw                        |
 
 ## Simulation as a Sanity Check
-
-When unsure whether your intuition is right, simulate the process directly.
 
 ```python
 import numpy as np
@@ -324,23 +324,23 @@ N = 100   # total population
 K = 15    # defective items in population
 n = 10    # sample size
 
-print(f"Mean:     {hypergeom.mean(N, K, n):.2f}")   # 1.5
-print(f"P(X = 0)  = {hypergeom.pmf(0, N, K, n):.4f}")  # No defectives in sample
-print(f"P(X ≤ 2)  = {hypergeom.cdf(2, N, K, n):.4f}")  # At most 2 defectives
-print(f"P(X ≥ 3)  = {1 - hypergeom.cdf(2, N, K, n):.4f}")
+print(f"Mean:      {hypergeom.mean(N, K, n):.2f}")   # 1.5
+print(f"P(X = 0) = {hypergeom.pmf(0, N, K, n):.4f}")  # No defectives in sample
+print(f"P(X ≤ 2) = {hypergeom.cdf(2, N, K, n):.4f}")  # At most 2 defectives
+print(f"P(X ≥ 3) = {1 - hypergeom.cdf(2, N, K, n):.4f}")
 ```
 
 ## Comparing All Four Distributions
 
-|                    | **Binomial**                | **Poisson**              | **Geometric**            | **Hypergeometric**  |
-| ------------------ | --------------------------- | ------------------------ | ------------------------ | ------------------- |
-| **What X counts**  | Successes in n trials       | Events in fixed interval | Trials until 1st success | Successes in sample |
-| **Population**     | Infinite / with replacement | Events over time/space   | Infinite                 | Finite              |
-| **Replacement**    | With replacement            | N/A                      | With replacement         | Without replacement |
-| **Parameters**     | n, p                        | λ                        | p                        | N, K, n             |
-| **Mean**           | np                          | λ                        | 1/p                      | nK/N                |
-| **Variance**       | np(1−p)                     | λ                        | (1−p)/p²                 | (complex)           |
-| **Key Assumption** | Fixed n, constant p         | Constant rate λ          | Independent trials       | Finite population   |
+|                    | **Binomial**          | **Poisson**              | **Geometric**            | **Hypergeometric**  |
+| ------------------ | --------------------- | ------------------------ | ------------------------ | ------------------- |
+| **What X counts**  | Successes in n trials | Events in fixed interval | Trials until 1st success | Successes in sample |
+| **Population**     | Infinite              | Events over time/space   | Infinite                 | Finite              |
+| **Replacement**    | With replacement      | N/A                      | With replacement         | Without replacement |
+| **Parameters**     | n, p                  | λ                        | p                        | N, K, n             |
+| **Mean**           | np                    | λ                        | 1/p                      | nK/N                |
+| **Variance**       | np(1−p)               | λ                        | (1−p)/p²                 | (complex)           |
+| **Key Assumption** | Fixed n, constant p   | Constant rate λ          | Independent trials       | Finite population   |
 
 ## Key Takeaways
 
