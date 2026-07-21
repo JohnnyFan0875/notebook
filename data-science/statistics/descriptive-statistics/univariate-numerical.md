@@ -250,7 +250,8 @@ print(f"SE: {se:.4f}  ← precision of the mean estimate")
 
 **Why SE connects to CLT, CI, and hypothesis testing:**
 
-- **CLT** tells us sample means are approximately normally distributed with spread = SE
+- **Central Limit Theorem (CLT)** tells us sample means are approximately normally distributed with spread = SE
+  - See [Central Limit Theorem](../probability-and-distributions/sampling-distributions.md#central-limit-theorem-clt)
 - **Confidence interval (CI)**:
   - $\text{CI} = \bar{x} \pm t_{crit} \times SE$
   - smaller SE → narrower (more precise) interval
@@ -298,13 +299,13 @@ print(f"Q1: {Q1:.3f},  Q3: {Q3:.3f},  IQR: {IQR:.3f}")
 
 **Outlier Detection**
 
-\[
+$$
 \text{Lower fence} = Q_1 - 1.5 \times IQR
-\]
+$$
 
-\[
+$$
 \text{Upper fence} = Q_3 + 1.5 \times IQR
-\]
+$$
 
 Data points outside these fences are flagged as potential **outliers** (this is what boxplot whiskers represent).
 

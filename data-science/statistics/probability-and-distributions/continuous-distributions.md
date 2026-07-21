@@ -220,6 +220,8 @@ cv = chi2.ppf(0.95, df)
 print(f"χ² critical value (df={df}, α=0.05) = {cv:.4f}")
 ```
 
+![Chi-square Distribution](./src/continuous-distributions-chi-square.png)
+
 ## F-Distribution
 
 The F-distribution is the ratio of two independent Chi-square variables divided by their respective degrees of freedom.
@@ -238,11 +240,11 @@ $$
 
 ### When to Use
 
-| Application                 | Details                                                                                      |
-| --------------------------- | -------------------------------------------------------------------------------------------- |
-| **Comparing two variances** | Is σ₁² = σ₂²? (F-test for equality of variances)                                             |
-| **ANOVA**                   | Are the means of multiple groups equal? F = variance between groups / variance within groups |
-| **Regression F-test**       | Is the overall regression model significant?                                                 |
+| Application                 | Details                                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Comparing two variances** | Is σ₁² = σ₂²? (F-test for equality of variances)                                                |
+| **ANOVA**                   | Are the means of multiple groups equal?<br>F = variance between groups / variance within groups |
+| **Regression F-test**       | Is the overall regression model significant?                                                    |
 
 ```python
 from scipy.stats import f
@@ -267,11 +269,16 @@ cv = f.ppf(0.95, dfn=5, dfd=20)
 print(f"F critical value (df=5,20, α=0.05) = {cv:.4f}")
 ```
 
+![F-Distribution](./src/continuous-distributions-f.png)
+
 ## Exponential Distribution
 
 The Exponential distribution models the **time between independent events** — the continuous counterpart of the Poisson distribution.
 
-Tip: If Poisson counts events per unit time, Exponential models the waiting time until the next event. Poisson counts events per unit time, and Exponential models the waiting time between two events.
+**Note:**
+
+- Poisson: count events per unit time
+- Exponential: wait time until the next event (wait time between two events)
 
 ### Parameter: Rate (λ)
 
@@ -310,10 +317,12 @@ plt.ylabel('Density')
 plt.legend()
 plt.show()
 
-print(f"Mean wait time:      {expon.mean(scale=scale):.2f}")
-print(f"P(wait ≤ 0.5)       = {expon.cdf(0.5, scale=scale):.4f}")
-print(f"P(wait > 1.0)       = {1 - expon.cdf(1.0, scale=scale):.4f}")
+print(f"Mean wait time:  {expon.mean(scale=scale):.2f}")
+print(f"P(wait ≤ 0.5)  = {expon.cdf(0.5, scale=scale):.4f}")
+print(f"P(wait > 1.0)  = {1 - expon.cdf(1.0, scale=scale):.4f}")
 ```
+
+![Exponential Distribution](./src/continuous-distributions-exponential.png)
 
 ### Memoryless Property
 
@@ -323,7 +332,9 @@ $$
 P(X > s + t \mid X > s) = P(X > t)
 $$
 
-Tip: If a lightbulb has been working for 1,000 hours, the probability of it lasting another 500 hours is the same as a brand-new bulb lasting 500 hours. Past survival time gives no information about future lifetime.
+**Example:**
+
+- If a lightbulb has been working for 1,000 hours, the probability of it lasting another 500 hours is the same as a brand-new bulb lasting 500 hours.
 
 ## Uniform Distribution
 
@@ -339,13 +350,30 @@ $$
 
 ```python
 from scipy.stats import uniform
+import matplotlib.pyplot as plt
+import numpy as np
 
 a, b = 0, 10
 scale = b - a
 
 print(f"Mean:          {uniform.mean(loc=a, scale=scale):.1f}")   # 5.0
-print(f"P(3 ≤ X ≤ 7)  = {uniform.cdf(7, a, scale) - uniform.cdf(3, a, scale):.2f}")  # 0.4
+print(f"P(3 ≤ X ≤ 7) = {uniform.cdf(7, a, scale) - uniform.cdf(3, a, scale):.2f}")  # 0.4
+
+x = np.linspace(a - 2, b + 2, 300)
+pdf = uniform.pdf(x, loc=a, scale=scale)
+
+plt.plot(x, pdf, color='steelblue', linewidth=2)
+plt.fill_between(x, pdf, where=(x >= 3) & (x <= 7), alpha=0.3, color='steelblue',
+                 label=f'P(3 ≤ X ≤ 7) = {uniform.cdf(7, a, scale) - uniform.cdf(3, a, scale):.2f}')
+plt.title(f'Uniform Distribution (a={a}, b={b})')
+plt.xlabel('x')
+plt.ylabel('Density')
+plt.legend()
+plt.ylim(0, 0.14)
+plt.show()
 ```
+
+![Uniform Distribution](./src/continuous-distributions-uniform.png)
 
 **Use cases:**
 
@@ -368,24 +396,12 @@ print(f"P(3 ≤ X ≤ 7)  = {uniform.cdf(7, a, scale) - uniform.cdf(3, a, scale)
 ### Family Relationships
 
 ```
-Normal(0,1) ──squared──▶  Chi-square(1)
-                              │
-                         sum k of them
-                              │
-                              ▼
-                         Chi-square(k)
-                              │
-                    ratio of two chi-squares
-                              │
-                              ▼
-                         F(df₁, df₂)
+Normal(0,1) ──[squared]──▶  Chi-square(1)  ──[sum k of them]──▶  Chi-square(k)  ──[ratio of two chi-squares]──▶  F(df₁, df₂)
 
-Normal(μ,σ²) ─ small n, unknown σ ─▶  t-distribution
+Normal(μ,σ²) ─[small n, unknown σ]─▶  t-distribution
 
-Poisson(λ) ─ time between events ─▶  Exponential(λ)
+Poisson(λ) ─[time between events]─▶  Exponential(λ)
 ```
-
-Tip: These relationships matter in practice: when you run a t-test, it uses the t-distribution. When you run ANOVA, it uses the F-distribution. When you run a Chi-square test, it uses the χ² distribution. Understanding where these distributions come from makes the tests much more intuitive.
 
 ## Key Takeaways
 
