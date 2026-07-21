@@ -2,8 +2,6 @@
 
 Monte Carlo simulation uses **repeated random sampling** to approximate quantities that are hard to solve exactly. In statistics, it is one of the most practical ways to turn probability models into numerical answers.
 
-Key point: Monte Carlo does not replace probability theory. It complements it. The formula gives the target; simulation gives an empirical approximation and often reveals whether your intuition is off.
-
 ## When It Helps
 
 | Situation                          | Why Monte Carlo is useful                             |
@@ -34,22 +32,19 @@ print(f"Monte Carlo estimate: {success.mean():.4f}")
 print(f"Exact answer:         {1 - (5/6)**4:.4f}")
 ```
 
-Tip: Monte Carlo error shrinks roughly at the rate of `1 / sqrt(n_sim)`. To cut simulation noise in half, you usually need about 4x as many runs.
+**Note:**
+
+- Monte Carlo error shrinks roughly at the rate of `1 / sqrt(n_sim)`.
+- To cut simulation noise in half, you usually need about `4x` as many runs.
 
 ## Monte Carlo vs. Bootstrap
-
-These ideas are related, but they answer different questions.
 
 | Method                     | What gets resampled?                         | Typical goal                              |
 | -------------------------- | -------------------------------------------- | ----------------------------------------- |
 | **Monte Carlo simulation** | Data generated from a probability model      | Estimate probabilities, outcomes, or risk |
 | **Bootstrap**              | The observed sample itself, with replacement | Estimate uncertainty of a statistic       |
 
-Bootstrap is best thought of as a **special resampling-based application** of simulation.
-
-## Bootstrap Example with a Built-in Dataset
-
-The example below uses `seaborn`'s built-in `tips` dataset to estimate the uncertainty of the mean total bill.
+## Bootstrap Example
 
 ```python
 import numpy as np
@@ -73,6 +68,11 @@ print(f"Bootstrap 95% CI: ({ci_low:.2f}, {ci_high:.2f})")
 ![Bootstrap distribution of simulated means](monte-carlo-bootstrap-distribution.png)
 
 The histogram above highlights a useful mental model: once you simulate many resamples, the single sample mean turns into a **distribution of plausible means**.
+
+- Blue bars: bootstrap distribution
+- Blue curve: density estimate
+- Green line: observed mean from the original sample.
+- Red lines: lower and upper bounds of the bootstrap 95% confidence interval
 
 ## A Risk-Oriented Example
 
