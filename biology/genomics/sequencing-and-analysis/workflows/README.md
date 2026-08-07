@@ -7,6 +7,7 @@ Practical sequencing workflow notes and validation-oriented pipeline examples.
 - `bioconductor-introduction.md`
 - `download-exon-from-fasta.md`
 - `limma-differential-expression.md`
+- `rna-seq/`
 - `rnaseq-differential-expression-with-deseq2.md`
 - `ngs-verification-validation.md`
 - `pmbio.md`

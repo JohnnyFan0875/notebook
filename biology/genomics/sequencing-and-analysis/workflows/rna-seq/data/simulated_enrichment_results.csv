@@ -1,0 +1,9 @@
+term,gene_ratio,fdr,count
+response to steroid hormone,0.18,0.0008,34
+extracellular matrix organization,0.15,0.002,28
+immune effector process,0.13,0.006,26
+cell cycle checkpoint,0.11,0.012,22
+ribosome biogenesis,0.1,0.019,18
+cytokine signaling,0.09,0.026,16
+oxidative phosphorylation,0.08,0.034,15
+chromatin organization,0.07,0.045,12

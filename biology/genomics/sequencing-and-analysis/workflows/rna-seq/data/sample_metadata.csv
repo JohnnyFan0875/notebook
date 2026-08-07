@@ -1,0 +1,7 @@
+sample_id,group,batch,sex,age,fastq1,fastq2
+ctrl_1,control,batch1,F,41,raw/ctrl_1_R1.fastq.gz,raw/ctrl_1_R2.fastq.gz
+ctrl_2,control,batch2,M,38,raw/ctrl_2_R1.fastq.gz,raw/ctrl_2_R2.fastq.gz
+ctrl_3,control,batch1,F,45,raw/ctrl_3_R1.fastq.gz,raw/ctrl_3_R2.fastq.gz
+treat_1,treated,batch1,M,42,raw/treat_1_R1.fastq.gz,raw/treat_1_R2.fastq.gz
+treat_2,treated,batch2,F,39,raw/treat_2_R1.fastq.gz,raw/treat_2_R2.fastq.gz
+treat_3,treated,batch1,M,44,raw/treat_3_R1.fastq.gz,raw/treat_3_R2.fastq.gz

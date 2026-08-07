@@ -2,67 +2,57 @@
 
 Before testing any hypothesis, you need to understand **where your data comes from** and **what it can tell you about the broader population**. This section covers how samples relate to populations, and how we use sample statistics to estimate unknown population parameters.
 
-Key point: Why this step is the most important: the whole premise of inferential statistics is that your sample can reasonably represent the target population. If the sampling method is biased, everything that follows will be distorted.
+> Key point:<br>Sample can reasonably represent the target population.
 
 ## Population vs. Sample
 
-| Term               | Definition                                                       | Example                                         |
-| ------------------ | ---------------------------------------------------------------- | ----------------------------------------------- |
-| **Population**     | The entire group you want to draw conclusions about              | All adults in Taiwan                            |
-| **Sample**         | A subset of the population actually observed                     | 1,000 adults surveyed in Taipei                 |
-| **Parameter**      | A numerical summary of the population (usually unknown)          | True population mean income μ                   |
+| Term               | Definition                                                       | Example                                        |
+| ------------------ | ---------------------------------------------------------------- | ---------------------------------------------- |
+| **Population**     | The entire group you want to draw conclusions about              | All adults in Taiwan                           |
+| **Sample**         | A subset of the population actually observed                     | 1,000 adults surveyed in Taipei                |
+| **Parameter**      | A numerical summary of the population (usually unknown)          | True population mean income μ                  |
 | **Statistic**      | A numerical summary computed from the sample                     | Sample mean income x̄                           |
 | **Sampling error** | The difference between a sample statistic and the true parameter | x̄ ≠ μ simply because we didn't survey everyone |
 
-Tip: We use Roman letters (x̄, s, p̂) for sample statistics and Greek letters (μ, σ, π) for population parameters. This distinction matters for formulas and interpretation.
+**Tip:**
+
+- Roman letters (x̄, s, p̂) for sample statistics
+- Greek letters (μ, σ, π) for population parameters.
 
 ## Sampling Methods
 
-| Method                     | Description                                                        | Pros / Cons                                                           |
-| -------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| **Simple random sampling** | Every individual has an equal probability of being selected        | ✅ Unbiased; ❌ Expensive if population is large/dispersed              |
-| **Stratified sampling**    | Divide into subgroups (strata), then randomly sample within each   | ✅ Ensures representation of subgroups; ❌ Requires strata info         |
-| **Cluster sampling**       | Randomly select whole clusters (e.g., schools), then sample within | ✅ Cheaper for geographically spread populations; ❌ Higher variance    |
-| **Systematic sampling**    | Select every k-th individual from a list                           | ✅ Easy to implement; ❌ Periodic pattern can introduce bias            |
-| **Convenience sampling**   | Select whoever is easily accessible                                | ✅ Fast and cheap; ❌ High risk of selection bias — avoid for inference |
+| Method                     | Description                                                          | Pros                                          | Cons                                              |
+| -------------------------- | -------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
+| **Simple random sampling** | Every individual has an equal probability of being selected          | Unbiased                                      | Expensive if population is large/dispersed        |
+| **Stratified sampling**    | Divide into subgroups (**strata**), then randomly sample within each | Ensures representation of subgroups           | Requires strata info                              |
+| **Cluster sampling**       | Randomly select whole clusters (e.g., schools), then sample within   | Cheaper for geographically spread populations | Higher variance                                   |
+| **Systematic sampling**    | Select every k-th individual from a list                             | Easy to implement                             | Periodic pattern can introduce bias               |
+| **Convenience sampling**   | Select whoever is easily accessible                                  | Fast and cheap                                | High risk of selection bias — avoid for inference |
 
-Warning: Bias vs. Variance tradeoff in sampling: Random methods minimize bias (systematic error) but may have high variance (noise). Non-random methods are fast but introduce bias that no amount of analysis can fix.
+**Bias vs. Variance tradeoff in sampling**
+
+- **Bias** (systematic error): the sampling process consistently pushes estimates away from the true population value.
+- **Variance** (random fluctuation): estimates change from sample to sample because different individuals were selected.
+- Random sampling generally reduces selection bias, but small random samples may have high sampling variance.
+- Non-random sampling is often faster and easier, but may introduce systematic selection bias.
 
 ### Systematic Sampling
 
 Systematic sampling means choosing every `k`-th observation after a starting point.
 
+- Operationally convenient, but it has one major caveat: if the row order contains a hidden pattern, systematic sampling can become biased.
+- Systematic sampling is acceptable when row order is already **random-like**. Otherwise, **shuffle** first, then apply systematic selection
+
 Example:
 
-- you have 10,000 rows
-- you want roughly 1,000 observations
-- set `k = 10` and take every 10th row
-
-This is operationally convenient, but it has one major caveat: if the row order contains a hidden pattern, systematic sampling can become biased.
-
-For example:
-
-- customer records sorted by region
-- manufacturing records sorted by machine cycle
-- web logs sorted by repeated periodic events
-
-If the periodicity in the data lines up with `k`, you may over- or under-sample certain patterns.
-
-Practical rule:
-
-- systematic sampling is acceptable when row order is already random-like
-- otherwise shuffle first, then apply systematic selection
-
-Once you shuffle rows first, systematic sampling behaves much more like simple random sampling.
+With 10,000 rows, setting k = 10 and selecting every 10th row will produce approximately 1,000 observations.
 
 ### Stratified vs. Cluster Sampling
 
-These two are easy to confuse because both start with groups, but their goals are different.
-
-| Method | What you do | Main goal |
-| ------ | ----------- | --------- |
-| **Stratified sampling** | sample from every subgroup | preserve subgroup representation |
-| **Cluster sampling** | sample some subgroups, then observe within them | reduce collection cost |
+| Method                  | What you do                                     | Main goal                        |
+| ----------------------- | ----------------------------------------------- | -------------------------------- |
+| **Stratified sampling** | sample from every subgroup                      | preserve subgroup representation |
+| **Cluster sampling**    | sample some subgroups, then observe within them | reduce collection cost           |
 
 Use stratified sampling when:
 
@@ -107,10 +97,10 @@ A **point estimate** is a single-value guess for a population parameter, calcula
 
 | Population Parameter  | Symbol | Point Estimate    | Symbol |
 | --------------------- | ------ | ----------------- | ------ |
-| Population mean       | μ      | Sample mean       | x̄     |
+| Population mean       | μ      | Sample mean       | x̄      |
 | Population variance   | σ²     | Sample variance   | s²     |
 | Population SD         | σ      | Sample SD         | s      |
-| Population proportion | π      | Sample proportion | p̂     |
+| Population proportion | π      | Sample proportion | p̂      |
 
 **Key limitation**: A point estimate is almost certainly not exactly equal to the true parameter. To communicate this uncertainty, we use **confidence intervals**.
 
@@ -151,8 +141,8 @@ CLT Statement: If you draw many random samples of size n from _any_ population w
 
 **What CLT enables:**
 
-* We can use z-tests and t-tests even when the original population isn't normal
-* The Normal distribution becomes our tool for computing probabilities about sample means
+- We can use z-tests and t-tests even when the original population isn't normal
+- The Normal distribution becomes our tool for computing probabilities about sample means
 
 ```python
 import numpy as np
