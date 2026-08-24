@@ -4,5 +4,6 @@ Population allele frequency resources used during variant interpretation.
 
 ## Topics
 
-- `gnomad.md`
-- `taiwangenomes.md`
+- [1000 Genomes Project](1000-genomes.md)
+- [gnomAD](gnomad.md)
+- [TaiwanGenomes](taiwangenomes.md)
