@@ -41,7 +41,7 @@
 | 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
 | [NumPy](numpy/README.md) | array、broadcasting、向量化、線性代數 | shape 與向量化怎麼想？ |
-| [pandas](pandas/README.md) | 選取、groupby、reshape、merge、缺值 | 表格資料怎麼清理與彙總？ |
+| [pandas](pandas/README.md) | 選取、groupby、reshape、merge、缺值、Parquet / HDF5 | 表格資料怎麼清理與彙總？ |
 | [匯入資料](importing-data.md) | CSV、Excel、JSON、Parquet、HDF5、生資格式、格式互轉 | 這個檔案該用什麼讀？讀完要檢查什麼？ |
 | [API 與 HTTP](api-http.md) | requests、狀態碼、重試、分頁、認證 | 如何穩定地從 Ensembl / NCBI 抓資料？ |
 | [scipy.stats 速查](scipy-stats.md) | `default_rng`、機率分配、檢定、R 對照 | 這個統計方法在 Python 裡怎麼寫？ |

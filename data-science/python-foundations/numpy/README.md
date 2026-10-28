@@ -1,32 +1,21 @@
-# NumPy Foundations
+[Data Science](../../README.md) › [Python Foundations](../README.md) › NumPy
 
-NumPy 是 Python 科學計算的基礎層。只要你在做向量化運算、矩陣處理、抽樣模擬，或想理解 pandas / scikit-learn 背後怎麼吃資料，NumPy 幾乎都在場。
+# NumPy
 
-## 建議閱讀順序
+NumPy 的 `ndarray` 是 Python 數值計算的共同底層：pandas、scikit-learn、SciPy、PyTorch 都吃它或模仿它的介面。多數錯誤來自 `shape` / `axis` / `dtype` 沒對齊，而不是公式寫錯。
 
-| 筆記 | 內容 |
+建議順序：array 基礎 → 向量化與 reshape → 隨機與統計 → 線性代數
+
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [Array 基礎](array-basics.md) | `shape` / `ndim` / `dtype`、建立 array、索引與切片、view vs copy | 這個 array 長什麼樣？切片後改值會不會改到原本的？ |
+| [向量化與 Reshape](vectorization-and-reshape.md) | element-wise 運算、broadcasting、布林遮罩、`reshape` / `transpose` / `concatenate` / `stack` / `split` | 怎麼不用迴圈一次算整批？維度對不上怎麼辦？ |
+| [隨機與統計](random-and-statistics.md) | `default_rng` 抽樣、描述統計、分位數、z-score、轉換 | 怎麼做可重現的模擬？array 的摘要統計怎麼算？ |
+| [線性代數](linear-algebra.md) | `@`、`solve`、`lstsq`、`inv`、`eig` / `eigh`、`svd` | 矩陣運算與解方程式怎麼寫才穩定？ |
+
+| 相關 | 連結 |
 | --- | --- |
-| [Array Basics](array-basics.md) | `ndim` / `shape` / `size` / `dtype`；`arange`、`linspace`、`zeros`、`eye`；1D / 2D slicing、負索引 |
-| [Vectorization and Reshape](vectorization-and-reshape.md) | element-wise 運算、broadcasting、`nditer`、boolean 運算；`reshape`、`transpose`、`concatenate` / `stack` / `split` |
-| [Random and Statistics](random-and-statistics.md) | `normal`、`randint`、`choice`、`seed`；mean / median / quantile、IQR、z-score、MAD、log / sqrt / Box-Cox |
-| [Linear Algebra](linear-algebra.md) | `dot`、`inner`、`cross`、`inv`、`eig`、`solve` |
-
-## 這一章要解決什麼
-
-- 什麼是 `shape`、`axis`、broadcasting，為什麼很多錯都出在這裡？
-- 何時該保留 NumPy array，何時該轉成 pandas DataFrame？
-- 哪些運算該向量化，哪些情境可以接受明確迴圈？
-- 如果後面要接機器學習、深度學習或統計模擬，哪些 NumPy 觀念是共用底層？
-
-## 使用方式
-
-- Each file contains examples with output and short explanations.
-- Use this section as both a learning path and a quick reference when working with arrays for data science, statistics, or linear algebra tasks.
-- For related conversions (e.g., array -> DataFrame), see [Data Type Transformation](../importing-data.md#格式互轉-data-type-transformation).
-
-## 先掌握的三件事
-
-1. `shape` 與 `axis` 的意義。
-2. slicing 與 broadcasting 如何改變運算結果。
-3. 何時該用向量化，而不是 Python `for` 迴圈。
-4. 高維 array 裡每個 axis 代表什麼，不要只把它當成「更多括號」。
+| 表格資料（有欄名、index） | [pandas](../pandas/README.md) |
+| 機率分配與檢定 | [scipy.stats 速查](../scipy-stats.md) |
+| 迴圈太慢、要編譯 | [Efficient Python](../performance-and-scaling/efficient-python.md)（Numba） |
+| 稠密 / 稀疏矩陣的實際應用 | [PCA](../../statistics/multivariate-analysis/pca.md) |

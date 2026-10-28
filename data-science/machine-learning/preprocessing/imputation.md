@@ -2,7 +2,7 @@
 
 # 補值 (Imputation)
 
-補值是用估計值填入缺失值。重點不是「把空格補滿」，而是補值方式**符合資料生成機制**、**不扭曲分布與關係**，且**只在訓練資料上 fit**。pandas 端的缺失偵測、缺失機制 (MCAR / MAR / MNAR) 與 `missingno` 視覺化見 [pandas: Handling Missing Data](../../python-foundations/pandas/missing-data.md)；缺失機制的判斷與 EDA 見 [Missing Data](../../data-manipulation-and-eda/missing-data.md)。
+補值是用估計值填入缺失值。重點不是「把空格補滿」，而是補值方式**符合資料生成機制**、**不扭曲分布與關係**，且**只在訓練資料上 fit**。pandas 端的缺失偵測與 `missingno` 視覺化見 [pandas: Handling Missing Data](../../python-foundations/pandas/missing-data.md)；缺失機制的判斷與 EDA 見 [Missing Data](../../data-manipulation-and-eda/missing-data.md)。
 
 ## 決策順序
 
@@ -86,7 +86,7 @@ df["no_email"] = df["email"].isna().astype(int)
 | 高缺失率欄位硬補平均 | 製造一大群相同值；改成缺失指標或刪欄位 |
 | 類別欄位用平均數 | 語意錯誤；用眾數或 `"unknown"` |
 | 偏態欄位用平均數 | 被極端值拉走；用中位數（如 `max_donation`） |
-| 把補值和插值 (interpolation) 混為一談 | 插值用於**有順序**的資料（時間序列、空間），利用前後點；見 [pandas Interpolation](../../python-foundations/pandas/missing-data.md#interpolation) |
+| 把補值和插值 (interpolation) 混為一談 | 插值用於**有順序**的資料（時間序列、空間），利用前後點；見 [pandas Interpolation](../../python-foundations/pandas/missing-data.md#6-插值-interpolation) |
 | 時間感知資料用未來資訊估補值 | 補值規則必須在未來的快照上也能重現，見 [Basetable](../foundations/basetable-and-time-aware-feature-engineering.md) |
 
 > **生資提醒**：蛋白質體 / 代謝體的缺失常是**低於偵測極限 (MNAR)**，補平均數會嚴重高估；常用最小值的一部分或從左截尾分配抽樣。單細胞 RNA-seq 的大量 0（dropout）多半不該當成缺失值補。

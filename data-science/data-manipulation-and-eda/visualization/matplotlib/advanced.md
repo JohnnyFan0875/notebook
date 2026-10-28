@@ -97,4 +97,4 @@ plt.show()
 - Use **dual axes** (`twinx`) for comparing variables with different scales.
 - **Annotations** enhance interpretability by highlighting points of interest.
 - Combine features (dual axes + annotations) for advanced storytelling.
-- 缺失值視覺化（`missingno`）見 [Pandas: Missing Data](../../../python-foundations/pandas/missing-data.md#graphical-analysis-with-missingno)。
+- 缺失值視覺化（`missingno`）見 [Pandas: Missing Data](../../../python-foundations/pandas/missing-data.md#3-missingno-視覺化)。

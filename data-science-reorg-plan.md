@@ -207,7 +207,7 @@
 每批 10–30 篇、一個子資料夾；每批完成跑連結檢查、commit 再做下一批。依「被引用越多越先做」排序：
 
 - [X] 批次 1：`python-foundations/`（不含 numpy / pandas）（補 pyproject + uv、`default_rng`、scipy.stats 對照）（已新增 `scipy-stats.md`；`python-packages.md` 改為 pyproject + uv；補回 phase 3 合併時被截斷的 `datetime.md` pandas 段）
-- [ ] 批次 2：`python-foundations/numpy/` + `pandas/`（view vs copy、dtype、Parquet / HDF5）
+- [X] 批次 2：`python-foundations/numpy/` + `pandas/`（view vs copy、dtype、Parquet / HDF5）（已新增 `pandas/memory-and-storage.md`；NumPy view vs copy、dtype 溢位；pandas 3 Copy-on-Write / `str` dtype；更新 `applymap`、`resample("M")`、`stack(dropna=)`、`np.random.seed`；補回被截斷的 `creating-data.md` / `modifying.md` 結尾）
 - [ ] 批次 3：`r-foundations/` 前半：資料結構、tidyverse、dplyr、tidyr、data.table、importing、datetime、missing（連 Bioconductor 筆記）
 - [ ] 批次 4：`r-foundations/` 後半：functional、OOP、效能、Rcpp、parallel、package、R Markdown、regex、text（補 renv、Quarto）
 - [ ] 批次 5：`data-manipulation-and-eda/`（含 visualization/）
