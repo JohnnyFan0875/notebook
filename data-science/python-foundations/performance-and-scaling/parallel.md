@@ -1,299 +1,179 @@
-# Python Parallel Computing: multiprocessing and Dask
+[Python Foundations](../README.md) › [效能與擴展](README.md) › 平行運算
 
-## Python Multiprocessing
+# 平行運算：multiprocessing 與 Dask (Parallel Computing)
 
-### Overview
+單核程式已經量測、向量化過（見 [Efficient Python](efficient-python.md)）仍然太慢或資料放不進記憶體時，才考慮平行化。先判斷工作是 **CPU-bound** 還是 **I/O-bound**，再選工具。
 
-- The **multiprocessing** module in Python allows you to create and manage separate processes, enabling true parallelism.
-- Useful for CPU-bound tasks (e.g., numerical computations, data processing) because it bypasses the Global Interpreter Lock (GIL).
-- Provides higher-level abstractions like `Pool` for parallel execution and low-level APIs like `Process` for manual control.
+## 選工具
 
-### Key Concepts
+| 情境 | 工具 | 原因 |
+| --- | --- | --- |
+| I/O-bound：下載、API 呼叫、讀很多小檔 | `ThreadPoolExecutor`、`asyncio` | 等待 I/O 時 GIL 會釋放，thread 就夠 |
+| CPU-bound 純 Python：同一函式套到很多輸入 | `ProcessPoolExecutor` / `multiprocessing.Pool`、`joblib` | 多個 process 各有自己的 GIL |
+| CPU-bound NumPy / pandas 運算 | 先確認 BLAS 是否已經多執行緒；Dask | NumPy 的矩陣運算常已用滿多核 |
+| 比記憶體大的 array / DataFrame | Dask、[Polars](polars.md) streaming | 分塊、延遲計算 |
+| 多個外部工具串成的流程 | Snakemake / Nextflow | 斷點續跑、HPC 排程，見 [工作流引擎](../../../computing/workflow-engines/README.md) |
+| 多台機器、TB 級資料 | Dask distributed、Spark | 見 [分散式處理](../../data-engineering/scalable-processing-and-out-of-core.md) |
 
-- **Process**: Independent execution unit with its own memory space.
-- **Pool**: A convenient way to parallelize a function across multiple inputs.
-- **Process class**: Allows you to manually spawn and control processes.
-- **Communication**: Can be achieved using `Queue`, `Pipe`, or shared memory objects.
+### GIL (Global Interpreter Lock)
 
-### Example 1: Parallel Square Computation with Pool
+CPython 同一時間只讓一個 thread 執行 Python bytecode，所以**純 Python 的 CPU 運算開 thread 不會變快**。例外：I/O 等待，以及 NumPy、pandas 等 C 擴充在計算時會釋放 GIL。Python 3.13 起有實驗性的 free-threaded 版本（`python3.13t`）可關閉 GIL，但套件支援仍在進行中。
+
+## `concurrent.futures`：首選的高階介面
+
+```python
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+import os
+
+def count_reads(path):                     # 必須定義在模組頂層，子 process 才能 import（pickle）
+    ...
+
+if __name__ == "__main__":                 # Windows / macOS 用 spawn 啟動，一定要有這個保護
+    files = sorted(Path("fastq").glob("*.fastq.gz"))
+    n = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count()))   # HPC 上用實際分配的核心數
+
+    with ProcessPoolExecutor(max_workers=n) as ex:
+        results = list(ex.map(count_reads, files, chunksize=4))       # 保持輸入順序
+
+    with ThreadPoolExecutor(max_workers=8) as ex:                     # I/O-bound：下載
+        futures = {ex.submit(download, url): url for url in urls}
+        for fut in as_completed(futures):                             # 誰先完成先處理
+            url = futures[fut]
+            try:
+                fut.result()
+            except Exception as e:
+                log.error("%s failed: %s", url, e)
+```
+
+`multiprocessing.Pool` 是較舊的等價介面：
 
 ```python
 import multiprocessing as mp
 
-# Function to compute square of a number
 def square(x):
     return x * x
 
 if __name__ == "__main__":
-    numbers = [1, 2, 3, 4, 5]
-
-    # Create a Pool with 4 worker processes
     with mp.Pool(processes=4) as pool:
-        results = pool.map(square, numbers)
+        pool.map(square, [1, 2, 3, 4, 5])          # [1, 4, 9, 16, 25]
+        pool.starmap(pow, [(2, 3), (3, 2)])        # 多個參數：[8, 9]
 
-    print("Input numbers:", numbers)
-    print("Squared results:", results)
+    p1 = mp.Process(target=print, args=("Hello",))   # 不同任務各開一個 process（較少用）
+    p1.start(); p1.join()
 ```
 
-**Output:**
+| | `Pool.map` / `Executor.map` | `Process` |
+| --- | --- | --- |
+| 用途 | 同一函式套到很多輸入 | 不同任務各自執行 |
+| 管理 | 自動分配與回收 | 手動 `start()` / `join()`、用 `Queue` 溝通 |
 
-```
-Input numbers: [1, 2, 3, 4, 5]
-Squared results: [1, 4, 9, 16, 25]
-```
-
-### Example 2: Launching Processes Manually with Process
+`joblib`（scikit-learn 內部使用）寫法更短，並對 NumPy 大陣列有記憶體映射優化：
 
 ```python
-from multiprocessing import Process
-
-def function1(v1):
-    print("Function1:", v1)
-
-def function2(v2):
-    print("Function2:", v2)
-
-if __name__ == "__main__":
-    v1, v2 = "Hello", "World"
-
-    p1 = Process(target=function1, args=(v1,))
-    p2 = Process(target=function2, args=(v2,))
-
-    p1.start()
-    p2.start()
-
-    p1.join()
-    p2.join()
+from joblib import Parallel, delayed
+Parallel(n_jobs=-1)(delayed(pow)(i, 2) for i in range(5))   # [0, 1, 4, 9, 16]；-1 = 所有核心
 ```
 
-**Output (order may vary):**
+### 常見陷阱
 
-```
-Function1: Hello
-Function2: World
-```
-
-### When to Use Pool vs Process
-
-- **Pool**: Best when you need to apply the _same function_ across many items (e.g., compute squares of a list of numbers, process many files). The workload is homogeneous and can be evenly distributed among worker processes.
-- **Process**: Best when you need to run _different functions or tasks_ in parallel (e.g., one process downloads data, another cleans it, another analyzes it). It gives you finer control but requires more manual management.
-
-### Notes & Best Practices
-
-- Always guard code with `if __name__ == "__main__":` when using multiprocessing in Python (especially on Windows and macOS).
-- For I/O-bound tasks, consider using `concurrent.futures.ThreadPoolExecutor` or `asyncio` instead.
-- Be mindful of overhead: starting processes has a cost, so multiprocessing shines with **large workloads**.
-- Use `Pool` for **batching the same function across many inputs**.
-- Use `Process` for **custom workflows** where each process runs a different function.
-
-> Use `multiprocessing` when you need to fully utilize multiple CPU cores for heavy computations.
-
-## Dask
-
-### Overview
-
-Dask 是 Python 生態中常見的平行與延遲執行工具，特別適合這兩種情境：
-
-- 單機有多核心，但原本的 NumPy / pandas 工作流跑太慢
-- 資料大到不想一次全部載入記憶體，想改成 partitioned、lazy 的執行模式
-
-它的核心想法不是「把所有 Python 程式自動變快」，而是：
-
-- 把工作拆成很多小任務
-- 組成 task graph
-- 交給 scheduler 用 threads 或 processes 執行
-- 在真正需要結果時才 `compute()`
-
-### Mental Model
-
-可以先把 Dask 想成 NumPy / pandas 的平行版本，但這個說法只對一半。
-
-更準確地說，Dask 提供兩層能力：
-
-1. 高階 collection API
-2. 底層 task scheduling
-
-高階 collection 常見有：
-
-- `dask.array`: 類似 NumPy array
-- `dask.dataframe`: 類似 pandas DataFrame
-- `dask.bag`: 適合非結構化或半結構化資料
-
-而這些物件的共同特性是：
-
-- 通常是 lazy evaluation
-- 底層由多個 partition 或 chunk 組成
-- 多數操作先建立任務，不會立刻算出結果
-
-### Why Dask Feels Different from NumPy
-
-NumPy 常見寫法是立刻建立完整陣列並直接計算：
+| 陷阱 | 說明 / 處理 |
+| --- | --- |
+| 少了 `if __name__ == "__main__"` | Windows / macOS 子 process 會重新執行整個腳本，無限產生 process |
+| 函式是 lambda 或定義在 notebook / 函式內 | 無法 pickle；放到 `.py` 模組頂層再 import。notebook 中可改用 `joblib` |
+| 任務太小 | 啟動 process 與傳輸資料的成本 > 計算本身；用 `chunksize` 或合併任務 |
+| 傳遞大型物件 | 每個 worker 都複製一份；改傳檔案路徑，讓 worker 自己讀 |
+| 超額訂閱 (oversubscription) | 8 個 process × 每個 NumPy 再開 8 個 BLAS thread = 64 個 thread 搶 8 核；設 `OMP_NUM_THREADS=1` 或用 `threadpoolctl` |
+| 每個 worker 亂數相同 | fork 時複製了同一個亂數狀態；用 `SeedSequence.spawn` 給每個任務獨立的種子 |
 
 ```python
 import numpy as np
 
-x = np.ones((4000, 6000))
-result = x.sum()
+def simulate(seed_seq):
+    rng = np.random.default_rng(seed_seq)          # 每個任務獨立、可重現的亂數串流
+    return rng.normal(size=1000).mean()
+
+seeds = np.random.SeedSequence(42).spawn(100)      # 從一個主種子衍生 100 個互不重疊的種子
+with ProcessPoolExecutor() as ex:
+    estimates = list(ex.map(simulate, seeds))      # 不論 worker 數、執行順序，結果都相同
 ```
 
-Dask array 則會把資料切成 chunks，並延後真正運算：
+## Dask
+
+Dask 把工作拆成很多小任務、組成任務圖 (task graph)，交給 scheduler 執行；呼叫 `.compute()` 前都只是**延遲 (lazy)** 的計畫。
+
+| collection | 類似 | 適用 |
+| --- | --- | --- |
+| `dask.array` | NumPy | 大型多維陣列（影像、模擬、表現矩陣） |
+| `dask.dataframe` | pandas | 比記憶體大的表格、很多 CSV / Parquet 檔 |
+| `dask.bag` | Python list | 半結構化資料（JSON 記錄、文字） |
+| `dask.delayed` | 一般函式 | 自訂的多步驟流程 |
 
 ```python
+import dask
 import dask.array as da
-
-x = da.ones((4000, 6000), chunks=(1000, 2000))
-result = x.sum()
-
-print(result)            # 還是 lazy object
-print(result.compute())  # 真正執行
-```
-
-重點差異是：
-
-- NumPy 預設 eager
-- Dask 預設 lazy
-- Dask 的 chunk 大小會直接影響平行度、排程成本與記憶體使用
-
-### Chunking
-
-`chunks=` 是理解 Dask array 的關鍵。
-
-```python
-x = da.ones((4000, 6000), chunks=(1000, 2000))
-```
-
-這代表一個大陣列會被切成很多較小區塊，Dask 再對每個區塊分別安排任務。
-
-chunk 太大時：
-
-- 平行度不夠
-- 單一任務記憶體壓力高
-
-chunk 太小時：
-
-- scheduler overhead 會變大
-- 任務太碎，反而不划算
-
-所以 Dask 效能通常不是只看「有沒有平行化」，而是也很看 chunk 設計是否合理。
-
-### Delayed Execution
-
-如果你的工作流不是 array / dataframe 風格，而是一連串自訂 Python 函數，可以用 `dask.delayed()`。
-
-```python
-import dask
-
-@dask.delayed
-def load_data(path):
-    return open(path).read()
-
-@dask.delayed
-def count_lines(text):
-    return len(text.splitlines())
-
-total = count_lines(load_data("example.txt"))
-result = total.compute()
-```
-
-這種模式適合：
-
-- 自訂 ETL pipeline
-- 多步驟資料處理
-- 想保留普通 Python 函數寫法，但又希望交給 Dask 排程
-
-### Dask Bag
-
-當資料不是整齊表格，而是：
-
-- 文字評論清單
-- JSON / dict list
-- 半結構化事件資料
-
-這時 `dask.bag` 比較合適。
-
-```python
 import dask.bag as db
+import dask.dataframe as dd
 
-reviews = [
-    "Really good service",
-    "Second time we've stayed here",
-    "Great older hotel"
-]
+# array：切成 chunks，延後運算
+x = da.ones((4000, 6000), chunks=(1000, 2000))     # 4 × 3 = 12 個區塊
+total = x.sum()                                    # 只是計畫
+total.compute()                                    # 24000000.0：真正執行
 
-bag = db.from_sequence(reviews, npartitions=2)
-lengths = bag.map(len)
+# dataframe：很多檔案當成一個表，API 與 pandas 幾乎相同
+df = dd.read_parquet("variants/*.parquet")         # 或 dd.read_csv("data/*.csv")
+af = df[df["qual"] > 30].groupby("chrom")["af"].mean()
+af.compute()                                       # 回傳 pandas Series
 
-print(lengths.compute())
+# bag：半結構化資料
+db.from_sequence(["Really good service", "Second time", "Great"], npartitions=2).map(len).compute()
+# [19, 11, 5]
+
+# delayed：自訂函式組成的流程
+@dask.delayed
+def load(path): ...
+@dask.delayed
+def qc(data): ...
+reports = [qc(load(p)) for p in paths]
+dask.compute(*reports)                             # 所有獨立任務平行執行
 ```
 
-可以把 bag 想成「可平行處理的 sequence」，特別適合 map / filter / fold 類型操作。
+### chunk 大小與 scheduler
 
-### Scheduler Choice
+| chunk 太大 | chunk 太小 |
+| --- | --- |
+| 平行度不足、單一任務記憶體壓力高 | 排程成本 > 計算，任務太碎 |
 
-Dask 的其中一個重要選項是 scheduler。
+經驗上每個 chunk 約 100 MB 左右；Parquet 檔的 row group 也影響 dataframe 的分割。
 
-常見觀念是：
-
-- threads: 常用於 `dask.array`、`dask.dataframe`、`dask.delayed`
-- processes: 常見於 `dask.bag`
-
-可以顯式指定：
+| scheduler | 預設用於 | 適合 |
+| --- | --- | --- |
+| `threads` | array、dataframe、delayed | 底層是 NumPy / pandas（會釋放 GIL） |
+| `processes` | bag | 純 Python 物件處理 |
+| `distributed` | — | 有 dashboard 可看進度與記憶體；也能擴展到多台機器 |
 
 ```python
-result = x.compute(scheduler="threads")
-result = x.compute(scheduler="processes")
+x.compute(scheduler="processes")
+
+from dask.distributed import Client
+client = Client(n_workers=4, threads_per_worker=2, memory_limit="4GB")
+client.dashboard_link                              # 瀏覽器開啟，看任務圖與記憶體使用
 ```
 
-或：
+### Dask 的陷阱
 
-```python
-import dask
+| 陷阱 | 說明 |
+| --- | --- |
+| 忘記 `.compute()` | 拿到的是 lazy 物件，不是結果 |
+| 多次 `.compute()` 重算同一段 | 用 `dask.compute(a, b)` 一次算，或 `.persist()` 把中間結果留在記憶體 |
+| 小資料也用 Dask | 放得進記憶體的資料，pandas / Polars 通常更快 |
+| 需要全域排序、大量 shuffle 的操作 | `set_index`、未排序的 `merge` 很昂貴 |
+| 當成任何 Python 程式的自動加速器 | 它只是排程器；每個任務本身仍要寫得有效率 |
 
-result = dask.compute(x, scheduler="threads")
-```
+## multiprocessing vs Dask
 
-選擇時可以先抓大方向：
-
-- 如果底層主要是 NumPy / pandas / C-extension 工作，threads 常常夠用
-- 如果工作更偏 Python-level object processing，processes 可能更適合
-
-但最終仍要看工作負載，不要只靠直覺。
-
-### Dask vs Multiprocessing
-
-它們都能利用多核心，但抽象層次不同。
-
-`multiprocessing` 比較像：
-
-- 你自己管理 process
-- 自己決定 function 如何分派
-- 自己處理很多流程細節
-
-Dask 比較像：
-
-- 你描述資料或任務依賴
-- Dask 幫你建立 task graph
-- scheduler 幫你安排執行
-
-所以如果需求只是「把同一個 function 套到很多輸入」，`multiprocessing.Pool` 可能就夠了。  
-如果需求已經進到 chunked arrays、lazy pipelines、半結構化資料處理，Dask 通常更自然。
-
-### Common Pitfalls
-
-- 忘記 `compute()`，以為結果已經真的算出來
-- 沒有理解 chunk / partition 對效能的影響
-- 小資料也硬上 Dask，結果排程成本大於收益
-- 把 Dask 當成所有 Python 程式的自動加速器
-- 沒有區分 threads 與 processes 的適用情境
-
-### Practical Takeaway
-
-Dask 最值得掌握的，不是某個單一 API，而是這個工作流：
-
-1. 選對 collection 類型
-2. 設計合理的 chunks 或 partitions
-3. 先建立 lazy pipeline
-4. 在真正需要輸出時才 `compute()`
-5. 根據工作型態調整 scheduler
-
-當你已經熟悉 NumPy、pandas 和 `multiprocessing` 的限制後，Dask 會是很自然的下一步。
+| | `multiprocessing` / `concurrent.futures` | Dask |
+| --- | --- | --- |
+| 抽象層次 | 你自己分派函式到 process | 描述資料或任務依賴，scheduler 安排 |
+| 適合 | 同一函式套到很多獨立輸入 | 分塊陣列、比記憶體大的表格、有依賴關係的流程 |
+| 記憶體外資料 | 不支援，要自己分塊 | 內建 |
+| 擴展到多機 | 否 | 是（distributed） |

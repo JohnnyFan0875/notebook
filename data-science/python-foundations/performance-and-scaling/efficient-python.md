@@ -1,332 +1,186 @@
-# Python: Efficient Code Patterns
+[Python Foundations](../README.md) › [效能與擴展](README.md) › Efficient Python
 
-Python 效能優化最常見的誤區，不是「不會寫快」，而是太早做微調，或把本來能交給 built-ins、NumPy、pandas 的工作留在 Python loop 裡。
+# 寫出有效率的 Python (Efficient Python)
 
-更穩定的做法是：
+最大的效能提升通常不是語法微調，而是**改變解法的形狀**：選對資料結構、把 Python 層級的迴圈交給 NumPy / pandas 的底層實作。順序永遠是：先量測 → 找到瓶頸 → 換解法 → 才考慮平行化（見 [平行運算](parallel.md)）。
 
-1. 先量測。
-2. 找出真正的 bottleneck。
-3. 改變解法的形狀，而不是先改語法細節。
-
-## What Efficient Usually Means
-
-有效率的程式通常同時在乎兩件事：
-
-- runtime
-- memory footprint
-
-兩者不一定永遠同方向。有些做法更快，但會多吃記憶體；有些做法節省記憶體，但會犧牲可讀性或速度。所以優化前先確認你在解哪一種問題。
-
-## Measure Before You Guess
-
-如果沒有量測，優化常常只是把直覺包裝成信心。
-
-在 notebook 或 IPython 中，`%timeit` 幾乎是最方便的起點。
-
-```python
-import numpy as np
-
-%timeit np.random.rand(1000)
+```
+量測（timeit / profiler）
+  → 演算法與資料結構對嗎？（set 查找、Counter、避免重複計算）
+    → 能向量化嗎？（NumPy / pandas 整欄運算）
+      → 還不夠：Numba / Polars / 平行化 / 分散式
 ```
 
-常見用法：
+## 量測 (Measure)
 
-- `%timeit expr`：量單行表達式
-- `%%timeit`：量整個 code cell
-- `%timeit -n10 -r2 expr`：指定 loops 與 runs
-- `%timeit -o expr`：保留結果物件，之後可看 `.timings`
-
-實務上要注意：
-
-- 比較方式要使用同一份資料
-- 先量大方向，不要一開始就比較奈秒級差異
-- 只因為 A 比 B 快，不代表這個差距在真實 bottleneck 上重要
-
-## Profile the Hot Path
-
-當你知道「程式慢」，下一步不是瞎改，而是找哪一行、哪一段最慢。
-
-如果只看總執行時間，常常看不出真正的熱點。這時可以用 line profiler 類工具。
+| 工具 | 回答 | 用法 |
+| --- | --- | --- |
+| `%timeit` / `timeit` | 一小段程式多快 | `%timeit expr`、`%%timeit`（整個 cell） |
+| `time.perf_counter()` | 腳本某段花多久 | 前後相減 |
+| `cProfile` | 時間花在哪些**函式** | `python -m cProfile -s cumtime script.py` |
+| `line_profiler` | 時間花在哪一**行** | `%lprun -f func func(data)` |
+| `memory_profiler` | 每行配置多少記憶體 | `%mprun -f func func(data)` |
+| `py-spy` / `scalene` | 不改程式碼，取樣正在跑的程式 | `py-spy top --pid 1234`、`scalene script.py` |
 
 ```python
+%timeit np.random.default_rng(0).random(1000)
+%timeit -n 100 -r 5 sum(range(1000))      # 指定 loops / runs
+res = %timeit -o sorted(data)             # 保留結果：res.best、res.timings
+
+import timeit
+timeit.timeit("sum(range(1000))", number=10_000)   # 腳本中使用
+
 %load_ext line_profiler
-%lprun -f my_function my_function(data)
+%lprun -f normalize normalize(df)
 ```
 
-它適合回答：
+| 原則 | 說明 |
+| --- | --- |
+| 用相同、具代表性的資料比較 | 小資料看不出 O(n²) 的問題 |
+| 先看數量級 | 10 倍以上的差異才值得改寫可讀的程式 |
+| 只優化熱點 | 只佔總時間 2% 的函式，快 10 倍也沒差 |
 
-- 是哪一行最耗時
-- loop 裡哪個操作最重
-- 是前處理、查詢、還是轉換最慢
+## 選對資料結構
 
-同樣地，如果問題偏向記憶體，可以用 memory profiler 類工具觀察每行的額外配置。
+![](src/efficient-python-benchmarks.png)
+
+左：同樣是把 n 個數平方，comprehension 只比 `append` 迴圈快一點，NumPy 在 10⁶ 個元素時快約 20 倍。右：`x in list` 的時間隨 n 線性成長，`x in set` 幾乎不變。
+
+| 需求 | 慢 | 快 |
+| --- | --- | --- |
+| 反覆的 membership test | `x in list`（O(n)） | `x in set` / `dict`（平均 O(1)） |
+| 計數 | 手寫 `d[k] = d.get(k, 0) + 1` | `collections.Counter` |
+| 分組收集 | 先檢查 key 是否存在 | `collections.defaultdict(list)` |
+| 兩端增刪 | `list.insert(0, x)`、`list.pop(0)`（O(n)） | `collections.deque` |
+| 排列 / 組合 | 手寫多層巢狀迴圈 | `itertools.product` / `combinations` |
+| 大量同型別數值 | Python `list` of float | NumPy array（連續記憶體、向量化） |
+| 前 k 大 | 整個排序後取前 k | `heapq.nlargest(k, x)`；NumPy `np.argpartition` |
 
 ```python
-%load_ext memory_profiler
-%mprun -f my_function my_function(data)
+keep = set(gene_whitelist)                        # 建一次 set，之後查找 O(1)
+filtered = [g for g in all_genes if g in keep]    # 若 keep 是 list：|all_genes| × |keep| 次比較
+
+from collections import Counter
+Counter(variant_types).most_common(3)
 ```
 
-重點不是記住工具名稱，而是建立習慣：先定位，再重寫。
+容器的完整介紹見 [核心資料型別](../core-data-types.md)。
 
-## Prefer Built-Ins Over Handwritten Loops
-
-很多手寫 loop，其實都在重做 Python 已經幫你優化好的事。
-
-### `range()`
+## 內建函式與 comprehension
 
 ```python
-nums = range(0, 11)
-even_nums = range(2, 11, 2)
-```
-
-`range()` 代表的是惰性序列，不會像手動建立 list 一樣立刻把所有值放進記憶體。
-
-### `enumerate()`
-
-```python
-for i, value in enumerate(values):
-    ...
-```
-
-如果你正在寫：
-
-```python
-for i in range(len(values)):
-    value = values[i]
-```
-
-通常 `enumerate()` 會更自然，也比較不容易寫出 index bug。
-
-### `zip()`
-
-```python
-for name, score in zip(names, scores):
-    ...
-```
-
-它通常比手動依 index 拼接多個序列更乾淨。
-
-### `map()`
-
-```python
-squares = list(map(lambda x: x ** 2, nums))
-```
-
-如果邏輯已經是「把同一個函式套到每個元素」，`map()` 或 comprehension 通常會比手寫 append loop 更簡潔。
-
-## Comprehensions Are Often Better Than Append Loops
-
-```python
-# slower to read and usually slower to run
-totals = []
+totals = []                                       # 慢且囉嗦
 for row in rows:
     totals.append(sum(row))
 
-# better
-totals = [sum(row) for row in rows]
+totals = [sum(row) for row in rows]               # comprehension
+totals = list(map(sum, rows))                     # 套用既有函式時，map 也很直接
+
+for i, v in enumerate(values): ...                # 取代 for i in range(len(values))
+for name, score in zip(names, scores): ...        # 取代依 index 拼接
+"".join(parts)                                    # 取代迴圈裡 s += part（每次都複製整個字串）
+any(p < 0.05 for p in pvals)                      # 找到第一個就停
 ```
 
-comprehension 的好處：
+comprehension 主要的好處是意圖集中；複雜邏輯硬塞進一行反而難讀，此時寫回一般迴圈。
 
-- 意圖更集中
-- 少了顯式 append 樣板
-- 通常比手寫 loop 更快
-
-但也不要把太複雜的商業邏輯塞進單一 comprehension。可讀性一旦崩掉，就不值得。
-
-## Pick the Right Data Structure
-
-很多效能問題不是 loop 太慢，而是資料結構選錯。
-
-### Membership Testing: Prefer `set` for Fast Lookups
+## 把不變的計算移出迴圈
 
 ```python
-names_set = set(names)
+for name, attack in zip(names, attacks):          # 錯：每圈都重算一次平均
+    if attack > np.mean(attacks):
+        ...
 
-if "Zubat" in names_set:
-    ...
+threshold = np.mean(attacks)                      # 對：只算一次
+for name, attack in zip(names, attacks):
+    if attack > threshold:
+        ...
 ```
 
-如果你一直在做 membership check:
+同理：迴圈內不要重複轉型、重複編譯 regex（先 `re.compile`）、重複開檔或連資料庫。
 
-- `x in list` 需要線性掃描
-- `x in set` 通常接近常數時間
+## 向量化 (Vectorization)
 
-這在去重、過濾、黑名單/白名單檢查時很常見。
-
-### Counting: Prefer `collections.Counter`
-
-```python
-from collections import Counter
-
-type_counts = Counter(poke_types)
-```
-
-如果你正在手寫：
-
-```python
-counts = {}
-for x in items:
-    counts[x] = counts.get(x, 0) + 1
-```
-
-那通常可以先考慮 `Counter`。
-
-### Missing Keys: Prefer `defaultdict`
-
-```python
-from collections import defaultdict
-
-groups = defaultdict(list)
-for key, value in pairs:
-    groups[key].append(value)
-```
-
-這會比每次先判斷 key 在不在 dict 中更清楚。
-
-### Readable Lightweight Records: `namedtuple`
-
-如果你的 tuple 已經有明確欄位意義，用 `namedtuple` 可以讓程式更容易讀，同時保留輕量結構。
-
-## Use `itertools` Instead of Nested Loop Plumbing
-
-`itertools` 常見價值不是「比較神奇」，而是把常見組合邏輯交給已實作好的 iterator 工具。
-
-```python
-from itertools import combinations
-
-pairs = list(combinations(items, 2))
-```
-
-如果你正在手寫雙層或三層 nested loops 來產生成對、排列、組合，先想想：
-
-- `product()`
-- `permutations()`
-- `combinations()`
-
-是不是已經能直接表達你的意圖。
-
-## Eliminate Loops When the Real Operation Is Bulk
-
-有些 loop 的本質其實不是「逐筆依賴前一步」，而只是因為你還沒把問題改寫成 bulk operation。
-
-### Use `map(sum, rows)` Instead of Manual Totals
-
-```python
-totals = list(map(sum, rows))
-```
-
-這類寫法不一定永遠勝過 comprehension，但常常可以讓程式更貼近「對每列做同一件事」的意圖。
-
-### Use NumPy for Numeric Bulk Work
-
-```python
-import numpy as np
-
-arr = np.array(rows)
-avgs = arr.mean(axis=1)
-```
-
-當資料是純數值、且操作本質上是整批矩陣/向量運算時，NumPy 往往能遠勝 Python loop。
-
-## Broadcasting Beats Manual Elementwise Loops
+整批數值運算交給 NumPy，運算在 C 層級的連續記憶體上執行，不經過 Python 物件。
 
 ```python
 import numpy as np
 
 values = np.array([1, 2, 3, 4])
-result = values * 2
+values * 2                                        # array([2, 4, 6, 8])：逐元素
+[1, 2, 3, 4] * 2                                  # [1, 2, 3, 4, 1, 2, 3, 4]：list 是重複串接！
+
+X = np.array(rows, dtype=float)
+X.mean(axis=1)                                    # 每列平均，取代 Python 迴圈
+np.where(X > 0, np.log2(X), 0)                    # 條件運算取代 if/else 迴圈
+(X - X.mean(axis=0)) / X.std(axis=0)              # broadcasting：每欄標準化
+
+np.log2(counts + 1)                               # 取代 [math.log2(c + 1) for c in counts]
 ```
 
-這種寫法不是語法糖，而是把 elementwise work 交給 NumPy 的底層實作。
+broadcasting 與 reshape 規則見 [NumPy 向量化與 reshape](../numpy/vectorization-and-reshape.md)。
 
-相對地，Python list 不支援真正的 broadcasting：
+### pandas：避免逐列處理
+
+| 由快到慢 | 寫法 |
+| --- | --- |
+| 1. 整欄向量化 | `df["cpm"] = df["count"] / df["count"].sum() * 1e6` |
+| 2. 內建方法 | `.str`、`.dt`、`groupby().agg()`、`np.where`、`np.select`、`.map(dict)` |
+| 3. `.apply(func, axis=1)` | 本質仍是 Python 迴圈，只是寫起來短 |
+| 4. `itertuples()` | 真的必須逐列時 |
+| 5. `iterrows()` / `for i in range(len(df))` | 最慢，且每列轉成 Series 會改變 dtype |
+
+詳見 [pandas 效能](../pandas/performance.md)。
+
+## 迴圈無法避免時：Numba
+
+逐元素依賴前一步（遞迴、動態規劃、模擬）無法向量化時，用 Numba 把數值迴圈編譯成機器碼。
 
 ```python
-values = [1, 2, 3, 4]
-# values * 2 只是重複串接，不是數值乘法
+from numba import njit
+import numpy as np
+
+@njit                                             # 第一次呼叫時編譯，之後接近 C 的速度
+def running_max_drawdown(x):
+    peak, worst = x[0], 0.0
+    for v in x:
+        peak = max(peak, v)
+        worst = min(worst, v - peak)
+    return worst
+
+running_max_drawdown(np.random.default_rng(0).normal(size=1_000_000).cumsum())
 ```
 
-所以如果你正在做大量數值逐元素轉換，NumPy 通常是更自然的容器。
+| 適合 Numba | 不適合 |
+| --- | --- |
+| NumPy array + 數值迴圈 | pandas DataFrame、dict、字串處理 |
+| 無法向量化的遞迴關係 | 已經能用 NumPy 一行寫完的運算 |
 
-## Move Invariants Outside the Loop
+## 記憶體
 
-有些 loop 沒辦法完全消失，但仍然可以寫得更好。
-
-核心原則：
-
-- 每次迭代都一樣的計算，不要放在 loop 內
-- 需要整批做一次的轉型，先在 loop 外處理
-- loop 內只保留每筆都必須做的最小工作
+| 做法 | 原因 |
+| --- | --- |
+| generator 取代建好的大 list | 一次只放一筆，見 [迭代器與生成器](../iterator.md#生成器-generators惰性求值) |
+| 指定較小的 dtype | `float32` 是 `float64` 的一半；重複字串用 `category` |
+| 只讀需要的欄位 | `pd.read_csv(usecols=...)`、`pd.read_parquet(columns=...)` |
+| 稀疏矩陣 | 單細胞計數矩陣 90% 以上是 0，用 `scipy.sparse` |
+| 分塊處理 | `chunksize`、Dask、Polars streaming，見 [平行運算](parallel.md)、[Polars](polars.md) |
 
 ```python
-threshold = np.mean(attacks)
-
-for name, attack in zip(names, attacks):
-    if attack > threshold:
-        ...
+import sys
+sys.getsizeof([0.0] * 1_000_000)                  # 約 8 MB（只是指標，還不含 float 物件）
+np.zeros(1_000_000).nbytes                        # 8,000,000 bytes
+df.memory_usage(deep=True).sum()                  # DataFrame 實際記憶體
 ```
 
-而不是：
+## 檢查表
 
-```python
-for name, attack in zip(names, attacks):
-    threshold = np.mean(attacks)
-    if attack > threshold:
-        ...
-```
-
-這種重複計算在大迴圈中很容易變成無意義成本。
-
-## pandas: Avoid Row-by-Row Work
-
-對 DataFrame 來說，效率排序大致可以這樣記：
-
-1. vectorized column operation
-2. `.apply()` when needed
-3. `.itertuples()` if you truly must iterate
-4. `.iterrows()` as the slow path
-
-如果你還在做：
-
-```python
-for i in range(len(df)):
-    ...
-```
-
-通常代表問題還沒有被改寫成 pandas 最擅長的形式。
-
-更完整的 DataFrame 效能整理放在 [pandas/performance.md](../pandas/performance.md)。
-
-## Memory Still Matters
-
-快不快不是唯一問題，記憶體暴增也會讓程式變慢或直接失敗。
-
-常見觀念：
-
-- `range()` 比預先建好大 list 更省
-- iterator / generator 通常比一次 materialize 全部資料更省
-- `set` / `dict` 查找快，但本身也有額外記憶體成本
-- NumPy array 通常比 Python object list 更緊湊，特別是純數值資料
-
-如果問題是大型資料處理，記憶體配置方式常常和 runtime 同樣重要。
-
-## Efficient Thinking Checklist
-
-當某段程式慢時，可以先問：
-
-- 我有量過它嗎
-- 我知道最慢的是哪一行嗎
-- 這個 loop 是否其實可以改成 built-in、comprehension、`map()`、`zip()`、`Counter`、`set`、`itertools`
-- 這個問題是否本質上是 bulk numeric work，應該交給 NumPy
-- 對 pandas 而言，是否應該改成 vectorized column operation
-- loop 裡是否有重複做的一次性計算
-
-## Practical Takeaways
-
-- 先量測，再優化。
-- 先選對資料結構，再談語法細節。
-- built-ins、`collections`、`itertools` 常常就是最簡單的加速工具。
-- 如果工作是整批數值運算，優先考慮 NumPy。
-- 如果工作是 DataFrame 轉換，優先考慮 pandas 向量化。
-- 真正大的效能提升，通常來自「少寫 Python-level loops」。
+| 問題 | 方向 |
+| --- | --- |
+| 量過了嗎？知道最慢的是哪一行嗎？ | `%timeit`、`line_profiler` |
+| 迴圈內有重複的一次性計算嗎？ | 移出迴圈 |
+| 一直在做 `in` 查找嗎？ | 改用 `set` / `dict` |
+| 是整批數值運算嗎？ | NumPy 向量化 |
+| 是 DataFrame 轉換嗎？ | 整欄運算、`groupby`，不要 `iterrows` |
+| 迴圈真的無法避免嗎？ | Numba |
+| 單核已經最佳化，資料還是太大或太慢？ | [平行運算](parallel.md)、[Polars](polars.md)、[分散式處理](../../data-engineering/scalable-processing-and-out-of-core.md) |

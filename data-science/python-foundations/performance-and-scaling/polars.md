@@ -1,260 +1,139 @@
+[Python Foundations](../README.md) › [效能與擴展](README.md) › Polars
+
 # Polars
 
-Polars 是一個以 expression 為核心的 DataFrame 工具，特別適合欄位選取、轉換、過濾與高效查詢。  
-如果 pandas 常讓你用「逐步操作 DataFrame」思考，Polars 更鼓勵你用「描述整個查詢」的方式思考。
+Polars 是用 Rust 寫的 DataFrame 引擎：多執行緒、欄式儲存（Apache Arrow），以**表達式 (expression)** 描述整個查詢，並能在 lazy 模式下先最佳化再執行。資料在數 GB、pandas 開始變慢或吃光記憶體時，常是比上 Spark 更簡單的選擇。
 
-## Why Polars Feels Different
+| | pandas | Polars |
+| --- | --- | --- |
+| 思考方式 | 一步步修改 DataFrame | 描述整個查詢，交給引擎執行 |
+| 執行 | eager、多數操作單執行緒 | eager 或 lazy、自動多執行緒 |
+| index | 有（常是混淆來源） | **沒有**，一律用欄位 |
+| 缺值 | `NaN` / `None` / `pd.NA` 混用 | 統一 `null`（`NaN` 是浮點值，不是缺值） |
+| 比記憶體大的資料 | 要自己分塊 | lazy + streaming 引擎 |
+| 生態系 | sklearn、statsmodels、seaborn 直接吃 | 需要時 `.to_pandas()` / `.to_numpy()` 轉換 |
 
-幾個很重要的特性：
-
-- expression-first API
-- 支援 eager 與 lazy 兩種模式
-- 很多操作鼓勵一次描述完整 transformation
-- `select()` 和 lazy planning 能幫助 query optimization
-
-這代表 Polars 不只是另一個 DataFrame 套件，它也在引導你靠近 query engine 的思維。
-
-## Reading Data
-
-### Eager Mode
+## 讀取：eager vs lazy
 
 ```python
 import polars as pl
 
-rentals = pl.read_csv("vacation_rentals.csv")
+df = pl.read_csv("rentals.csv")                # eager：立刻讀成 DataFrame（探索、除錯）
+lf = pl.scan_csv("rentals.csv")                # lazy：只建立查詢計畫（LazyFrame）
+lf = pl.scan_parquet("variants/*.parquet")     # 多檔、Parquet 也一樣
+lf.collect()                                   # 執行並回傳 DataFrame
 ```
 
-`read_csv()` 會直接把資料讀成 `DataFrame`。  
-這種方式適合：
+| 用 eager | 用 lazy |
+| --- | --- |
+| 探索資料、一步步看中間結果 | 已知完整流程、串接很多步驟 |
+| 除錯某段轉換 | 資料大、在乎速度與記憶體 |
+| | 只需要部分欄位 / 列（引擎會只讀需要的部分） |
 
-- 小到中型資料
-- 想一步一步檢查結果
-- 正在 debug
+## 表達式 (Expressions)
 
-### Lazy Mode
+`pl.col("x")` 本身不是資料，而是「對欄位 x 的運算描述」，放進 `select`、`with_columns`、`filter`、`agg` 等 context 才會執行。
 
-```python
-lazy_rentals = pl.scan_csv("vacation_rentals.csv")
-```
-
-`scan_csv()` 不會立刻把整份資料完整 materialize，而是先建立 query plan。  
-這種方式適合：
-
-- 資料較大
-- 有多步 transformation
-- 想讓 Polars 做 query optimization
-
-## Core Mental Model: Expressions
-
-Polars 很多操作不是直接「改 DataFrame」，而是先建立 expression，再交給 engine 執行。
-
-最常見的入口是 `pl.col()`：
+| Context | 作用 | pandas 對應 |
+| --- | --- | --- |
+| `select(...)` | **只保留**指定的輸出欄 | `df[["a", "b"]]` + 新欄 |
+| `with_columns(...)` | 保留原欄位，新增或覆寫欄 | `df.assign(...)` |
+| `filter(...)` | 篩選列 | `df[mask]` / `df.query()` |
+| `group_by(...).agg(...)` | 分組彙總 | `df.groupby().agg()` |
+| `sort(...)` | 排序 | `sort_values()` |
+| `join(...)` | 合併 | `merge()` |
 
 ```python
-rentals.select(
-    pl.col("name"),
-    pl.col("price"),
+df = pl.DataFrame({
+    "name": ["a", "bb", "ccc", "d"],
+    "type": ["Villa", "Flat", "Villa", "Villa"],
+    "price": [300, 120, 800, 450],
+    "beds": [3, 1, 4, 0],
+    "beach": [True, False, True, False],
+})
+
+df.select("name", "price")
+df.select((pl.col("price") / pl.col("beds")).alias("price_per_bed"))   # alias 命名輸出欄
+
+df.with_columns(
+    (pl.col("price") * 0.9).alias("discount_price"),
+    pl.when(pl.col("beds") > 0)                                        # 條件運算：取代 np.where
+      .then(pl.col("price") / pl.col("beds"))
+      .otherwise(None)
+      .alias("ppb"),                                                   # [100.0, 120.0, 200.0, null]
 )
+
+df.filter((pl.col("price") < 500) & pl.col("beach"))                  # 多條件用 & | ~，每個條件加括號
+
+df.group_by("type").agg(
+    pl.len().alias("n"),
+    pl.col("price").mean().alias("mean_price"),
+)                                                                      # Flat: 1, 120.0；Villa: 3, 516.7
+
+df.with_columns(pl.col("price").rank().over("type").alias("rank_in_type"))   # 視窗函數：類似 groupby().transform
+
+df.with_columns(pl.col(pl.String).str.len_chars().name.suffix("_len"))      # 依 dtype 一次選多欄
+df.join(hosts, on="host_id", how="left")
 ```
 
-可以把 `pl.col()` 想成：
+字串用 `.str`、日期用 `.dt`、list 欄用 `.list` 命名空間，和 pandas 類似。
 
-- 指定欄位
-- 對欄位做計算
-- 把這些計算組成新的查詢
-
-## Selecting Columns
-
-### Simple Selection
+## Lazy 查詢與最佳化
 
 ```python
-rentals.select("name", "price")
-```
-
-Polars 通常偏好 `select()`，因為它比直接用 bracket subsetting 更符合 query planning。
-
-### Why `select()` Matters
-
-`select()` 不只是語法偏好，它也有助於優化。  
-在 lazy mode 下，Polars 可以更明確知道最後真正需要哪些欄位。
-
-## Transforming Columns
-
-### Arithmetic with Expressions
-
-```python
-rentals.select(
-    (pl.col("price") / pl.col("beds")).alias("price_per_bed")
-)
-```
-
-這種寫法的重點是：
-
-- 計算直接描述在 expression 裡
-- 可以順便 rename
-- 不需要先拆成很多臨時欄位
-
-### Renaming with `alias()`
-
-```python
-rentals.select(
-    pl.col("price").alias("nightly_price")
-)
-```
-
-`alias()` 很重要，因為 expression 一多，如果沒有命名，輸出常會變得不好讀。
-
-### Constants and Derived Columns
-
-你也可以從常數建立 expression，或把新欄位加回原表。
-
-```python
-rentals.with_columns(
-    (pl.col("price") * 0.9).alias("discount_price")
-)
-```
-
-## `select()` vs `with_columns()`
-
-這是 Polars 很核心的分別：
-
-- `select()`: 只保留你指定的輸出欄位
-- `with_columns()`: 保留原本欄位，另外新增或覆蓋欄位
-
-### Use `select()` When
-
-- 你想明確定義最後輸出
-- 你想只保留少數欄位
-- 你在 lazy mode 下想讓 projection 更清楚
-
-### Use `with_columns()` When
-
-- 你要在原資料上加新欄位
-- 你想保留既有欄位並做增量轉換
-
-## Filtering Rows
-
-Polars 的過濾同樣是 expression-based：
-
-```python
-rentals.filter(
-    pl.col("type") == "Villa"
-)
-```
-
-也可以組多條件：
-
-```python
-rentals.filter(
-    (pl.col("price") < 500) &
-    (pl.col("beach") == True)
-)
-```
-
-這種寫法的重點是：
-
-- 條件本身也是 expression
-- 過濾邏輯和查詢描述在同一層
-- 在 lazy mode 下可一起被優化
-
-## Dtype-Aware Operations
-
-Polars 很強調 dtype-aware expressions。  
-這代表很多字串、數值或型別轉換操作，都可以用欄位型別導向的方式表達。
-
-例如字串長度：
-
-```python
-rentals.with_columns(
-    pl.col("name").str.len_chars().alias("name_len")
-)
-```
-
-甚至可以一次對某類型欄位操作：
-
-```python
-rentals.with_columns(
-    pl.col(pl.String).str.len_chars()
-)
-```
-
-這對 schema 明確、欄位很多的資料表特別方便。
-
-## Lazy Query Planning
-
-Polars lazy mode 最大的價值，是它會先累積查詢，再一起優化。
-
-```python
-query = (
-    pl.scan_csv("vacation_rentals.csv")
-    .select("name", "price")
-)
-```
-
-真正執行時才 `collect()`：
-
-```python
-result = query.collect()
-```
-
-### Explain the Plan
-
-```python
-print(
-    pl.scan_csv("vacation_rentals.csv")
-    .select("name", "price")
-    .explain()
-)
-```
-
-這能幫你看到 query plan，例如 projection pushdown。  
-從資料工作角度看，這很重要，因為它讓你知道 engine 是否真的只讀必要欄位。
-
-## Eager vs Lazy
-
-### Prefer Eager When
-
-- 你在探索資料
-- 你想一步一步看中間結果
-- 你在 debug 某段 transformation
-
-### Prefer Lazy When
-
-- 你已經知道完整處理流程
-- 你要鏈很多步驟
-- 你在乎效能與 query optimization
-
-一個很實用的心智模型是：
-
-- `eager`: step-by-step
-- `lazy`: full-query
-
-## Practical Workflow
-
-```python
-import polars as pl
-
 result = (
-    pl.scan_csv("vacation_rentals.csv")
+    pl.scan_csv("rentals.csv")
     .filter(pl.col("type") == "Villa")
-    .with_columns(
-        (pl.col("price") / pl.col("beds")).alias("price_per_bed")
-    )
+    .with_columns((pl.col("price") / pl.col("beds")).alias("price_per_bed"))
     .select("name", "price", "price_per_bed")
     .collect()
 )
+
+print(pl.scan_csv("rentals.csv").filter(pl.col("type") == "Villa").select("name", "price").explain())
+# Csv SCAN [rentals.csv]
+#   PROJECT 3/5 COLUMNS              ← projection pushdown：只讀用到的 3 欄
+#   SELECTION: col("type") == "Villa" ← predicate pushdown：讀檔時就過濾
 ```
 
-這段示範了 Polars 的典型思路：
+| 最佳化 | 意義 |
+| --- | --- |
+| projection pushdown | 只讀查詢用到的欄位 |
+| predicate pushdown | 篩選條件推到讀檔階段，少讀很多列（Parquet 尤其有效） |
+| 共同子表達式消除 | 重複的運算只算一次 |
 
-1. 先建立 lazy source
-2. 用 expression 過濾與轉換
-3. 用 `select()` 定義輸出
-4. 最後 `collect()`
+### 比記憶體大的資料：streaming
 
-## Practical Takeaways
+```python
+(
+    pl.scan_parquet("gnomad_chr*.parquet")
+    .filter(pl.col("AF") > 0.01)
+    .group_by("chrom")
+    .agg(pl.len())
+    .collect(engine="streaming")             # 分批處理，不需要整份放進記憶體
+)
 
-- 把 Polars 想成 expression engine，比把它想成 pandas clone 更準。
-- `select()` 與 `with_columns()` 的差異，是寫出可維護 Polars 程式的關鍵。
-- eager mode 比較適合 debug；lazy mode 比較適合正式 pipeline。
-- 當資料變大時，`scan_csv()` + `collect()` 通常比直接 `read_csv()` 更值得先考慮。
+pl.scan_csv("huge.csv").filter(...).sink_parquet("filtered.parquet")   # 結果直接寫檔，不經過記憶體
+```
+
+## 與 pandas / NumPy 互轉
+
+```python
+pdf = df.to_pandas()                         # 給 seaborn、statsmodels、sklearn
+df = pl.from_pandas(pdf)
+X = df.select(pl.col(pl.Float64)).to_numpy()
+```
+
+> 常見做法：繁重的讀取、篩選、join、彙總用 Polars（lazy），結果變小後 `.to_pandas()` 交給統計 / 繪圖套件。
+
+## 從 pandas 轉過來的注意事項
+
+| pandas 習慣 | Polars |
+| --- | --- |
+| `df["new"] = ...` 原地修改 | 物件不可變；`df = df.with_columns(...)` |
+| 依賴 index 對齊、`loc` | 沒有 index；用欄位 `join` / `filter` |
+| `apply(lambda ...)` | 改用表達式；`map_elements` 是最後手段（會失去平行與最佳化） |
+| `df[df.a > 1]` | `df.filter(pl.col("a") > 1)` |
+| `groupby` 結果有 index | `group_by` 結果是一般欄位，**順序不保證**（需要時 `maintain_order=True` 或 `sort`） |
+| `NaN` 當缺值 | 用 `null`；`fill_null` / `is_null`，`fill_nan` 只處理浮點 NaN |
+
+R 使用者可對照 `dplyr`：`select` / `filter` / `mutate`（`with_columns`）/ `group_by` + `summarise`（`agg`）幾乎一一對應，見 [R 資料處理](../../r-foundations/README.md)。SQL 使用者也可以直接 `pl.SQLContext` 或改用 DuckDB 查 Parquet，見 [Databases](../../databases/README.md)。
