@@ -1,117 +1,126 @@
-# EDA Workflow
+[Data Science](../README.md) › [資料處理與 EDA](README.md) › EDA 流程
 
-探索式資料分析的目標不是一次把所有圖都畫完，而是用最少的步驟，快速建立對資料的可信理解。好的 EDA workflow 會讓你在建模前先發現資料偏差、欄位定義問題與潛在風險。
+# EDA 流程 (EDA Workflow)
 
+探索式資料分析 (Exploratory Data Analysis, EDA) 不是把所有圖畫一遍，而是用最少步驟建立「這份資料可不可信、長什麼樣」的理解，在建模前抓到欄位定義錯誤、偏差與資料洩漏。
 
-## 第一步：Data Profiling
+## 整體流程
 
-Data profiling 是 EDA 的第一層，重點在於快速辨識欄位品質與資料結構。它不像完整分析那麼深入，但非常適合當成每份新資料集的固定檢查清單。
+```text
+1. 釐清問題      目標變數？觀測單位（一列 = 一個病人？一個樣本？一個 read？）？時間範圍？
+2. Profiling     結構、型別、完整性、唯一性、合理性、一致性
+3. 單變數        數值：偏態、極端值、是否需 log；類別：不平衡、稀有類別、拼寫分裂
+4. 雙變數 / 多變數 數值×數值、類別×數值、時間×數值；PCA 看批次
+5. 初步假設      哪些變數可能重要？哪些欄位有 leakage 風險？
+6. 記錄行動      要轉型 / 清理 / 排除 / 分層的欄位清單
+```
 
-各類品質問題的統計影響（缺失、重複、單位、離群值、生資特有的陷阱）見 [Statistics：資料品質](../statistics/descriptive-statistics/data-quality.md)。
+各類品質問題的統計影響（缺失、重複、單位、離群值）見 [Statistics：資料品質](../statistics/descriptive-statistics/data-quality.md)；多變數的工具與 Simpson's paradox 見 [多變量探索](../statistics/multivariate-analysis/multivariate-eda.md)。
 
-### 檢查哪些面向
+## 第一步：資料剖析 (Data Profiling)
 
-| 面向 | 你要問的問題 |
-| --- | --- |
-| 結構 | 有幾列幾欄？主鍵是什麼？一列代表什麼？ |
-| 型別 | 數值、類別、日期、文字欄位是否判斷正確？ |
-| 完整性 | 缺失值比例高嗎？是否集中在特定欄位或群體？ |
-| 唯一性 | 主鍵是否重複？類別值是否有拼寫分裂？ |
-| 合理性 | 值域、單位、日期順序是否合理？ |
-| 一致性 | 同一欄位是否同時混入多種格式？ |
+每份新資料集都跑一次的固定檢查表：
 
-### pandas 實作範例
+| 面向 | 要問的問題 | 常見風險訊號 |
+| --- | --- | --- |
+| 結構 | 幾列幾欄？主鍵是什麼？一列代表什麼？ | 列數比預期少 → 前面 filter / join 掉了資料 |
+| 型別 | 數值、類別、日期、文字判斷正確嗎？ | 數值欄變成 `object` / `str`（混入 `""`、`"NA"`、`">100"`）；日期沒轉 datetime 導致排序錯 |
+| 完整性 | 缺失比例？集中在特定欄位或群體？ | 缺失集中在某批次 / 某中心 → 不是隨機，見 [缺失機制](missing-data.md) |
+| 唯一性 | 主鍵重複嗎？類別值有拼寫分裂嗎？ | 重複匯入造成的重複列；`"NY"` / `"New York"` / `"new york"` |
+| 合理性 | 值域、單位、日期順序合理嗎？ | 負的年齡、出院早於入院、mg 與 g 混用 |
+| 一致性 | 同一欄是否混多種格式？ | `"2024/01/02"` 與 `"02-01-2024"` 混用 |
 
 ```python
 import pandas as pd
 import seaborn as sns
 
-penguins = sns.load_dataset("penguins")
+df = sns.load_dataset("penguins")
 
+# 1. 結構與型別
+df.shape
+df.info()
+df.sample(5, random_state=0)        # 不只看 head()，也看隨機列與 tail()
+
+# 2. 每欄一列的 profile 表
 profile = pd.DataFrame({
-    "dtype": penguins.dtypes,
-    "missing_ratio": penguins.isna().mean(),
-    "n_unique": penguins.nunique(dropna=False),
-})
+    "dtype": df.dtypes,
+    "missing_ratio": df.isna().mean(),
+    "n_unique": df.nunique(dropna=False),
+}).sort_values("missing_ratio", ascending=False)
 
-profile
+# 3. 數值欄摘要；類別欄看次數（含 NaN）
+df.describe().T
+for col in df.select_dtypes(exclude="number"):
+    print(df[col].value_counts(dropna=False), "\n")
+
+# 4. 重複
+df.duplicated().sum()                      # 完全重複的列
+df.duplicated(subset=["id"]).sum()         # 主鍵重複（有 id 欄時）
 ```
 
-接著可以對數值欄位補上摘要統計：
+> 想要一鍵報表可用 `ydata-profiling`（`ProfileReport(df)`）或 R 的 `skimr::skim()`，但報表只是起點，結論仍要自己寫下來。
+
+做完 profiling 留一份簡短紀錄：哪些欄位要轉型、要清理、暫時排除，哪些可能是 target、feature 或分層變數。
+
+## Python ↔ R 對照
+
+| 任務 | pandas | R (tidyverse) |
+| --- | --- | --- |
+| 結構 / 型別 | `df.info()` | `glimpse(df)` |
+| 摘要統計 | `df.describe(include="all")` | `summary(df)`、`skimr::skim(df)` |
+| 缺失比例 | `df.isna().mean()` | `colMeans(is.na(df))`、`naniar::miss_var_summary(df)` |
+| 類別次數 | `s.value_counts(dropna=False)` | `count(df, x)` |
+| 重複列 | `df.duplicated().sum()` | `sum(duplicated(df))` |
+
+## omics 資料的 EDA
+
+基因表現矩陣（基因 × 樣本）與一般表格的檢查重點不同：
+
+| 檢查 | 做法 | 看什麼 |
+| --- | --- | --- |
+| 樣本與 metadata 對齊 | `set(counts.columns) == set(meta.index)`，並依 metadata 排序欄位 | 樣本名稱不一致、順序錯位（最常見也最致命的錯） |
+| 基因 ID | 檢查重複 ID、版本號（`ENSG00000141510.17`）、Excel 轉成日期的基因名（`SEPT2` → `2-Sep`） | 重複列、無法對應的 ID |
+| 文庫大小 (library size) | 每個樣本的 total counts | 某樣本特別低 → 定序失敗或要排除 |
+| 偵測基因數 | 每樣本 count > 0 的基因數 | 與文庫大小一起判斷樣本品質 |
+| 分布 | 每樣本 `log2(count + 1)` 的箱型圖 / 密度圖 | 原始 count 高度右偏，先 log 再看 |
+| 樣本相關 / PCA | log 轉換後的 PCA，依條件、批次、定序日期上色 | 樣本依**批次**而非生物條件分群 → 批次效應 |
 
 ```python
-penguins.describe().T
+import numpy as np
+
+# counts: 基因 × 樣本的 DataFrame；meta: index 為樣本名
+assert set(counts.columns) == set(meta.index)
+counts = counts[meta.index]                      # 欄位順序對齊 metadata
+
+qc = pd.DataFrame({
+    "lib_size": counts.sum(),
+    "n_detected": (counts > 0).sum(),
+}).join(meta)
+
+logc = np.log2(counts + 1)
+logc.boxplot(rot=90)                             # 每樣本分布
 ```
 
-對類別欄位則優先看：
+PCA 的計算與解讀見 [PCA](../statistics/multivariate-analysis/pca.md)；批次效應與混淆見 [混淆與偏誤](../statistics/experimental-design/confounding-bias.md)。
 
-```python
-for col in ["species", "island", "sex"]:
-    print(col)
-    print(penguins[col].value_counts(dropna=False))
-    print()
-```
+## 判讀與後續動作
 
-### 常見風險訊號
+| 觀察 | 可能原因 | 下一步 |
+| --- | --- | --- |
+| 資料量比預期少 | filter 過頭、inner join 掉資料 | 每步驟後印 `shape`，join 前後比對 key |
+| 某欄幾乎全空 | 欄位沒用到，或某流程站沒填 | 先問是否重要；重要就調查缺失機制 |
+| 類別極不平衡 | 罕見疾病、少數族群 | 建模時用分層切分、適當評估指標，見 [類別不平衡](../machine-learning/evaluation/class-imbalance.md) |
+| 時間上有明顯斷點 | 儀器 / 試劑 / 流程改版 | 不要隨機切分；改用時間切分或加批次變數 |
+| 某欄與 target 幾乎完全相關 | 資料洩漏（事後才知道的變數、ID 編碼了結果） | 刪除或重新定義，見 [資料洩漏](../machine-learning/foundations/data-leakage.md) |
+| 樣本依批次分群 | 批次效應 | 檢查批次與條件是否混淆；設計上無法分開時結論有限 |
 
-- `object` 欄位其實是數值，只是混入空字串或特殊字元。
-- 日期欄位沒有轉成 datetime，導致排序與篩選錯誤。
-- ID 欄位被誤拿去建模，造成偽訊號。
-- 重複列來自資料重複匯入，而不是自然重複觀測。
-- 缺失值不是隨機發生，而是流程中某一站沒有填。
+## 常見錯誤
 
-### 建議輸出
-
-做完 profiling 後，最好留下簡短紀錄：
-
-- 哪些欄位需要轉型
-- 哪些欄位要進一步清理
-- 哪些欄位暫時排除
-- 哪些欄位可能成為 target、feature 或分層變數
-
-Data profiling 的目的不是產生漂亮報表，而是降低後續分析踩雷機率。當你能在早期抓到型別、完整性與一致性問題，後面做統計與建模時會穩很多。
-
-## 一個可重複使用的流程
-
-1. 了解分析問題：先確認目標變數、資料來源、觀測單位與時間範圍。
-2. 盤點資料結構：看列數、欄位數、資料型別、主鍵與索引。
-3. 做資料品質檢查：缺失值、重複值、不合理範圍、格式不一致。
-4. 看單變數分布：數值欄位看偏態、極端值；類別欄位看不平衡與稀有類別。
-5. 看變數關係：數值對數值、類別對數值、時間對數值。
-6. 建立初步假設：哪些變數可能重要？哪些欄位可能有 leakage？
-7. 記錄後續動作：哪些欄位要修、刪、轉型、合併或保留註記。
-
-## 初學者最常漏掉的地方
-
-- 只看 `head()`，沒看 `tail()`、`sample()` 與整體分布。
-- 只看平均值，沒有看中位數、四分位距與離群值。
-- 忽略類別拼寫不一致，例如 `"NY"`、`"New York"`、`"new york"`。
-- 看到缺失值就直接填補，沒有先釐清缺失機制與業務意義。
-- 先做編碼與標準化，再切 train/test，導致資料洩漏。
-
-## 一個簡單的起手式
-
-```python
-import pandas as pd
-import seaborn as sns
-
-tips = sns.load_dataset("tips")
-
-tips.info()
-tips.describe(include="all").T
-tips.isna().mean().sort_values(ascending=False)
-tips.duplicated().sum()
-```
-
-上面這幾步不能取代完整分析，但足以在 1 到 2 分鐘內抓到結構、缺失與欄位型態。
-
-## 如何判讀 EDA 結果
-
-- 如果資料量比想像中少，先確認是否過濾過頭或 join 掉了資料。
-- 如果某些欄位幾乎全空，先確認它們是否真的對問題重要。
-- 如果類別分布極不平衡，後續建模時要提早考慮抽樣策略與評估指標。
-- 如果時間欄位有明顯制度變更點，後續切分資料時要避免隨機切分造成錯誤樂觀。
-
-## 小結
-
-EDA 的價值在於讓後面的每一步更穩。當你能清楚回答「資料從哪裡來、長什麼樣、哪裡不可靠、接下來要怎麼處理」，才適合往統計檢定或模型訓練前進。
+| 錯誤 | 為什麼有問題 |
+| --- | --- |
+| 只看 `head()` | 檔尾常有加總列、註解列；排序過的檔前幾列不具代表性 |
+| 只看平均數 | 偏態、雙峰、離群值都看不到；搭配中位數、IQR 與圖，見 [圖表設計原則](visualization/chart-design-principles.md) |
+| 看到缺值就補 | 沒先釐清缺失機制，補值可能製造偏誤 |
+| 先標準化 / 編碼再切 train/test | 用到測試集資訊 → 洩漏，見 [Train-Test Split](../machine-learning/preprocessing/train-test-split.md) |
+| ID 欄位當 feature | 模型學到 ID 與結果的偶然關聯 |
+| EDA 看完全部資料才定假設 | 在同一份資料上探索又檢定 → 偽陽性膨脹；探索與確認最好分開資料 |

@@ -1,130 +1,85 @@
-# Matplotlib: Basics
+[視覺化](../README.md) › [Matplotlib](README.md) › 基礎
 
-This page is about low-level plotting mechanics in Matplotlib: figures, axes, ticks, labels, and saving output. If you want the higher-level grammar built on top of Matplotlib, start with [Seaborn: Basics](../seaborn/basics.md).
+# Matplotlib 基礎 (Basics)
 
-This section introduces the basics of Matplotlib, focusing on figure creation, labels, titles, ticks, scales, and saving figures.
+一張圖由 `Figure`（整張畫布）與一個或多個 `Axes`（座標系，真正畫資料的地方）組成。掌握 `fig, ax = plt.subplots()` 之後，標籤、刻度、尺度、存檔都是對這兩個物件呼叫方法。高階的統計圖見 [Seaborn 基礎](../seaborn/basics.md)。
 
-## Import Packages and Example Dataset
+## 結構
+
+```text
+Figure                    fig：尺寸、整體標題、存檔
+└── Axes (一或多個)        ax：資料、標題、軸標籤、圖例
+    ├── XAxis / YAxis      刻度 (ticks)、刻度標籤、尺度 (linear / log)
+    └── Artists            Line2D、PathCollection（散點）、Rectangle（長條）、Text …
+```
+
+## 建立與設定
 
 ```python
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Example dataset: Iris
 iris = sns.load_dataset("iris")
-```
 
-## Create a Basic Plot
+# 1. 建立：figsize 單位是英吋；layout="constrained" 自動避免標籤重疊
+fig, ax = plt.subplots(figsize=(8, 4), layout="constrained")
+ax.plot(iris.index, iris["sepal_length"], marker="o", color="tab:red", linestyle="--")
 
-```python
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["sepal_length"], marker='o', color='r', linestyle='--')
+# 2. 標題與標籤（一次設定多個）
+ax.set(title="Sepal length by index", xlabel="Index", ylabel="Sepal length (cm)")
 
-ax.set_xlabel("Index")
-ax.set_ylabel("Sepal Length (cm)")
-ax.set_title("Basic Line Plot: Sepal Length")
-plt.show()
-```
-
-- `plt.subplots()`: creates a figure (`fig`) and axes (`ax`).
-- `ax.plot()`: plots data with markers, colors, and line styles.
-
-## Styling and Themes
-
-```python
-plt.style.use('ggplot')  # Other options: 'seaborn', 'grayscale'
-
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["petal_length"], color='blue')
-ax.set_title("Styled Plot with ggplot Theme")
-plt.show()
-```
-
-- `plt.style.use()`: apply predefined styles to plots.
-
-## Set Size of Figure
-
-```python
-fig, ax = plt.subplots()
-fig.set_size_inches(8, 4)
-ax.plot(iris.index, iris["petal_width"], color='green')
-ax.set_title("Customized Figure Size")
-plt.show()
-```
-
-- `fig.set_size_inches(width, height)`: control output dimensions.
-
-## Ticks and Labels
-
-```python
-fig, ax = plt.subplots()
-ax.plot(iris.index[:10], iris["sepal_length"][:10], marker='o')
-
-ax.set_xticks(range(0, 11, 2))
-ax.set_xticklabels(["Zero","Two","Four","Six","Eight","Ten"])
-ax.set_yticks([4, 5, 6, 7, 8])
-
-ax.set_xlabel("Custom X Axis")
-ax.set_ylabel("Sepal Length")
-ax.set_title("Customized Ticks and Labels")
-plt.show()
-```
-
-- `set_xticks()`, `set_yticks()`: control tick positions.
-- `set_xticklabels()`: customize tick labels.
-
-## Axis Limits and Scales
-
-```python
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["sepal_length"])
-
+# 3. 範圍、尺度、刻度
 ax.set_xlim(0, 50)
 ax.set_ylim(4, 8)
-ax.set_yscale('linear')  # Options: 'linear', 'log'
+ax.set_yscale("log")                     # "linear"、"log"、"symlog"（含 0 或負值）、"logit"
+ax.set_xticks(range(0, 51, 10))
+ax.set_xticks([0, 25, 50], labels=["start", "mid", "end"])   # 位置與標籤一起設
+ax.tick_params(axis="x", rotation=45)
 
-ax.set_title("Axis Limits and Scales")
-plt.show()
+# 4. 多子圖
+fig, axes = plt.subplots(2, 2, figsize=(8, 6), sharex=True, layout="constrained")
+axes[0, 0].hist(iris["sepal_length"])
+fig.suptitle("Iris measurements")
+
+# 5. 存檔與關閉
+fig.savefig("iris.png", dpi=300, bbox_inches="tight")   # 點陣
+fig.savefig("iris.pdf")                                  # 向量，論文用
+plt.close(fig)        # 迴圈中大量產圖時一定要關，否則記憶體持續累積
 ```
 
-- `set_xlim()`, `set_ylim()`: control visible ranges.
-- `set_yscale('log')`: logarithmic scale.
+| 想做 | 方法 |
+| --- | --- |
+| 改尺寸 | `plt.subplots(figsize=(w, h))` 或 `fig.set_size_inches(w, h)` |
+| 子圖共用軸 | `sharex=True` / `sharey=True` |
+| 不規則版面 | `fig.subplot_mosaic("AAB;CCB")` |
+| 清空 vs 關閉 | `ax.cla()` 清一個 axes；`plt.clf()` 清整張 figure 但保留視窗；`plt.close(fig)` 釋放記憶體 |
+| 在 notebook 顯示 | 最後一行回傳 figure 或呼叫 `plt.show()`；腳本中 `plt.show()` 會阻塞直到關閉視窗 |
 
-## Save Figures
+## 樣式 (Style)
 
 ```python
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["petal_length"], color='purple')
-ax.set_title("Saved Figure Example")
-
-fig.savefig("iris_plot.png")
+plt.style.available                 # 列出內建樣式
+plt.style.use("ggplot")             # 全域套用
+with plt.style.context("seaborn-v0_8-whitegrid"):   # 只影響這個區塊
+    fig, ax = plt.subplots()
+plt.rcParams["font.size"] = 12      # 個別 rc 參數
 ```
 
-- `fig.savefig()`: saves figure to file in formats like PNG, PDF, SVG.
+> Matplotlib 3.6 起內建的 `"seaborn"` 系列樣式改名為 `"seaborn-v0_8-*"`；直接用 Seaborn 的外觀請改呼叫 `sns.set_theme()`。
 
-## Clear Figures
+## 中文字型
+
+Matplotlib 預設字型沒有中文，會顯示成方框；設定系統上有的 CJK 字型：
+
+| 平台 | 字型名稱 |
+| --- | --- |
+| Windows | `Microsoft JhengHei`（正黑體） |
+| macOS | `PingFang TC`、`Heiti TC`、`Arial Unicode MS` |
+| Linux | `Noto Sans CJK TC`（需安裝 `fonts-noto-cjk`） |
 
 ```python
-plt.clf()  # clear the current figure
+plt.rcParams["font.sans-serif"] = ["Microsoft JhengHei", "PingFang TC", "Noto Sans CJK TC"]
+plt.rcParams["axes.unicode_minus"] = False   # 負號改用 ASCII "-"，避免中文字型缺 U+2212 顯示成方框
 ```
 
-- Useful for scripts generating multiple plots in sequence.
-
-## Handling Non-English Characters
-
-```python
-plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False
-```
-
-- Ensures proper display of non-English characters and minus signs.
-- Reference
-  - [Medium](https://medium.com/marketingdatascience/%E8%A7%A3%E6%B1%BApython-3-matplotlib%E8%88%87seaborn%E8%A6%96%E8%A6%BA%E5%8C%96%E5%A5%97%E4%BB%B6%E4%B8%AD%E6%96%87%E9%A1%AF%E7%A4%BA%E5%95%8F%E9%A1%8C-f7b3773a889b)
-  - [PythonforDataScience (GitHub)](https://github.com/PyDataScience/PythonforDataScience/blob/master/Matplotlib/%E4%BD%9C%E5%9C%96%E9%A1%AF%E7%A4%BA%E4%B8%AD%E6%96%87.ipynb)
-
-## Key Takeaways
-
-- `plt.subplots()`: central for creating figures and axes.
-- Customize plots with labels, ticks, limits, scales, and styles.
-- Save figures with `fig.savefig()` for sharing or publications.
-- Handle special cases (non-English characters) with `rcParams`.
+> 要分享的程式或論文圖，圖內文字用英文最保險，不受對方字型影響。

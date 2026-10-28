@@ -1,88 +1,34 @@
+[資料處理與 EDA](../../README.md) › [視覺化](../README.md) › Matplotlib
+
 # Matplotlib
 
-Matplotlib 提供最細緻的圖表控制能力，適合需要完整掌握 figure、axes、標註、刻度與輸出格式的情境。若你想知道 Seaborn 背後實際發生什麼，理解 Matplotlib 幾乎是必經之路。
+Python 最底層也最完整的繪圖套件：Seaborn 與 pandas `.plot()` 都畫在 Matplotlib 的 `Axes` 上，所以要調細節、組多子圖或輸出出版級圖時都會回到這裡。本章以 Matplotlib 3.10+ 為準。
 
-## 建議閱讀順序
+```text
+基礎（figure / axes / 輸出）→ 折線、散布 → 長條、直方、箱型 → 雙軸與註解
+```
 
-1. [Basics](basics.md): 先把 figure、axes、labels、style 與輸出流程建立起來。
-2. [Line Plot](line-plot.md) 與 [Scatter Plot](scatter-plot.md): 這兩類圖最常出現在分析與模型診斷。
-3. [Bar Plot & Histogram](bar-histogram.md) 與 [Box Plot](box-plot.md): 補上分布與群組比較的常用圖。
-4. [Advanced](advanced.md): 需要註解、雙軸、客製版面或比較複雜的輸出時再讀。
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [基礎](basics.md) | `fig, ax`、標籤、刻度、log 軸、樣式、存檔、中文字型 | 圖的骨架怎麼建、怎麼輸出？ |
+| [折線圖](line-plot.md) | 多條線、子圖、誤差線、參考線 | 怎麼畫趨勢與不確定性？ |
+| [散布圖](scatter-plot.md) | 分組、顏色 / 大小編碼、趨勢線、overplotting | 兩個連續變數什麼關係？點太多怎麼辦？ |
+| [長條圖與直方圖](bar-histogram.md) | 分組 / 堆疊長條、直方圖、bins | 類別怎麼比較？分布長怎樣？ |
+| [箱型圖](box-plot.md) | 鬚的定義、分組、notch、疊加原始點 | 各組分布與離群值？ |
+| [進階：雙軸與註解](advanced.md) | `twinx`、`annotate`、`axvspan` | 怎麼標出重點、比較不同尺度？ |
 
-## 主題地圖
+## 兩種寫法
 
-### [Basics](basics.md)
+| | 物件導向 (OO) | pyplot (狀態式) |
+| --- | --- | --- |
+| 寫法 | `fig, ax = plt.subplots()`；`ax.plot()`、`ax.set_title()` | `plt.plot()`、`plt.title()` |
+| 作用對象 | 明確指定哪個 axes | 「目前的」figure / axes |
+| 建議 | 多子圖、函式、正式腳本都用這個 | 互動中快速看一眼 |
 
-- Create figures and axes with `plt.subplots()`
-- Add labels, titles, and ticks
-- Adjust figure size, axis limits, and scales
-- Apply styles and themes (`plt.style.use`)
-- Save and clear figures
-- Handle non-English characters with `rcParams`
+> 本章範例都用 OO 寫法。Seaborn 的 axes-level 函式接受 `ax=`，pandas `.plot()` 回傳 `ax`，都能接著用 `ax.set_*()` 調整。
 
-### [Line Plot](line-plot.md)
-
-- Basic line plots
-- Multiple lines with legends
-- Subplots
-- Error bars
-- Reference lines (`axhline`, `axvline`)
-- Dual axes with `twinx`
-- Annotations
-
-### [Scatter Plot](scatter-plot.md)
-
-- Basic scatter plots
-- Grouping by categories
-- Customize marker size and color (`c`, `s`, `cmap`, `alpha`)
-- Reference lines
-- Subplots for comparison
-- Scatter with trend line (`np.polyfit`)
-- Annotations
-
-### [Bar Plot & Histogram](bar-histogram.md)
-
-- Basic bar plots
-- Grouped and stacked bars
-- Horizontal bars (`ax.barh`)
-- Histograms (`ax.hist`)
-- Multiple histograms with overlay
-- Density overlays (histogram + KDE)
-
-### [Box Plot](box-plot.md)
-
-- Basic box plots
-- Multiple box plots
-- Grouped box plots by category
-- Horizontal box plots
-- Customized box plots (notched, colored)
-- Overlay raw data points
-
-### [Advanced](advanced.md)
-
-- Dual y-axis plots with `twinx`
-- Annotating with arrows
-- Combining dual axes and annotations
-- Missing data visualization with **Missingno**
-
-## Matplotlib vs Pandas `.plot()`
-
-| Aspect        | Matplotlib                                           | Pandas `.plot()`                                 |
-| ------------- | ---------------------------------------------------- | ------------------------------------------------ |
-| **API**       | Low-level, flexible plotting library                 | High-level wrapper on Matplotlib                 |
-| **Use Cases** | Full control of plots, customizations, multiple axes | Quick visualization directly from DataFrames     |
-| **Examples**  | `plt.bar(x, y)`, `ax.plot(x, y)`                     | `df.plot(kind='bar')`, `df.plot(kind='scatter')` |
-| **Best For**  | Publication-quality, complex figures                 | Exploratory data analysis (EDA)                  |
-
-For Pandas visualization examples, see [Pandas Visualization](../pandas-plotting.md).
-
-## 這一章要解決什麼
-
-- 當高階 API 不夠用時，我要怎麼直接控制 figure、axes、legend 與 annotation？
-- 什麼時候應該回到 Matplotlib，而不是繼續疊加 pandas 或 Seaborn 的預設？
-- 如果一張圖要拿去簡報、論文或正式報告，哪些底層控制最重要？
-
-## Practical Reminder
-
-- 先把軸、標籤與圖例設對，再追求視覺風格。
-- 如果圖已經需要很多手工調整，通常 Matplotlib 會比高階 API 更可靠。
+| 相關 | 連結 |
+| --- | --- |
+| 統計圖（自動分組、CI） | [Seaborn](../seaborn/README.md) |
+| 從 DataFrame 快速畫 | [pandas Plotting](../pandas-plotting.md) |
+| 選圖與避免誤導 | [圖表設計原則](../chart-design-principles.md) |

@@ -1,123 +1,64 @@
-# Seaborn: Relational Plots
+[視覺化](../README.md) › [Seaborn](README.md) › 關係圖
 
-Relational plots (`relplot`) are designed to visualize relationships between two or more variables. They can display data as **scatter plots** or **line plots**, and can be extended with additional dimensions (hue, size, style, col, row).
+# 關係圖 (Relational Plots)
 
-## Import Packages and Example Dataset
+兩個連續變數之間的關係：`scatterplot` 看點的分布，`lineplot` 看 y 隨有序的 x（時間、劑量）如何變化。`relplot(kind=...)` 是 figure-level 版，可以 facet。
+
+## 散布圖
 
 ```python
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Example dataset: Iris
 iris = sns.load_dataset("iris")
+
+# 1. hue / size / style 同時編碼三個額外變數
+sns.scatterplot(data=iris, x="sepal_length", y="petal_length",
+                hue="species", style="species", size="petal_width", alpha=0.7)
+
+# 2. facet：每個物種一個子圖
+sns.relplot(data=iris, x="sepal_length", y="sepal_width", col="species", col_wrap=2, height=3)
 ```
 
-## Basic Scatter Plot
+| 參數 | 對應 | 建議 |
+| --- | --- | --- |
+| `hue` | 顏色 | 最容易辨識，放最重要的分組 |
+| `style` | 點形 / 線型 | 與 `hue` 用同一欄可提高色盲可讀性 |
+| `size` | 點大小 / 線粗 | 數值欄位；大小差異不易精確比較 |
+| `alpha` | 透明度 | 點多時降低 |
+| `col` / `row` / `col_wrap` | 子圖 | 只在 `relplot` |
+
+## 折線圖與彙總
+
+`lineplot` 同一個 x 有多個 y 時，會**自動彙總**：畫平均線 + 95% bootstrap CI 誤差帶。
 
 ```python
-sns.relplot(x="sepal_length", y="sepal_width", data=iris, kind="scatter")
-plt.show()
+flights = sns.load_dataset("flights")       # 每年 12 個月 → 每個 year 有 12 個值
+
+# 1. 每年平均 + 95% CI（預設）
+sns.lineplot(data=flights, x="year", y="passengers")
+
+# 2. 改成 ± SD；或 errorbar=None 不畫
+sns.lineplot(data=flights, x="year", y="passengers", errorbar="sd")
+
+# 3. 每個月一條線，不彙總
+sns.lineplot(data=flights, x="year", y="passengers", hue="month", palette="viridis")
+
+# 4. 每個個體一條線（重複測量、單細胞軌跡）：units= 指定個體、estimator=None 關閉彙總
+fmri = sns.load_dataset("fmri")
+sns.lineplot(data=fmri.query("region == 'frontal'"), x="timepoint", y="signal",
+             units="subject", estimator=None, lw=0.8, color="gray")
 ```
 
-- Default `kind` is `scatter`.
-- Use for simple two-variable relationships.
+| 參數 | 用途 |
+| --- | --- |
+| `estimator` | 彙總函式，預設 `"mean"`；`None` 不彙總 |
+| `errorbar` | `("ci", 95)`（預設）、`"sd"`、`("pi", 50)`、`None`；舊參數 `ci=` 已棄用 |
+| `err_style` | `"band"`（預設，誤差帶）或 `"bars"`（誤差線） |
+| `units` | 每個個體畫一條線，需搭配 `estimator=None` |
+| `markers=True`、`dashes=False` | 加點標記、全部實線 |
+| `sort=False` | 不依 x 排序（x 是軌跡順序時） |
 
-## Scatter Plot with Hue (Subgrouping)
+> x 沒有順序時（如 iris 的 `sepal_length` 對 `sepal_width`），`lineplot` 照樣會彙總並連線，但這條線沒有意義，應該用散布圖。
 
-```python
-sns.relplot(x="sepal_length", y="sepal_width",
-            data=iris, kind="scatter",
-            hue="species")
-plt.show()
-```
-
-- `hue`: adds a third variable via color.
-- Helps show grouping (e.g., by species).
-
-## Advanced Customization (Hue, Size, Style, Alpha)
-
-```python
-sns.relplot(x="sepal_length", y="petal_length",
-            data=iris, kind="scatter",
-            hue="species",                      # color by species
-            size="petal_width",                 # scale marker size
-            style="species",                    # marker style by species
-            alpha=0.7)                          # transparency
-plt.show()
-```
-
-- `size`: adjust point size based on a numeric variable.
-- `style`: change marker type based on categories.
-- `alpha`: control transparency.
-
-## Faceting with Columns and Rows
-
-```python
-sns.relplot(x="sepal_length", y="sepal_width",
-            data=iris, kind="scatter",
-            col="species",                     # separate plots by species
-            col_wrap=2)                        # wrap into 2 columns
-plt.show()
-```
-
-- `col`/`row`: create grids of subplots based on categorical variables.
-- `col_wrap`: wrap columns into multiple rows.
-
-## Basic Line Plot
-
-```python
-flights = sns.load_dataset("flights")
-
-sns.relplot(x="year", y="passengers",
-            data=flights, kind="line")
-plt.show()
-```
-
-- `kind='line'`: plot trends instead of scatter points.
-- Often used for time series.
-
-## Line Plot with Multiple Categories
-
-```python
-sns.relplot(x="year", y="passengers",
-            data=flights, kind="line",
-            hue="month",          # color by month
-            style="month",        # different line styles
-            markers=True,          # show points on lines
-            dashes=False)          # disable dashed lines
-plt.show()
-```
-
-- `markers=True`: show individual points.
-- `dashes=False`: force all lines to be solid.
-
-## Confidence Intervals in Line Plots
-
-```python
-sns.relplot(x="year", y="passengers",
-            data=flights, kind="line",
-            ci="sd")                   # shaded band shows ±1 standard deviation
-plt.show()
-```
-
-- Default: 95% CI shaded region.
-- `ci=None`: remove confidence intervals.
-
-## Multiple Observations per X Value
-
-```python
-sns.relplot(x="sepal_length", y="sepal_width",
-            data=iris, kind="line")
-plt.show()
-```
-
-- Aggregates multiple y-values per x using mean.
-- `ci`: controls the uncertainty band.
-
-## Key Takeaways
-
-- `relplot`: unified interface for **scatter** and **line** plots.
-- Use **hue, size, style, alpha** for encoding more dimensions.
-- Use **col/row faceting** to create subplots by categories.
-- Line plots can display trends, multiple categories, and confidence intervals.
-- Great for **exploring relationships** in multivariate data (e.g., Iris, Flights).
+> 重複測量的資料（同一受試者多個時間點），預設 CI 把每個觀測當獨立樣本，會低估不確定性；先算每人的值再彙總，或用 [混合效應模型](../../../statistics/regression-analysis/mixed-effects-models.md)。

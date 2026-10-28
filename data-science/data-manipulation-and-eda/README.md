@@ -1,25 +1,24 @@
-# Data Manipulation and EDA
+[Data Science](../README.md) › 資料處理與 EDA
 
-這個章節放在建模之前，目的是先把資料看懂。很多機器學習或統計分析的失敗，其實不是模型選錯，而是太早跳進建模，沒有先處理欄位定義、缺失值、重複值、異常值與資料分布。
+# 資料處理與探索式分析 (Data Manipulation & EDA)
 
-## 建議閱讀順序
+建模之前先把資料看懂。很多分析失敗不是模型選錯，而是太早建模，沒先確認欄位定義、缺失、重複、離群值與分布。
 
-1. [EDA Workflow](eda-workflow.md): 先做 data profiling（型別、完整性、唯一性），再走固定的探索節奏。
-2. [Missing Data](missing-data.md): 缺失機制（MCAR / MAR / MNAR）與刪除策略；工具用法見 [pandas](../python-foundations/pandas/missing-data.md) / [R](../r-foundations/missing-data.md)，插補見 [Imputation](../machine-learning/preprocessing/imputation.md)。
-3. [Visualization](visualization/README.md): 把 EDA 的發現轉成可比較、可溝通的圖表。
-4. [Geospatial Data in Python](geospatial-data-in-python.md)（選讀）: 資料帶有位置欄位時，geometry、CRS 與空間關係。
-5. 追蹤群組隨時間的留存 / 流失：改用存活分析，見 [Kaplan–Meier](../statistics/survival-analysis/kaplan-meier.md)。
+```text
+Profiling → 缺失機制 → 單變數 / 雙變數圖 → 記錄要修的欄位 → 統計 / 建模
+```
 
-## 這一章要解決什麼
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [EDA 流程](eda-workflow.md) | profiling 檢查表、起手式程式碼、omics 矩陣的 QC、判讀訊號 | 拿到新資料第一步看什麼？ |
+| [缺失機制](missing-data.md) | MCAR / MAR / MNAR、刪除策略、生資常見的缺失型態 | 缺值能直接刪嗎？會造成什麼偏誤？ |
+| [視覺化](visualization/README.md) | 圖表設計原則、Matplotlib、Seaborn、pandas plotting | 什麼問題配什麼圖？怎麼畫才不誤導？ |
+| [地理空間資料](geospatial-data-in-python.md)（選讀） | GeoPandas、geometry、CRS、空間 join | 資料有經緯度時要注意什麼？ |
 
-- 我拿到的新資料集，第一步該看什麼？
-- 哪些欄位有資料品質風險，會影響後面分析？
-- 如果資料有經緯度、區域邊界或地理圖層，分析前要先確認哪些前提？
-- 缺失值到底要刪掉、填補，還是先保留並記錄？
-- 圖表與摘要統計要如何搭配，避免只看平均數就下結論？
-
-## 與其他章節的銜接
-
-- 欄位整理與索引操作可搭配 [pandas](../python-foundations/pandas/README.md)。
-- 視覺化探索已整合到本章的 [Visualization](visualization/README.md) 子章節。
-- 當資料品質確認後，再進入 [Statistics](../statistics/README.md) 或 [Machine Learning](../machine-learning/README.md)。
+| 相關 | 連結 |
+| --- | --- |
+| 資料品質對統計的影響、生資陷阱 | [Statistics：資料品質](../statistics/descriptive-statistics/data-quality.md) |
+| 多變數 EDA、相關矩陣、Simpson's paradox | [多變量探索](../statistics/multivariate-analysis/multivariate-eda.md) |
+| 工具：缺值 API | [pandas 缺值](../python-foundations/pandas/missing-data.md)、[R naniar](../r-foundations/missing-data.md) |
+| 插補、離群值處理 | [Imputation](../machine-learning/preprocessing/imputation.md)、[Outlier Handling](../machine-learning/preprocessing/outlier-handling.md) |
+| 群組隨時間的留存 / 流失 | [Kaplan–Meier](../statistics/survival-analysis/kaplan-meier.md) |

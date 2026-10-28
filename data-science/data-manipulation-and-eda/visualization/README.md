@@ -1,34 +1,43 @@
-# Visualization
+[Data Science](../../README.md) › [資料處理與 EDA](../README.md) › 視覺化
 
-資料視覺化不是把數字畫成圖而已，而是把分析問題轉成讀者能理解的證據。這個章節把常用的 Python 繪圖工具與圖表設計原則整理成一條可實作的路線。
+# 視覺化 (Visualization)
 
-## 建議閱讀順序
+把分析問題轉成讀者看得懂的證據。先學設計原則，再學工具：Matplotlib 是底層，Seaborn 與 pandas `.plot()` 都建立在它之上。
 
-1. [Chart Design Principles](chart-design-principles.md): 先理解圖表為什麼容易誤導，以及如何設計可讀的圖。
-2. [Matplotlib](matplotlib/README.md): 學會 figure、axes、標籤、版面與輸出控制。
-3. [Seaborn](seaborn/README.md): 進一步處理統計圖、分組比較與高階語意映射。
-4. [Pandas Plotting](pandas-plotting.md): `df.plot()` 快速檢查與時間序列圖。
+```text
+設計原則 → Matplotlib（figure / axes）→ Seaborn（統計圖）→ pandas plotting（快速檢查、時間序列）
+```
 
-> 圖表要組成決策介面時，見 [Data Communication: Dashboard Design](../../data-communication/dashboard-design.md)。
-
-## 何時用哪個工具
-
-| 工具 | 最適合的場景 | 注意事項 |
+| 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
-| [Matplotlib](matplotlib/README.md) | 客製化版面、多子圖、出版級控制 | 語法較底層，但最靈活 |
-| [Seaborn](seaborn/README.md) | EDA、統計圖、直接吃 DataFrame | 高階 API 方便，但仍要理解底層軸設定 |
-| [Pandas Plotting](pandas-plotting.md) | 最快的第一眼、時間序列 | 客製化有限，底層仍是 Matplotlib |
+| [圖表設計原則](chart-design-principles.md) | 選圖、常見誤導、顏色、出版輸出 | 這個問題該畫什麼圖？怎麼不誤導？ |
+| [Matplotlib](matplotlib/README.md) | figure / axes、各種圖型、雙軸、註解 | 怎麼精確控制每個元素？ |
+| [Seaborn](seaborn/README.md) | 分布、類別、關係、迴歸、矩陣圖 | 怎麼從 DataFrame 快速畫統計圖？ |
+| [pandas Plotting](pandas-plotting.md) | `df.plot()`、時間序列的 rolling / resample 圖 | 怎麼最快看一眼資料？ |
 
-## 常見選圖原則
+## 選工具
 
-- 比較類別大小時，先想長條圖，不要先想圓餅圖。
-- 看分布時，優先用 histogram、KDE、boxplot 或 violin plot。
-- 看兩個連續變數關係時，先用 scatter plot，再判斷是否需要回歸線。
-- 看時間變化時，優先用 line plot，並清楚標示時間刻度與單位。
-- 看多個變數之間的整體關係時，可考慮 heatmap、pairplot 或 facet grid。
+| 工具 | 最適合 | 注意 |
+| --- | --- | --- |
+| pandas `.plot()` | 第一眼檢查、時間序列 | 客製化有限 |
+| Seaborn | EDA、分組比較、統計圖（自動算平均與 CI） | 細節仍要用 Matplotlib 的 `ax` 調整 |
+| Matplotlib | 多子圖版面、出版級控制、特殊圖 | 語法較冗長 |
 
-## 與其他章節的關係
+## 選圖速查
 
-- 需要資料清理與欄位整理時，先回到本章前面的 [Data Manipulation and EDA](../README.md)。
-- 需要理解分布、假設檢定或效果量時，回到 [Statistics](../../statistics/README.md)。
-- 需要用圖解釋模型結果時，參考 [Machine Learning Evaluation](../../machine-learning/evaluation/README.md) 與 [Interpretability and Diagnostics](../../machine-learning/interpretability-and-diagnostics/README.md)。
+| 問題 | 首選 | 替代 / 補充 |
+| --- | --- | --- |
+| 類別大小比較 | 排序長條圖 | 點圖 (dot plot)；避免圓餅圖 |
+| 單一連續變數分布 | histogram、KDE | ECDF（不受 bin 影響） |
+| 各組分布比較 | box + 原始點、violin | strip / swarm（n 小時） |
+| 兩個連續變數 | scatter | n 很大用 hexbin / 2D density |
+| 時間趨勢 | line | rolling mean、small multiples |
+| 多變數關係 | pairplot、相關 heatmap | PCA 圖、clustermap |
+| 差異表現結果 | volcano plot、MA plot | 見 [RNA-seq 對比與視覺化](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/08-contrasts-testing-and-visualization.md) |
+
+| 相關 | 連結 |
+| --- | --- |
+| 把圖組成儀表板 | [Dashboard Design](../../data-communication/dashboard-design.md) |
+| 分布、效果量的統計意義 | [Statistics](../../statistics/README.md) |
+| 模型評估圖（ROC、校準、殘差） | [ML Evaluation](../../machine-learning/evaluation/README.md)、[Interpretability](../../machine-learning/interpretability-and-diagnostics/README.md) |
+| R 的作圖 | [tidyverse：接到 ggplot2](../../r-foundations/tidyverse-workflow.md#接到-ggplot2) |

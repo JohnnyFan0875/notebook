@@ -1,118 +1,72 @@
-# Seaborn: Regression Plots
+[視覺化](../README.md) › [Seaborn](README.md) › 迴歸圖
 
-Regression plots in Seaborn allow visualization of relationships between variables along with fitted regression models and diagnostic checks. Common functions include **regplot**, **residplot**, and **lmplot**.
+# 迴歸圖 (Regression Plots)
 
-## Import Packages and Example Dataset
+在散布圖上疊加擬合的迴歸線與信賴帶，並用殘差圖檢查模型假設。Seaborn 的迴歸圖只用於**視覺化**，不輸出係數或 p 值；要做推論用 statsmodels，見 [簡單線性迴歸](../../../statistics/regression-analysis/simple-linear-regression.md)。
+
+## 迴歸線
 
 ```python
 import seaborn as sns
 import matplotlib.pyplot as plt
-import numpy as np
 
-# Example dataset: Iris
 iris = sns.load_dataset("iris")
-```
-
-## Basic Regression Plot
-
-```python
-sns.regplot(x="sepal_length", y="petal_length", data=iris)
-plt.title("Regression Plot: Sepal vs Petal Length")
-plt.show()
-```
-
-- Adds a linear regression line with a 95% confidence interval (default).
-- `ci=None`: removes confidence interval.
-- `order=n`: fits a polynomial regression of order _n_.
-
-## Logistic Regression
-
-If the dependent variable is binary, set `logistic=True`.
-
-```python
-# Example dataset: Tips
 tips = sns.load_dataset("tips")
+fig, axes = plt.subplots(1, 3, figsize=(14, 4), layout="constrained")
 
-sns.regplot(x="total_bill", y="smoker", data=tips, logistic=True, ci=None)
-plt.title("Logistic Regression Example")
-plt.show()
+# 1. 線性 + 95% CI 帶（bootstrap）
+sns.regplot(data=iris, x="sepal_length", y="petal_length", ax=axes[0])
+
+# 2. 多項式 / 穩健迴歸 / LOWESS 平滑
+sns.regplot(data=iris, x="sepal_length", y="petal_length", order=2, ci=None, ax=axes[1])
+
+# 3. 邏輯斯迴歸：y 必須是 0/1 數值，字串類別會報錯；需要 statsmodels
+tips["smoker_yes"] = (tips["smoker"] == "Yes").astype(int)
+sns.regplot(data=tips, x="total_bill", y="smoker_yes", logistic=True, ci=None,
+            y_jitter=0.03, scatter_kws={"alpha": 0.3}, ax=axes[2])
+
+# figure-level：每個物種各自一條線
+sns.lmplot(data=iris, x="sepal_length", y="petal_length", hue="species", ci=None, height=4)
 ```
 
-- Fits a logistic regression curve.
-- Useful for binary classification relationships.
+| 參數 | 用途 |
+| --- | --- |
+| `ci` | 迴歸線信賴帶，預設 95；`None` 不畫（`regplot` 仍用 `ci=`，不是 `errorbar=`） |
+| `order=n` | n 次多項式 |
+| `logistic=True` | 邏輯斯迴歸（y 為 0/1） |
+| `lowess=True` | 局部加權平滑，看非線性趨勢 |
+| `robust=True` | 降低離群值影響 |
+| `x_bins` / `x_estimator` | x 分箱後畫各箱平均 ± CI，點很多時清楚 |
+| `x_jitter` / `y_jitter` | 只影響點的顯示位置，不影響擬合 |
+| `truncate=False` | 迴歸線延伸到整個 x 軸範圍 |
 
-## Residual Plot
+> `lmplot(hue=...)` 的每條線是**分開擬合**；斜率與截距等同於 `petal_length ~ sepal_length * species` 交互作用模型的各組估計，不是控制物種後的共同斜率。Simpson's paradox（合併後斜率方向與各組相反）就靠這種分組迴歸線發現，見 [多變量探索](../../../statistics/multivariate-analysis/multivariate-eda.md#simpsons-paradox)。
 
-Residual plots help assess model fit.
-
-```python
-sns.residplot(x="sepal_length", y="petal_length", data=iris, lowess=True)
-plt.xlabel("Fitted values (Sepal Length)")
-plt.ylabel("Residuals")
-plt.title("Residual Plot")
-plt.show()
-```
-
-- `lowess=True`: adds a locally weighted smoothing line.
-- Ideally, residuals should be randomly scattered around 0.
-
-## Quantile-Quantile (QQ) Plot
-
-For normality checks, QQ plots compare residual quantiles to a normal distribution.
+## 殘差與診斷圖
 
 ```python
+import numpy as np
 import statsmodels.api as sm
 
+# 1. residplot：先擬合 y ~ x，再畫 (x, 殘差)；x 軸是預測變數，不是 fitted values
+sns.residplot(data=iris, x="sepal_length", y="petal_length", lowess=True,
+              line_kws={"color": "tomato"})
+
+# 2. 用 statsmodels 模型畫 Q-Q 與 Scale-Location
 model = sm.OLS(iris["petal_length"], sm.add_constant(iris["sepal_length"])).fit()
-sm.qqplot(model.resid, line="45")
-plt.title("QQ Plot of Residuals")
-plt.show()
+std_resid = model.get_influence().resid_studentized_internal
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4), layout="constrained")
+sm.qqplot(std_resid, line="45", ax=axes[0])           # 標準化殘差才能對 45° 線；原始殘差用 line="s"
+sns.regplot(x=model.fittedvalues, y=np.sqrt(np.abs(std_resid)), lowess=True,
+            line_kws={"color": "tomato"}, ax=axes[1])
+axes[1].set(xlabel="Fitted values", ylabel="√|standardized residuals|", title="Scale-Location")
 ```
 
-- If residuals follow a straight line, normality assumption holds.
+| 圖 | 理想樣子 | 有問題時 |
+| --- | --- | --- |
+| 殘差 vs x / fitted | 點隨機散在 0 附近，平滑線水平 | U 形 → 非線性；漏斗形 → 異質變異 |
+| Q-Q plot | 點貼著對角線 | 尾巴翹起 → 重尾或偏態 |
+| Scale-Location | 平滑線大致水平 | 線上升 → 變異隨 fitted 增加 |
 
-## Scale-Location Plot
-
-- **Purpose**: Displays fitted values (x-axis) vs. square root of standardized residuals (y-axis).
-- **Homoscedasticity Check**: The red line should be roughly horizontal, indicating constant variance across fitted values.
-- **Definition**: Homoscedasticity means equal or similar variances across different groups.
-- **Residual Pattern**: Residuals should be randomly scattered around the red line with roughly equal variability at all fitted values.
-
-```python
-model_norm_residuals = model.get_influence().resid_studentized_internal
-model_norm_residuals_abs_sqrt = np.sqrt(np.abs(model_norm_residuals))
-
-sns.regplot(x=model.fittedvalues,
-            y=model_norm_residuals_abs_sqrt,
-            ci=None,
-            lowess=True)
-
-plt.xlabel("Fitted values")
-plt.ylabel("Sqrt(|Standardized Residuals|)")
-plt.title("Scale-Location Plot")
-plt.show()
-```
-
-- Red line should be roughly horizontal if variance is constant.
-
-## LM Plot
-
-`lmplot` is a higher-level interface combining regression plots with FacetGrid.
-
-```python
-sns.lmplot(x="sepal_length", y="petal_length",
-           data=iris, hue="species", ci=None)
-plt.title("LM Plot by Species")
-plt.show()
-```
-
-- Similar to `regplot`, but supports faceting with `col`/`row`.
-- Use `hue` for subgroup regression lines.
-
-## Key Takeaways
-
-- `regplot`: basic regression fits (linear, polynomial, logistic).
-- `residplot`: visualize residuals for model diagnostics.
-- `lmplot`: regression fits across multiple facets/groups.
-- Supplement with **QQ plots** and **Scale-Location plots** for deeper diagnostic checks.
-- Useful for both **exploring relationships** and **validating assumptions**.
+四張診斷圖的完整判讀、槓桿與 Cook's distance 見 [模型假設與診斷](../../../statistics/multivariate-analysis/assumptions-diagnostics.md#四張診斷圖)。
