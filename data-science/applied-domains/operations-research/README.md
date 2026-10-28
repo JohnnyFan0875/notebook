@@ -17,15 +17,15 @@ Key point: operations research 的核心不是把數學寫得很複雜，而是�
 
 ## 建議閱讀順序
 
-1. 先看 [Data Communication](../data-communication/README.md)，先把 business question 和 analytical question 分清楚。
-2. 再看 [Statistics](../statistics/README.md)，建立不確定性與輸入資料品質的基本感覺。
+1. 先看 [Data Communication](../../data-communication/README.md)，先把 business question 和 analytical question 分清楚。
+2. 再看 [Statistics](../../statistics/README.md)，建立不確定性與輸入資料品質的基本感覺。
 3. 再看 [Optimization in Python](optimization-in-python.md)，建立 objective、constraints 與 solver 的基本直覺。
 4. 再看 [Supply Chain Optimization](supply-chain-optimization.md)，把 prescriptive model 的骨架與限制條件直覺建立起來。
 
 ## 與其他章節的關係
 
-- [Statistics](../statistics/README.md): 幫你判斷需求、成本、處理時間與其他輸入是否可信。
-- [Machine Learning](../machine-learning/README.md): ML 常回答「會發生什麼」，OR 則接著回答「應該怎麼做」。
+- [Statistics](../../statistics/README.md): 幫你判斷需求、成本、處理時間與其他輸入是否可信。
+- [Machine Learning](../../machine-learning/README.md): ML 常回答「會發生什麼」，OR 則接著回答「應該怎麼做」。
 - [Process Analytics](../process-analytics/README.md): 若 bottleneck 已被找出，OR 常負責後續的資源配置與改善方案。
 
 ## 實務提醒

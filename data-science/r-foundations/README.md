@@ -43,7 +43,7 @@
 ### 建模與統計工作流
 
 - [Explanatory Modeling in R](explanatory-modeling-in-r.md)
-- [Modeling with tidymodels](modeling-with-tidymodels.md)
+- [Modeling with tidymodels](../machine-learning/packages/tidymodels/README.md)
 - [Sampling in R](sampling-in-r.md)
 - [Statistical Functions in R](statistical-functions.md)
 - [Survey Data Analysis in R](survey-data-analysis.md)
@@ -61,7 +61,7 @@
 - [Regular Expressions in R](regular-expressions.md)
 - [String Distance and Fuzzy Matching in R](string-distance-and-fuzzy-matching.md)
 - [Text Analysis in R](text-analysis.md)
-- [Web Scraping in R](web-scraping-in-r.md)
+- [Web Scraping in R](../web-scraping/rvest.md)
 
 ## 建議閱讀方式
 
@@ -78,10 +78,10 @@
 - 如果你需要在 R 裡連資料庫、讀 API、處理 JSON 或其他統計軟體格式，補 [Importing Data in R](importing-data.md)。
 - 如果你在 R 裡常遇到 `NA`、隱藏缺值標記或想追蹤 imputation，補 [Missing Data in R](missing-data.md)。
 - 如果你想把散點圖、`lm()`、`broom` 輸出與模型比較串成一條可讀的 regression workflow，補 [Explanatory Modeling in R](explanatory-modeling-in-r.md)。
-- 如果你已經會做基本資料整理，想把切分資料、前處理、模型與評估串成一致的機器學習流程，補 [Modeling with tidymodels](modeling-with-tidymodels.md)。
+- 如果你已經會做基本資料整理，想把切分資料、前處理、模型與評估串成一致的機器學習流程，補 [Modeling with tidymodels](../machine-learning/packages/tidymodels/README.md)。
 - 如果你需要在大資料量下做高效 join、查找、批次整併與 reshape，補 [Joining and Reshaping with data.table](data-table-joins-and-reshaping.md)。
 - 如果你已經確認 bottleneck 落在少數計算熱點，想把小型函式降到 C++，補 [Rcpp for R Performance](rcpp-for-r-performance.md)。
-- 如果你要用 R 抓網頁節點、表格或處理 scraping request 細節，補 [Web Scraping in R](web-scraping-in-r.md)。
+- 如果你要用 R 抓網頁節點、表格或處理 scraping request 細節，補 [Web Scraping in R](../web-scraping/rvest.md)。
 - 如果你想在 R 裡實作 random sample、stratified sample 或 bootstrap workflow，補 [Sampling in R](sampling-in-r.md)。
 - 如果你需要從 log、半結構化字串或文字欄位裡抽 pattern，補 [Regular Expressions in R](regular-expressions.md)。
 - 如果你的資料值不只是格式混亂，還包含 typo、近似拼法或要做 approximate join，補 [String Distance and Fuzzy Matching in R](string-distance-and-fuzzy-matching.md)。

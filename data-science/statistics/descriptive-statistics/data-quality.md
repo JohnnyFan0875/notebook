@@ -4,7 +4,7 @@
 
 在算任何摘要統計、做檢定或建模之前，先確認資料是「可分析的」(analysis-ready)。缺失值、重複列、錯誤單位都可能嚴重扭曲平均數、p 值與迴歸係數。
 
-> 組織層級的資料品質治理（責任歸屬、監控）見 [AI Strategy and Governance: Data Quality](../../ai-strategy-and-governance/data-quality.md)。
+> 組織層級的資料品質治理（責任歸屬、監控）見 [Responsible AI: Data Quality](../../responsible-ai/data-quality.md)。
 
 ## 快速檢查表
 

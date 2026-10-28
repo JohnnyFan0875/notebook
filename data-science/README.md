@@ -17,7 +17,7 @@
 7. [Data Engineering](data-engineering/README.md): 了解資料如何被擷取、儲存、排程、轉換與交付，建立可長期運作的資料供應鏈觀念。
 8. [Statistics](statistics/README.md): 建立估計、不確定性、假設檢定、回歸與時間序列的判讀能力。
 9. [Machine Learning](machine-learning/README.md): 學會以 workflow 為中心的建模、評估、解釋與部署觀念。
-10. [AI Strategy and Governance](ai-strategy-and-governance/README.md): 當模型開始進入真實決策流程，再補齊治理、風險、隱私與責任邊界。
+10. [Responsible AI](responsible-ai/README.md): 當模型開始進入真實決策流程，再補齊治理、風險、隱私與責任邊界。
 11. [Deep Learning](deep-learning/README.md): 在理解模型訓練流程後，再進入神經網路與 PyTorch 實作。
 12. [LLM Applications and Systems](llm/README.md): 當你開始把模型接到檔案、知識庫、工具與工作流程時，再進入 LLM 應用系統設計。
 
@@ -25,14 +25,12 @@
 
 - [Databases](databases/README.md): 當分析開始依賴 SQL 查詢、資料抽取與資料庫端聚合時插入閱讀。
 - [Web Scraping](web-scraping/README.md): 當資料不在 API 或現成表格裡，而需要從網站擷取時插入閱讀。
-- [Process Analytics](process-analytics/README.md): 當資料來自 event log、工單、訂單或醫療流程時，延伸到流程觀點。
 
 ### 進階方法與領域支線
 
-- [Operations Research](operations-research/README.md): 當問題變成在限制條件下尋找最佳決策時再往這裡走。
 - [Network Analysis](network-analysis/README.md): 當資料重點在節點、連結與群聚關係時插入 graph thinking。
-- [Marketing Analytics](marketing-analytics/README.md): 當問題聚焦在價格、促銷、品牌選擇與 customer response 時，作為應用支線閱讀。
-- [Finance](finance/README.md): 當你需要報酬率、自相關、風險與投資組合觀點時，從統計與時間序列之後切入最自然。
+- [Image Analysis](image-analysis/README.md): 不用模型的古典影像處理，處理顯微鏡或醫學影像時插入閱讀。
+- [Applied Domains](applied-domains/README.md): finance、marketing、operations research、process analytics 等領域應用，依需要選讀。
 
 ## 學習路線圖
 
@@ -45,13 +43,13 @@ flowchart LR
     C --> F[Data Engineering]
     F --> K[Databases / Web Scraping]
     E --> G[Machine Learning]
-    G --> L[AI Strategy and Governance]
+    G --> L[Responsible AI]
     F --> G
     G --> H[Deep Learning]
     G --> I[LLM Applications]
-    E --> J[Operations Research / Network Analysis / Marketing Analytics]
-    E --> M[Finance]
-    F --> N[Process Analytics]
+    E --> J[Network Analysis]
+    E --> M[Applied Domains]
+    C --> N[Image Analysis]
 ```
 
 ## 章節地圖
@@ -65,18 +63,16 @@ flowchart LR
 | [Visualization](data-manipulation-and-eda/visualization/README.md) | Matplotlib、Seaborn、圖表設計原則 | 我該用哪種圖？結果要怎麼說才不誤導？ |
 | [Data Communication](data-communication/README.md) | 問題定義、需求拆解、stakeholder 對齊、分析敘事起點 | 模糊的商業需求要怎麼翻成可回答的分析問題？ |
 | [Data Engineering](data-engineering/README.md) | pipelines、storage、batch/stream、scheduling | 資料如何穩定流進分析與模型流程，而不是每次手動整理？ |
-| [Process Analytics](process-analytics/README.md) | event logs、traces、resources、throughput、process variation | 真實流程是怎麼跑的？哪裡慢？哪些變體最常見？ |
 | [Statistics](statistics/README.md) | 描述統計、推論、回歸、時間序列、生存分析 | 這個差異或趨勢是否可靠？ |
-| [Operations Research](operations-research/README.md) | optimization、decision variables、constraints、network design、sensitivity analysis | 在需求、成本、容量與商業規則都存在時，最佳決策該怎麼求？ |
 | [Network Analysis](network-analysis/README.md) | graphs、centrality、paths、cliques、subgraphs | 當資料的核心是誰和誰相連時，我該如何分析重要節點、最短路徑與群體結構？ |
 | [Machine Learning](machine-learning/README.md) | 前處理、模型訓練、評估、解釋、部署 | 我如何建立可泛化、可監控的預測系統？ |
-| [Marketing Analytics](marketing-analytics/README.md) | price response、promotion effects、choice models、campaign targeting | 價格、促銷與競品條件改變時，顧客與市場會怎麼反應？ |
-| [AI Strategy and Governance](ai-strategy-and-governance/README.md) | AI ethics、治理、風險與策略 | 當 AI 進入真實決策流程時，我如何讓它可控、可解釋、可問責？ |
+| [Responsible AI](responsible-ai/README.md) | AI ethics、治理、隱私、法規、風險 | 當 AI 進入真實決策流程時，我如何讓它可控、可解釋、可問責？ |
 | [Deep Learning](deep-learning/README.md) | 張量、損失函數、反向傳播、遷移學習 | 我如何用神經網路處理更複雜的資料型態？ |
 | [LLM Applications and Systems](llm/README.md) | agents、RAG、tool use、orchestration | 當模型要連接知識、工具與流程時，系統應該怎麼設計？ |
-| [Databases](databases/README.md) | MySQL、PostgreSQL | 資料如何在資料庫端先整理、抽取與聚合？ |
-| [Finance](finance/README.md) | 金融時間序列概念 | 報酬率與自相關要如何判讀？ |
-| [Web Scraping](web-scraping/README.md) | BeautifulSoup、Selenium | 當資料不在 API 或 CSV 時，如何合法抓取？ |
+| [Databases](databases/README.md) | SQL 查詢、PostgreSQL、SQL Server、SQLAlchemy / PyMongo | 資料如何在資料庫端先整理、抽取與聚合？ |
+| [Image Analysis](image-analysis/README.md) | scikit-image、mask、物件量測、registration | 不訓練模型時，如何從影像抽出可量測的結構？ |
+| [Applied Domains](applied-domains/README.md) | finance、marketing、operations research、process analytics | 通用方法放進特定領域時，要注意什麼？ |
+| [Web Scraping](web-scraping/README.md) | Scrapy selectors、BeautifulSoup、Selenium、rvest | 當資料不在 API 或 CSV 時，如何合法抓取？ |
 
 ## 一套一致的分析節奏
 

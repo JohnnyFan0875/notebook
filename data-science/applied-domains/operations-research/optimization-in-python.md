@@ -242,4 +242,4 @@ Key point: 很多實務 optimization 工作不是「按下 solver」，而是把
 ## Related Notes
 
 - [Supply Chain Optimization](./supply-chain-optimization.md)
-- [Linear Regression](../machine-learning/supervised-learning/regression/linear.md): both involve optimization, but regression optimizes model fit while operations research optimizes a decision under explicit constraints.
+- [Linear Regression](../../machine-learning/supervised-learning/regression/linear.md): both involve optimization, but regression optimizes model fit while operations research optimizes a decision under explicit constraints.

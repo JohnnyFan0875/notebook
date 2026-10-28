@@ -187,5 +187,5 @@ glance(model_2)
 
 ## Where to Go Next
 
-- 如果你想把模型、前處理與評估包成更完整 pipeline，接著看 [Modeling with tidymodels](modeling-with-tidymodels.md)。
+- 如果你想把模型、前處理與評估包成更完整 pipeline，接著看 [Modeling with tidymodels](../machine-learning/packages/tidymodels/README.md)。
 - 如果你想補 regression 理論與假設診斷，接著看 statistics 模組裡的 simple / multiple regression 筆記。

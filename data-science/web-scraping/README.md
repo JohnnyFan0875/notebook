@@ -5,12 +5,16 @@
 ## 建議閱讀順序
 
 1. 先確認是否真的需要 scraping：若網站已有 API，通常應優先讀 [API HTTP](../python-foundations/api-http.md) 或相關資料擷取說明，而不是直接抓 HTML。
-2. 再讀 [BeautifulSoup and Selenium](beautifulsoup-selenium.md)，理解靜態頁面、動態頁面、登入流程與等待機制的差異。
-3. 若要把抓回來的資料接到清理與分析，回頭搭配 [Data Manipulation and EDA](../data-manipulation-and-eda/README.md) 與 [Data Engineering](../data-engineering/README.md)。
+2. 讀 [Scrapy and Selectors](scrapy-and-selectors.md)，掌握 CSS / XPath selector 與從 HTML 抽出欄位的基本功。
+3. 再讀 [BeautifulSoup and Selenium](beautifulsoup-selenium.md)，理解靜態頁面、動態頁面、登入流程與等待機制的差異。
+4. 主要用 R 的話，讀 [rvest](rvest.md)。
+5. 若要把抓回來的資料接到清理與分析，回頭搭配 [Data Manipulation and EDA](../data-manipulation-and-eda/README.md) 與 [Data Engineering](../data-engineering/README.md)。
 
 ## Topics
 
+- [Scrapy and Selectors](scrapy-and-selectors.md)
 - [BeautifulSoup and Selenium](beautifulsoup-selenium.md)
+- [Web Scraping in R (rvest)](rvest.md)
 
 ## 這一章要解決什麼
 
@@ -27,7 +31,7 @@
 ## 與其他章節的關係
 
 - [Python Foundations](../python-foundations/README.md): 放程式語法、HTTP、例外處理與腳本結構。
-- [R Foundations](../r-foundations/README.md): 如果主要工作流在 R，可對照 [Web Scraping in R](../r-foundations/web-scraping-in-r.md)。
+- [R Foundations](../r-foundations/README.md): R 的語法與資料結構；scraping 本身見 [rvest](rvest.md)。
 - [Data Engineering](../data-engineering/README.md): 當 scraping 不再是一次性行為，而是資料管線的一部分時，要回到 ingestion、governance 與可重跑設計。
 - [Data Manipulation and EDA](../data-manipulation-and-eda/README.md): 抓到資料後，真正的工作通常才開始。
 

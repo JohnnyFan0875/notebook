@@ -2,7 +2,7 @@
 
 自相關描述的是「現在的值與過去值之間有多像」。在金融資料中，它常用來判斷價格或報酬率是否存在延續性、反轉性，或某種尚未被模型解釋掉的時間依賴。
 
-This note is about **financial interpretation**: momentum, mean reversion, volatility clustering, and why a statistically significant pattern may still be economically useless. If you need ACF/PACF for time-series model identification, use [Time Series Autocorrelation](../statistics/time-series-analysis/autocorrelation.md).
+This note is about **financial interpretation**: momentum, mean reversion, volatility clustering, and why a statistically significant pattern may still be economically useless. If you need ACF/PACF for time-series model identification, use [Time Series Autocorrelation](../../statistics/time-series-analysis/autocorrelation.md).
 
 ## 先分清楚：價格 vs 報酬率
 
@@ -54,6 +54,6 @@ pd.Series(acf_values, index=range(len(acf_values)))
 
 ## Related Concepts
 
-- [Time Series Autocorrelation](../statistics/time-series-analysis/autocorrelation.md)
-- [Stationarity](../statistics/time-series-analysis/stationarity.md)
+- [Time Series Autocorrelation](../../statistics/time-series-analysis/autocorrelation.md)
+- [Stationarity](../../statistics/time-series-analysis/stationarity.md)
 - [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md)

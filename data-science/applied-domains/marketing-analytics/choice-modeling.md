@@ -208,5 +208,5 @@ multinomial logit 的經典限制之一是 **IIA** (`independence of irrelevant 
 ## Related Topics
 
 - [Market Response Models](market-response-models.md)
-- [Logistic Regression](../statistics/regression-analysis/logistic-regression.md)
-- [Clustering](../machine-learning/unsupervised-learning/clustering/README.md)
+- [Logistic Regression](../../statistics/regression-analysis/logistic-regression.md)
+- [Clustering](../../machine-learning/unsupervised-learning/clustering/README.md)

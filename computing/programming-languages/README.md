@@ -15,3 +15,4 @@ Notes for language-specific syntax, runtime model, and core developer ergonomics
 - [Java OOP](java-oop.md)
 - [Java Objects and Packages](java-objects-and-packages.md)
 - [Java Collections and Exception Handling](java-collections-and-exception-handling.md)
+- [Scala Fundamentals](scala-fundamentals.md)

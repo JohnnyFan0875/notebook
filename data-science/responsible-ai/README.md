@@ -1,4 +1,4 @@
-# AI Strategy and Governance
+# Responsible AI
 
 This section focuses on the organizational side of AI adoption: how teams define acceptable use, manage risk, document trade-offs, and keep systems aligned with business and social constraints.
 
@@ -29,11 +29,10 @@ Key point: Technical capability alone is not enough. Once an AI system influence
 9. [Responsible AI Data Management](responsible-ai-data-management.md): Focus on lawful use, consent, source quality, subgroup representation, auditing, and bias mitigation before model deployment.
 10. [Data Quality](data-quality.md): Make enterprise data quality concrete through dimensions, rules, thresholds, monitoring, and remediation ownership.
 11. [Data Quality with Great Expectations](data-quality-with-great-expectations.md): See how data contexts, expectation suites, validations, checkpoints, and Data Docs implement repeatable quality checks.
-12. [Data Warehousing](data-warehousing.md): Extend data management into analytical architecture, warehouse layers, dimensional modeling, and ETL or ELT design choices.
-13. [Data Bias in AI](data-bias-in-ai.md): Understand how biased collection, representation, and interpretation distort AI decisions.
-14. [Responsible AI](responsible-ai.md): Then translate ethical intent into lifecycle decisions, stakeholder work, and operating principles.
-15. [AI Governance](ai-governance.md): Define the processes, ownership, and documentation needed to apply those principles.
-16. [AI Security and Risk Management](ai-security-and-risk-management.md): Add the operational view of model risk, attack surfaces, and monitoring.
+12. [Data Bias in AI](data-bias-in-ai.md): Understand how biased collection, representation, and interpretation distort AI decisions.
+13. [Responsible AI](responsible-ai.md): Then translate ethical intent into lifecycle decisions, stakeholder work, and operating principles.
+14. [AI Governance](ai-governance.md): Define the processes, ownership, and documentation needed to apply those principles.
+15. [AI Security and Risk Management](ai-security-and-risk-management.md): Add the operational view of model risk, attack surfaces, and monitoring.
 
 ## Working Rule
 

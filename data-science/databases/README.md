@@ -23,6 +23,11 @@
 - [Database Normalization](database-normalization.md)
 - [NoSQL Foundations](nosql-foundations.md)
 
+### 從 Python 存取
+
+- [Python Database Access with SQLAlchemy](python-sqlalchemy.md)
+- [MongoDB with PyMongo](mongodb-pymongo.md)
+
 ### PostgreSQL
 
 - [PostgreSQL](postgresql.md)
@@ -63,6 +68,7 @@
 - 需要先釐清 OLTP / OLAP、schema、view 與 access control 的設計方向。
 - 需要展開組織樹、分類樹、BOM、路徑搜尋等遞迴查詢。
 - 想把分析邏輯前移，減少本地端記憶體負擔與重複匯出流程。
+- 需要從 Python 用 SQLAlchemy 連線、讀 schema、組 query，或用 PyMongo 操作 document collection。
 
 ## 常見閱讀路線
 

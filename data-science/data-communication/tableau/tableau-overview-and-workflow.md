@@ -58,7 +58,7 @@ They are most useful when the goal is not just to show one chart, but to support
 - KPI monitoring
 - guided exploration
 
-The broader design principles still live in [Dashboard Design](../../data-manipulation-and-eda/visualization/dashboard-design.md).
+The broader design principles still live in [Dashboard Design](../dashboard-design.md).
 
 ## Practical Takeaways
 

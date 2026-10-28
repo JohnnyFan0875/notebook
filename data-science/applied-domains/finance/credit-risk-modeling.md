@@ -71,7 +71,7 @@ logistic regression 是信用風險建模的典型 baseline，因為它：
 
 在 credit risk 語境裡，它最自然的用途不是只看分類正確率，而是把 borrower features 映射到 `PD`。
 
-如果你要補通用模型細節，可以再看 [machine-learning logistic regression](../machine-learning/supervised-learning/classification/logistic-regression.md)。
+如果你要補通用模型細節，可以再看 [machine-learning logistic regression](../../machine-learning/supervised-learning/classification/logistic-regression.md)。
 
 ## Trees and Gradient Boosting
 
@@ -89,7 +89,7 @@ logistic regression 是信用風險建模的典型 baseline，因為它：
 - 需要更小心地檢查 calibration
 - 容易只顧 ranking score，而忽略經濟決策可用性
 
-如果你要補通用 boosting 背景，可以再看 [XGBoost](../machine-learning/supervised-learning/ensemble/xgboost.md)。
+如果你要補通用 boosting 背景，可以再看 [XGBoost](../../machine-learning/supervised-learning/ensemble/xgboost.md)。
 
 ## Model Output Must Be Evaluated in Finance Terms
 
@@ -152,7 +152,7 @@ AUC 高通常表示排序能力較好，但要注意：
 - AUC 高也不保證概率校準正確
 - 真實成本不對稱時，單靠 AUC 不夠
 
-如果要補通用背景，可以再看 [ROC / AUC](../machine-learning/evaluation/roc-auc.md)。
+如果要補通用背景，可以再看 [ROC / AUC](../../machine-learning/evaluation/roc-auc.md)。
 
 ## Calibration Matters for PD
 
@@ -169,7 +169,7 @@ AUC 高通常表示排序能力較好，但要注意：
 
 credit scoring、定價、資本估算、風險分層都很依賴 calibration。
 
-如果要補通用背景，可以再看 [thresholds and calibration](../machine-learning/evaluation/classification-thresholds-and-calibration.md)。
+如果要補通用背景，可以再看 [thresholds and calibration](../../machine-learning/evaluation/classification-thresholds-and-calibration.md)。
 
 ## Class Imbalance Is Structural, Not Accidental
 

@@ -2,7 +2,7 @@
 
 # 自相關：ACF 與 PACF (Autocorrelation)
 
-衡量序列與**自己的過去**有多相關。ACF / PACF 圖是定態序列的「指紋」，也是選擇 ARIMA 階數 p、q 的核心工具。金融情境（動能、均值回歸）的解讀見 [Finance: Autocorrelation](../../finance/autocorrelation.md)。
+衡量序列與**自己的過去**有多相關。ACF / PACF 圖是定態序列的「指紋」，也是選擇 ARIMA 階數 p、q 的核心工具。金融情境（動能、均值回歸）的解讀見 [Finance: Autocorrelation](../../applied-domains/finance/autocorrelation.md)。
 
 | | ACF 自相關函數 (autocorrelation function) | PACF 偏自相關函數 (partial ACF) |
 | --- | --- | --- |

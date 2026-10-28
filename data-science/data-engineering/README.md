@@ -5,8 +5,8 @@
 ## 建議閱讀順序
 
 1. 先讀核心觀念：從 [Foundations](foundations.md)、[Storage and Models](storage-and-models.md)、[Ingestion](ingestion.md)、[Processing and Pipelines](processing-and-pipelines.md) 建立資料流的基本語言。
-2. 再讀資料模型：用 [Data Modeling Foundations](data-modeling-foundations.md) 與 [Dimensional Modeling and Star Schema](dimensional-modeling-and-star-schema.md) 建立分析資料表設計能力。
-3. 再補可擴展與治理：讀 [Scalable Processing and Out-of-Core Workflows](scalable-processing-and-out-of-core.md)、[Governance](governance.md)、[Data Versioning and DVC](data-versioning-and-dvc.md)。
+2. 再讀資料模型：用 [Data Modeling Foundations](data-modeling-foundations.md) 與 [Data Warehousing and Dimensional Modeling](dimensional-modeling-and-star-schema.md) 建立分析資料表設計能力。
+3. 再補可擴展與治理：讀 [Scalable Processing and Out-of-Core Workflows](scalable-processing-and-out-of-core.md)、[Governance](governance.md)、[Data Versioning and DVC](../machine-learning/production/dvc.md)。
 4. 接著選平台路線：如果偏資料平台，走 Spark / Databricks / warehouse；如果偏 BI 交付，走 Fabric / Power BI；如果偏即時資料流，再看 Kafka / Kinesis。
 
 ## 主題分組
@@ -22,9 +22,9 @@
 ### 資料建模與治理
 
 - [Data Modeling Foundations](data-modeling-foundations.md): entity / attribute / relationship、cardinality、primary / foreign key 與 normalization 的上游設計基礎
-- [Dimensional Modeling and Star Schema](dimensional-modeling-and-star-schema.md): medallion 到 gold layer、fact / dimension、SCD 與特殊維度設計
+- [Data Warehousing and Dimensional Modeling](dimensional-modeling-and-star-schema.md): warehouse vs lake / mart、分層、Inmon vs Kimball、medallion 到 gold layer、fact / dimension、SCD、OLAP vs OLTP、ETL vs ELT
 - [Governance](governance.md): data catalog、lineage、access control、encryption 與合規
-- [Data Versioning and DVC](data-versioning-and-dvc.md): data lineage、reproducibility、`params.yaml`、`dvc.yaml` 與資料版本管理
+- [Data Versioning and DVC](../machine-learning/production/dvc.md): data lineage、reproducibility、`params.yaml`、`dvc.yaml` 與資料版本管理
 
 ### 可擴展處理與分散式工作流
 
@@ -32,7 +32,7 @@
 - [Spark and PySpark](spark-and-pyspark.md): Spark 的分散式處理心智模型、RDD、DataFrame、partition 與 PySpark 的基本入口
 - [Spark SQL in PySpark](spark-sql-in-pyspark.md): `spark.sql()`、temp view、window functions、文字 ETL 與 Spark 內部 SQL 工作流
 - [Spark with sparklyr](sparklyr.md): `spark_connect()`、`compute()` / `collect()`、`DBI` SQL、`sdf_` / `ft_` / `ml_` 與 R 介面的 Spark workflow
-- [Scala Foundations](scala-foundations.md): Scala 的語言定位、腳本 vs 應用程式、靜態型別與 Spark / JVM 生態的關聯
+- [Scala Fundamentals](../../computing/programming-languages/scala-fundamentals.md): Scala 的語言定位、腳本 vs 應用程式、靜態型別與 Spark / JVM 生態的關聯
 
 ### 資料平台與雲端 Warehouse
 

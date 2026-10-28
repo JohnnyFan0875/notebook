@@ -47,9 +47,6 @@
 
 - [Importing Data](importing-data.md)
 - [API HTTP](api-http.md)
-- [Database Access with SQLAlchemy](database-access-sqlalchemy.md)
-- [MongoDB](mongodb.md)
-- [Web Scraping](web-scraping.md)
 - [Dask](dask.md)
 - [Multiprocessing](multiprocessing.md)
 - [Polars](polars.md)
@@ -62,3 +59,4 @@
 - 如果你常卡在資料清理、彙總與欄位操作，先補 [pandas](pandas/README.md)。
 - 寫分析腳本時，`argparse`、`if-name-main`、`assert` 與 `try-except` 會直接影響可維護性。
 - 如果你已經能寫 notebook，但常常無法把流程整理成可重跑程式，優先讀「腳本與工程實務」那一組。
+- 用 Python 連資料庫見 [Databases](../databases/README.md)（[SQLAlchemy](../databases/python-sqlalchemy.md)、[PyMongo](../databases/mongodb-pymongo.md)）；抓網頁見 [Web Scraping](../web-scraping/README.md)。

@@ -230,4 +230,4 @@ Key point: 很多實用任務不是「整張圖套同一個變換」，而是「
 - 影像前處理常不是可有可無，它會直接決定後續結果是否穩定。
 - grayscale、smoothing、thresholding、contours 這條鏈是很值得熟悉的基本功。
 
-[Back to Computer Vision](README.md)
+[Back to Image Analysis](README.md)

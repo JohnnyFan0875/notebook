@@ -116,4 +116,4 @@ chisquare([50_812, 49_188])        # SRM 檢查：p 很小 → 先修資料，�
 4. 效果大到實務上有意義嗎？
 5. 還有哪些設計或資料品質風險？
 
-微小但精確的提升可能不重要；有意義但 CI 很寬的提升可能值得延長測試。貝氏的 A/B 測試解讀見 [貝氏 vs 頻率學派](../bayesian-statistics/bayesian-vs-frequentist.md#範例ab-測試)；行銷情境見 [Campaign Measurement](../../marketing-analytics/campaign-measurement.md)。
+微小但精確的提升可能不重要；有意義但 CI 很寬的提升可能值得延長測試。貝氏的 A/B 測試解讀見 [貝氏 vs 頻率學派](../bayesian-statistics/bayesian-vs-frequentist.md#範例ab-測試)；行銷情境見 [Campaign Measurement](../../applied-domains/marketing-analytics/campaign-measurement.md)。

@@ -7,7 +7,7 @@
 ## 建議順序
 
 ```
-MLOps 概觀 → 部署與監控 → MLflow（實驗追蹤、模型註冊）
+MLOps 概觀 → 部署與監控 → MLflow（實驗追蹤、模型註冊）→ DVC（資料與 pipeline 版本）
 ```
 
 ## 筆記
@@ -17,6 +17,7 @@ MLOps 概觀 → 部署與監控 → MLflow（實驗追蹤、模型註冊）
 | [MLOps 概觀](mlops-overview.md) | MLOps 流程、和 DevOps 的差別、成熟度 | 為什麼模型需要「維運」？ |
 | [部署與監控](deployment-and-monitoring.md) | 部署型態、四層監控、漂移指標 (PSI)、重訓 | 上線後怎麼知道模型壞了？ |
 | [MLflow](mlflow.md) | Tracking、Models、Registry（aliases） | 怎麼追蹤實驗、管理模型版本？ |
+| [DVC](dvc.md) | 資料版本、`dvc.yaml` pipeline、`params.yaml`、remote storage | 怎麼讓資料和實驗可重現？ |
 
 ## 核心問題
 

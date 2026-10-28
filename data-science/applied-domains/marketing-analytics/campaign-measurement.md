@@ -13,7 +13,7 @@ Marketing analytics 問題通常不是抽象的「數據告訴我什麼」，而
 - 如果 campaign 延長一個月，預期 ROI 會怎麼變？
 - 某個國家增加 spend，是否真的改善該 channel 的結果？
 
-這類問題很適合先回到 [Forming Analytical Questions](../data-communication/forming-analytical-questions.md) 的框架，但 marketing 場景通常還要再補上：
+這類問題很適合先回到 [Forming Analytical Questions](../../data-communication/forming-analytical-questions.md) 的框架，但 marketing 場景通常還要再補上：
 
 - campaign goal 是什麼
 - target audience 是誰
@@ -203,5 +203,5 @@ Campaign planning 常會連到不同分析方法：
 
 - [Market Response Models](market-response-models.md)
 - [Choice Modeling](choice-modeling.md)
-- [A/B Testing](../statistics/experimental-design/ab-testing.md)
-- [Forming Analytical Questions](../data-communication/forming-analytical-questions.md)
+- [A/B Testing](../../statistics/experimental-design/ab-testing.md)
+- [Forming Analytical Questions](../../data-communication/forming-analytical-questions.md)

@@ -73,19 +73,19 @@
 
 ## Phase 2：跨資料夾搬移
 
-- [ ] `data-engineering/scala-foundations.md` → `computing/programming-languages/scala-fundamentals.md`（與 java / julia 同層），更新該 README
-- [ ] `python-foundations/web-scraping.md` → `web-scraping/scrapy-and-selectors.md`
-- [ ] `r-foundations/web-scraping-in-r.md` → `web-scraping/rvest.md`
-- [ ] `python-foundations/mongodb.md` → `databases/mongodb-pymongo.md`
-- [ ] `python-foundations/database-access-sqlalchemy.md` → `databases/python-sqlalchemy.md`
-- [ ] `r-foundations/modeling-with-tidymodels.md` → `machine-learning/packages/tidymodels/README.md`（與 scikit-learn、statsmodels 並列）
-- [ ] `data-manipulation-and-eda/visualization/dashboard-design.md` → `data-communication/dashboard-design.md`
-- [ ] `deep-learning/computer-vision/biomedical-image-analysis.md`、`image-processing-with-scikit-image.md` → 新資料夾 `data-science/image-analysis/`（古典影像處理，非 DL）；從 `deep-learning/computer-vision/README.md` 與 `biology/medical-imaging/README.md` 連過去
-- [ ] `data-engineering/data-versioning-and-dvc.md` → `machine-learning/production/dvc.md`（與 mlflow 並列）
-- [ ] `ai-strategy-and-governance/data-warehousing.md` → 併入 `data-engineering/dimensional-modeling-and-star-schema.md`（Phase 4 一起做也可）
-- [ ] 建 `applied-domains/`（README），把 `finance/`、`marketing-analytics/`、`operations-research/`、`process-analytics/` 搬進去（`git mv` 整個資料夾，內容合併在 Phase 5）
-- [ ] `ai-strategy-and-governance/` 改名 → `responsible-ai/`
-- [ ] 更新 `data-science/README.md` 章節地圖與路線圖 → 連結檢查 → commit
+- [x] `data-engineering/scala-foundations.md` → `computing/programming-languages/scala-fundamentals.md`（與 java / julia 同層），更新該 README
+- [x] `python-foundations/web-scraping.md` → `web-scraping/scrapy-and-selectors.md`
+- [x] `r-foundations/web-scraping-in-r.md` → `web-scraping/rvest.md`
+- [x] `python-foundations/mongodb.md` → `databases/mongodb-pymongo.md`
+- [x] `python-foundations/database-access-sqlalchemy.md` → `databases/python-sqlalchemy.md`
+- [x] `r-foundations/modeling-with-tidymodels.md` → `machine-learning/packages/tidymodels/README.md`（與 scikit-learn、statsmodels 並列）
+- [x] `data-manipulation-and-eda/visualization/dashboard-design.md` → `data-communication/dashboard-design.md`
+- [x] `deep-learning/computer-vision/biomedical-image-analysis.md`、`image-processing-with-scikit-image.md` → 新資料夾 `data-science/image-analysis/`（古典影像處理，非 DL）；從 `deep-learning/computer-vision/README.md` 與 `biology/medical-imaging/README.md` 連過去
+- [x] `data-engineering/data-versioning-and-dvc.md` → `machine-learning/production/dvc.md`（與 mlflow 並列）
+- [x] `ai-strategy-and-governance/data-warehousing.md` → 併入 `data-engineering/dimensional-modeling-and-star-schema.md`（已在 Phase 2 完成，標題改為 Data Warehousing and Dimensional Modeling）
+- [x] 建 `applied-domains/`（README），把 `finance/`、`marketing-analytics/`、`operations-research/`、`process-analytics/` 搬進去（`git mv` 整個資料夾，內容合併在 Phase 5）
+- [x] `ai-strategy-and-governance/` 改名 → `responsible-ai/`
+- [x] 更新 `data-science/README.md` 章節地圖與路線圖 → 連結檢查 → commit
 
 ## Phase 3：基礎層整併（Python / R / EDA / web-scraping / databases）
 
@@ -133,7 +133,7 @@
 
 **data-engineering**
 - [ ] `etl.md` 併入 `processing-and-pipelines.md`
-- [ ] `ai-strategy` 的 `data-warehousing.md` 併入 `dimensional-modeling-and-star-schema.md`；`data-modeling-foundations.md` 的 1NF–3NF 改連 `databases/database-normalization.md`
+- [ ] ~~`ai-strategy` 的 `data-warehousing.md` 併入 `dimensional-modeling-and-star-schema.md`~~（Phase 2 已完成）；`data-modeling-foundations.md` 的 1NF–3NF 改連 `databases/database-normalization.md`
 - [ ] `databricks-foundations.md` + `databricks-data-management.md` + `databricks-sql.md` → `databricks.md`
 - [ ] `spark-and-pyspark.md` + `spark-sql-in-pyspark.md` → `spark.md`；`sparklyr.md` 保留；`scalable-processing-and-out-of-core.md` 保留並連 `python-foundations/performance-and-scaling/`、`r-foundations/parallel-programming-in-r.md`
 - [ ] `snowflake-foundations.md` + `bigquery-foundations.md` + `redshift-foundations.md` → `cloud-data-warehouses.md`（比較表為主）

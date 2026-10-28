@@ -207,7 +207,7 @@ Key point: 對 binary response model，marginal effects 通常比 raw coefficien
 
 ## Related Topics
 
-- [Regression Analysis](../statistics/regression-analysis/README.md)
-- [Logistic Regression](../statistics/regression-analysis/logistic-regression.md)
-- [Classification Thresholds and Calibration](../machine-learning/evaluation/classification-thresholds-and-calibration.md)
-- [ROC / AUC](../machine-learning/evaluation/roc-auc.md)
+- [Regression Analysis](../../statistics/regression-analysis/README.md)
+- [Logistic Regression](../../statistics/regression-analysis/logistic-regression.md)
+- [Classification Thresholds and Calibration](../../machine-learning/evaluation/classification-thresholds-and-calibration.md)
+- [ROC / AUC](../../machine-learning/evaluation/roc-auc.md)

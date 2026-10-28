@@ -23,7 +23,7 @@ Key point: marketing analytics 不是把模型硬套到商業資料上，而是�
 1. 先看 [Market Response Models](market-response-models.md)，建立需求反應、價格效果與 binary response 的基本語言。
 2. 再看 [Choice Modeling](choice-modeling.md)，理解多選項情境下的 utility、share 與 product design 問題。
 3. 接著看 [Campaign Measurement](campaign-measurement.md)，把模型、channel、KPI 與 business impact 串成同一個 campaign workflow。
-4. 再回頭搭配 [Regression Analysis](../statistics/regression-analysis/README.md) 與 [Classification Thresholds and Calibration](../machine-learning/evaluation/classification-thresholds-and-calibration.md)，把統計模型和實際決策門檻連起來。
+4. 再回頭搭配 [Regression Analysis](../../statistics/regression-analysis/README.md) 與 [Classification Thresholds and Calibration](../../machine-learning/evaluation/classification-thresholds-and-calibration.md)，把統計模型和實際決策門檻連起來。
 
 ## Reading Reminders
 
@@ -32,6 +32,6 @@ Key point: marketing analytics 不是把模型硬套到商業資料上，而是�
 
 ## 與其他章節的關係
 
-- [Regression Analysis](../statistics/regression-analysis/README.md): 很多 market response 與 choice model 都建立在線性或廣義線性模型直覺上。
-- [Experimental Design](../statistics/experimental-design/README.md): 若目標是估計真正的 campaign lift，而不是相關性，實驗設計很重要。
-- [Machine Learning Evaluation](../machine-learning/evaluation/README.md): 當 response model 真的進入 targeting 或 allocation 決策時，threshold、calibration 與 error cost 會變重要。
+- [Regression Analysis](../../statistics/regression-analysis/README.md): 很多 market response 與 choice model 都建立在線性或廣義線性模型直覺上。
+- [Experimental Design](../../statistics/experimental-design/README.md): 若目標是估計真正的 campaign lift，而不是相關性，實驗設計很重要。
+- [Machine Learning Evaluation](../../machine-learning/evaluation/README.md): 當 response model 真的進入 targeting 或 allocation 決策時，threshold、calibration 與 error cost 會變重要。

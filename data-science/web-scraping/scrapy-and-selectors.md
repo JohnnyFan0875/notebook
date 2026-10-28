@@ -2,7 +2,7 @@
 
 Web scraping is the workflow of downloading HTML, selecting the parts you care about, and extracting structured data from them.
 
-This note focuses on the **Python-level mechanics**: selectors, extraction patterns, and how HTML structure maps to code. If you want the broader workflow of deciding between API vs scraping, static vs dynamic pages, or where scraping fits in the notebook, start with [Web Scraping](../web-scraping/README.md).
+This note focuses on the **Python-level mechanics**: selectors, extraction patterns, and how HTML structure maps to code. If you want the broader workflow of deciding between API vs scraping, static vs dynamic pages, or where scraping fits in the notebook, start with [Web Scraping](README.md).
 
 A practical scraping loop is:
 
@@ -55,7 +55,7 @@ In practice, scraping often means one of these:
 
 The real work is usually not downloading the page. It is selecting the right repeated structure reliably.
 
-Tip: In this foundations note, treat scraping as a parsing problem. In the dedicated [Web Scraping](../web-scraping/README.md) chapter, treat it as a data-collection workflow with tooling, policy, and maintainability concerns.
+Tip: In this foundations note, treat scraping as a parsing problem. In the dedicated [Web Scraping](README.md) chapter, treat it as a data-collection workflow with tooling, policy, and maintainability concerns.
 
 ## Fetch HTML and Turn It into a Selector
 
@@ -225,8 +225,8 @@ Why this is good:
 
 ## Related Notes
 
-- [Web Scraping](../web-scraping/README.md): overall scraping workflow, tool choice, and chapter-level reading order
-- [API HTTP](api-http.md): when the data source already exposes a stable API
+- [Web Scraping](README.md): overall scraping workflow, tool choice, and chapter-level reading order
+- [API HTTP](../python-foundations/api-http.md): when the data source already exposes a stable API
 - [Data Manipulation and EDA](../data-manipulation-and-eda/README.md): what to do after raw HTML has been turned into rows and columns
 
 Sometimes you want the direct children of a selected element.

@@ -1,4 +1,4 @@
-# Scala Foundations
+# Scala Fundamentals
 
 ## Why Scala Shows Up in Data Engineering
 
