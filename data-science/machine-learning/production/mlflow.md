@@ -1,235 +1,142 @@
+[Machine Learning](../README.md) › [上線與維運](README.md) › MLflow
+
 # MLflow
 
-MLflow 把 experiment tracking、model packaging、registry 與 reproducible project structure 放進同一套工具裡，讓模型從訓練到部署之間比較不會斷線。
+MLflow 把實驗追蹤、模型打包、模型註冊放進同一套工具，讓模型從訓練到部署不會斷線。它回答的是：這次訓練用了哪些資料與參數？同一個模型如何在不同環境一致地載入？哪個版本目前在服務中？別人幾週前的結果怎麼重現？
 
-## MLflow 在解決什麼
+本筆記以 **MLflow 3.17** 驗證；MLflow 2.x 與 3.x 有幾個重要差異，見下方「版本差異」。
 
-機器學習專案常見的問題不是模型 train 不起來，而是：
+## 核心元件
 
-- 這次訓練到底用了哪份資料與哪些參數
-- 同一個模型如何在不同環境被一致地載入
-- 哪個版本已經過審核，哪個版本正在 production
-- 團隊如何重現別人幾週前跑過的結果
+| 元件 | 用途 | 解決的問題 |
+| --- | --- | --- |
+| Tracking | 記錄 run 的參數、指標、artifacts | 實驗紀錄散落各處 |
+| Models | 統一的模型打包格式（flavors） | 模型換環境就載入不了 |
+| Model Registry | 模型版本、別名 (alias)、標籤 | 不知道哪個版本在線上 |
+| Projects | 定義可重現的執行環境與入口 | 程式碼在別人電腦跑不起來 |
 
-MLflow 的核心價值，就是把這些資訊變成可追蹤的系統，而不是散落在 notebook、雲端硬碟與訊息紀錄裡。
-
-## 四個核心元件
-
-| 元件 | 用途 |
-| --- | --- |
-| Tracking | 記錄 run、參數、metrics、artifacts |
-| Models | 用統一格式包裝模型，方便載入與部署 |
-| Model Registry | 管理模型版本、狀態與交接流程 |
-| Projects | 定義可重現的專案結構與執行環境 |
-
-這四塊剛好對應到 MLOps 最容易失控的四件事：實驗紀錄、部署格式、版本治理與重現性。
-
-## Tracking: 把訓練過程留下來
-
-MLflow Tracking 的基本單位是 experiment 與 run。
-
-- `experiment` 用來分組不同主題或專案
-- `run` 用來記錄某一次訓練或評估
-
-常見操作像是：
+## 1. Tracking
 
 ```python
 import mlflow
+import mlflow.sklearn
 
-mlflow.set_experiment("churn-model")
+mlflow.set_tracking_uri("sqlite:///mlflow.db")   # 本機用 SQLite；團隊用 tracking server
+mlflow.set_experiment("churn-model")             # 實驗 = 一組相關的 runs
 
-with mlflow.start_run():
-    mlflow.log_param("max_depth", 6)
-    mlflow.log_metric("rmse", 0.82)
+with mlflow.start_run(run_name="logreg-C1"):
+    mlflow.log_param("C", 1.0)                   # 超參數
+    mlflow.log_metric("cv_auc", 0.992)           # 指標（可帶 step 記錄訓練曲線）
+    mlflow.set_tag("data_version", "2024-06")    # 資料版本等中繼資料
+    mlflow.log_artifact("confusion_matrix.png")  # 任意檔案
+
+# 自動記錄：參數、訓練指標、模型
+mlflow.sklearn.autolog()
 ```
 
-如果要更細緻地管理 experiments，也可以透過 client API 建立、加 tag 或刪除：
+> MLflow 3.x 的本機**檔案型後端 (`./mlruns`) 已進入維護模式**，直接使用會報錯並建議改用資料庫後端（`sqlite:///mlflow.db`）；artifacts 預設仍會寫到目前目錄下的 `mlruns/`。
+
+用 client API 管理實驗時，參數是 **experiment_id**，不是名稱：
 
 ```python
 from mlflow import MlflowClient
 
 client = MlflowClient()
-client.create_experiment("churn-model")
-client.set_experiment_tag("churn-model", "team", "risk")
+exp_id = mlflow.get_experiment_by_name("churn-model").experiment_id
+client.set_experiment_tag(exp_id, "team", "risk")
 ```
 
-實務上最重要的不是 API 名稱，而是要養成習慣：每次訓練都留下可對帳的參數、metrics、模型產物與必要的程式碼脈絡。
-
-## Autologging 與 artifacts
-
-MLflow 可以替常見框架自動記錄資訊，降低遺漏風險：
+## 2. Models：打包與載入
 
 ```python
-import mlflow.sklearn
+# 記錄模型（存整個 pipeline，含前處理）
+info = mlflow.sklearn.log_model(pipeline, name="model",
+                                input_example=X_train[:5])        # 自動推斷輸入 schema（signature）
 
-mlflow.sklearn.autolog()
+loaded = mlflow.sklearn.load_model(info.model_uri)               # 原生 sklearn 物件
+pyfunc = mlflow.pyfunc.load_model(info.model_uri)                # 通用介面，只有 predict()
 ```
 
-autologging 通常會自動存下：
-
-- 模型參數
-- 評估指標
-- 模型檔與相關 artifacts
-- 執行環境的一部分中繼資訊
-
-在投影片內容裡，模型 artifact 附近常會看到像 `artifact_path`、`python_version`、`mlflow_version`、`sklearn_version` 這類 metadata。這些資訊的價值在於：當模型無法重現時，我們至少知道該往哪裡查。
-
-## Models: 把模型包成可載入的格式
-
-MLflow Models 的重點不是再發明一個新模型，而是替不同 ML library 提供一致的打包與載入方式。
-
-例如 `scikit-learn` 的常見操作：
-
-```python
-import mlflow.sklearn
-
-mlflow.sklearn.log_model(model, artifact_path="model")
-loaded_model = mlflow.sklearn.load_model("runs:/<run_id>/model")
-```
-
-這裡的 `runs:/` URI 很重要。它代表模型不只是某個本機檔案，而是某次 run 底下的一個 artifact。這讓 training 紀錄與部署來源可以直接連起來。
-
-## Flavors 與 `pyfunc`
-
-MLflow 用 `flavor` 來描述模型如何被特定工具鏈理解。
-
-- `mlflow.sklearn`
-- `mlflow.xgboost`
-- `mlflow.pytorch`
-- `mlflow.pyfunc`
-
-其中 `pyfunc` 很值得理解，因為它提供了較通用的 Python 介面。當你的推論流程不只是單純 `model.predict()`，而是還包含額外前處理、後處理或客製化邏輯時，就可能會用到它。
-
-```python
-import mlflow.pyfunc
-
-class CustomPredict(mlflow.pyfunc.PythonModel):
-    def load_context(self, context):
-        self.model = context.artifacts["model"]
-```
-
-`load_context()` 的概念是：在模型真正被載入時，把需要的 artifacts 一起接回來。這對多檔案推論流程特別重要。
-
-## Registry: 管理模型版本，而不是只留最新檔案
-
-如果 Tracking 解決的是「這次跑了什麼」，Registry 解決的就是「現在該用哪個版本」。
-
-Model Registry 的核心能力包括：
-
-- 集中存放已註冊模型
-- 對同一模型建立多個 version
-- 用 stage 或其他治理流程標示可用狀態
-- 透過 UI 或 client API 做交接
-
-常見註冊方式：
-
-```python
-mlflow.register_model("runs:/<run_id>/model", "ChurnModel")
-```
-
-也可以在 log model 時直接指定註冊名稱：
-
-```python
-mlflow.sklearn.log_model(
-    model,
-    "model",
-    registered_model_name="ChurnModel",
-)
-```
-
-## Staging、Production、Archived 的意義
-
-教材把 model stage 拆成 `Staging`、`Production`、`Archived`。把它們理解成技術狀態不如理解成團隊流程狀態：
-
-| Stage | 代表的意思 |
+| Flavor | 用途 |
 | --- | --- |
-| Staging | 候選版本，準備驗證 |
-| Production | 目前正式服務中的版本 |
-| Archived | 保留歷史版本，但不再主動使用 |
-
-stage 的價值不是名字本身，而是把「誰能上線、誰已退役」變成可查詢的狀態，而不是靠口頭同步。
-
-## 以 URI 載入不同來源的模型
-
-MLflow 一個很實用的設計，是用 URI 指向模型來源。
-
-常見形式有：
-
-- `runs:/<run_id>/model`
-- `models:/ChurnModel/3`
-- `models:/ChurnModel/Production`
-- 本機路徑或物件儲存路徑
-
-這讓載入方式更穩定：
+| `mlflow.sklearn`、`mlflow.xgboost`、`mlflow.pytorch`… | 依框架原生存取 |
+| `mlflow.pyfunc` | 通用 Python 介面；任何 flavor 都能用它載入，部署端不必知道是哪個框架 |
+| 自訂 `mlflow.pyfunc.PythonModel` | 推論流程含額外前後處理時 |
 
 ```python
-staging_model = mlflow.sklearn.load_model("models:/ChurnModel/Staging")
-prod_model = mlflow.sklearn.load_model("models:/ChurnModel/Production")
+class CustomModel(mlflow.pyfunc.PythonModel):
+    def load_context(self, context):          # 載入時取回需要的 artifacts
+        import joblib
+        self.model = joblib.load(context.artifacts["model_path"])
+
+    def predict(self, context, model_input):
+        return self.model.predict_proba(model_input)[:, 1]
 ```
 
-如果團隊能接受以 registry stage 作為部署入口，那推論服務就不必硬編碼某個本機檔名。
+> MLflow 3.17 的 sklearn 模型預設存成 `model.skops`（不是 pickle）；另有 `MLFLOW_ALLOW_PICKLE_DESERIALIZATION` 設定控制 pickle 載入。pickle 檔載入時可執行任意程式碼，只載入可信來源的模型。
 
-## Serving: 從 model artifact 到可呼叫服務
+## 3. Model Registry：版本與別名
 
-MLflow 也提供 CLI serving 方式：
+```python
+# 註冊：log 時直接註冊，或之後再註冊
+mlflow.sklearn.log_model(pipeline, name="model", registered_model_name="ChurnModel")
+mlflow.register_model(info.model_uri, "ChurnModel")
+
+# 用別名 (alias) 標記用途，取代舊的 stage
+client.set_registered_model_alias("ChurnModel", "champion", version=3)
+client.set_registered_model_alias("ChurnModel", "challenger", version=4)
+
+# 部署端只認別名，不寫死版本號
+model = mlflow.pyfunc.load_model("models:/ChurnModel@champion")
+```
+
+| 模型 URI | 指向 |
+| --- | --- |
+| `runs:/<run_id>/model` | 某次 run 的 artifact（MLflow 2.x 常見） |
+| `models:/m-<model_id>` | MLflow 3 的 logged model（`log_model` 回傳的 `model_uri`） |
+| `models:/ChurnModel/3` | 註冊模型的特定版本 |
+| `models:/ChurnModel@champion` | 目前被標為 champion 的版本 |
+
+> **Stage（`Staging` / `Production` / `Archived`）自 MLflow 2.9 起 deprecated**，`transition_model_version_stage()` 會發出警告，未來的主要版本將移除。改用 alias（`@champion`、`@challenger`）與 tag；換版本時只要移動別名，回滾就是把別名指回舊版本。
+
+## 4. Serving
 
 ```bash
-mlflow models serve -m "models:/ChurnModel/Production"
+mlflow models serve -m "models:/ChurnModel@champion" -p 5000 --env-manager local
 ```
 
-這種做法適合：
+適合快速驗證模型能否服務化與本機 demo。正式環境通常把 MLflow 當作**模型來源與治理層**，外面再接自己的 API、批次作業或服務平台。
 
-- 快速驗證模型可否被服務化
-- 做本機或測試環境 demo
-- 讓團隊先建立「模型包裝與載入一致」的習慣
-
-但在真正 production 環境，通常還是會把 MLflow 當成模型來源與治理層，外面再接 API、batch job 或更完整的 serving infrastructure。
-
-## Projects: 把可重現性寫進專案結構
-
-MLflow Projects 想解決的是「程式碼明明有，但你跑不起來」。
-
-典型專案結構像這樣：
+## 5. Projects
 
 ```text
 project/
-  MLproject
-  train_model.py
-  python_env.yaml
-  requirements.txt
+  MLproject          # 入口與參數
+  train.py           # 訓練邏輯
+  python_env.yaml    # Python 環境
+  requirements.txt   # 套件依賴
 ```
 
-這些檔案各自扮演不同角色：
+```bash
+mlflow run . -P alpha=0.5
+```
 
-- `MLproject`: 定義專案入口與參數
-- `train_model.py`: 實際訓練邏輯
-- `python_env.yaml`: Python 執行環境描述
-- `requirements.txt`: 套件依賴
+## 版本差異（2.x → 3.x）
 
-如果一個模型只能在原作者的筆電上跑通，那就還不算可維護的 MLOps 資產。Projects 的意義正是把執行方式明文化。
-
-## 一個實務上的心智模型
-
-可以把 MLflow 想成四層：
-
-1. Tracking 記住你做過什麼
-2. Models 定義模型如何被包裝與載入
-3. Registry 決定哪個版本可被團隊採用
-4. Projects 幫你重現整個訓練流程
-
-當這四層連起來時，模型才比較接近真正可交接、可部署、可回滾的 production asset。
+| 項目 | 舊 | 新 |
+| --- | --- | --- |
+| `log_model` 的位置參數 | `artifact_path="model"` | `name="model"` |
+| 模型 URI | 以 `runs:/<run_id>/model` 為主 | `models:/m-<model_id>`（logged model 成為一級物件） |
+| 部署標記 | Stage（Staging / Production） | Alias（`@champion`） |
+| 本機後端 | `./mlruns` 檔案系統 | 建議 `sqlite:///mlflow.db` |
 
 ## 常見誤區
 
-- 只記錄 metrics，不記錄資料版本與前處理脈絡
-- 只有 `model.pkl`，沒有清楚的 model URI 與 registry 流程
-- 把 `Production` 當成一個手動改名的資料夾，而不是治理狀態
-- 以為有 MLflow 就自動完成部署、監控與重訓
+| 誤區 | 改正 |
+| --- | --- |
+| 只記錄指標，不記錄資料版本與前處理 | 用 tag 記資料版本；log 整個 pipeline |
+| 只有 `model.pkl`，沒有 registry | 註冊模型、用別名部署 |
+| 以為有 MLflow 就完成部署、監控、重訓 | 監控與重訓需另外建，見 [部署與監控](deployment-and-monitoring.md) |
+| 把病人層級資料當 artifact 上傳 | 只記錄彙總與中繼資料，注意隱私規範 |
 
-## Related Concepts
-
-- [MLOps Overview](mlops-overview.md)
-- [Deployment and Monitoring](deployment-and-monitoring.md)
-- [Model Lifecycle](../workflow/model-lifecycle.md)
-
-[Back to Production](README.md)
+相關：[MLOps 概觀](mlops-overview.md)、[模型生命週期](../workflow/model-lifecycle.md)、[Kaggle 競賽流程](../workflow/kaggle-competition-workflow.md)（實驗紀錄）。

@@ -1,55 +1,47 @@
-# Explicit vs. Implicit Feedback
+[Machine Learning](../README.md) › [推薦系統](README.md) › 顯性 vs 隱性回饋
 
-## Explicit Feedback
+# 顯性 vs 隱性回饋 (Explicit vs Implicit Feedback)
 
-explicit feedback 是使用者直接表達偏好的訊號，例如：
+推薦資料的訊號分兩種，建模假設完全不同。
 
-- 星等評分
-- like / dislike
-- 問卷偏好分數
+| | 顯性回饋 (explicit) | 隱性回饋 (implicit) |
+| --- | --- | --- |
+| 例子 | 星等評分、讚 / 倒讚、問卷偏好 | 點擊、瀏覽、停留時間、購買、播放次數 |
+| 語意 | 清楚：5 分比 3 分更喜歡 | 模糊：互動不一定是喜歡，沒互動不一定是不喜歡 |
+| 負面訊號 | 有（低分） | **幾乎沒有**（只有「有互動」） |
+| 資料量 | 少（多數人不評分） | 多、更新快 |
+| 雜訊 | 較低 | 較高（誤點、自動播放、送禮） |
+| 建模目標 | 預測評分（迴歸） | 預測偏好與信心（排序） |
+| 範例資料 | MovieLens | Million Song Dataset（播放次數） |
 
-這類資料的好處是語意清楚。`5` 分通常可以被理解成比 `3` 分更喜歡。
+## 隱性回饋的建模：偏好 + 信心
 
-MovieLens 就是典型的 explicit-rating 練習資料，適合拿來做 rating prediction 與 ALS 入門。
+隱性回饋的 ALS（Hu, Koren & Volinsky, 2008）把每個互動 $r_{u,i}$（如播放次數）拆成兩個量：
 
-## Implicit Feedback
+| 量 | 定義 | 意義 |
+| --- | --- | --- |
+| 偏好 $p_{u,i}$ | $r_{u,i} > 0$ 時為 1，否則為 0 | 使用者是否「喜歡」 |
+| 信心 $c_{u,i}$ | $1 + \alpha \cdot r_{u,i}$ | 對這個偏好有多確定；互動越多越有信心 |
 
-implicit feedback 不是直接評分，而是從行為推測偏好，例如：
+和顯性版本的關鍵差別：**所有格子（包括沒互動的）都參與訓練**，只是沒互動的格子偏好為 0、信心最低。`alpha` 控制「互動次數」轉換成「信心」的速度；有時對次數先取 log 再乘 α，避免極端值主導。
 
-- click
-- view
-- dwell time
-- purchase
-- stream count
+```python
+from pyspark.ml.recommendation import ALS
 
-這類資料在產品中更常見，但它的難點是：互動不一定等於喜歡，沒有互動也不一定等於不喜歡。
+ALS(userCol="userId", itemCol="songId", ratingCol="plays",
+    implicitPrefs=True,        # 切換成偏好 + 信心的目標函數
+    alpha=40,                  # 信心縮放；只在 implicitPrefs=True 時有作用
+    rank=25, regParam=0.05, coldStartStrategy="drop")
+```
 
-Million Song Dataset 這類音樂互動資料，常被當成 implicit recommendation 的範例。
+> `implicitPrefs` 不是小細節，它切換整個目標函數。隱性模型輸出的是**偏好分數**（用來排序），不是評分預測，所以不能用 RMSE 評估，要用 [排序指標](evaluation-and-serving.md)。
 
-## Why the Distinction Matters
+## 實務提醒
 
-explicit 與 implicit 的差異，不只是欄位名稱不同，而是整個建模假設都不同：
-
-- explicit rating 比較像在學一個偏好分數
-- implicit signal 比較像在學互動強弱與信心程度
-
-因此在 PySpark ALS 中，`implicitPrefs` 不是小細節，而是切換建模模式的重要開關。
-
-## The Role of Alpha
-
-在 implicit recommendation 裡，`alpha` 常被用來調整 confidence weighting。
-
-直覺上可以把它理解成：
-
-- 互動次數越多，模型對「這可能代表偏好」的信心越高
-- 但這個信心放大多少，需要透過 `alpha` 這類設定控制
-
-所以 implicit recommendation 不只是在 rating 欄位裡塞一個 `0/1`，而是要重新思考觀測訊號與信心權重的關係。
-
-## Practical Reminders
-
-- explicit feedback 較少、較乾淨，但在真實產品裡往往更難大量取得。
-- implicit feedback 量大、更新快，但噪音也更高。
-- 如果你搞不清楚資料代表偏好還是只是曝光痕跡，先不要急著訓練模型。
-
-[Back to Recommender Systems](README.md)
+| 提醒 | 說明 |
+| --- | --- |
+| 先想清楚資料代表什麼 | 是偏好，還是只是曝光的痕跡（被推薦了所以點擊） |
+| 曝光偏誤 | 使用者只能和「被展示過」的項目互動；沒互動可能只是沒看到 |
+| 不同行為權重不同 | 購買 > 加入購物車 > 點擊 > 瀏覽 |
+| 去除雜訊 | 過短的停留、機器人流量、重複點擊 |
+| 顯性資料也有偏誤 | 會評分的多是極度喜歡或討厭的人 |

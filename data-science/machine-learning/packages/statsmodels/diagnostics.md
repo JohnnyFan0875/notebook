@@ -1,136 +1,76 @@
-# Statsmodels: Regression Diagnostics
+[Machine Learning](../../README.md) › [套件](../README.md) › [statsmodels](README.md) › 診斷
 
-Diagnostics are tools to evaluate whether [regression](../../supervised-learning/regression/) model assumptions hold and to identify influential observations. Unlike **metrics** (which summarize overall fit quality), diagnostics focus on **individual observations** and assumption checks.
+# statsmodels：迴歸診斷 (Regression Diagnostics)
 
-This note focuses on **regression diagnostics in statsmodels**: residuals, leverage, Cook's distance, DFBETAs, and influence plots. For diagnostics specific to Cox proportional hazards models, see [Survival Analysis: Model Diagnostics & Violations](../../../statistics/survival-analysis/diagnostics.md).
+檢查迴歸假設是否成立、結果是否被少數觀測驅動。[指標](metrics.md) 摘要整體配適；診斷看的是**個別觀測**與**假設**。殘差圖的判讀型態見 [模型假設與診斷](../../../statistics/multivariate-analysis/assumptions-diagnostics.md)；Cox 模型的診斷見 [存活分析：模型診斷](../../../statistics/survival-analysis/diagnostics.md)。
 
-## Import and Setup
+## 指標速查
+
+| 診斷 | 衡量 | 經驗門檻 | statsmodels |
+| --- | --- | --- | --- |
+| 殘差 vs 配適值 | 線性、等變異 | 無結構、等寬 | `model.resid`、`model.fittedvalues` |
+| 標準化殘差 | 離群的 y | \|r\| > 2 或 3 | `summary_frame()["standard_resid"]` |
+| Leverage（hat 值） | x 離中心多遠 | > 2p/n 或 3p/n | `["hat_diag"]` |
+| Cook's distance | 刪掉該點，所有配適值改變多少 | > 4/n（或 > 1 很嚴重） | `["cooks_d"]` |
+| DFFITS | 刪掉該點，自己的配適值改變多少 | \|DFFITS\| > 2√(p/n) | `influence.dffits` |
+| DFBETAS | 刪掉該點，每個係數改變多少 | \|DFBETAS\| > 2/√n | `influence.dfbetas` |
+| VIF | 共線性 | > 5–10 | `variance_inflation_factor` |
+| Breusch-Pagan | 異質變異 | p < 0.05 | `het_breuschpagan` |
+
+（p = 參數數，含截距；n = 樣本數）
+
+## Leverage ≠ 影響力
+
+![Leverage vs influence](src/diagnostics-leverage-vs-influence.png)
+
+兩張圖的紅點 leverage 都是 0.84（x 遠離其他點）。左邊的點落在趨勢線上，刪掉它斜率只從 0.83 變成 0.87；右邊的點偏離趨勢，單獨把斜率從 0.87 拉到 0.09（Cook's D 36.5）。**影響力 = leverage × 殘差大小**，兩者都大才危險。
+
+> 左邊那個「沒影響力」的點 Cook's D 仍有 0.36，超過 4/n = 0.19 的經驗門檻。門檻只用來**挑出值得看的點**，是否真的有影響要比較刪除前後的結果。
+
+## 用法
 
 ```python
-import pandas as pd
 import numpy as np
-from statsmodels.formula.api import ols
-```
-
-Example dataset:
-
-```python
-df = pd.DataFrame({
-    'x': [1, 2, 3, 4, 5, 20],  # Note: outlier at x=20
-    'y': [1, 2, 1.3, 3.75, 2.25, 7]
-})
-
-model = ols("y ~ x", data=df).fit()
-```
-
-## Residuals
-
-```python
-residuals = model.resid
-fitted = model.fittedvalues
-```
-
-* **Residuals**: differences between observed and predicted values.
-* Plot residuals vs fitted values to check linearity and homoscedasticity.
-
-```python
+import pandas as pd
 import matplotlib.pyplot as plt
-
-plt.scatter(fitted, residuals)
-plt.axhline(0, color='red', linestyle='--')
-plt.xlabel("Fitted values")
-plt.ylabel("Residuals")
-plt.show()
-```
-
-* If residuals show a pattern → model assumptions may be violated.
-
-## Leverage
-
-Leverage measures how far an observation’s predictors are from the mean of predictor values.
-
-```python
-influence = model.get_influence()
-df_influence = influence.summary_frame()
-
-# Leverage values
-df["leverage"] = df_influence["hat_diag"]
-```
-
-* High leverage points can disproportionately affect the regression line.
-* High leverage points are far from the mean of predictors.
-* Although an **influential point** will often have **high leverage**, a high leverage point is **not necessarily influential** ([source](https://stats.stackexchange.com/questions/65912/precise-meaning-of-and-comparison-between-influential-point-high-leverage-point)).
-  * In the example below:
-    * The **blue line** is the regression line based on all the data.
-    * The **red line** is the regression line excluding the point at the top right.
-  *
-
-      ![Image](https://i.sstatic.net/7c5BB.png)
-  * That point clearly has **high leverage** because it is far from the rest of the data.
-  * However, since it still follows the overall pattern of the data, removing it barely changes the regression line.
-  * Thus, it is **high leverage but not influential**.
-
-## Cook’s Distance
-
-Cook’s distance combines residual size and leverage to measure influence.
-
-```python
-df["cooks_d"] = df_influence["cooks_d"]
-```
-
-* Rule of thumb: points with Cook’s D > 4/n may be influential.
-* Influential points (high Cook’s distance) strongly affect the regression line.
-
-## DFBETAs
-
-DFBETAs measure the effect of removing one observation on each regression coefficient.
-
-```python
-dfbetas = influence.dfbetas
-print(dfbetas)
-```
-
-* Large absolute DFBETA values indicate an observation strongly affects a specific coefficient.
-
-## DFFITS
-
-DFFITS measures how much a predicted value changes when an observation is removed.
-
-```python
-dffits = influence.dffits[0]
-print(dffits)
-```
-
-* Rule of thumb: |DFFITS| > 2 \* sqrt(p/n) indicates an influential point (p = number of predictors, n = sample size).
-
-## Influence Plot
-
-Statsmodels provides a built-in influence plot:
-
-```python
+import statsmodels.formula.api as smf
 from statsmodels.graphics.regressionplots import influence_plot
+from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
+df = pd.DataFrame({"x": [1, 2, 3, 4, 5, 20],          # x = 20 是高 leverage 點
+                   "y": [1, 2, 1.3, 3.75, 2.25, 7]})
+model = smf.ols("y ~ x", data=df).fit()
+
+# 1. 殘差圖
+plt.scatter(model.fittedvalues, model.resid); plt.axhline(0, ls="--")
+
+# 2. 影響力指標一次取得
+infl = model.get_influence()
+infl.summary_frame()[["hat_diag", "cooks_d", "dffits", "standard_resid"]]
+# 第 6 筆（x=20）：hat_diag 0.967、cooks_d 3.41、dffits −2.33 → 高 leverage 且有影響力
+# 第 4 筆：standard_resid 1.81 但 hat_diag 只有 0.18 → y 偏離，但影響不大
+dffits, threshold = infl.dffits        # 回傳 (值, 門檻)；門檻 = 2√(p/n) = 1.15
+infl.dfbetas                           # n × p
+
+# 3. 綜合圖：x = leverage、y = 學生化殘差、泡泡大小 = Cook's D
 influence_plot(model)
-plt.show()
+
+# 4. 異質變異與共線性
+lm_stat, lm_p, f_stat, f_p = het_breuschpagan(model.resid, model.model.exog)
+X = model.model.exog                   # 含截距欄
+[variance_inflation_factor(X, i) for i in range(1, X.shape[1])]   # 跳過截距
 ```
 
-* Visualizes leverage (x-axis), standardized residuals (y-axis), and Cook’s distance (bubble size).
+## 發現問題後
 
-## Key Takeaways
+| 問題 | 對策 |
+| --- | --- |
+| 高影響點是輸入錯誤 | 修正或移除，並記錄 |
+| 高影響點是真實資料 | 報告有 / 無該點的結果；考慮穩健迴歸（`smf.rlm`） |
+| 殘差有曲線 | 加非線性項、轉換變數 |
+| 異質變異 | 轉換 y（log），或用穩健標準誤 `cov_type="HC3"`，見 [線性迴歸](linear-regression.md#穩健標準誤) |
+| 高 VIF | 刪除或合併相關變數、用 [Ridge](../../supervised-learning/regression/ridge.md) |
+| 殘差自相關（時間資料） | 時間序列模型或 HAC 標準誤 |
 
-* **Residuals**: check linearity and homoscedasticity.
-* **Leverage**: identifies points with unusual predictor values.
-* **Cook’s Distance**: identifies influential observations.
-* **DFBETAs and DFFITS**: quantify influence on coefficients and fitted values.
-* **Influence plots**: provide a combined diagnostic view.
-
-Diagnostics help ensure regression assumptions are valid and results are not driven by a few extreme observations.
-
-## Related Concepts
-
-* [Statsmodels Documentation](./)
-* [Model Diagnostics](../../interpretability-and-diagnostics/model-diagnostics.md)
-* [Linear Regression](../../supervised-learning/regression/linear.md)
-* [Generalization](../../foundations/generalization.md)
-
-[Back to Statsmodels Documentation](./)
+> 不要只因為某點「影響很大」就刪掉它；先確認它是錯誤還是真實現象，見 [離群值處理](../../preprocessing/outlier-handling.md)。

@@ -1,83 +1,66 @@
-# Recommendation Foundations
+[Machine Learning](../README.md) › [推薦系統](README.md) › 基礎概念
 
-This note is about the modeling setup behind recommendation systems: interactions, sparsity, cold start, and ranking. If you need ingestion, storage, and pipeline architecture instead, go to [Data Engineering Foundations](../../data-engineering/foundations.md).
+# 推薦系統基礎 (Recommendation Foundations)
 
-## What a Recommendation Problem Looks Like
+推薦問題的建模設定：互動資料、稀疏性、冷啟動與排序。資料擷取、儲存與管線架構見 [資料工程基礎](../../data-engineering/foundations.md)。
 
-推薦問題常見的輸入不是一般 tabular dataset，而是一張 interaction table：
+## 推薦問題長什麼樣子
 
-- `user_id`
-- `item_id`
-- `rating`, `watch_time`, `click`, `purchase`, `play_count` 等互動訊號
+輸入通常不是一般的表格資料，而是一張**互動表 (interaction table)**：
 
-模型要回答的通常不是「這筆資料屬於哪一類」，而是：
+| user_id | item_id | 互動訊號 | 時間 |
+| --- | --- | --- | --- |
+| u1 | m42 | rating = 4 | 2024-03-01 |
+| u1 | m7 | 觀看 35 分鐘 | 2024-03-02 |
+| u2 | m42 | 點擊 | 2024-03-02 |
 
-- 這個 user 可能喜歡哪些 items
-- 這個 item 應該推薦給哪些 users
-- 在候選集合裡，哪些項目應該排在前面
+模型要回答的是：
 
-## Two Common Recommendation Families
+| 問題 | 例子 |
+| --- | --- |
+| 這個使用者可能喜歡哪些項目？ | 首頁推薦 |
+| 這個項目該推薦給哪些使用者？ | 新品行銷名單 |
+| 和這個項目相似的有哪些？ | 「看了這個的人也看了」 |
+| 候選集合裡哪些該排前面？ | 搜尋結果排序 |
 
-### Content-Based Filtering
+## 兩大類方法
 
-content-based filtering 依賴 item features。
+| | 內容式過濾 (content-based) | 協同過濾 (collaborative filtering) |
+| --- | --- | --- |
+| 依賴 | Item 的特徵（類型、作者、品牌、描述） | 使用者與項目的互動 |
+| 直覺 | 你喜歡 A，推薦和 A 特徵相似的 B | 和你相似的人喜歡 B；常被同一群人喜歡的項目彼此相關 |
+| 優點 | 新項目只要有特徵就能推薦；理由好解釋 | 不需要人工特徵；能發現「意外但有趣」的項目 |
+| 缺點 | 容易困在已知偏好；依賴特徵品質 | 冷啟動；需要足夠互動 |
+| 筆記 | [內容式過濾](content-based-filtering.md) | [記憶式](memory-based-collaborative-filtering.md)、[ALS](collaborative-filtering-and-als.md) |
 
-常見特徵包括：
+## User-Item 矩陣
 
-- genre
-- language
-- decade
-- actors
-- brand
-- category
+```
+            item_1  item_2  item_3  item_4  ...
+user_1        5       ·       3       ·
+user_2        ·       4       ·       ·
+user_3        1       ·       ·       5
+...
+```
 
-它的直覺是：如果使用者喜歡某類 item，就推薦 feature 上相近的其他 items。
+列 = 使用者、欄 = 項目、格 = 評分或互動強度。大多數使用者只接觸過極少數項目，所以矩陣通常 **> 99% 是空的**。
 
-### Collaborative Filtering
+> **空白格不代表不喜歡**，只代表沒有觀察到互動（可能根本沒看過）。把空白當成 0 分或負樣本，是推薦系統最常見的錯誤。
 
-collaborative filtering 主要依賴 user-item interactions，而不是 item 的人工特徵表。
+## 稀疏性與冷啟動
 
-它的直覺是：
+| 問題 | 說明 | 對策 |
+| --- | --- | --- |
+| 稀疏性 (sparsity) | 觀察到的互動太少，相似度與因子估計不穩 | 矩陣分解、正則化、加入項目特徵 |
+| 新使用者冷啟動 | 沒有歷史互動 | 熱門度、問卷 / 入門選擇、人口統計或情境特徵 |
+| 新項目冷啟動 | 還沒被看過 | 內容式方法、探索策略（給新項目一些曝光） |
+| 熱門度偏誤 (popularity bias) | 熱門項目互動多，被推薦更多，形成回饋迴圈 | 多樣性、新穎性指標；探索 |
 
-- 相似使用者可能喜歡相似項目
-- 常被同一群人喜歡的 items 可能彼此相關
+實務系統很少只用一種方法，常把熱門度、內容特徵、協同過濾與業務規則混合。
 
-這也是 PySpark ALS 最常出現的場景。
+## 典型架構：召回 + 排序
 
-## The User-Item Matrix View
-
-很多推薦模型都可以從 user-item matrix 來理解：
-
-- row 代表 user
-- column 代表 item
-- cell 代表 rating 或互動強度
-
-這個矩陣通常非常 sparse，因為大多數使用者只接觸過極少數 items。
-
-一個很重要的心智模型是：空白格不代表使用者討厭該 item，只代表目前沒有觀察到互動。
-
-## Sparsity and Cold Start
-
-推薦系統有兩個很常見的結構性問題。
-
-### Sparsity
-
-- 觀測到的 interactions 很少
-- 很多 user 與 item 幾乎沒有足夠訊號
-- 相似度或因子分解容易受稀疏性影響
-
-### Cold Start
-
-- 新 user 沒有歷史資料
-- 新 item 還沒有曝光或互動
-- 模型很難只靠 collaborative signal 直接做出好推薦
-
-這也是為什麼很多實務系統不會只依賴單一推薦方法，而會把 popularity、內容特徵或 business rules 一起用上。
-
-## Practical Reminders
-
-- interaction data 的缺值不能直接當負樣本處理。
-- collaborative filtering 很強，但對新 user 和新 item 特別脆弱。
-- 如果 item metadata 很完整，content-based 方法通常能補足 cold-start 弱點。
-
-[Back to Recommender Systems](README.md)
+```
+全部項目（百萬）→ 召回 candidate generation（快、粗：協同過濾、內容相似、熱門）→ 數百個候選
+              → 排序 ranking（慢、精：GBDT / 深度模型，加入情境特徵）→ 過濾與重排（已看、庫存、多樣性）→ top-N
+```
