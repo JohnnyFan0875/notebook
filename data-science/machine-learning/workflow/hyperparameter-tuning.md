@@ -16,7 +16,7 @@
 | Bayesian optimization | 用過去結果建代理模型，選下一組最有希望的 | 評估次數少 | 較難平行、需額外套件 | Optuna、Hyperopt、scikit-optimize |
 | 演化 / 族群式 (population-based) | 一群設定互相競爭、突變 | 適合很大或不平滑的空間 | 需要大量運算 | Ray Tune (PBT)、DEAP |
 
-深度學習的學習率排程 (learning rate schedule) 屬於訓練過程的一部分，見 [Deep Learning](../../deep-learning/README.md)。
+深度學習的學習率排程 (learning rate schedule) 屬於訓練過程的一部分，見 [PyTorch 訓練迴圈](../../deep-learning/training-workflows/pytorch-training-loop.md#學習率排程-scheduler)。
 
 ![Grid vs random search](src/hyperparameter-tuning-grid-vs-random.png)
 

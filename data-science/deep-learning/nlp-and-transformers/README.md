@@ -1,13 +1,29 @@
-# NLP and Transformers
+[Data Science](../../README.md) › [Deep Learning](../README.md) › NLP 與 Transformer
 
-這一章整理文字任務常見的深度學習路線，從文字表示、序列模型、transformer 到 LLM fine-tuning，讓內容能以一般 Markdown 形式連續閱讀，而不是停留在零散摘錄。
+# NLP 與 Transformer (NLP and Transformers)
 
-## Topics
+序列資料（文字、DNA、蛋白質）怎麼變成 tensor、怎麼建模。從 tokenize 與 embedding、RNN / LSTM，到 attention 與 Transformer——現代 LLM 與蛋白質語言模型的共同骨架。
 
-- [Text and Sequence Models](text-and-sequence-models.md)：tokenize、embedding、RNN / LSTM / GRU
-- [Transformers and Attention](transformers-and-attention.md)
-- LLM fine-tuning（prompt vs RAG vs fine-tune、LoRA / PEFT）已移到 [LLM: Fine-Tuning](../../llm/integration/fine-tuning.md)
+## 建議順序
 
-## Suggested Order
+```
+token / embedding → RNN / LSTM（狀態傳遞） → attention → Transformer → 應用
+                                                                   ├─ LLM：見 LLM 章節
+                                                                   └─ DNA / 蛋白質：見生資應用
+```
 
-先理解 token、embedding 與序列資料，再看 RNN / sequence modeling，之後進入 transformer，最後才看 LLM fine-tuning 的實務取捨。
+## 筆記
+
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [文字與序列模型](text-and-sequence-models.md) | tokenization（字元 / 子詞 / k-mer）、embedding、padding、RNN / LSTM / GRU | 序列怎麼變成 tensor？RNN 的限制是什麼？ |
+| [Transformer 與 Attention](transformers-and-attention.md) | Q / K / V、scaled dot-product、multi-head、位置編碼、encoder vs decoder | attention 在算什麼？為什麼 Transformer 成為主流？ |
+
+## 相關章節
+
+| 主題 | 位置 |
+| --- | --- |
+| LLM 概念、prompt、RAG、fine-tuning（LoRA） | [LLM](../../llm/README.md)、[Fine-Tuning](../../llm/integration/fine-tuning.md) |
+| 句向量與語意搜尋 | [Embeddings 與語意搜尋](../../llm/rag/embeddings-and-semantic-search.md) |
+| 蛋白質 / DNA 語言模型 | [序列與蛋白模型](../bio-applications/sequence-and-protein-models.md) |
+| 不用深度學習的文字分析（tf-idf、LDA） | [Text Analysis in R](../../r-foundations/text-analysis.md) |

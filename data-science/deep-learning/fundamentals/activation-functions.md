@@ -1,191 +1,67 @@
-# Activation Functions
+[Deep Learning](../README.md) › [基礎](README.md) › 激活函數
 
-> **待修（改寫階段）**：移除標題與內文中的 emoji。
+# 激活函數 (Activation Functions)
 
-Activation functions introduce **non-linearity** into neural networks.
-Without them, a deep neural network would behave like a linear model, no matter how many layers it has.
+激活函數在層與層之間加入非線性。沒有它，再多層的網路都等於一個 [線性層](linear-layer.md)。它的**導數**決定梯度能否順利往回傳，因此直接影響能不能訓練起來。
 
-## 1. Sigmoid Function
+## 常用函數
 
-**Formula:**
+| 函數 | 公式 | 值域 | 導數特性 | 用在哪 |
+| --- | --- | --- | --- | --- |
+| Sigmoid | $\sigma(x) = \dfrac{1}{1+e^{-x}}$ | (0, 1) | $\sigma(1-\sigma)$，最大 0.25；兩端趨近 0 | 二元分類**輸出**、gate（LSTM） |
+| Tanh | $\tanh(x)$ | (−1, 1) | $1-\tanh^2$，最大 1；兩端趨近 0 | RNN 隱藏狀態 |
+| **ReLU** | $\max(0, x)$ | [0, ∞) | x > 0 為 1，否則 0 | CNN、MLP 隱藏層預設 |
+| Leaky ReLU | $\max(\alpha x, x)$，α 約 0.01 | ℝ | 負區斜率 α | ReLU 出現大量死神經元時 |
+| **GELU** | $x \cdot \Phi(x)$ | 約 [−0.17, ∞) | 平滑、負區有小梯度 | **Transformer**（BERT、GPT、ESM） |
+| SiLU / Swish | $x \cdot \sigma(x)$ | 約 [−0.28, ∞) | 平滑 | EfficientNet、部分 LLM（SwiGLU） |
+| Softmax | $\dfrac{e^{x_i}}{\sum_j e^{x_j}}$ | (0, 1)，總和 1 | — | 多類別輸出（通常交給 loss 處理） |
 
-\[
-\sigma(x) = \frac{1}{1 + e^{-x}}
-\]
+![Activation functions and derivatives](src/activation-functions-curves.png)
 
-- **Range:** (0, 1)
-  - For large negative x → output → 0.
-  - For large positive x → output → 1.
-  - At x = 0 → output = 0.5.
-- **Use case:** Binary classification (probability output).
-- **Limitations:**
-  - Saturates at extreme values (gradients near 0).
-  - Leads to **vanishing gradient problem** in deep networks.
+> 判讀：sigmoid 導數最大只有 0.25，連乘 10 層後梯度剩 $0.25^{10} \approx 10^{-6}$——這就是**梯度消失 (vanishing gradient)**。ReLU 在正區導數恆為 1，梯度不會被縮小，但負區導數為 0：若某個神經元對所有輸入都輸出負值，它永遠不會更新（**死神經元 dead ReLU**）。
 
-![Image](https://editor.analyticsvidhya.com/uploads/94469sig%20derivative.png)
+## 為什麼導數重要
 
-**PyTorch Example:**
+反向傳播時，每經過一層梯度就乘上該層激活函數的導數（[鏈鎖律](backpropagation.md#鏈鎖律)）：
+
+| 導數 | 結果 | 對策 |
+| --- | --- | --- |
+| 長期 < 1（sigmoid、tanh 飽和區） | 梯度消失，前面的層學不動 | 隱藏層改 ReLU / GELU、[殘差連接](../computer-vision/convolutional-neural-networks.md#經典架構)、[normalization](regularization-and-normalization.md) |
+| 長期 > 1（或權重太大） | 梯度爆炸，loss 變 NaN | [初始化](weight-initialization.md)、gradient clipping、降低學習率 |
+| 恆為 0（死 ReLU） | 神經元停止學習 | Leaky ReLU / GELU、降低學習率 |
+
+## PyTorch 用法
 
 ```python
 import torch
-import torch.nn as nn
+from torch import nn
+import torch.nn.functional as F
 
+# 1. 當作層放進模型（隱藏層）
 model = nn.Sequential(
-    nn.Linear(6, 4),
-    nn.Linear(4, 1),
-    nn.Sigmoid()
+    nn.Linear(6, 16), nn.ReLU(),
+    nn.Linear(16, 16), nn.GELU(),
+    nn.Linear(16, 1),                 # 輸出 logits，不接 Sigmoid → 用 BCEWithLogitsLoss
 )
-```
 
-## 2. Softmax Function
+# 2. 函式寫法（自訂 forward 裡常用）
+x = torch.tensor([-1.0, 0.0, 2.0])
+F.relu(x)                             # tensor([0., 0., 2.])
+F.leaky_relu(x, negative_slope=0.01)  # tensor([-0.0100, 0.0000, 2.0000])
+torch.sigmoid(x)                      # tensor([0.2689, 0.5000, 0.8808])
 
-**Formula:**
-
-\[
-\text{Softmax}(x_i) = \frac{e^{x_i}}{\sum_j e^{x_j}}
-\]
-
-- **Range:** (0, 1), with all outputs summing to 1.
-- **Use case:** Multi-class classification.
-- Each output represents the probability of belonging to a class.
-- Behavior: Converts a vector of scores (logits) into a probability distribution.
-- **Limitation:** Still susceptible to saturation at extreme logits.
-- Graph
-  - **2-class case**: Looks similar to sigmoid (because softmax with 2 classes reduces to sigmoid).
-  - **3+ classes**: You don’t get a single curve; you get multiple probability curves that compete — when one class probability goes up, others go down.
-
-**PyTorch Example:**
-
-```python
-import torch
-import torch.nn as nn
-
+# 3. softmax 一定要指定 dim（類別所在的維度）
 logits = torch.tensor([[1.0, 2.0, 3.0, 4.0]])
-softmax = nn.Softmax(dim=-1)
-print(softmax(logits))
+F.softmax(logits, dim=-1)             # tensor([[0.0321, 0.0871, 0.2369, 0.6439]])
 ```
 
-## 3. ReLU (Rectified Linear Unit)
+## 輸出層怎麼選
 
-**Formula:**
+| 任務 | 輸出層 | 搭配 loss |
+| --- | --- | --- |
+| 二元分類 / 多標籤 (multi-label) | 1 或 K 個 logits（不接 sigmoid） | `BCEWithLogitsLoss` |
+| 多類別單選 | K 個 logits（不接 softmax） | `CrossEntropyLoss` |
+| 迴歸 | 無激活 | `MSELoss` / `L1Loss` |
+| 非負輸出（計數、表現量） | `softplus` 或 `exp` | Poisson / NB 負對數似然 |
 
-\[
-f(x) = \max(0, x)
-\]
-
-### Properties
-
-- Introduces **sparsity** (some neurons inactive).
-- Efficient to compute.
-- Prevents **vanishing gradient** for positive values.
-
-### Limitation
-
-- Neurons with negative inputs have gradient 0 → **dead neurons** (neuron will not update during backpropagation).
-
-![Image](https://pica.zhimg.com/v2-58ed41447e25974904be6fd1c5f21490_1440w.jpg)
-
-### PyTorch Example
-
-```python
-import torch.nn as nn
-
-relu = nn.ReLU()
-```
-
-## 4. Leaky ReLU
-
-**Formula:**
-
-\[
-f(x) = \max(\alpha x, x), \quad \alpha \text{ is a small constant (e.g., 0.01)}
-\]
-
-### Improvement over ReLU
-
-- For negative inputs, slope = **α** (not 0).
-- Helps avoid the **dead neuron** problem.
-
-### PyTorch Example
-
-```python
-import torch.nn as nn
-
-leaky_relu = nn.LeakyReLU(negative_slope=0.05)
-```
-
-## Meaning of Activation Function Derivatives
-
-In deep learning, the **derivative (gradient) of the activation function** is crucial because it directly affects
-**gradient descent** and **backpropagation**.
-
-### Why the Derivative Matters
-
-1. **Gradient Flow**
-
-   - During backpropagation, we compute the derivative of the loss with respect to each layer’s parameters.
-   - This requires the **chain rule**, where the derivative of the activation function is a key term.
-   - If the derivative is too small → **vanishing gradients**.
-   - If the derivative is too large → **exploding gradients**.
-
-2. **Sensitivity of Nonlinear Transformation**
-
-   - The derivative tells us how sensitive the output is to changes in the input.
-   - Example: For the **sigmoid function**, at extreme inputs the slope is close to 0 → output hardly changes → learning stalls.
-
-3. **Learning Efficiency**
-   - The derivative shape influences how effectively gradients propagate.
-   - **ReLU** has derivative = 1 for positive inputs → efficient gradient flow → faster training.
-   - **Leaky ReLU** fixes the “dead neuron” issue of ReLU by keeping a small slope for negative inputs.
-
-### Common Activation Functions and Derivatives
-
-- **Sigmoid**
-  \[
-  \sigma(x) = \frac{1}{1 + e^{-x}}, \quad
-  \sigma'(x) = \sigma(x)(1 - \sigma(x))
-  \]
-
-  - Problem: For large |x|, derivative → 0 → vanishing gradients.
-
-- **ReLU**
-  \[
-  f(x) = \max(0, x), \quad
-  f'(x) = \begin{cases}
-  1 & x > 0 \\
-  0 & x \leq 0
-  \end{cases}
-  \]
-
-  - Advantage: Avoids vanishing gradients for positive inputs.
-  - Limitation: Zero gradient for x ≤ 0 → “dead neurons”.
-
-- **Leaky ReLU**
-  \[
-  f(x) = \max(\alpha x, x), \quad
-  f'(x) = \begin{cases}
-  1 & x > 0 \\
-  \alpha & x \leq 0
-  \end{cases}
-  \]
-  - Fixes ReLU’s dead neuron problem by using a small slope α (e.g., 0.01) for negative inputs.
-
-### Summary
-
-- The **derivative of the activation function controls how gradients propagate**.
-- It directly influences **learning ability** and **convergence speed**.
-- Choosing an activation function requires considering its derivative:
-  - Will it cause vanishing/exploding gradients?
-  - Does it allow efficient learning?
-
-## 📌 Summary
-
-- **Sigmoid:** Good for binary classification but suffers from vanishing gradients.
-- **Softmax:** Converts logits into class probabilities (multi-class tasks).
-- **ReLU:** Default choice in hidden layers; simple and efficient.
-- **Leaky ReLU:** Fixes ReLU’s dead neuron problem by allowing small gradients for negative inputs.
-
-## 🔗 Related
-
-- [Loss Functions](loss-functions.md) → Softmax is often combined with **CrossEntropyLoss**.
-- [Backpropagation](backpropagation.md) → Gradients flow differently depending on the activation function.
+細節見 [損失函數](loss-functions.md)。2 類 softmax 等價於 sigmoid：$\text{softmax}(z_1, z_2)_1 = \sigma(z_1 - z_2)$。

@@ -1,81 +1,103 @@
-# Text and Sequence Models
+[Deep Learning](../README.md) › [NLP 與 Transformer](README.md) › 文字與序列模型
 
-在文字任務中，模型無法直接吃字串，第一步一定是把 token 轉成數值表示；之後再用 RNN / LSTM / GRU 或 [Transformer](transformers-and-attention.md) 處理序列。
+# 文字與序列模型 (Text and Sequence Models)
 
-相關：句向量與語意搜尋見 [Embeddings and Semantic Search](../../llm/rag/embeddings-and-semantic-search.md)；不用深度學習的文字分析（tidytext、sentiment、LDA）見 [Text Analysis in R](../../r-foundations/text-analysis.md)。
+模型不能直接吃字串。序列要先切成 token、轉成整數 ID、再查表變成向量 (embedding)；之後才交給 RNN / LSTM 或 [Transformer](transformers-and-attention.md) 處理。同一套流程也適用於 DNA 與蛋白質序列。
 
-## 從文字到 tensor 的基本流程
+## 從序列到 tensor
 
-1. tokenize：把句子切成 token
-2. build vocabulary：建立 token 到 index 的對應
-3. numericalize：把 token 序列轉成整數序列
-4. pad / truncate：對齊 batch 長度
-5. embedding：把整數 index 映射成可學習的 dense vector
+```
+"I love NLP"  → tokenize → ["i", "love", "nlp"] → numericalize → [1, 2, 3]
+                                                      ↓ pad 到同長度
+                                                 [[1, 2, 3, 0, 0], ...]  (batch, L)
+                                                      ↓ nn.Embedding
+                                                 (batch, L, d) 的實數向量
+```
 
-## Bag-of-Words vs Embeddings
+## Tokenization
 
-| 方法 | 特點 | 限制 |
-| --- | --- | --- |
-| Bag-of-Words | 簡單、可解釋 | 不保留語序、維度高且稀疏 |
-| Embedding | 緊湊、可學語意相似性 | 需要訓練或預訓練表示 |
+| 方式 | 例子 | 優點 | 缺點 |
+| --- | --- | --- | --- |
+| 字詞 (word) | `["unhappiness"]` | 直觀 | 詞彙表巨大、未見過的詞 (OOV) 無法處理 |
+| 字元 (character) | `["u","n","h",...]` | 沒有 OOV | 序列很長 |
+| **子詞 (subword)**：BPE、WordPiece、SentencePiece | `["un", "##happi", "##ness"]` | 兼顧詞彙量與 OOV | 切法依語料而定 |
+| 單一殘基 / 鹼基 | 蛋白質 `M K T A Y`、DNA `A C G T` | 自然、無歧義 | 序列長 |
+| k-mer | DNA `ACG CGT GTA`（k=3 重疊） | 帶入局部脈絡 | 詞彙量 $4^k$；重疊 k-mer 有資訊洩漏到相鄰 token 的問題 |
 
-## Minimal Example
+> 預訓練模型的 tokenizer 必須和模型配套使用（`AutoTokenizer.from_pretrained(同一個名稱)`）；自己訓練時，詞彙表只能從**訓練集**建立。
+
+## Embedding
+
+`nn.Embedding(vocab_size, d)` 就是一張可學習的查表矩陣：第 i 列是 token i 的向量，等同 one-hot 乘上權重矩陣，但更省記憶體。
 
 ```python
 import torch
 from torch import nn
 
-vocab = {"<pad>": 0, "i": 1, "love": 2, "nlp": 3}
-tokens = ["i", "love", "nlp"]
-ids = torch.tensor([vocab[token] for token in tokens])
-
-embedding = nn.Embedding(num_embeddings=len(vocab), embedding_dim=8)
-embedded = embedding(ids)
-
-print(embedded.shape)  # torch.Size([3, 8])
+vocab = {"<pad>": 0, "<unk>": 1, "i": 2, "love": 3, "nlp": 4}
+ids = torch.tensor([[vocab.get(t, 1) for t in ["i", "love", "nlp"]]])   # 未知詞 → <unk>
+emb = nn.Embedding(len(vocab), embedding_dim=8, padding_idx=0)          # pad 向量固定為 0、不更新
+emb(ids).shape                                                           # torch.Size([1, 3, 8])
 ```
 
-## 為什麼 embedding 有用
+| 表示法 | 特點 |
+| --- | --- |
+| Bag-of-words / tf-idf | 不保留語序、高維稀疏；小資料文字分類仍是強 baseline |
+| 靜態 embedding（word2vec、GloVe） | 每個詞一個固定向量；「bank」不分河岸或銀行 |
+| 上下文 embedding（BERT、ESM） | 同一個 token 在不同句子 / 序列中向量不同 |
 
-- 把離散 token 轉成可學習連續表示
-- 類似語境的詞可能學到相近向量
-- 可以作為 RNN、CNN、Transformer 的輸入基礎
+用預訓練模型產生句向量做語意搜尋見 [Embeddings 與語意搜尋](../../llm/rag/embeddings-and-semantic-search.md)；不用深度學習的 tidytext / tf-idf / LDA 見 [Text Analysis in R](../../r-foundations/text-analysis.md)。
 
-## 常見陷阱
+> embedding 的相似度反映的是**訓練資料中的共現**，不保證是語意或生物功能上的相似；在下游任務上驗證，不要直接拿向量距離當結論。
 
-- tokenization 規則和推論時不一致
-- 忘記處理 OOV 詞或 padding token
-- 把 embedding 當成天然可解釋的語意空間，而忽略資料與任務影響
+## Padding 與 mask
 
-## Sequence Models (RNN / LSTM / GRU)
+batch 內序列長短不一時要補到同長，模型必須知道哪些位置是 padding：
 
-在 transformer 成為主流前，文字深度學習大量依賴 RNN、LSTM、GRU 等 sequence models。即使現在很多專案直接用 transformer，理解 sequence modeling 仍然很重要，因為它幫助你掌握「語序」與「狀態傳遞」的基本概念。
+| 模型 | 處理方式 |
+| --- | --- |
+| RNN | `pack_padded_sequence`，讓 RNN 跳過 padding |
+| Transformer | `attention_mask` / `src_key_padding_mask`：padding 位置不被注意 |
+| 池化成一個向量 | 平均時排除 padding：`(h * mask).sum(1) / mask.sum(1)` |
+| Loss | `CrossEntropyLoss(ignore_index=pad_id)` |
 
-### 這類模型在做什麼
+## 循環神經網路 (RNN / LSTM / GRU)
 
-- 一次讀入一個 token
-- 把前面資訊壓進 hidden state
-- 再用 hidden state 影響後續預測
+RNN 一次讀一個 token，把目前為止的資訊壓縮進隱藏狀態 (hidden state) $h_t = f(x_t, h_{t-1})$。
 
-### 為什麼會遇到限制
+| 模型 | 機制 | 特點 |
+| --- | --- | --- |
+| Vanilla RNN | 單一 tanh 更新 | 長序列梯度消失，記不住遠處資訊 |
+| **LSTM** | 遺忘 / 輸入 / 輸出三個 gate + 細胞狀態 (cell state) | 能保留長距離資訊；過去序列任務的主力 |
+| GRU | 兩個 gate，結構較簡單 | 參數較少，效果常與 LSTM 相近 |
+| 雙向 (bidirectional) | 正向 + 反向各跑一次再串接 | 分類、標註任務常用；不能用於逐字生成 |
 
-- 序列太長時，早期資訊難以保留
-- 訓練難以平行化
-- 容易有 vanishing / exploding gradients
+```python
+class LSTMClassifier(nn.Module):
+    def __init__(self, vocab_size, n_classes, d=64, hidden=128):
+        super().__init__()
+        self.emb = nn.Embedding(vocab_size, d, padding_idx=0)
+        self.lstm = nn.LSTM(d, hidden, batch_first=True, bidirectional=True)
+        self.head = nn.Linear(2 * hidden, n_classes)
 
-### LSTM / GRU 的價值
+    def forward(self, ids, lengths):                     # lengths：每條序列的實際長度
+        x = nn.utils.rnn.pack_padded_sequence(self.emb(ids), lengths.cpu(),
+                                              batch_first=True, enforce_sorted=False)
+        _, (h, _) = self.lstm(x)                         # h: (2 方向, batch, hidden)
+        return self.head(torch.cat([h[0], h[1]], dim=1))
 
-它們透過 gating 機制，讓模型比較能保留重要資訊、忘記不重要資訊，因此比最基本的 vanilla RNN 更穩定。
+model = LSTMClassifier(vocab_size=5000, n_classes=2)
+model(torch.randint(1, 5000, (4, 20)), torch.tensor([20, 15, 9, 3])).shape   # torch.Size([4, 2])
+```
 
-### 常見任務
+## RNN vs Transformer
 
-- sentiment analysis
-- text classification
-- language modeling
-- sequence generation
+| 面向 | RNN / LSTM | Transformer |
+| --- | --- | --- |
+| 長距離依賴 | 資訊要一步步傳遞，容易衰減 | 任兩個位置直接相連 |
+| 訓練平行化 | 不行（必須依序） | 可以（所有位置同時算） |
+| 計算量對長度 L | $O(L)$ | $O(L^2)$（attention 矩陣） |
+| 小資料 | 較容易訓練 | 從頭訓練需大量資料；通常用預訓練模型 |
+| 現況 | 小型、串流、低延遲任務 | 主流；LLM、蛋白質語言模型 |
 
-### 判讀提醒
-
-- 若你只是做短文字分類，簡單模型未必輸 transformer 太多。
-- 若資料很少，sequence model 也可能比大 transformer 更容易穩定訓練。
-- 若任務需要長距離依賴，transformer 通常更有優勢。
+> 短文本分類、樣本少時，tf-idf + logistic 迴歸或小型 LSTM 常與大型模型差距不大，而且便宜、好解釋——先建 [baseline](../../machine-learning/evaluation/baselines-and-error-analysis.md)。
