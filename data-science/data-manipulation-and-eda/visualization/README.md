@@ -5,9 +5,11 @@
 ## 建議閱讀順序
 
 1. [Chart Design Principles](chart-design-principles.md): 先理解圖表為什麼容易誤導，以及如何設計可讀的圖。
-2. [Dashboard Design](dashboard-design.md): 當圖表不是單張輸出，而是要組成決策介面時，先理解 dashboard 編排原則。
-3. [Matplotlib](matplotlib/README.md): 學會 figure、axes、標籤、版面與輸出控制。
-4. [Seaborn](seaborn/README.md): 進一步處理統計圖、分組比較與高階語意映射。
+2. [Matplotlib](matplotlib/README.md): 學會 figure、axes、標籤、版面與輸出控制。
+3. [Seaborn](seaborn/README.md): 進一步處理統計圖、分組比較與高階語意映射。
+4. [Pandas Plotting](pandas-plotting.md): `df.plot()` 快速檢查與時間序列圖。
+
+> 圖表要組成決策介面時，見 [Data Communication: Dashboard Design](../../data-communication/dashboard-design.md)。
 
 ## 何時用哪個工具
 
@@ -15,6 +17,7 @@
 | --- | --- | --- |
 | [Matplotlib](matplotlib/README.md) | 客製化版面、多子圖、出版級控制 | 語法較底層，但最靈活 |
 | [Seaborn](seaborn/README.md) | EDA、統計圖、直接吃 DataFrame | 高階 API 方便，但仍要理解底層軸設定 |
+| [Pandas Plotting](pandas-plotting.md) | 最快的第一眼、時間序列 | 客製化有限，底層仍是 Matplotlib |
 
 ## 常見選圖原則
 

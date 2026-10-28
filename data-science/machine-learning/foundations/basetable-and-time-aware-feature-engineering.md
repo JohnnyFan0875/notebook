@@ -147,4 +147,4 @@ pig_table = create_pig_table(basetable, "target", "disc_age")
 6. 母體定義清楚了嗎？
 7. 有季節性嗎？需要相似月份或多快照嗎？
 
-相關：[特徵工程原則](feature-engineering-principles.md)、[資料切分與洩漏](../workflow/data-splitting-and-leakage.md)、[存活分析](../../statistics/survival-analysis/README.md)（目標是「何時發生」而非「是否發生」時）。
+相關：[特徵工程原則](feature-engineering-principles.md)、[資料洩漏](data-leakage.md)、[切分策略](../preprocessing/train-test-split.md#切分策略)、[存活分析](../../statistics/survival-analysis/README.md)（目標是「何時發生」而非「是否發生」時）。

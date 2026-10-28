@@ -73,23 +73,7 @@ These columns are different from "partially missing" columns because they carry 
 
 Before choosing a method, ask why values are missing.
 
-### MCAR, MAR, MNAR
-
-- `MCAR` (Missing Completely at Random): missingness is unrelated to observed or unobserved values.
-- `MAR` (Missing at Random): missingness depends on other observed variables.
-- `MNAR` (Missing Not at Random): missingness depends on the value itself or another unobserved mechanism.
-
-Examples:
-
-- `MCAR`: a sensor randomly fails for a few timestamps.
-- `MAR`: income is missing more often for people in a certain occupation field.
-- `MNAR`: people with very high debt are less likely to report debt.
-
-This distinction matters because:
-
-- deletion is safest when values are close to `MCAR`
-- simple imputation is often acceptable for light `MCAR` / `MAR`
-- `MNAR` usually means the missingness itself carries signal and should be treated carefully
+MCAR / MAR / MNAR 的定義與對刪除 / 插補的影響見 [Missing Data Mechanisms](../../data-manipulation-and-eda/missing-data.md)。
 
 ## Graphical Analysis with `missingno`
 
@@ -131,37 +115,6 @@ df = df.bfill()
 - Median is usually safer when outliers exist.
 - Mode or constant fill is common for categorical variables.
 - Forward / backward fill is mainly for ordered data such as time series.
-
-## Statistical Imputation with `SimpleImputer`
-
-For reproducible preprocessing pipelines, prefer `sklearn.impute.SimpleImputer`.
-
-```python
-from sklearn.impute import SimpleImputer
-
-mean_imputer = SimpleImputer(strategy="mean")
-median_imputer = SimpleImputer(strategy="median")
-mode_imputer = SimpleImputer(strategy="most_frequent")
-constant_imputer = SimpleImputer(strategy="constant", fill_value=0)
-
-df_imputed = pd.DataFrame(
-    mean_imputer.fit_transform(df),
-    columns=df.columns,
-    index=df.index,
-)
-```
-
-- `strategy="mean"` and `strategy="median"` are for numeric columns.
-- `strategy="most_frequent"` is useful for discrete columns.
-- `strategy="constant"` is explicit but can inject bias if the fill value is not meaningful.
-
-Simple imputation is easy to explain, but it can shrink variance and weaken real relationships between features.
-
-## Related Notes
-
-- [Missing Data Mechanisms](../../data-manipulation-and-eda/missing-data.md): MCAR, MAR, and MNAR concepts
-- [Missing Data in R](../../r-foundations/missing-data.md): the analogous workflow in R
-- [Imputation](../../machine-learning/preprocessing/imputation.md): model-preprocessing perspective when missing data enters ML pipelines
 
 ## Drop Missing Data Carefully
 
@@ -211,58 +164,9 @@ ts = ts.interpolate(method="quadratic")
 
 Interpolation is most appropriate for ordered measurements, not arbitrary table columns.
 
-## Advanced Imputation
+## Model-Based Imputation
 
-When simple methods are too crude, model-based imputers can use other columns to predict missing values.
-
-### KNN Imputation
-
-```python
-from fancyimpute import KNN
-
-knn_imputer = KNN()
-df_knn = pd.DataFrame(
-    knn_imputer.fit_transform(df),
-    columns=df.columns,
-    index=df.index,
-)
-```
-
-- KNN finds similar rows using non-missing features.
-- It works best when nearby observations are genuinely comparable.
-- Feature scaling matters, because distance-based methods are sensitive to magnitude.
-
-### MICE / Iterative Imputation
-
-```python
-from fancyimpute import IterativeImputer
-
-mice_imputer = IterativeImputer()
-df_mice = pd.DataFrame(
-    mice_imputer.fit_transform(df),
-    columns=df.columns,
-    index=df.index,
-)
-```
-
-- MICE models each incomplete column using the others.
-- It is often more robust than one-shot mean filling.
-- It is slower, more complex, and still relies on assumptions about feature relationships.
-
-For categorical data, advanced imputers usually require encoding to numeric values first.
-
-## Compare Imputation Results
-
-Do not choose an imputation method only because it "fills everything".
-
-Useful checks include:
-
-- comparing missingness percentages before and after treatment
-- comparing distributions with histograms or KDE plots
-- checking whether correlations changed sharply
-- measuring downstream model performance across multiple imputations
-
-In practice, the best imputation is the one that preserves the structure you care about, not the one with the fanciest algorithm.
+`SimpleImputer`、`KNNImputer`、`IterativeImputer`（MICE 式）、缺失指標與補值後的驗證見 [Imputation](../../machine-learning/preprocessing/imputation.md)。
 
 ## Key Takeaways
 
@@ -271,4 +175,9 @@ In practice, the best imputation is the one that preserves the structure you car
 - Distinguish `MCAR`, `MAR`, and `MNAR` before choosing deletion or imputation.
 - Use `missingno` when missingness relationships are hard to see numerically.
 - Prefer interpolation for ordered series, not generic tabular gaps.
-- Validate imputed data with distributions, correlations, or downstream task metrics.
+
+## Related Notes
+
+- [Missing Data Mechanisms](../../data-manipulation-and-eda/missing-data.md): MCAR, MAR, and MNAR concepts
+- [Missing Data in R](../../r-foundations/missing-data.md): the analogous workflow in R
+- [Imputation](../../machine-learning/preprocessing/imputation.md): model-preprocessing perspective when missing data enters ML pipelines

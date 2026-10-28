@@ -81,15 +81,9 @@ pred = valid_df["passenger_count"].map(group_mean).fillna(global_mean)
 
 順序：切分與指標對齊 → baseline → 核心特徵 → [調參](hyperparameter-tuning.md)。太早調參，只是在壞的驗證上把錯誤流程調到最好看。
 
-## 6. Ensemble：Blending vs Stacking
+## 6. Ensemble
 
-| | Blending | Stacking |
-| --- | --- | --- |
-| 做法 | 多個模型的預測直接加權平均 | 用各模型的 **out-of-fold (OOF) 預測**當第二層模型的輸入 |
-| 優點 | 簡單、不容易出錯 | 能學到模型之間的互補性 |
-| 風險 | 權重若在 validation 上調也會過擬合 | OOF 做錯就洩漏 |
-
-見 [Stacking](../supervised-learning/ensemble/stacking.md)、[Voting](../supervised-learning/ensemble/voting.md)。
+流程可信、單模型調好之後，再用 blending（預測加權平均）或 stacking（用 out-of-fold 預測訓練第二層模型）收尾。兩者的差異與 OOF 的做法見 [Stacking：Blending vs Stacking](../supervised-learning/ensemble/stacking.md#blending-vs-stacking)、[Voting](../supervised-learning/ensemble/voting.md)。
 
 ## 7. Public leaderboard 是訊號，不是真相
 

@@ -2,7 +2,7 @@
 
 Missing data can be classified into three categories based on the relationship between the missingness and the observed/unobserved data. Understanding these mechanisms is crucial for selecting appropriate statistical methods for handling missing data.
 
-This note focuses on the **conceptual side** of missingness: MCAR, MAR, MNAR, and why those mechanisms change the validity of deletion or imputation choices. If you need tool-specific workflows, see [Pandas: Handling Missing Data](../python-foundations/pandas/missing-data.md) or [Missing Data in R](../r-foundations/missing-data.md).
+This note focuses on the **conceptual side** of missingness: MCAR, MAR, MNAR, and why those mechanisms change the validity of deletion or imputation choices. 插補方法只在 [Imputation](../machine-learning/preprocessing/imputation.md)。If you need tool-specific workflows, see [Pandas: Handling Missing Data](../python-foundations/pandas/missing-data.md) or [Missing Data in R](../r-foundations/missing-data.md).
 
 ## 1. **MCAR — Missing Completely at Random**
 
@@ -88,4 +88,5 @@ When handling missing data without imputation, deletion strategies are commonly 
 
 - [Pandas: Handling Missing Data](../python-foundations/pandas/missing-data.md): pandas-based detection, fill, interpolation, and imputation workflow
 - [Missing Data in R](../r-foundations/missing-data.md): R and `naniar` oriented missingness workflow
+- [Imputation](../machine-learning/preprocessing/imputation.md): 插補方法（SimpleImputer、KNN、MICE、缺失指標）與補值造成的扭曲
 - [Data Quality](../statistics/descriptive-statistics/data-quality.md): broader pre-model checks beyond missingness alone

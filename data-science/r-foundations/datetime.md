@@ -2,7 +2,7 @@
 
 日期時間在 R 裡很容易表面上「看起來像字串」，但在分析流程中必須盡早轉成正確型別。否則排序、比較、分組與時間差計算都可能出錯。
 
-這篇偏重 **R 的日期時間工作流**：`Date` / `POSIXct`、`lubridate`、解析、時區與日曆欄位提取。若你在 Python 標準庫工作，請看 [Datetime Module](../python-foundations/datetime.md)；若你在 pandas DataFrame 裡處理時間欄位，請看 [Pandas: Datetime Handling](../python-foundations/pandas/datetime.md)。
+這篇偏重 **R 的日期時間工作流**：`Date` / `POSIXct`、`lubridate`、解析、時區與日曆欄位提取。若你在 Python 標準庫工作，請看 [Datetime Module](../python-foundations/datetime.md)；若你在 pandas DataFrame 裡處理時間欄位，請看 [Pandas: Datetime Handling](../python-foundations/datetime.md)。
 
 ## Core Classes
 

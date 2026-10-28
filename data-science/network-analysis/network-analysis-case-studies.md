@@ -1,5 +1,7 @@
 # Network Analysis Case Studies
 
+> **待改寫**：指標的定義與解讀留在前三篇，本篇只保留「資料怎麼變成 graph」的案例；改寫時補生資範例：PPI 網路（STRING）、基因共表現網路（WGCNA）、單細胞 kNN 圖 + Leiden。
+
 真正做 network analysis 時，資料通常不是一開始就長成乾淨的 node-edge 表。你更常拿到的是事件紀錄、文字欄位、交易資料或移動軌跡，然後必須自己決定怎麼把它轉成 graph。
 
 Key point: case study 的價值不只是多看幾張圖，而是學會把 messy event data 轉成可分析的 network，並知道不同建模選擇會產生不同 edge meaning。
@@ -208,7 +210,7 @@ Twitter mentions 案例沒有只跑一種 community detection，而是比較了:
 - 哪些邊界非常依賴演算法？
 - 我的結論是否對分群方法敏感？
 
-Key point: community detection 比較像是結構假說產生器，不是最後仲裁者。
+Key point: community detection 比較像是結構假說產生器，不是最後仲裁者。edge betweenness 分群的原理見 [Directed Networks and Structural Metrics](directed-networks-and-structural-metrics.md#community-detection-turns-dense-structure-into-groups)；選圖工具的原則見 [Graph Visualization](introduction-to-network-analysis.md#graph-visualization-is-for-reasoning-not-decoration)。
 
 ## Bike Sharing Data Naturally Becomes A Weighted Mobility Graph
 
@@ -270,16 +272,6 @@ Key point: community detection 比較像是結構假說產生器，不是最後�
 - 要移除多少 nodes 或 edges，網路才會斷開
 
 這讓 network analysis 從 navigation 問題往 robustness 問題延伸。對交通、通訊、供應鏈類資料來說，這往往比單純 shortest path 更接近真實風險。
-
-## Visualization Tools Depend On The Task
-
-最後一部分案例展示了多種畫圖方式與套件。對 notebook 來說，真正要保留的不是某個特定 R 套件名稱，而是選圖工具的原則:
-
-- 靜態探索圖: 適合快速檢查局部結構
-- 屬性映射圖: 適合把中心性、社群或權重映射到顏色與大小
-- 互動式圖: 適合展示較大的網路與滑動探索
-
-換句話說，visualization tool 應該根據分析目的選，而不是因為某個套件比較炫就固定使用。
 
 ## A Practical Workflow For Messy Network Data
 

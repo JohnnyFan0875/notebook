@@ -1,5 +1,7 @@
 # TensorFlow and Keras Basics
 
+> **待改寫**：改寫階段縮成「PyTorch ↔ Keras 對照」表（tensor、layer、compile / fit vs 訓練迴圈、callbacks、存檔），不再保留完整教學。
+
 ## Overview
 
 如果 PyTorch 筆記讓你熟悉了 tensor、gradient 和 module 的基本語感，那 TensorFlow 版本其實是在同一套深度學習觀念上，換一組 API 與工作流。

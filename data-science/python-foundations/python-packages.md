@@ -4,6 +4,8 @@
 
 這篇筆記聚焦的是本地 package 的基本組成、`__init__.py` 的角色，以及讓 package 可安裝、可攜帶的最低限度觀念。
 
+> **待改寫（過時）**：本篇的 `setup.py`、`MANIFEST.in`、`python setup.py sdist bdist_wheel` 是舊式打包流程。改寫階段換成 `pyproject.toml` + `uv`（`uv init --package`、`uv build`）；環境管理見 [Containers and Environments](../../computing/containers-and-env/README.md)。
+
 ## When a Script Wants to Become a Package
 
 通常有幾個訊號：

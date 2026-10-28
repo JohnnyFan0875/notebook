@@ -2,7 +2,7 @@
 
 # 自相關：ACF 與 PACF (Autocorrelation)
 
-衡量序列與**自己的過去**有多相關。ACF / PACF 圖是定態序列的「指紋」，也是選擇 ARIMA 階數 p、q 的核心工具。金融情境（動能、均值回歸）的解讀見 [Finance: Autocorrelation](../../finance/autocorrelation.md)。
+衡量序列與**自己的過去**有多相關。ACF / PACF 圖是定態序列的「指紋」，也是選擇 ARIMA 階數 p、q 的核心工具。金融情境（動能、均值回歸）的解讀見 [金融情境](#金融情境動能與均值回歸)。
 
 | | ACF 自相關函數 (autocorrelation function) | PACF 偏自相關函數 (partial ACF) |
 | --- | --- | --- |
@@ -68,3 +68,18 @@ acorr_ljungbox(model_result.resid, lags=[10, 20], return_df=True)
 > ACF 描述結構，不說明原因。趨勢殘留、季節性、差分不足、真正的序列持續性都可能產生相似的 ACF。
 >
 > 迴歸殘差有自相關時（Durbin-Watson ≠ 2），一般 OLS 的 SE 會失準，見 [假設檢查](../inferential-statistics/assumption-checks.md#獨立性-independence)。
+
+## 金融情境：動能與均值回歸
+
+| 序列 | 用途 | 注意 |
+| --- | --- | --- |
+| 價格 | 幾乎不直接判讀 | 有趨勢、非定態，ACF 必然很高 |
+| 報酬率 | 動能（正自相關）、均值回歸 / 短期反轉（負自相關） | 接近 0 只代表**線性**依賴弱，不代表不可預測 |
+| 平方或絕對報酬率 | 波動聚集 (volatility clustering) | 報酬率本身 ACF ≈ 0，平方報酬率 ACF 常明顯 > 0 |
+
+| 陷阱 | 說明 |
+| --- | --- |
+| 直接判讀價格的自相關 | 先轉成報酬率，見 [定態](stationarity.md) |
+| 統計顯著 = 可交易訊號 | 加入交易成本與滑價後常消失，見 [Trading Strategies and Backtesting](../../applied-domains/finance/trading-strategies-and-backtesting.md) |
+| 高頻資料 | bid-ask bounce 等微結構雜訊會造成假的負自相關 |
+| 只看單一期間 | 換期間、頻率、資產後是否仍存在？ |

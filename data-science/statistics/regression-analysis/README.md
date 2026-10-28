@@ -24,7 +24,7 @@
 | 存活時間（有設限） | Cox 模型 | [存活分析](../survival-analysis/cox-ph-model.md) |
 | 很多預測變數（p 大） | Ridge / Lasso | [ML: Regularization](../../machine-learning/foundations/regularization.md) |
 
-診斷（共線性、殘差、影響點）的深入內容見 [多變量：假設與診斷](../multivariate-analysis/assumptions-diagnostics.md)。
+診斷（共線性、殘差、影響點）的深入內容見 [多變量：假設與診斷](../multivariate-analysis/assumptions-diagnostics.md)。R 的寫法（`lm`、`glm`、`broom`）見 [Explanatory Modeling in R](../../r-foundations/explanatory-modeling-in-r.md)。
 
 ## 常見解讀陷阱
 

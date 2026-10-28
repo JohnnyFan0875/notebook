@@ -5,6 +5,9 @@ Web scraping allows you to extract and process information from websites. Two of
 - **BeautifulSoup** (parsing static HTML)
 - **Selenium** (interacting with dynamic websites)
 
+
+> **待修（改寫階段）**：`random.randint(5)` 少一個參數（應為 `random.uniform(1, 5)` 或 `randint(1, 5)`）；Selenium 4 起 `webdriver.Chrome(ChromeDriverManager().install())` 要改成 `webdriver.Chrome(service=Service(...))` 或直接 `webdriver.Chrome()`（Selenium Manager 自動處理 driver）；`find_element_by_xpath` 改成 `find_element(By.XPATH, ...)`。
+
 ## BeautifulSoup Example
 
 ```python
@@ -150,10 +153,4 @@ chrome.quit()
 
 ## Best Practices
 
-- **Respect website policies**: Always check a site’s robots.txt and terms of service.
-- **Throttle requests**: Add delays (`time.sleep`) or random intervals to avoid overloading servers.
-- **Use headers**: Randomize `User-Agent` strings to simulate real browser traffic.
-- **Avoid detection**: Use Selenium stealth modes and proxies if necessary.
-- **Data cleaning**: Combine scraping with libraries like `pandas` for structured analysis.
-
-This guide covers **BeautifulSoup** for static HTML and **Selenium** for dynamic content, with consistent examples and tips for safe, effec
+robots.txt、節流、User-Agent 等共用原則見 [Web Scraping: 禮貌與合法性](README.md#禮貌與合法性)。

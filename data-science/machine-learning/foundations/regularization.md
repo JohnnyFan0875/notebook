@@ -14,7 +14,7 @@ $$
 
 | 方法 | 懲罰 | 效果 | 何時用 | 筆記 |
 | --- | --- | --- | --- | --- |
-| L2 / Ridge | $\sum \beta_j^2$ | 係數平滑縮小，**不會變成 0** | 特徵多且彼此相關、只想穩定預測 | [Ridge](../supervised-learning/regression/ridge.md) |
+| L2 / Ridge | $\sum \beta_j^2$ | 係數平滑縮小，**不會變成 0** | 共線性、很多小效果；只想穩定預測 | [Ridge](../supervised-learning/regression/ridge.md) |
 | L1 / Lasso | $\sum \lvert\beta_j\rvert$ | 部分係數**剛好為 0** → 自動特徵選擇 | 預期只有少數特徵重要 | [Lasso](../supervised-learning/regression/lasso.md) |
 | Elastic Net | L1 與 L2 的加權組合 | 稀疏，且相關特徵會一起被選 | 特徵高度相關又想稀疏（基因共表現） | [Elastic Net](../supervised-learning/regression/elastic-net.md) |
 
@@ -32,6 +32,9 @@ from sklearn.linear_model import RidgeCV, LassoCV, ElasticNetCV, LogisticRegress
 ridge = make_pipeline(StandardScaler(), RidgeCV(alphas=np.logspace(-3, 3, 50)))
 lasso = make_pipeline(StandardScaler(), LassoCV(cv=5))
 enet  = make_pipeline(StandardScaler(), ElasticNetCV(l1_ratio=[0.1, 0.5, 0.9], cv=5))
+
+lasso.fit(X_train, y_train)
+(lasso[-1].coef_ != 0).sum()                               # Lasso 保留的特徵數
 
 # 分類：sklearn 的 C = 1/λ，C 越小正則化越強
 LogisticRegression(C=0.1)                                  # 預設 L2
@@ -64,4 +67,14 @@ LogisticRegression(C=0.1, l1_ratio=1, solver="saga")       # L1（sklearn ≥ 1.
 | --- | --- |
 | [過擬合](overfitting-underfitting.md) | [欠擬合](overfitting-underfitting.md) |
 
-> 正則化後的係數是**有偏的**，不能直接拿來做一般的顯著性推論（p 值、信賴區間）。要推論請用未懲罰的模型或專門的方法（如 post-selection inference）。
+> 正則化後的係數是**有偏的**，不能直接拿來做一般的顯著性推論（p 值、信賴區間）。要推論請用未懲罰的模型或專門的方法（如 post-selection inference），或把 Lasso 當作篩選、再於獨立資料上檢定。
+
+## 變數選擇方法比較
+
+| 方法 | 評價 |
+| --- | --- |
+| 領域知識 | 首選，尤其以解釋為目的 |
+| Lasso / Elastic Net + CV | 以預測為目的、變數多 |
+| AIC / BIC 比較少數候選模型 | 可以，見 [多元線性迴歸](../../statistics/regression-analysis/multiple-linear-regression.md#變數選擇) |
+| 逐步選擇 (stepwise) | 不建議：不穩定、p 值與 CI 失真、易過擬合 |
+

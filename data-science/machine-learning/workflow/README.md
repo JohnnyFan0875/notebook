@@ -7,7 +7,7 @@
 ## 建議順序
 
 ```
-問題定義 → 資料切分與洩漏 → 交叉驗證 → Pipeline → 調參 → 模型生命週期
+問題定義 → 資料切分 → 交叉驗證 → Pipeline → 調參 → 模型生命週期
                                                           ↘ Kaggle 競賽流程（實戰整合）
 ```
 
@@ -18,12 +18,12 @@
 | 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
 | [問題定義](problem-framing.md) | 目標、預測單位、預測時點、錯誤代價 | 到底要預測什麼？怎樣算成功？ |
-| [資料切分與洩漏](data-splitting-and-leakage.md) | 切分策略、正確順序、洩漏預防 | 資料要怎麼切才不會騙自己？ |
+| [切分策略](../preprocessing/train-test-split.md#切分策略) | 正確順序、分組 / 時間 / 快照切分 | 資料要怎麼切才不會騙自己？ |
 | [交叉驗證](cross-validation.md) | K-Fold、分層、分組、時間序列、Nested CV | 怎麼穩定地估計泛化能力？ |
 | [Pipeline](pipeline-basic.md) | `Pipeline`、`ColumnTransformer`、存檔 | 怎麼讓前處理不洩漏、上線可重現？ |
 | [超參數調整](hyperparameter-tuning.md) | Grid / Random / Bayesian（Optuna） | 怎麼有效率地挑參數？ |
 | [模型生命週期](model-lifecycle.md) | 各階段產出、退化與重訓 | 模型上線後怎麼持續演進？ |
-| [Kaggle 競賽流程](kaggle-competition-workflow.md) | local validation、baseline、blending / stacking | 怎麼建立能穩定判斷改動是否有效的實驗系統？ |
+| [Kaggle 競賽流程](kaggle-competition-workflow.md)（選讀） | local validation、baseline、ensemble | 怎麼建立能穩定判斷改動是否有效的實驗系統？ |
 
 ## 常見失誤
 

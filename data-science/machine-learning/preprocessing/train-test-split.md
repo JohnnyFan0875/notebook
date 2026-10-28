@@ -2,7 +2,17 @@
 
 # 訓練 / 測試切分 (Train-Test Split)
 
-把資料分成訓練集（配適模型）與測試集（評估在沒看過的資料上的 [泛化](../foundations/generalization.md) 能力）。**先切分，再 fit 任何會從資料學習的前處理**。切分策略的完整選擇（分組、時間、快照）見 [資料切分與洩漏](../workflow/data-splitting-and-leakage.md)。
+把資料分成訓練集（配適模型）與測試集（評估在沒看過的資料上的 [泛化](../foundations/generalization.md) 能力）。**先切分，再 fit 任何會從資料學習的前處理**。洩漏型態與預防見 [資料洩漏](../foundations/data-leakage.md)。
+
+## 正確順序
+
+```
+1. 定義預測單位與時間點
+2. 依問題結構切分 ──► train │ (validation) │ test（test 鎖起來）
+3. 只在 train 上 fit 前處理（放進 Pipeline）
+4. 用 validation 或交叉驗證選模型、調參
+5. 最後在 test 上評估一次
+```
 
 ## 切分比例
 
@@ -49,12 +59,31 @@ model.score(X_test, y_test)      # 只看一次
 | `random_state` | 固定切法，讓結果可重現 |
 | `shuffle=False` | 時間序列依原順序切（資料須先依時間排序） |
 
-## 不能隨機切的情況
+## 切分策略
 
-| 資料 | 改用 |
-| --- | --- |
-| 同一病人 / 使用者有多筆 | `GroupShuffleSplit`、`GroupKFold` |
-| 有時間順序 | 依日期切、`TimeSeriesSplit` |
-| 要宣稱可用於其他來源 | 外部資料集當 test |
+隨機切分只適用於觀測彼此獨立且同分布 (i.i.d.)；其他情況要依資料結構切。
+
+| 策略 | 何時用 | sklearn |
+| --- | --- | --- |
+| 隨機切分 | 觀測彼此獨立且同分布 | `train_test_split`、`KFold` |
+| 分層切分 | [分類](../supervised-learning/classification/README.md)，尤其 [類別不平衡](../evaluation/class-imbalance.md) | `stratify=y`、`StratifiedKFold` |
+| 分組切分 | 同一使用者 / 病人 / 裝置 / 店家 / 批次有多筆資料 | `GroupShuffleSplit`、`GroupKFold` |
+| 時間切分 | 預測未來、資料有時間順序 | `TimeSeriesSplit`、依日期切 |
+| 快照感知切分 | 同一實體在多個 reference date 各有一筆（[Basetable](../foundations/basetable-and-time-aware-feature-engineering.md)） | 依實體分組或依快照日期切 |
+| 外部驗證 | 要宣稱能用在其他醫院 / 族群 / 平台 | 用另一個來源當 test |
+
+```python
+from sklearn.model_selection import GroupShuffleSplit
+
+# 依病人分組切分：同一病人的所有樣本只會在 train 或 test 其中一邊
+gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+train_idx, test_idx = next(gss.split(X, y, groups=patient_id))
+
+# 依時間切分
+train = df[df["date"] < "2024-01-01"]
+test = df[df["date"] >= "2024-01-01"]
+```
+
+各種 CV 切法的圖解見 [交叉驗證](../workflow/cross-validation.md)。
 
 > 不要手動先對全部資料 `fit_transform` 再切分；把前處理放進 [Pipeline](../workflow/pipeline-basic.md)，切分後的 `fit` 自然只用到訓練資料。

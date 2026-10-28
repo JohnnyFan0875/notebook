@@ -261,6 +261,6 @@ Networking 的重點不是把所有元件背下來，而是知道 Azure 怎麼�
 
 - [Azure Fundamentals](azure-fundamentals.md)
 - [Cloud Computing Fundamentals](cloud-computing-fundamentals.md)
-- [Databricks Foundations](../../data-science/data-engineering/databricks-foundations.md)
+- [Databricks](../../data-science/data-engineering/databricks.md)
 
 [Back to Cloud](README.md)

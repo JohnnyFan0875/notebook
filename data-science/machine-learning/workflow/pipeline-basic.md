@@ -74,4 +74,4 @@ joblib.dump(search.best_estimator_, "model.joblib")   # 存整個 pipeline，不
 | 存整個 pipeline | 只存模型，上線時前處理就會不一致 |
 | 記錄套件版本 | `joblib` 存的物件在不同 sklearn 版本間不保證相容 |
 
-相關：[補值](../preprocessing/imputation.md)、[類別編碼](../preprocessing/categorical-encoding.md)、[特徵縮放](../preprocessing/feature-scaling.md)、[超參數調整](hyperparameter-tuning.md)、[MLflow](../production/mlflow.md)。
+相關：[補值](../preprocessing/imputation.md)、[類別編碼](../preprocessing/categorical-encoding.md)、[特徵縮放](../preprocessing/feature-scaling.md)、[超參數調整](hyperparameter-tuning.md)、[MLflow](../production/mlflow.md)；R 的對應做法（recipes + workflows）見 [tidymodels](../packages/tidymodels/README.md)。

@@ -118,31 +118,9 @@ cor(x, y, method = "kendall")
 
 Key point: `cov()` 的量綱會跟原始資料有關，不適合直接比較不同尺度；`cor()` 被標準化到 `[-1, 1]`，通常更容易解讀。
 
-## Linear and Logistic Regression in R
+## Regression
 
-### Linear Regression
-
-```r
-model_lm <- lm(y ~ x1 + x2, data = df)
-summary(model_lm)
-```
-
-通常先看：
-
-- coefficients
-- `R-squared`
-- residual standard error
-- p-values
-
-### Logistic Regression
-
-```r
-model_glm <- glm(y ~ x1 + x2, data = df, family = "binomial")
-summary(model_glm)
-predict(model_glm, newdata = df, type = "response")
-```
-
-這裡的 `type = "response"` 很重要，因為它會把 log-odds 轉成 probability。
+`lm()` / `glm()`、`broom` 整理輸出與模型比較見 [Explanatory Modeling in R](explanatory-modeling-in-r.md)。
 
 ## Common Mistakes
 
@@ -155,7 +133,7 @@ predict(model_glm, newdata = df, type = "response")
 ## Related Notes
 
 - [Functions in R](functions.md)
-- [Vectors in R](vectors.md)
+- [Vectors in R](data-structures.md)
 - [Probability Basics](../statistics/probability-and-distributions/probability-basics.md)
 - [Discrete Distributions](../statistics/probability-and-distributions/discrete-distributions.md)
 - [Assumption Checks](../statistics/inferential-statistics/assumption-checks.md)

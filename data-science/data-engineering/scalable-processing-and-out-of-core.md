@@ -209,4 +209,10 @@ scalable code 不只是能跑大資料，也要知道慢在哪裡。
 - 想做平行化前，先確認你的運算能不能被安全拆解與合併。
 - `bigmemory` 和 `iotools` 是具體工具，但更重要的是背後的 out-of-core 與 chunk-wise 心智模型。
 
+## Related Notes
+
+- Python 單機加速與平行化：[Performance and Scaling](../python-foundations/performance-and-scaling/README.md)（`multiprocessing`、Dask、Polars）
+- R 的平行化：[Parallel Programming in R](../r-foundations/parallel-programming-in-r.md)
+- 資料大到需要叢集時：[Spark and PySpark](spark.md)、[Spark with sparklyr](sparklyr.md)
+
 [Back to Data Engineering](README.md)

@@ -344,7 +344,6 @@ role 的設計重點不只是建立 user，而是建立權限集合。
 ## Related Topics
 
 - [Database Normalization](./database-normalization.md)
-- [PostgreSQL](./postgresql.md)
-- [Business Analysis in SQL](./business-analysis-in-sql.md)
+- [PostgreSQL](postgresql-psql-and-copy.md)
 - [Data Modeling Foundations](../data-engineering/data-modeling-foundations.md)
 - [Dimensional Modeling and Star Schema](../data-engineering/dimensional-modeling-and-star-schema.md)

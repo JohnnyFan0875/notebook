@@ -1,19 +1,15 @@
 # Data Communication
 
-這個模組整理資料工作中「把分析做對、也把問題說對」的核心能力。它不只關心圖表怎麼呈現，也關心一開始怎麼把模糊的商業需求翻成可以被資料回答的分析問題。
+這個模組整理資料工作中「把分析做對、也把問題說對」的核心能力。它不只關心圖表怎麼呈現，也關心一開始怎麼把模糊的需求翻成可以被資料回答的分析問題，以及最後怎麼把結果交付出去。
 
-Key point: 很多分析失敗，不是因為模型不夠好，而是因為一開始問錯問題，或沒有把商業語境、資料限制與決策需求對齊。
+Key point: 很多分析失敗，不是因為模型不夠好，而是因為一開始問錯問題，或沒有把領域語境、資料限制與決策需求對齊。
 
 ## Recommended Learning Path
 
-1. [Data Fluency](./data-fluency.md): 先建立從 data literacy 到 data fluency 的整體觀，知道個人能力與組織文化差在哪裡。
-2. [Forming Analytical Questions](./forming-analytical-questions.md): 學會把 business question 轉成 analytical question，避免一開始就做錯方向。
-3. [Data-Driven Decision Making](./data-driven-decision-making.md): 把 exploratory、explanatory、predictive 分析接到風險、stakeholder 與實際決策脈絡。
-4. [Communicating Data Insights](./communicating-data-insights.md): 問題定義完成後，再把洞察整理成受眾看得懂、記得住、願意行動的內容。
-5. [Reports and Presentations](./reports-and-presentations.md): 當訊息已經清楚後，再把它包裝成合適的 written report 或 oral presentation。
-6. [Tableau](./tableau/README.md): 如果需要把資料連接、計算欄位與互動式 dashboard 落地到 BI 工具，可以再往下看 Tableau 工作流。
-7. [DataLab Workflow](./datalab-workflow.md): 如果需要在 notebook 裡混用 SQL、Python / R、檔案連接、chart 與 AI assistant，可以看 DataLab 的工作流心智模型。
-8. [Sigma Overview and Workflow](./sigma-overview-and-workflow.md): 如果需要 spreadsheet-style BI、warehouse-native workbook 與互動控制，也可以看 Sigma 的工作流心智模型。
+1. [Forming Analytical Questions](./forming-analytical-questions.md): 學會把 business / research question 轉成 analytical question，避免一開始就做錯方向。
+2. [Communicating Results](./communicating-results.md): 把洞察整理成受眾看得懂、記得住、願意行動的內容，再選對交付形式（報告、簡報、可重現報告）。
+3. [Dashboard Design](./dashboard-design.md): 當結果要組成一個決策畫面，先理解 dashboard 的版面、層級與互動原則。
+4. [BI Tools](./bi-tools/README.md)（選讀）: 需要把資料連接、模型、計算與互動式報表落地到 Power BI 或 Tableau 時再看。
 
 Tip: 如果你常遇到「需求很大、但不知道從哪個資料切入」，先回來檢查問題是否已經具備明確對象、衡量方式、時間範圍與可行的分析方法。
 
@@ -21,11 +17,9 @@ Tip: 如果你常遇到「需求很大、但不知道從哪個資料切入」，
 
 | Module | Core Topics | Main Questions |
 | --- | --- | --- |
-| [Data Fluency](./data-fluency.md) | data literacy vs fluency、KPI、分析習慣、data culture、governance | 一個人或一個組織，什麼時候才算真正會用資料做決策？ |
-| [Forming Analytical Questions](./forming-analytical-questions.md) | 問題拆解、stakeholder 溝通、分析問題設計、分析類型對應 | 這個商業問題到底要怎麼改寫成能被資料回答的問題？ |
-| [Data-Driven Decision Making](./data-driven-decision-making.md) | exploratory/explanatory/predictive framing、decision risk、stakeholder impact、automation boundaries | 這個分析是為了理解、解釋還是預測？結果又該如何安全地變成決策？ |
-| [Communicating Data Insights](./communicating-data-insights.md) | audience 分析、視覺化簡化、資料故事、訊息聚焦 | 有了分析結果之後，要怎麼說才能讓人理解、記住並採取行動？ |
-| [Reports and Presentations](./reports-and-presentations.md) | persona、finding selection、report 結構、reproducibility、簡報規劃 | 這份分析應該用什麼格式交付？報告和簡報要怎麼組織才清楚又可信？ |
-| [DataLab Workflow](./datalab-workflow.md) | workbook、SQL / Python / R cells、file connections、chart、AI assistant、scheduled runs | 如果想在 notebook 式環境裡快速接資料、查詢、視覺化並分享分析，DataLab 應該怎麼理解？ |
-| [Tableau](./tableau/README.md) | Tableau 工作流、資料連接、joins / unions、calculated fields、dashboard 組裝 | 如果要把分析轉成可互動、可交付的 BI 成品，Tableau 這類工具應該怎麼想？ |
-| [Sigma Overview and Workflow](./sigma-overview-and-workflow.md) | workbook、pivot / chart、lineage、controls、draft / publish workflow | 如果想在 cloud warehouse 上用更接近 spreadsheet 的方式做互動分析，Sigma 應該怎麼理解？ |
+| [Forming Analytical Questions](./forming-analytical-questions.md) | 問題拆解、stakeholder 溝通、分析問題設計、分析類型對應 | 這個問題到底要怎麼改寫成能被資料回答的問題？ |
+| [Communicating Results](./communicating-results.md) | audience 分析、視覺化簡化、資料故事、credibility、report / 簡報結構、reproducibility | 有了結果之後，要怎麼說、用什麼格式交付才清楚又可信？ |
+| [Dashboard Design](./dashboard-design.md) | dashboard 目的、版面層級、KPI 與篩選互動 | 多張圖要怎麼組成一個能幫人做決策的畫面？ |
+| [BI Tools](./bi-tools/README.md) | Power Query、semantic model、DAX、Power BI 報表、Tableau | 要把分析轉成可互動的 BI 成品時，工具應該怎麼想？ |
+
+[Back to Data Science](../README.md)

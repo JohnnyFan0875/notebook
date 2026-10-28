@@ -11,7 +11,7 @@
 | [分群](clustering/README.md) | K-Means、階層式、DBSCAN / HDBSCAN、GMM | 資料自然分成幾群？ |
 | [降維](dimensionality-reduction/README.md) | PCA、t-SNE、UMAP、NMF | 高維資料怎麼壓縮、怎麼畫出來？ |
 | [異常偵測](anomaly-detection/README.md) | Isolation Forest、LOF、時間序列異常 | 哪些觀測值不尋常？ |
-| [關聯規則](association-rules/README.md) | Apriori、FP-Growth、support / confidence / lift | 哪些項目常一起出現？ |
+| [關聯規則](association-rules/README.md)（選讀） | Apriori、FP-Growth、support / confidence / lift | 哪些項目常一起出現？ |
 
 ## 典型用途
 

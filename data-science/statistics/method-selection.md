@@ -32,7 +32,7 @@
 | 存活時間（有設限） | [Cox](survival-analysis/cox-ph-model.md)、[AFT](survival-analysis/parametric-models.md) | Hazard ratio、時間比 |
 | 群集 / 重複量測 | [混合效應模型](regression-analysis/mixed-effects-models.md)、GEE | 同上 + 隨機效應變異 |
 | 時間序列 | [ARIMA / SARIMA](time-series-analysis/arima.md) | — |
-| 預測變數很多 (p ≫ n) | [Ridge / Lasso / Elastic Net](multivariate-analysis/multiple-regression.md) | 收縮後的係數（不做一般推論） |
+| 預測變數很多 (p ≫ n) | [Ridge / Lasso / Elastic Net](../machine-learning/foundations/regularization.md) | 收縮後的係數（不做一般推論） |
 | 兩個連續變數的關聯強度 | [Pearson / Spearman / Kendall](descriptive-statistics/bivariate.md) | r、ρ、τ |
 
 ## 3. 結構探索（無結果變數）
@@ -41,7 +41,7 @@
 | --- | --- |
 | 降維、看整體結構 | [PCA](multivariate-analysis/pca.md) |
 | 找群組 | [K-Means / 階層式 / DBSCAN](multivariate-analysis/clustering.md) |
-| 監督式降維、視覺化類別分離 | [LDA](multivariate-analysis/logistic-lda.md) |
+| 監督式降維、視覺化類別分離 | [LDA](multivariate-analysis/lda.md) |
 | 驗證潛在構念 | [SEM / CFA](multivariate-analysis/structural-equation-modeling-with-lavaan.md) |
 
 ## 4. 其他常見需求

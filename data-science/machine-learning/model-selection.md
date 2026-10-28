@@ -53,10 +53,10 @@
 | 時間序列 | `TimeSeriesSplit` |
 | 小樣本且要調參又要報告效能 | Nested CV |
 
-細節見 [交叉驗證](workflow/cross-validation.md)、[資料切分與洩漏](workflow/data-splitting-and-leakage.md)。
+細節見 [交叉驗證](workflow/cross-validation.md)、[切分策略](preprocessing/train-test-split.md#切分策略)。
 
 ## 選擇前的三個問題
 
 1. **預測單位與預測時間點是什麼？** 決定哪些特徵合法、資料該怎麼切（見 [問題定義](workflow/problem-framing.md)）
-2. **哪種錯誤代價高？** 決定指標與閾值（見 [評估思維](foundations/evaluation-mindset.md)）
+2. **哪種錯誤代價高？** 決定指標與閾值（見 [模型評估](evaluation/README.md)）
 3. **要預測還是要解釋？** 要解釋就優先簡單模型與 [statsmodels](packages/statsmodels/README.md)；要預測就以驗證分數為準

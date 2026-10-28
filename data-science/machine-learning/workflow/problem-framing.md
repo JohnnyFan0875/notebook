@@ -21,8 +21,8 @@
 | 決定 | 由什麼決定 |
 | --- | --- |
 | 能用哪些模型 | 輸出型態（連續、類別、排序、時間） |
-| 用哪個指標 | 決策情境與錯誤代價，見 [評估思維](../foundations/evaluation-mindset.md) |
-| 怎麼切資料 | 資料生成過程（時間、分組），見 [資料切分與洩漏](data-splitting-and-leakage.md) |
+| 用哪個指標 | 決策情境與錯誤代價，見 [模型評估](../evaluation/README.md) |
+| 怎麼切資料 | 資料生成過程（時間、分組），見 [切分策略](../preprocessing/train-test-split.md#切分策略) |
 
 ## 常見失敗
 

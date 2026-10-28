@@ -1,8 +1,8 @@
-# Datetime Module
+# Datetime（stdlib 與 pandas）
 
 Working with dates and times is a common task in Python. The `datetime` module provides classes for manipulating dates, times, and time intervals, while `dateutil` extends functionality for more advanced timezone handling.
 
-This note focuses on the **Python standard-library layer**: `datetime`, `timedelta`, parsing, formatting, and timezone basics. If you are working with datetime columns inside DataFrames, use [Pandas: Datetime Handling](pandas/datetime.md). For the analogous workflow in R, see [Date and Time in R](../r-foundations/datetime.md).
+前半是 **Python 標準庫**（`datetime`、`timedelta`、parsing、formatting、timezone），後半是 [pandas datetime 欄位](#pandas-datetime-欄位)（`pd.to_datetime`、`.dt`、`DatetimeIndex`、resample）。For the analogous workflow in R, see [Date and Time in R](../r-foundations/datetime.md).
 
 ## Import Packages
 
@@ -229,3 +229,24 @@ rides["Duration minutes"] = rides["Duration"].dt.total_seconds() / 60
 - Prefer `dateutil.tz` for named timezones (`America/New_York`, `Asia/Taipei`) instead of fixed offsets.
 - Use `timedelta` for safe date arithmetic instead of manually adjusting year, month, or day.
 - If you compare datetimes from strings, parse them first with `strptime()` so the comparison happens on true datetime values.
+
+## pandas Datetime 欄位
+
+Datetime handling is essential for working with time series or date-related data. Pandas provides powerful methods for parsing, extracting, formatting, and performing arithmetic on datetime values.
+
+### Example Dataset
+
+```python
+import seaborn as sns
+import pandas as pd
+
+# Use the Iris dataset and add a fake datetime column
+iris = sns.load_dataset("iris")
+iris["measurement_date"] = pd.to_datetime([
+    '2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05'
+] * 30)  # repeat dates for all 150 rows
+
+iris.head()
+```
+
+#

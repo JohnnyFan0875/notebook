@@ -1,5 +1,7 @@
 # Activation Functions
 
+> **待修（改寫階段）**：移除標題與內文中的 emoji。
+
 Activation functions introduce **non-linearity** into neural networks.
 Without them, a deep neural network would behave like a linear model, no matter how many layers it has.
 

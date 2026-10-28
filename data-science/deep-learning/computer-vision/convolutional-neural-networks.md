@@ -47,11 +47,51 @@ model = nn.Sequential(
 - pooling 會改變高與寬
 - 接到 `Linear` 前，務必確認 flatten 後的維度
 
+## 影像分類流程
+
+1. 準備資料集與標籤
+2. 做 resize、normalize、augmentation
+3. 用 `DataLoader` 建立 mini-batch
+4. 定義模型與 loss
+5. 訓練並監控 validation 表現
+6. 檢查 confusion matrix、錯誤樣本與 class imbalance
+
+| 前處理 | 作用 |
+| --- | --- |
+| `Resize` | 統一輸入大小 |
+| `ToTensor` | 把影像轉成 tensor |
+| `Normalize` | 讓像素分布穩定 |
+| augmentation | flip、crop、color jitter；只套在 train |
+
+```python
+from torch import nn, optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+
+transform = transforms.Compose([
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+])
+train_ds = datasets.FakeData(size=512, image_size=(3, 64, 64), num_classes=4, transform=transform)
+train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
+
+criterion = nn.CrossEntropyLoss()                       # model 用上面的 CNN skeleton（64×64 輸入 → 32×16×16）
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+```
+
+## 輸出該怎麼看
+
+- 多類別分類時，輸出通常是 logits，不是機率。
+- 要看預測類別時，常用 `argmax(dim=1)`。
+- 要看類別機率時，可再接 `softmax`，但訓練時的 `CrossEntropyLoss` 不需要你手動先做 softmax。
+
 ## 常見錯誤
 
 - 忘記算卷積與 pooling 後的輸出 shape，導致 `Linear` 維度不合。
-- 資料量不多卻訓練太深的 CNN，結果嚴重 overfitting。
-- 只看訓練 accuracy，不看 validation loss 是否反而上升。
+- 把 `CrossEntropyLoss` 和手動 `Softmax` 疊在一起用。
+- augmentation 只套在 train，卻忘了 validation 也要至少做一致的 resize / tensor transform。
+- 資料量不多卻訓練太深的 CNN，結果嚴重 overfitting；資料不多時先用 [Transfer Learning](../training-workflows/transfer-learning.md)。
+- 只看訓練 accuracy，不看 validation loss 是否反而上升；accuracy 不錯也要回頭看哪些類別最常被混淆。
 
 ## 小結
 

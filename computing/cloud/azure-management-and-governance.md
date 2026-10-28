@@ -343,7 +343,7 @@ Azure Monitor 的 `Alerts` 用來建立自動通知與回應機制。
 
 - [Azure Fundamentals](azure-fundamentals.md)
 - [Azure Services Overview](azure-services-overview.md)
-- [Governance](../../data-science/data-engineering/governance.md)
+- [Data Governance](../../data-science/data-engineering/governance.md)
 - [AWS Security and Cost Management](aws-security-and-cost-management.md)
 
 [Back to Cloud](README.md)

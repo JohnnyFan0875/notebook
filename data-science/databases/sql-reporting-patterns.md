@@ -267,6 +267,48 @@ ORDER BY date;
 - 先把每天聚合到正確 grain
 - 再對聚合後的結果做 rolling 計算
 
+## Subtotals with `ROLLUP` / `CUBE` / `GROUPING SETS`
+
+需要同時輸出明細、小計與總計時，用 `GROUP BY` 的 OLAP 擴充，不必 `UNION ALL` 多段查詢。
+
+| 語法 | 產生的層次 | 適用 |
+| --- | --- | --- |
+| `ROLLUP (a, b)` | `(a, b)`、`(a)`、`()` | 有階層：年 → 國家 → 總計 |
+| `CUBE (a, b)` | 所有組合 `(a, b)`、`(a)`、`(b)`、`()` | 各維度邊際總計；結果數量會膨脹 |
+| `GROUPING SETS (...)` | 只列出指定的組合 | 報表需求已明確 |
+
+```sql
+SELECT
+    m.year_of_release,
+    c.country,
+    COUNT(*)                AS n_rentals,
+    ROUND(AVG(r.rating), 2) AS avg_rating
+FROM renting AS r
+LEFT JOIN customers AS c ON c.customer_id = r.customer_id
+LEFT JOIN movies    AS m ON m.movie_id    = r.movie_id
+GROUP BY ROLLUP (m.year_of_release, c.country);
+
+-- 只要特定層次
+GROUP BY GROUPING SETS ((country, genre), (country), (genre), ());
+```
+
+小計 / 總計列的維度欄會是 `NULL`；要和真正的缺值區分時用 `GROUPING(col)`（1 表示該列是彙總列）。
+
+## Correlated Subquery
+
+子查詢參照外層列時就是 correlated subquery，適合「每列跟自己的群組比」的門檻條件。只檢查存在性時改用 `EXISTS`（見 [SQL Joins and Set Operations](sql-joins-and-set-operations.md)）。
+
+```sql
+-- 被租超過 5 次的電影
+SELECT m.movie_id, m.title
+FROM movies AS m
+WHERE 5 < (
+    SELECT COUNT(*)
+    FROM renting AS r
+    WHERE r.movie_id = m.movie_id
+);
+```
+
 ## Handle Nulls Explicitly
 
 報表裡的 `NULL` 很少可以直接丟給使用者自己解讀。

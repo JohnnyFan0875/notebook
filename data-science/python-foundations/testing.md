@@ -68,7 +68,7 @@ pytest tests/test_math.py
 pytest -k even
 ```
 
-如果你只是想理解 `assert` 本身的用途，可搭配 [assert.md](assert.md) 一起看。
+如果你只是想理解 `assert` 本身的用途，可搭配 [Errors and Assertions](errors-and-assertions.md#python-assert) 一起看。
 
 ## Feature Test 的直覺
 

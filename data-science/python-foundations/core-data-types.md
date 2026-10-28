@@ -189,7 +189,7 @@ print(name.strip().lower())
 - `in`
 - `replace()`
 
-如果文字規則開始變複雜，再考慮用 regex，參考 [regex.md](regex.md)。
+如果文字規則開始變複雜，再考慮用 regex，參考 [regex.md](text-cleaning-and-regex.md)。
 
 ## Dictionaries
 

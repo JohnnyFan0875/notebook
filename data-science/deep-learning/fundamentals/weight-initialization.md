@@ -1,5 +1,7 @@
 # Weight Initialization in PyTorch
 
+> **待修（改寫階段）**：`##Kaiming/He Initialization` 標題缺空格。
+
 ## Overview
 
 Weight initialization is crucial in deep learning because it sets the **starting point** for optimization.

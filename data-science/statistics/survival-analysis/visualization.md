@@ -2,7 +2,7 @@
 
 # 存活分析視覺化 (Visualization)
 
-視覺化不是裝飾：KM 曲線是所有存活分析的起點、log-log 圖是 PH 假設的視覺檢查、森林圖是 Cox 結果的標準呈現。每種圖都有特定的診斷或溝通目的。從 DataFrame 快速作圖見 [Pandas: Visualization](../../python-foundations/pandas/visualization.md)。
+視覺化不是裝飾：KM 曲線是所有存活分析的起點、log-log 圖是 PH 假設的視覺檢查、森林圖是 Cox 結果的標準呈現。每種圖都有特定的診斷或溝通目的。從 DataFrame 快速作圖見 [Pandas: Visualization](../../data-manipulation-and-eda/visualization/pandas-plotting.md)。
 
 ## 圖表總覽
 
