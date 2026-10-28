@@ -46,9 +46,6 @@ Power BI 可以先理解成一個把資料整理、資料模型、視覺化與�
 - Service 偏發布與使用
 
 如果你想把資料來源、storage mode、gateway 與 refresh 這一層拆開來看，可以接著讀 [Data Connections in Power BI](data-connections-in-power-bi.md)。
-如果你想從 report consumer / business user 的角度看 Service，接著讀 [Power BI Service for End Users](power-bi-service-for-end-users.md)。
-如果你想看 KPI、scenario analysis、forecasting 與 capital budgeting 指標如何落到 Power BI 報表，接著讀 [Financial Analysis in Power BI](financial-analysis-in-power-bi.md)。
-如果你想看 Power BI 和 `pandas` / `seaborn` 怎麼一起工作，可以接著讀 [Python in Power BI](python-in-power-bi.md)。
 
 ## A Simple Working Model
 
@@ -103,9 +100,6 @@ Power BI 的核心輸出是互動式視覺化，但真正重要的不是圖表�
 - 篩選與互動是否合理
 
 如果你想把 `report`、`dashboard`、bookmark state、tooltip 與 Q&A 這一層拆開來看，可以接著讀 [Reports in Power BI](reports-in-power-bi.md)。
-如果你想把 Service 裡的分享、workspace、app、alerts 與 end-user exploration 拆開來看，可以接著讀 [Power BI Service for End Users](power-bi-service-for-end-users.md)。
-如果你想從財務 KPI、what-if modeling 與投資決策指標的角度看報表，接著讀 [Financial Analysis in Power BI](financial-analysis-in-power-bi.md)。
-如果你想從時間序列、MoM change、rolling average 與 decomposition tree 的角度看 Power BI，接著讀 [Trend Analysis in Power BI](trend-analysis-in-power-bi.md)。
 
 常見視覺化類型包括：
 

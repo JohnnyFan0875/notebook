@@ -7,7 +7,7 @@
 1. [EDA Workflow](eda-workflow.md): 建立一套固定的資料盤點與探索節奏。
 2. [Data Profiling](data-profiling.md): 學會快速看懂資料型態、品質與欄位風險。
 3. [Geospatial Data in Python](geospatial-data-in-python.md): 當資料帶有位置欄位時，先搞懂 geometry、CRS 與空間關係。
-4. [Cohort Analysis](cohort-analysis.md): 用 cohort table 與 retention heatmap 追蹤群組隨時間的變化。
+4. 追蹤群組隨時間的留存 / 流失：改用存活分析，見 [Kaplan–Meier](../statistics/survival-analysis/kaplan-meier.md)。
 5. [Missing Data](missing-data.md): 釐清缺失值成因、處理策略與常見誤區。
 6. [Visualization](visualization/README.md): 把 EDA 的發現轉成可比較、可溝通的圖表。
 

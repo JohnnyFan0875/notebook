@@ -395,7 +395,6 @@ Q&A 的可用性，最後還是回到 semantic model 的可理解性。
 ## Relation to Other Notes
 
 - 如果你想看報表層的互動與 UX 心法，可以先看 [Report Design in Power BI](report-design-in-power-bi.md)。
-- 如果你想從消費者角度理解 Service 內的使用方式，可以接著看 [Power BI Service for End Users](power-bi-service-for-end-users.md)。
 - 如果你想看報表背後的模型與 relationships，可以接著看 [Semantic Models and Power BI](semantic-models-and-power-bi.md)。
 - 如果你想看報表指標怎麼被 measures 與 context 驅動，可以接著看 [DAX in Power BI](dax-in-power-bi.md)。
 

@@ -14,7 +14,6 @@
 - [Quantitative Risk Management](quantitative-risk-management.md)
 - [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md)
 - [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md)
-- [Corporate Finance](corporate-finance/README.md)
 
 ## Submodules
 
@@ -29,7 +28,6 @@
 | [Quantitative Risk Management](quantitative-risk-management.md) | loss distribution、volatility、risk factors、VaR / ES、stress thinking、risk appetite | 如果要把不確定性轉成可監控、可比較、可決策的風險量，該怎麼做？ |
 | [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md) | trading vs. investing、technical indicators、signals、benchmarking、strategy optimization、drawdown review | 一個交易規則要怎麼從技術指標走到可評估的歷史回測？回測結果又該怎麼避免只看報酬？ |
 | [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md) | volatility、log returns、lognormal prices、simple simulation、probability ranges | 股票價格的不確定性要怎麼建模？為什麼要看區間和分布，而不是單一路徑？ |
-| [Corporate Finance](corporate-finance/README.md) | capital budgeting、funding、capital structure、dividends、buybacks | 公司該不該投資？資金該由誰提供？多餘現金應不應該還給股東？ |
 
 ## 閱讀提醒
 
@@ -40,14 +38,13 @@
 
 ## 建議閱讀順序
 
-1. 先看 [Corporate Finance](corporate-finance/README.md)，建立公司層級的資本配置視角。
-2. 再看 [Fundamental Financial Concepts](fundamental-financial-concepts.md)，先把 time value of money、compounding 與現金流折現的語言打穩。
-3. 再看 [Financial Data Ingestion and Cleaning](financial-data-ingestion-and-cleaning.md)，先把市場資料的來源、欄位型別與清理流程釐清。
-4. 再看 [Portfolio Analysis](portfolio-analysis.md)，把報酬、波動、分散與權重配置串成組合層級視角。
-5. 再看 [Quantitative Risk Management](quantitative-risk-management.md)，把 volatility、loss distribution、risk factors 與管理框架接起來。
-6. 再看 [Credit Risk Modeling](credit-risk-modeling.md)，理解機率模型如何接到核貸 threshold、錯誤成本與 portfolio 風險。
-7. 再看 [Autocorrelation](autocorrelation.md)，理解金融時間序列和市場資料的統計特性。
-8. 再看 [Bond Valuation and Interest Rate Risk](bond-valuation-and-interest-rate-risk.md)，建立 fixed-income 的 discounting 與利率風險直覺。
-9. 再看 [Insurance and Annuity Valuation](insurance-and-annuity-valuation.md)，把折現現金流的想法延伸到 survival- and death-contingent products。
-10. 接著看 [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md)，把 volatility、price path 與機率區間連回實際建模。
-11. 再看 [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md)，把 indicators、signals、benchmark 與 drawdown review 串成完整交易研究流程。
+1. 再看 [Fundamental Financial Concepts](fundamental-financial-concepts.md)，先把 time value of money、compounding 與現金流折現的語言打穩。
+2. 再看 [Financial Data Ingestion and Cleaning](financial-data-ingestion-and-cleaning.md)，先把市場資料的來源、欄位型別與清理流程釐清。
+3. 再看 [Portfolio Analysis](portfolio-analysis.md)，把報酬、波動、分散與權重配置串成組合層級視角。
+4. 再看 [Quantitative Risk Management](quantitative-risk-management.md)，把 volatility、loss distribution、risk factors 與管理框架接起來。
+5. 再看 [Credit Risk Modeling](credit-risk-modeling.md)，理解機率模型如何接到核貸 threshold、錯誤成本與 portfolio 風險。
+6. 再看 [Autocorrelation](autocorrelation.md)，理解金融時間序列和市場資料的統計特性。
+7. 再看 [Bond Valuation and Interest Rate Risk](bond-valuation-and-interest-rate-risk.md)，建立 fixed-income 的 discounting 與利率風險直覺。
+8. 再看 [Insurance and Annuity Valuation](insurance-and-annuity-valuation.md)，把折現現金流的想法延伸到 survival- and death-contingent products。
+9. 接著看 [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md)，把 volatility、price path 與機率區間連回實際建模。
+10. 再看 [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md)，把 indicators、signals、benchmark 與 drawdown review 串成完整交易研究流程。

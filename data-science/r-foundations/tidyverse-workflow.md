@@ -19,6 +19,28 @@
 
 Key point: tidyverse 的強項不是單一函式，而是每一步都維持相容的表格結構。
 
+## Everything Is an Object（給 SAS 使用者）
+
+SAS 用 `DATA step` + `PROC` 產生報表；R 則是在有狀態的 session 裡建立、轉換、重用物件。單一數值、vector、data frame、`summary()` 輸出、模型結果都是 object，「輸出」往往就是下一步的輸入。
+
+```r
+smry <- df %>% select(weight, height) %>% summary()
+class(smry); smry[, 1:2]            # summary 也能 subset
+
+fit <- lm(height ~ weight + sex, data = df)
+coef(fit); residuals(fit)            # 模型是物件，不是報表
+broom::tidy(fit)                     # 轉成 tibble，可接 dplyr / ggplot2
+```
+
+| SAS 習慣 | R 對應 |
+| --- | --- |
+| `BY` 分組 | `group_by()` + `summarise()` |
+| `PROC MEANS` / `FREQ` | `summarise()`、`count()` |
+| `PROC REG` 報表 | `lm()` 物件 + `summary()` / `broom::tidy()` |
+| 看 log | `class()`、`str()`、`glimpse()` 檢查物件 |
+
+常見錯誤：只找一模一樣的 `PROC` 對照、看完輸出不存物件、忘記 session 有狀態（重跑順序影響物件是否存在）。
+
 ## Tibbles and Pipes
 
 tidyverse 裡最常見的表格物件是 tibble。它和 base R 的 data frame 很像，但輸出更適合互動分析，也較少自動把字串偷偷轉型。

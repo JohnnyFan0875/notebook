@@ -46,10 +46,7 @@
 
 ### BI 與語意層交付
 
-- [Microsoft Fabric Fundamentals](microsoft-fabric-fundamentals.md): lakehouse、dataflow / pipeline / notebook、semantic model 與 Power BI 在 Fabric 中的整體關係
-- [Microsoft Fabric Environment Design and Deployment](microsoft-fabric-environment-design-and-deployment.md): workspace、capacity、Git integration、deployment stages 與 Fabric 平台生命周期管理
 - [Power BI Overview](power-bi-overview.md): Desktop / Service、Power Query Editor、views、filter scope、互動式視覺化與報表工作流
-- [Power BI Service for End Users](power-bi-service-for-end-users.md): workspace、apps、sharing、alerts、permissions 與 end-user analysis workflow
 - [Data Connections in Power BI](data-connections-in-power-bi.md): data sources、`Import` / `DirectQuery` / `Live`、parameters、gateway 與 incremental refresh
 - [Data Preparation in Power BI](data-preparation-in-power-bi.md): Power Query、`Applied Steps`、preview features 與文字 / 數值 / 日期欄位清理
 - [Data Transformation in Power BI](data-transformation-in-power-bi.md): pivot / unpivot、append / merge、custom columns、`M language` 與 Advanced Editor
@@ -57,14 +54,6 @@
 - [DAX in Power BI](dax-in-power-bi.md): context、calculated columns vs measures、`CALCULATE()` 與模型層計算心智模型
 - [Report Design in Power BI](report-design-in-power-bi.md): progressive disclosure、themes、bookmarks、mobile layout 與報表 UX
 - [Reports in Power BI](reports-in-power-bi.md): dashboards vs reports、bookmark state、navigation、custom tooltips 與 Q&A
-
-### BI 案例與實務延伸
-
-- [Financial Analysis in Power BI](financial-analysis-in-power-bi.md): financial dashboard、KPI / OKR、scenario analysis、forecasting 與 capital budgeting 指標在 Power BI 中的落地方式
-- [Customer Churn Analysis in Power BI](customer-churn-analysis-in-power-bi.md): churn 定義、snapshot data 限制、segment drill-down 與 stakeholder-facing report narrative
-- [HR Analytics in Power BI](hr-analytics-in-power-bi.md): workforce KPI、attrition、metadata、fact/dimension grain 與 HR dashboard 的敏感解讀邊界
-- [Python in Power BI](python-in-power-bi.md): Power Query 與 Python 的分工、missing data、Seaborn、correlation 與 Power BI 內的 Python workflow
-- [Trend Analysis in Power BI](trend-analysis-in-power-bi.md): time series、MoM change、rolling average、anomalies、decomposition tree 與 key influencers
 
 ### 串流與即時資料
 

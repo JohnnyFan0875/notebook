@@ -9,7 +9,6 @@ Key point: Prompt engineering is not about clever phrasing alone. It is about ma
 | Note | Focus |
 | --- | --- |
 | [Prompt Engineering](prompt-engineering.md) | prompt structure, examples, shot strategies, chaining, and iteration |
-| [GPT Tools and Practical Use](gpt-tools-and-practical-use.md) | GPT-powered tools, input-output framing, use cases, and safe usage boundaries |
 | [ChatGPT Customization and Reusable Workflows](chatgpt-customization-and-reusable-workflows.md) | reusable ChatGPT setups, custom instructions, custom GPTs, XML tags, and simulation-style prompting |
 | [Chatbot Prompt Design](chatbot-prompt-design.md) | system prompts, role design, conversational boundaries, and multi-turn behavior |
 

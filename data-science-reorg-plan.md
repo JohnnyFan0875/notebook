@@ -44,32 +44,32 @@
 先刪，減少後面要搬、要改的量。刪前快速看一眼是否有該救的段落（括號內）。
 
 **data-engineering / BI**
-- [ ] `data-engineering/customer-churn-analysis-in-power-bi.md`、`hr-analytics-in-power-bi.md`、`financial-analysis-in-power-bi.md`、`trend-analysis-in-power-bi.md`（4 篇 case studies）
-- [ ] `data-engineering/microsoft-fabric-fundamentals.md`、`microsoft-fabric-environment-design-and-deployment.md`
-- [ ] `data-engineering/power-bi-service-for-end-users.md`
-- [ ] `data-engineering/python-in-power-bi.md`（內容已被 `machine-learning/preprocessing/imputation.md` 涵蓋）
-- [ ] `data-communication/sigma-overview-and-workflow.md`、`datalab-workflow.md`
-- [ ] `data-communication/data-fluency.md`、`data-driven-decision-making.md`（給商業分析師的素養內容）
+- [x] `data-engineering/customer-churn-analysis-in-power-bi.md`、`hr-analytics-in-power-bi.md`、`financial-analysis-in-power-bi.md`、`trend-analysis-in-power-bi.md`（4 篇 case studies）
+- [x] `data-engineering/microsoft-fabric-fundamentals.md`、`microsoft-fabric-environment-design-and-deployment.md`
+- [x] `data-engineering/power-bi-service-for-end-users.md`
+- [x] `data-engineering/python-in-power-bi.md`（內容已被 `machine-learning/preprocessing/imputation.md` 涵蓋）
+- [x] `data-communication/sigma-overview-and-workflow.md`、`datalab-workflow.md`
+- [x] `data-communication/data-fluency.md`、`data-driven-decision-making.md`（給商業分析師的素養內容）
 
 **ai-strategy-and-governance**
-- [ ] `ai-strategy.md`、`monetizing-ai.md`、`digital-transformation.md`、`data-strategy.md`、`data-management.md`、`understanding-artificial-intelligence.md`
+- [x] `ai-strategy.md`、`monetizing-ai.md`、`digital-transformation.md`、`data-strategy.md`、`data-management.md`、`understanding-artificial-intelligence.md`
 
 **llm**
-- [ ] `llm/integration/microsoft-copilot-productivity-workflows.md`、`llm-business-workflows.md`
-- [ ] `llm/prompting/gpt-tools-and-practical-use.md`
+- [x] `llm/integration/microsoft-copilot-productivity-workflows.md`、`llm-business-workflows.md`
+- [x] `llm/prompting/gpt-tools-and-practical-use.md`
 
 **databases**
-- [ ] `sql-server-triggers.md`、`sql-server-functions-and-stored-procedures.md`
-- [ ] `oracle-sql-patterns.md`（救：NVL / TO_DATE → 後面的 dialect 對照表）
-- [ ] `mysql.md`（救：`LOAD DATA` / 匯出指令）
-- [ ] `business-analysis-in-sql.md`（救：ROLLUP / CUBE / GROUPING SETS、EXISTS / correlated subquery → `sql-reporting-patterns.md`）
+- [x] `sql-server-triggers.md`、`sql-server-functions-and-stored-procedures.md`
+- [x] `oracle-sql-patterns.md`（救：NVL / TO_DATE → 已先建 `databases/sql-dialect-cheatsheet.md`）
+- [x] `mysql.md`（救：`LOAD DATA` / 匯出指令 → `sql-dialect-cheatsheet.md`）
+- [x] `business-analysis-in-sql.md`（救：ROLLUP / CUBE / GROUPING SETS、EXISTS / correlated subquery → `sql-reporting-patterns.md`）
 
 **r-foundations / EDA / 其他**
-- [ ] `r-foundations/social-media-analysis.md`（rtweet 依賴已停用的 Twitter API；LDA / sentiment 與 `text-analysis.md` 重複）
-- [ ] `r-foundations/sas-to-r-mental-model.md`（救：「一切皆物件 / model object / broom」→ `tidyverse-workflow.md`）
-- [ ] `data-manipulation-and-eda/cohort-analysis.md`（商業 retention；連結改指向 `statistics/survival-analysis/kaplan-meier.md`）
-- [ ] `finance/corporate-finance/`（整個資料夾 9 篇）
-- [ ] 跑連結檢查 → 修掉所有指向已刪檔的連結（README 表格列直接刪掉該列）→ commit
+- [x] `r-foundations/social-media-analysis.md`（rtweet 依賴已停用的 Twitter API；LDA / sentiment 與 `text-analysis.md` 重複）
+- [x] `r-foundations/sas-to-r-mental-model.md`（救：「一切皆物件 / model object / broom」→ `tidyverse-workflow.md`）
+- [x] `data-manipulation-and-eda/cohort-analysis.md`（商業 retention；連結改指向 `statistics/survival-analysis/kaplan-meier.md`）
+- [x] `finance/corporate-finance/`（整個資料夾 9 篇）
+- [x] 跑連結檢查 → 修掉所有指向已刪檔的連結（README 表格列直接刪掉該列）→ commit
 
 ## Phase 2：跨資料夾搬移
 

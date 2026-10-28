@@ -22,7 +22,6 @@
 - [Functions in R](functions.md)
 - [Date and Time in R](datetime.md)
 - [Object-Oriented Programming with S3 and R6](object-oriented-programming-s3-r6.md)
-- [SAS to R Mental Model](sas-to-r-mental-model.md)
 
 ### 資料整理與匯入
 
@@ -63,7 +62,6 @@
 - [String Distance and Fuzzy Matching in R](string-distance-and-fuzzy-matching.md)
 - [Text Analysis in R](text-analysis.md)
 - [Web Scraping in R](web-scraping-in-r.md)
-- [Social Media Analysis in R](social-media-analysis.md)
 
 ## 建議閱讀方式
 
@@ -79,7 +77,6 @@
 - 如果你開始擔心輸入檢查、錯誤訊息、命名規則或腳本穩定性，補 [Defensive Programming in R](defensive-programming.md)。
 - 如果你需要在 R 裡連資料庫、讀 API、處理 JSON 或其他統計軟體格式，補 [Importing Data in R](importing-data.md)。
 - 如果你在 R 裡常遇到 `NA`、隱藏缺值標記或想追蹤 imputation，補 [Missing Data in R](missing-data.md)。
-- 如果你原本比較熟 SAS，想先把 session、物件、pipeline 與 output object 的差異講清楚，補 [SAS to R Mental Model](sas-to-r-mental-model.md)。
 - 如果你想把散點圖、`lm()`、`broom` 輸出與模型比較串成一條可讀的 regression workflow，補 [Explanatory Modeling in R](explanatory-modeling-in-r.md)。
 - 如果你已經會做基本資料整理，想把切分資料、前處理、模型與評估串成一致的機器學習流程，補 [Modeling with tidymodels](modeling-with-tidymodels.md)。
 - 如果你需要在大資料量下做高效 join、查找、批次整併與 reshape，補 [Joining and Reshaping with data.table](data-table-joins-and-reshaping.md)。
@@ -91,7 +88,6 @@
 - 如果你想把評論、文件或留言拆成 tokens，做 stop-word 清理、詞典式 sentiment 或 LDA topic modeling，補 [Text Analysis in R](text-analysis.md)。
 - 如果你的 R 函數開始跨專案重用，想把文件、依賴與測試一起管好，補 [R Package Development](package-development.md)。
 - 如果你要把分析、圖表與文字整成可重跑的正式交付物，補 [Reporting with R Markdown](reporting-with-r-markdown.md)。
-- 如果你想用 R 抓 tweet、清理社群文字、做簡單 sentiment 或 retweet network，補 [Social Media Analysis in R](social-media-analysis.md)。
 - 如果你拿到 NHANES 這類複雜抽樣資料，不確定 weights、`svymean()` 或 weighted plots 該怎麼用，補 [Survey Data Analysis in R](survey-data-analysis.md)。
 - 如果你常在 list、data frame 或矩陣上做重複彙總，最後看 [The apply Family](apply-family.md)。
 - 如果你已經懂基本統計概念，但常忘記在 R 裡該用哪個函式，補 [Statistical Functions in R](statistical-functions.md)。

@@ -104,7 +104,6 @@ discounting 的目的，是把:
 - IRR 比較接近「隱含報酬率是多少」
 - EAA 適合拿來比較壽命不同的專案
 
-如果你要更完整的專案評估框架，可以再接著看 [capital-budgeting.md](corporate-finance/capital-budgeting.md)。
 
 ## Cost of Capital
 
