@@ -1,110 +1,79 @@
-# Multi-Agent Patterns
+[LLM](../README.md) › [Agent](README.md) › 多 Agent 模式
 
-Multi-agent systems split work across several specialized agents instead of forcing one agent to do everything.
+# 多 Agent 模式 (Multi-Agent Patterns)
 
-Key point: A multi-agent design is useful when coordination and specialization improve the workflow more than the extra orchestration complexity hurts it.
+多 agent 系統把工作分給多個專職 agent，而不是讓一個 agent 什麼都做。只有當**分工帶來的清晰度與可控性**大於額外的協調成本時才值得。實作通常以 [LangGraph](langgraph-agent-workflows.md) 的圖結構表示：每個 agent 是一個節點，路由是條件邊。
 
-## Why a Graph Mental Model Helps
+## 從線性到條件流程
 
-Frameworks such as LangGraph popularize an important design idea: agent workflows are often easier to reason about as graphs.
-
-| Graph Piece | Workflow Meaning |
-| --- | --- |
-| Node | a step such as an agent, tool call, or transformation |
-| Edge | the path from one step to the next |
-| Conditional edge | branching based on model output, tool need, or workflow state |
-| State | the shared information carried across steps |
-
-Tip: You do not need a graph framework to use graph thinking. The value is in making transitions and branching explicit.
-
-## From Linear Flows to Conditional Flows
-
-A simple agent pipeline can be too rigid.
-
-| Pattern | Strength | Limitation |
+| 模式 | 優點 | 限制 |
 | --- | --- | --- |
-| Linear agent | easy to build and debug | every request follows the same path even when it should not |
-| Conditional workflow | allows different branches by situation | needs clearer routing logic and state handling |
+| 線性流程 | 簡單、好除錯 | 每個請求都走相同路徑，即使不需要 |
+| 條件流程 | 依情況分支 | 需要清楚的路由邏輯與狀態 |
 
-Example: A finance assistant should not call a stock tool for every question. Some requests only need explanation, while others need external data or computation.
+例：研究助理不該對每個問題都搜尋 PubMed。概念解釋直接回答；需要文獻時才檢索；需要計算時才執行程式。
 
-## Tool Use as a Routing Decision
-
-Many agent workflows become cleaner when tool usage is treated as a branch instead of a default action.
-
-| Question | Design Implication |
+| 先問 | 路由到 |
 | --- | --- |
-| Does this request need external data? | route to a retrieval or API tool only when necessary |
-| Does it require computation? | route to a code or calculator tool |
-| Is plain explanation enough? | answer directly without extra steps |
+| 需要外部資料嗎？ | 檢索 / API 工具 |
+| 需要計算嗎？ | 程式執行工具 |
+| 解釋就夠了嗎？ | 直接回答，不呼叫工具 |
 
-Key point: Not every user query should trigger a tool call. Good orchestration often starts by deciding whether a tool is needed at all.
+## Supervisor 與 Swarm
 
-## Swarm Pattern
+```
+Supervisor：                              Swarm：
+            supervisor                    文獻 agent ⇄ 資料 agent
+          ↙     ↓      ↘                        ↖     ↙
+   文獻 agent 資料 agent 寫作 agent               寫作 agent
+   （做完都回到 supervisor，由它決定下一步）   （各自決定 handoff 給誰）
+```
 
-In a swarm-style system, multiple peer agents collaborate and can hand work across one another.
+| 模式 | 運作 | 適合 | 主要風險 |
+| --- | --- | --- | --- |
+| Supervisor | 一個協調者決定下一個由誰做、何時結束 | 路由需要可解釋、可控制 | 協調者成為瓶頸或單點失敗 |
+| Swarm（點對點 handoff） | 各 agent 自行決定交給誰 | 任務歸屬會自然轉移的開放式任務 | 誰先開始、誰接手難預測；可能互相踢皮球或重複工作 |
+| 階層式 | supervisor 底下還有 sub-supervisor | 大型系統、多團隊 | 複雜度高 |
 
-| Strength | Trade-off |
+| Supervisor 的職責 | 理由 |
 | --- | --- |
-| flexible collaboration | harder to control the starting point and handoff logic |
-| natural specialization | harder to predict who acts next |
-| useful for open-ended tasks | debugging can become messy |
+| 選擇下一個 agent | 路由明確 |
+| 保存共享的任務狀態 | 避免協調資訊散落 |
+| 決定何時結束 | 避免無止盡的交接 |
+| 執行政策與升級規則 | 集中控制安全 |
 
-This pattern is attractive when several agents have distinct expertise, but it introduces two practical questions:
+> Swarm 協作太鬆散時，加一個 supervisor 通常是恢復秩序最簡單的方法。
 
-1. which agent should start
-2. how agents coordinate without looping or duplicating work
+## 共享狀態
 
-## Supervisor Pattern
+多 agent 系統最常見的失敗是無法維持一致的共享狀態。
 
-A supervisor design adds one coordinating layer that decides which specialist agent should act.
-
-| Supervisor Role | Why It Helps |
+| 狀態 | 缺少時 |
 | --- | --- |
-| choose the next agent | makes routing explicit |
-| hold shared task state | reduces scattered coordination |
-| decide when to stop | avoids endless handoffs |
-| enforce policy or escalation | improves control and safety |
+| 目前目標 | 各 agent 各做各的 |
+| 已完成的結果 | 重複工作 |
+| 工具輸出（證據） | 後面的 agent 憑空推論 |
+| 停止條件 | 無用的迴圈 |
 
-Tip: If swarm collaboration feels too loose, a supervisor is often the simplest way to restore clarity.
+> Agent 共用工具卻不共享足夠狀態，系統看起來在協作，實際上在重複勞動。
 
-## Comparing Swarm and Supervisor Designs
+## 什麼時候值得
 
-| Pattern | Better When | Main Risk |
-| --- | --- | --- |
-| Swarm | task ownership can shift naturally across specialists | coordination becomes implicit and unstable |
-| Supervisor | routing needs to be explainable and controlled | the supervisor can become a bottleneck or single point of failure |
-
-## State Matters More Than It First Appears
-
-Multi-agent systems usually fail because the team cannot maintain a coherent shared state.
-
-| State Need | Why It Matters |
+| 值得 | 不值得 |
 | --- | --- |
-| current objective | keeps all agents aligned on the same task |
-| prior results | prevents repeated work |
-| tool outputs | carries external evidence forward |
-| stop conditions | prevents useless loops |
+| 任務自然分成不同角色（檢索、分析、撰寫、審查） | 單一 agent + 好工具 + 清楚分支就能解決 |
+| 不同子任務需要不同工具、權限或模型 | 所有步驟用同一組工具 |
+| 路由決策必須可檢查 | 只是想讓系統「看起來更聰明」 |
+| 單一 agent 的 prompt 與工具多到難以除錯 | 還沒有評估證明單一 agent 不足 |
 
-Warning: If agents share tools but do not share enough state, the system can look collaborative while actually behaving redundantly.
+> 多 agent 會讓延遲、成本與失敗點成倍增加。用同一個 [評估集](../evaluation-and-hallucination.md) 比較單一 agent 與多 agent，有明確改善才採用。
 
-## When Multi-Agent Design Is Worth It
+## 檢查清單
 
-Multi-agent architecture is more justified when:
-
-1. tasks divide naturally into distinct roles
-2. different tools or policies apply to different subproblems
-3. routing decisions must be explicit and inspectable
-4. one generalist agent has become too hard to debug or extend
-
-It is less justified when a single agent with good tools and clear branching can already solve the workflow.
-
-## Minimum Checklist
-
-Before adopting a multi-agent system, check:
-
-1. which agents exist and why each one is separate
-2. what state is shared across the workflow
-3. how routing decisions are made
-4. when tool use is triggered versus skipped
-5. who decides the workflow is complete
+| 問題 | 沒想清楚的後果 |
+| --- | --- |
+| 有哪些 agent？為什麼各自獨立？ | 職責重疊、難以維護 |
+| 共享哪些狀態？ | 重複工作、遺失證據 |
+| 路由由誰、依什麼決定？ | 無法解釋流程 |
+| 何時觸發工具、何時跳過？ | 不必要的呼叫與成本 |
+| 誰決定任務完成？ | 無限交接 |

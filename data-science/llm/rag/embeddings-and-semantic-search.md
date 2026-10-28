@@ -1,130 +1,89 @@
-# Embeddings and Semantic Search
+[LLM](../README.md) › [RAG](README.md) › Embedding 與語意搜尋
 
-Embeddings turn text into numerical vectors so a system can compare meaning, not just exact word overlap.
+# Embedding 與語意搜尋 (Embeddings and Semantic Search)
 
-Key point: Embeddings are useful because they capture semantic similarity. This makes them a foundation for retrieval, recommendations, clustering, and lightweight classification.
+Embedding 把一段文字對應成固定長度的向量，語意相近的文字向量也相近。這讓「依意思搜尋」成為可能，也是 RAG、推薦、分群與輕量分類的基礎。詞向量與 embedding 層的原理見 [文字與序列模型](../../deep-learning/nlp-and-transformers/text-and-sequence-models.md)。
 
-## What an Embedding Represents
+## 概念
 
-An embedding maps a piece of text into a point in a high-dimensional vector space.
-
-| Idea | Practical Meaning |
+| 概念 | 意義 |
 | --- | --- |
-| Nearby vectors | texts are semantically similar |
-| Distant vectors | texts are less related in meaning |
-| Shared structure | related intent or topic can stay close even with different wording |
+| Embedding 向量 | 一段文字（句子、段落）→ 數百到數千維向量；單一維度沒有可解讀的意義 |
+| 相近向量 | 語意相近，即使用字不同（"cell death" ≈ "apoptosis"） |
+| Cosine 相似度 | $\cos\theta = \dfrac{a \cdot b}{\lVert a \rVert \lVert b \rVert}$，比較方向；向量正規化後等於內積 |
+| Bi-encoder | 問題與文件**各自**編碼成向量 → 可事先算好文件向量，檢索快 |
+| Cross-encoder | 問題與文件**一起**輸入模型打分 → 較準但慢，用於 [reranking](rag-pipeline.md#檢索策略) |
 
-Tip: The exact numbers inside an embedding are usually not meant for human interpretation. The important part is how vectors relate to one another.
-
-## Why Semantic Search Matters
-
-Traditional search often depends on keyword matching. That works well when the query and the document use the same words, but it can miss intent when phrasing differs.
-
-| Search Style | Strength | Weakness |
+| 搜尋方式 | 優點 | 缺點 |
 | --- | --- | --- |
-| Keyword search | precise for exact terms | misses paraphrases, synonyms, and intent |
-| Semantic search | understands related meaning | can return broad matches if indexing or filtering is weak |
+| 關鍵字（BM25） | 精確比對專有名詞、基因符號、ID | 找不到同義詞與改寫 |
+| 語意（embedding） | 找到意思相近的改寫 | 對罕見術語、精確 ID 不敏感；可能回傳「主題相近但不相關」的結果 |
+| Hybrid | 兩者分數合併 | 多一個需要調整的權重 |
 
-Example: A user searching for "remote engineering manager roles" may still care about a posting titled "distributed software team lead." Keyword search may miss that connection, while embeddings can preserve the semantic overlap.
+> 生醫文字中基因符號、變異寫法、藥名很常見，純語意搜尋常把 `BRCA1` 與 `BRCA2` 視為幾乎相同。生醫 RAG 通常需要 [hybrid search](rag-pipeline.md#檢索策略)。
 
-## Core Semantic Search Flow
+## 語意搜尋流程
 
-A simple semantic retrieval loop usually looks like this:
+```python
+import numpy as np
+from sentence_transformers import SentenceTransformer
 
-1. embed the candidate texts
-2. store those embeddings with the source text and metadata
-3. embed the user query
-4. compare the query vector against candidate vectors
-5. return the nearest results
+model = SentenceTransformer("all-MiniLM-L6-v2")     # 通用小模型；生醫文字可比較領域模型
+docs = ["Ferroptosis is an iron-dependent form of regulated cell death.",
+        "Scanpy is a toolkit for single-cell RNA-seq analysis.",
+        "GPX4 inhibition triggers lipid peroxidation."]
+doc_emb = model.encode(docs, normalize_embeddings=True)          # (3, 384)
 
-Cosine similarity is a common comparison method because it measures how aligned two vectors are in direction.
+query_emb = model.encode(["iron-dependent cell death mechanisms"], normalize_embeddings=True)
+scores = doc_emb @ query_emb.T                                    # 已正規化 → 內積 = cosine
+order = np.argsort(-scores.ravel())                               # 由近到遠的文件索引；預期第 0 篇（ferroptosis）排第一
+```
 
-Key point: Embeddings make similarity searchable, but relevance still depends on chunking, metadata, filtering, and the quality of the source text.
-
-## Enriched Embeddings
-
-Sometimes a single raw field is too narrow. A stronger representation can come from combining multiple attributes into one embedding input.
-
-| Raw Input | Enriched Input |
+| 步驟 | 注意 |
 | --- | --- |
-| headline only | headline + topic + keywords |
-| job title only | job title + team + responsibilities |
-| document chunk only | chunk + source label + section context |
+| 文件與問題用**同一個** embedding 模型 | 不同模型的向量空間不相容；換模型要重算全部文件 |
+| 部分模型要求加前綴 | 如 E5 系列的 `"query: "` / `"passage: "`；照 model card 做 |
+| 輸入長度上限 | 超過會被截斷（常見 256–512 token）→ 先切段 |
+| 儲存向量時一併存 ID、原文、metadata | 才能回溯來源、過濾、更新 |
 
-Tip: Enriched embeddings work because the vector captures a fuller description of the item. This can improve both search and recommendation quality.
-
-## Recommendation Systems
-
-Embeddings are not only for search. They also help recommend similar items.
-
-| Use Case | How Embeddings Help |
+| 選 embedding 模型 | 說明 |
 | --- | --- |
-| Article recommendation | recommend items close to a user's current article |
-| Job matching | compare candidate interests with job descriptions |
-| Product or content discovery | surface items with similar meaning even when labels differ |
+| 看 MTEB 排行榜的**檢索**分數 | 但通用基準不代表你的領域；用自己的資料測 |
+| 維度 | 越高越準但越耗記憶體；部分模型支援截短維度 |
+| 多語言 | 中英混合資料要選多語言模型 |
+| 部署 | API embedding（省事）vs 本機模型（資料不出機構、免費） |
 
-The underlying pattern is similar to semantic search: represent items as vectors, compare distances, and return the closest matches.
+## 豐富輸入 (Enriched Embeddings)
 
-## Zero-Shot Classification with Embeddings
+單一欄位資訊太少時，把多個屬性組合成一段文字再嵌入：
 
-Embeddings can support lightweight classification without training a dedicated classifier.
-
-One practical pattern is:
-
-1. write short descriptions for each label
-2. embed those label descriptions
-3. embed the item to classify
-4. compare the item vector to each label vector
-5. assign the nearest label
-
-This is useful when you need a fast baseline for categorization, sentiment labeling, or headline tagging.
-
-Warning: Zero-shot classification with embeddings is convenient, but it can break down when labels are ambiguous, domain-specific, or too close together semantically.
-
-## Operational Limits of Naive Similarity Search
-
-A simple in-memory prototype usually works at small scale, but it does not age well.
-
-| Limitation | Why It Becomes a Problem |
+| 原始輸入 | 豐富後 |
 | --- | --- |
-| All embeddings loaded in memory | memory usage grows with the dataset |
-| Query compared to every record | latency grows linearly with corpus size |
-| Repeated query embedding work | unnecessary recomputation slows repeated workflows |
-| Weak data structure | harder to filter, update, and debug results |
+| 論文標題 | 標題 + 摘要 + MeSH 詞 |
+| 資料集名稱 | 名稱 + 物種 + 組織 + 技術平台 + 描述 |
+| 文件段落 | 段落 + 文件標題 + 章節標題 |
 
-This is the point where vector databases become useful: they move embeddings from a notebook demo into a retrieval system.
+章節標題對切分後的段落特別重要：「結果顯示顯著上升」單獨看不出在講什麼，加上「GPX4 表現量 / 結果」後才能被正確檢索。
 
-## What to Store Alongside Embeddings
+## 其他用途
 
-Embeddings are rarely enough by themselves.
-
-| Stored Field | Why It Matters |
+| 用途 | 做法 |
 | --- | --- |
-| identifier | lets the system fetch or update records |
-| source text or source reference | preserves the evidence behind retrieval |
-| metadata | supports filtering, tracing, and grouping |
-| document type or tags | helps keep retrieval scoped and relevant |
+| 推薦相似項目 | 找與目前論文 / 資料集向量最近的 k 個 |
+| 去重 | 相似度 > 門檻視為重複（如同一研究的多篇報告） |
+| 分群、視覺化 | 向量做 [K-means](../../machine-learning/unsupervised-learning/clustering/README.md) / UMAP，觀察主題結構 |
+| 零樣本分類 | 每個標籤寫一句描述並嵌入，文件分給最相近的標籤 |
+| 作為特徵 | 向量餵給 [邏輯斯迴歸](../../machine-learning/supervised-learning/README.md) 等分類器；少量標註即可得到不錯的 baseline |
 
-Key point: Retrieval systems become much easier to operate when vectors are paired with traceable source information.
+```python
+labels = {"immunology": "immune cells, T cells, cytokines, antibodies",
+          "neuroscience": "neurons, synapses, brain, neural circuits"}
+label_emb = model.encode(list(labels.values()), normalize_embeddings=True)
+pred = np.array(list(labels))[(doc_emb @ label_emb.T).argmax(axis=1)]
+```
 
-## Where This Fits in RAG
+零樣本分類適合快速 baseline；標籤語意接近或高度專業時會失準，有標註資料就改用監督式分類。
 
-Embeddings sit in the middle of a larger retrieval pipeline:
+## 從原型到向量資料庫
 
-1. documents are prepared and chunked
-2. chunks are embedded
-3. embeddings are stored and queried
-4. the nearest chunks are returned
-5. retrieved text is inserted into a grounded prompt
-
-If you want the storage and indexing side of that pipeline, continue with [Vector Databases for RAG](vector-databases.md).
-
-## Minimum Checklist
-
-Before using embeddings in a real workflow, make sure you can explain:
-
-1. what text is being embedded and why
-2. whether raw or enriched inputs are more appropriate
-3. how similarity is computed
-4. what metadata is stored with each vector
-5. when a simple prototype should be replaced with a vector database
+上面的 NumPy 做法把所有向量放在記憶體、每次查詢與全部文件比較（暴力搜尋），幾萬筆以內很夠用。資料量大、需要 metadata 過濾或持續更新時，改用 [向量資料庫](vector-databases.md)。

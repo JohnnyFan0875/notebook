@@ -1,172 +1,135 @@
-# Understanding the EU AI Act
+[Data Science](../README.md) › [Responsible AI](README.md) › EU AI Act
 
-The EU AI Act is a risk-based regulatory framework for AI systems and certain general-purpose AI models.
+# 歐盟人工智慧法 (EU AI Act)
 
-Key point: The Act does not treat all AI the same. Its core logic is proportionality: the higher the potential impact on people and society, the stronger the obligations.
+EU AI Act（Regulation (EU) 2024/1689）是以**風險分級**管理 AI 的法規：影響越大，義務越重。醫療 AI 是重點對象：屬於醫療器材的 AI 多半落在高風險類別，要同時符合醫療器材法規。它與 [GDPR](privacy-and-regulation.md#gdpr-要點) 並行：GDPR 管個人資料，AI Act 管 AI 系統本身。
 
-> **待改寫（補內容）**：補醫療器材情境——AI 醫療器材軟體（SaMD）多落在 high-risk 類別，需同時符合 MDR / IVDR 的符合性評鑑；以及 in-vitro diagnostic 演算法的要求。
+> 本篇是學習筆記，不是法律意見。條文、指引與時程以歐盟官方公告為準。
 
-## Why the EU AI Act Matters
+## 適用對象
 
-The Act aims to create an ecosystem of trust around AI by setting harmonized rules for systems that affect safety, rights, and public confidence.
-
-| Goal | Why It Matters |
-| --- | --- |
-| Build trust | Adoption is easier when users understand the guardrails |
-| Harmonize rules | Organizations can work against a more consistent framework |
-| Protect people | High-impact systems face stricter obligations |
-| Support innovation with limits | Low-risk uses are treated differently from dangerous ones |
-
-## Who It Applies To
-
-The Act reaches beyond one narrow technical role.
-
-| Actor | Typical Role |
-| --- | --- |
-| Provider | Builds or places an AI system or model on the market |
-| Deployer | Uses the AI system in practice |
-| Importer or distributor | Helps move the system into the market |
-
-Tip: Governance questions often change depending on whether a team is creating the system, integrating it, or deploying it into a specific workflow.
-
-## Systems vs. Models
-
-The Act distinguishes between AI systems and general-purpose AI models.
-
-| Concept | Meaning |
-| --- | --- |
-| AI system | A deployable product or workflow with specific inputs, outputs, and use context |
-| AI model | A more general underlying model that may power many downstream systems |
-
-Key point: This distinction matters because general-purpose AI can create downstream risk far beyond one product boundary.
-
-## The Risk Pyramid
-
-The Act uses a pyramid-style risk approach.
-
-| Risk Level | Typical Treatment |
-| --- | --- |
-| Unacceptable risk | Prohibited practices |
-| High risk | Allowed only with substantial obligations |
-| Limited risk | Transparency or disclosure-focused duties |
-| Minimal or no risk | Lighter treatment, though good practice still matters |
-
-This risk-based structure is one reason the Act is frequently discussed alongside responsible AI governance.
-
-## Unacceptable Risk
-
-Some uses are treated as unacceptable because they are considered too harmful or too intrusive.
-
-Examples commonly associated with this tier include:
-
-- subliminal or manipulative practices
-- exploitation of vulnerable groups
-- social scoring
-- certain predictive policing uses
-- indiscriminate facial image scraping
-- some emotion inference or protected-attribute inference contexts
-- certain real-time remote biometric identification scenarios
-
-Warning: Teams should not treat prohibited practices as merely "risky features." They are the kinds of uses that force an early no-go decision.
-
-## High-Risk AI Systems
-
-High-risk systems are not automatically banned, but they face materially stronger obligations because they can affect access, opportunity, safety, or rights.
-
-| High-Risk Area | Why It Is Sensitive |
-| --- | --- |
-| Biometric systems | Can enable surveillance and identity-related harm |
-| Education and employment | Can shape opportunity, selection, and advancement |
-| Essential services | Can affect access to credit, healthcare, utilities, or other vital services |
-| Law enforcement, migration, asylum, border control | Can strongly affect liberty, due process, and human rights |
-| Critical infrastructure | Can affect safety and continuity of important systems |
-
-Key point: The common pattern is impact. These are domains where AI errors or misuse can meaningfully change a person's life chances or safety.
-
-## Limited-Risk and Lower-Risk Systems
-
-Some systems fall into limited-risk or lower-risk categories, where transparency and user awareness matter more than intensive conformity duties.
-
-Typical obligations at lower tiers often focus on:
-
-- disclosure that AI is being used
-- clearer user awareness
-- proportionate operational controls
-
-Even when the formal burden is lighter, teams still benefit from documenting intended use, known limits, and oversight paths.
-
-## AI Literacy
-
-The Act's logic does not stop at documentation. It also points toward AI literacy for the people who build, integrate, and use AI.
-
-| Audience | Literacy Need |
-| --- | --- |
-| Builders | Understand model capabilities, limits, and regulatory duties |
-| Integrators | Know how to combine models safely in a real workflow |
-| Deployers and users | Recognize when AI outputs require challenge, escalation, or human review |
-
-Tip: Literacy is a governance control. A policy is weak if the people operating the system do not understand what the policy is trying to prevent.
-
-## GPAI: General-Purpose AI Models
-
-The Act also includes a separate track for general-purpose AI models because they may power many downstream systems.
-
-| GPAI Concern | Why It Matters |
-| --- | --- |
-| Broad downstream reuse | One model can shape many other products |
-| Scale and power | A single model failure can spread widely |
-| Documentation needs | Integrators need enough information to use the model safely |
-| Copyright and training content | Training practices can create legal and governance obligations |
-
-Common GPAI obligations include:
-
-1. maintain technical documentation about training and evaluation
-2. provide downstream integrators with enough documentation for safe use
-3. respect copyright-related obligations
-4. summarize training content where required
-
-## Systemic Risk in GPAI
-
-Some GPAI models may cross into systemic-risk territory when their scale or capability creates wider societal or market impact.
-
-Typical systemic-risk style duties include:
-
-- stronger model evaluations
-- incident reporting
-- cybersecurity expectations
-- direct communication with relevant authorities when needed
-
-Warning: Once a model becomes infrastructure for many other systems, "we only ship the base model" is not a sufficient governance mindset.
-
-## Providers vs. Deployers
-
-Responsibility is shared, but not identical.
-
-| Role | Main Question |
-| --- | --- |
-| Provider | Was the system or model designed, documented, and released with the right controls? |
-| Deployer | Is the actual use context appropriate, lawful, and proportionate? |
-
-Key point: A compliant provider does not guarantee a compliant deployment. Real-world use can change the risk profile dramatically.
-
-## Relationship to GDPR and Responsible AI
-
-The EU AI Act and GDPR overlap, but they are not the same.
-
-| Topic | GDPR Focus | EU AI Act Focus |
+| 角色 | 定義 | 例子 |
 | --- | --- | --- |
-| Personal data | Lawful processing, privacy, rights, and safeguards | May matter when the AI use case processes personal data |
-| Risk | Rights and freedoms in data processing | Risk classification of AI uses and obligations by tier |
-| Automation | Profiling and automated decision safeguards | Broader governance of AI systems and model use |
+| 提供者 (provider) | 開發 AI 系統或模型並以自己名義投入市場 | 開發 AI 判讀軟體的公司 |
+| 部署者 (deployer) | 在職務中使用 AI 系統 | 使用該軟體的醫院 |
+| 進口商、經銷商 | 把系統帶入歐盟市場 | — |
 
-The Act is also closely aligned with responsible AI practice because it rewards teams that already do risk classification, documentation, human oversight, and use-case review.
+適用範圍有域外效力：系統在歐盟上市或輸出在歐盟使用，非歐盟組織也適用。**純科學研究與開發用途**（尚未投入市場或使用）原則上排除適用，但上市前的真實環境測試有特別規定。
 
-## Minimum Standard Before an AI Act-Sensitive Launch
+> 合規的提供者不保證部署合規：同一個系統用在不同情境，風險可能完全不同。
 
-Before launching or integrating an AI system in a meaningful workflow, you should be able to explain:
+## 風險分級
 
-1. which risk tier the system belongs to
-2. whether the use case touches any prohibited or clearly restricted practices
-3. whether the system is high risk and what obligations follow from that
-4. whether the deployment relies on a general-purpose AI model and what downstream duties exist
-5. who owns provider-side and deployer-side compliance decisions
+```
+          ┌─────────────────┐
+          │  不可接受：禁止   │  社會評分、操縱、特定生物辨識用途
+          ├─────────────────┤
+          │   高風險：重度義務  │  醫療器材、關鍵基礎設施、教育、就業、執法……
+          ├─────────────────┤
+          │  有限風險：透明義務 │  聊天機器人、生成內容、deepfake
+          ├─────────────────┤
+          │  最低風險：無特別義務│  垃圾郵件過濾、遊戲 AI
+          └─────────────────┘
+```
+
+| 等級 | 例子 | 義務 |
+| --- | --- | --- |
+| 不可接受 | 潛意識操縱、利用弱勢族群、社會評分、僅依側寫預測犯罪、無差別抓取臉部影像建資料庫、職場與教育的情緒辨識（醫療或安全用途除外）、依生物特徵推論種族 / 政治立場 / 性傾向等、公共場所即時遠端生物辨識（執法有限例外） | 禁止 |
+| 高風險 | 見下表 | 風險管理、資料治理、技術文件、紀錄、透明、人工監督、準確性與穩健性、符合性評鑑、CE 標示、上市後監控 |
+| 有限風險 | 與人互動的聊天機器人、AI 生成的影像 / 音訊 / 文字、deepfake | 告知使用者正在與 AI 互動；生成內容需可機器辨識的標記 |
+| 最低風險 | 多數 AI 應用 | 無特別義務；鼓勵自願行為準則 |
+
+### 高風險的兩條路徑
+
+| 路徑 | 內容 | 例子 |
+| --- | --- | --- |
+| 附件 I：受歐盟產品法規規範的產品（或其安全元件），且需第三方符合性評鑑 | 醫療器材 (MDR)、體外診斷器材 (IVDR)、機械、玩具、車輛等 | AI 影像判讀軟體、AI 病理分析、AI 基因檢測解讀 |
+| 附件 III：特定用途領域 | 生物辨識、關鍵基礎設施、教育、就業、基本服務（含公共醫療給付資格、緊急分流）、執法、移民、司法 | 決定是否符合醫療補助資格、急診病人分流 |
+
+附件 III 的系統若只執行狹窄的程序性任務、不實質影響決策結果，可主張不屬於高風險（需記錄理由）；但涉及對自然人進行側寫 (profiling) 的一律是高風險。
+
+## 醫療 AI：與 MDR / IVDR 的關係
+
+| 情況 | AI Act 分類 |
+| --- | --- |
+| AI 本身是醫療器材軟體 (SaMD)，依 MDR 為 IIa 類以上（需 notified body 評鑑） | 高風險 |
+| AI 是體外診斷器材，依 IVDR 需 notified body 評鑑（多數 B、C、D 類） | 高風險 |
+| MDR I 類（自我宣告，不需 notified body） | 不因附件 I 成為高風險 |
+| 醫院內部研究用、未投入市場的模型 | 研究排除條款；仍受 GDPR、研究倫理規範 |
+| 一般健康 / 健身 App（非醫療用途） | 通常非高風險；聊天介面仍有透明義務 |
+
+醫療器材法規的分類規則（MDR Rule 11）讓多數提供診斷或治療決策資訊的軟體落在 IIa 類以上，所以**大部分臨床用 AI 都會是高風險**。
+
+| 實務重點 | 說明 |
+| --- | --- |
+| 單一符合性評鑑 | AI Act 的要求可整合進 MDR / IVDR 的 notified body 評鑑，不必分兩次 |
+| 文件整合 | 技術文件可合併；AI Act 額外要求資料治理（訓練 / 驗證 / 測試資料的代表性與偏誤檢查）、紀錄、人工監督設計 |
+| 資料治理 | 訓練資料要有相關性、代表性、盡可能無錯誤，並檢查可能的偏誤（見 [資料偏誤](data-bias-and-representativeness.md)） |
+| 上市後監控 | 持續追蹤表現與嚴重事故；AI 的 drift 也在監控範圍 |
+| 部署者義務 | 醫院依說明使用、指派具備能力的人監督、保存紀錄、輸入資料符合用途 |
+
+## 高風險系統的義務
+
+| 義務 | 實務對應 |
+| --- | --- |
+| 風險管理系統 | 整個生命週期的風險識別、評估、緩解 |
+| 資料與資料治理 | 資料來源、前處理、代表性、偏誤檢查的紀錄 |
+| 技術文件 | 類似完整的 [Model Card](responsible-ai.md#文件與可追溯性) + 設計與驗證紀錄 |
+| 自動紀錄 (logging) | 系統運作期間的事件紀錄，可追溯 |
+| 透明與使用說明 | 預期用途、表現、限制、適用族群 |
+| 人工監督 | 設計讓人能理解輸出、決定不採用、中止系統 |
+| 準確性、穩健性、資安 | 宣告的效能指標；抵抗錯誤與攻擊（見 [AI 資安](ai-security-and-risk-management.md)） |
+| 品質管理系統 | 與醫療器材的 QMS 可整合 |
+
+## 通用目的 AI 模型 (GPAI)
+
+LLM 等通用模型有獨立的規範路徑，因為一個模型可能成為大量下游系統的基礎。
+
+| 對象 | 義務 |
+| --- | --- |
+| 所有 GPAI 提供者 | 技術文件；提供下游整合者足夠資訊；遵守著作權法（含尊重 text-and-data-mining 的排除聲明）；公開訓練內容摘要 |
+| 具系統性風險的 GPAI（訓練算力超過門檻或經指定） | 另需模型評估（含對抗測試）、系統性風險評估與緩解、嚴重事故通報、資安保護 |
+| 開源模型 | 部分文件義務可減免；具系統性風險者不減免 |
+
+用 GPAI 打造醫療應用的團隊，自己就是該**系統**的提供者，要負系統層級的義務；不能以「我們只是用別人的模型」卸責。
+
+## 時程
+
+| 日期 | 生效內容 |
+| --- | --- |
+| 2024-08-01 | 法規生效 |
+| 2025-02-02 | 禁止用途、AI 素養 (AI literacy) 義務 |
+| 2025-08-02 | GPAI 義務、治理架構、罰則 |
+| 2026-08-02 | 多數其他條文（含有限風險的透明義務） |
+| 2027-12-02 | 附件 III 高風險系統義務（原定 2026-08-02，經 Digital Omnibus 延後） |
+| 2028-08-02 | 附件 I 產品（含醫療器材、IVD）中的高風險 AI 義務（原定 2027-08-02，經 Digital Omnibus 延後） |
+
+<sub>延後依據：Digital Omnibus on AI（Regulation (EU) 2026/1744），2026-07-27 生效；見 [AI Act Explorer](https://artificialintelligenceact.eu/ai-act-explorer/digital-omnibus/)。時程仍可能再調整，請以官方公告為準。</sub>
+
+| 罰則（上限，取金額或全球年營業額比例之高者） | |
+| --- | --- |
+| 違反禁止用途 | 3,500 萬歐元或 7% |
+| 違反其他多數義務 | 1,500 萬歐元或 3% |
+| 提供不正確資訊給主管機關 | 750 萬歐元或 1% |
+
+## 與 GDPR 的關係
+
+| 面向 | GDPR | EU AI Act |
+| --- | --- | --- |
+| 管什麼 | 個人資料的處理 | AI 系統與 GPAI 模型 |
+| 風險觀 | 對當事人權利與自由的風險（DPIA） | 依用途分級的風險 |
+| 自動化決策 | 第 22 條：當事人要求人工介入的權利 | 高風險系統的人工監督設計義務 |
+| 文件 | 處理活動紀錄、DPIA | 技術文件、風險管理、紀錄 |
+
+高風險醫療 AI 若處理病人資料，兩者同時適用：DPIA 與 AI Act 的風險管理可以一起做。
+
+## 上線前檢查
+
+| 問題 | 對應段落 |
+| --- | --- |
+| 我們是提供者還是部署者？ | [適用對象](#適用對象) |
+| 用途是否觸及禁止用途？ | [風險分級](#風險分級) |
+| 是否屬於醫療器材 / IVD？在 MDR / IVDR 是哪一類？ | [醫療 AI](#醫療-ai與-mdr--ivdr-的關係) |
+| 若為高風險，資料治理、文件、紀錄、人工監督是否到位？ | [高風險系統的義務](#高風險系統的義務) |
+| 是否建立在 GPAI 模型上？下游責任是什麼？ | [GPAI](#通用目的-ai-模型-gpai) |
+| 適用的時程是哪一天？ | [時程](#時程) |

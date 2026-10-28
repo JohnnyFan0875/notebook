@@ -1,155 +1,115 @@
-# LangGraph Agent Workflows
+[LLM](../README.md) › [Agent](README.md) › LangGraph
 
-LangGraph is useful when a tool-using agent should behave like a visible workflow instead of one opaque model call.
+# LangGraph Agent 工作流程 (LangGraph Agent Workflows)
 
-Key point: The main value of a graph-based agent framework is not "more autonomy." It is explicit state, transitions, and routing that make the workflow easier to inspect and control.
+LangGraph 把 agent 寫成一張**狀態圖**：節點 (node) 是步驟，邊 (edge) 是轉移，狀態 (state) 在節點間傳遞。價值不在「更自主」，而在流程明確：看得到走了哪條路、在哪裡停、哪一步需要人工核准。
 
-## Why a Graph Layer Helps
+## 核心概念
 
-A plain tool-using agent can work for simple cases, but it quickly becomes hard to reason about once routing and state grow.
+| 元件 | 意義 | 例子 |
+| --- | --- | --- |
+| State | 在節點間傳遞的資料（常是 message 列表 + 自訂欄位） | `MessagesState`：對話與工具結果 |
+| Node | 一個步驟（函式），讀 state、回傳要更新的欄位 | 呼叫模型、執行工具、驗證輸出 |
+| Edge | 固定轉移 | `tools` → `model` |
+| Conditional edge | 依 state 決定下一個節點 | 模型要求工具 → `tools`；否則 → `END` |
+| `START` / `END` | 流程的起點與終點 | — |
+| Checkpointer | 每步保存 state | 對話記憶、中斷後恢復、人工核准 |
 
-| Workflow Need | Why a Graph Helps |
-| --- | --- |
-| visible steps | you can name nodes and inspect what each one does |
-| conditional branching | the workflow can choose different paths based on state or tool calls |
-| persistent state | messages and intermediate results can move through the workflow explicitly |
-| stoppable execution | start and end conditions become part of the design |
+> 許多 agent 失敗其實是狀態設計失敗：該傳下去的資訊沒傳，後面的步驟就無法正確判斷。
 
-Tip: A graph is valuable because it turns orchestration into something you can read and debug, not because graphs are inherently smarter.
+## 最小的 tool-using agent
 
-## Graph State Is the Backbone
-
-LangGraph workflows revolve around state passed between nodes.
-
-| State Element | Why It Matters |
-| --- | --- |
-| message history | preserves the conversation and prior tool outputs |
-| intermediate results | lets later nodes use earlier work |
-| routing signals | determines whether the workflow should continue, branch, or stop |
-| task metadata | supports tracing, auditability, or policy checks |
-
-Key point: Many agent failures are really state-design failures. If the workflow does not carry the right information forward, later steps cannot behave reliably.
-
-## Nodes and Edges Encode the Workflow
-
-The graph structure usually breaks into a few simple pieces.
-
-| Graph Piece | Practical Meaning |
-| --- | --- |
-| node | one step such as model invocation, tool execution, or validation |
-| edge | the default path from one node to the next |
-| conditional edge | a branch based on state, tool calls, or completion logic |
-| `START` and `END` | explicit workflow boundaries |
-
-This matters because the agent becomes an actual process definition instead of a loose bundle of callbacks.
-
-## A Chatbot Can Be a Graph Too
-
-Even a basic chatbot can be represented as:
-
-```text
-START
--> chatbot node
--> END
+```
+START → model ──(有 tool_calls)──→ tools ──→ model ……
+              └─(沒有 tool_calls)──→ END
 ```
 
-That may seem trivial, but it establishes the same structure later used for tools, retries, guardrails, and branching.
+```python
+from langchain_core.tools import tool
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.memory import MemorySaver
 
-Tip: Starting with a minimal graph is often cleaner than jumping directly into a complex multi-node design.
+@tool
+def lookup_gene(symbol: str) -> str:
+    """以 HGNC 符號查詢人類基因的官方名稱與 NCBI Gene ID。"""
+    ...
 
-## Tool Use Becomes a Routing Decision
+tools = [lookup_gene]
+llm = ChatOpenAI(model=MODEL, temperature=0).bind_tools(tools)
 
-In LangGraph, tool use is often modeled as a branch rather than a hidden side effect.
+def call_model(state: MessagesState):
+    return {"messages": [llm.invoke(state["messages"])]}   # 回傳的 messages 會被附加到 state
 
-| Situation | Better Routing Choice |
+g = StateGraph(MessagesState)
+g.add_node("model", call_model)
+g.add_node("tools", ToolNode(tools))                       # 執行模型要求的工具，結果寫回 messages
+g.add_edge(START, "model")
+g.add_conditional_edges("model", tools_condition)          # 有 tool_calls → "tools"，否則 → END
+g.add_edge("tools", "model")
+app = g.compile(checkpointer=MemorySaver())
+
+config = {"configurable": {"thread_id": "user-42"}, "recursion_limit": 10}   # thread_id 區分對話；限制步數
+for state in app.stream({"messages": [("user", "TP53 的官方名稱？")]}, config, stream_mode="values"):
+    state["messages"][-1].pretty_print()                    # 逐步看到模型輸出與工具呼叫
+```
+
+| 設計 | 理由 |
 | --- | --- |
-| no tool needed | answer directly and end |
-| tool call requested | branch to a tool node |
-| tool result returned | route back to the model for the next step |
-| stop condition met | exit the workflow |
+| 模型節點與工具節點分開 | 推理錯誤與工具錯誤不會混在一起 |
+| 工具使用是**路由決策** | 可以解釋 agent 為什麼行動，而不只是看到答案 |
+| `recursion_limit` | 明確的停止條件，避免無限迴圈 |
+| `thread_id` + checkpointer | 同一對話延續狀態；不同使用者互不干擾 |
 
-Key point: Treating tool use as routing makes it much easier to explain why the agent acted, not just what it answered.
+## 人工核准 (Human-in-the-Loop)
 
-## Tool Nodes Separate Acting from Reasoning
+```python
+app = g.compile(checkpointer=MemorySaver(), interrupt_before=["tools"])   # 執行工具前暫停
 
-A useful graph pattern is to keep model reasoning and tool execution in different nodes.
+app.invoke({"messages": [("user", "把這 20 筆樣本標記為 QC failed")]}, config)
+pending = app.get_state(config).values["messages"][-1].tool_calls      # 檢視模型想執行什麼
+# 人確認後繼續；不同意則用 app.update_state(...) 修改或取消
+app.invoke(None, config)
+```
 
-| Node Type | Responsibility |
+只對有副作用的工具暫停即可（把唯讀工具和寫入工具分在不同節點）；較新版本也可在節點內用 `interrupt()` 做更細的控制。
+
+## 串流與可觀測性
+
+| 可觀察 | 用途 |
 | --- | --- |
-| model node | interpret messages and decide whether a tool is needed |
-| tool node | execute one or more allowed tools |
-| post-tool node | integrate tool outputs into the next response |
+| 節點轉移 | 看流程走了哪條路 |
+| 模型中間輸出 | 檢查推理是否合理 |
+| 工具呼叫與參數 | 確認選對工具、參數正確 |
+| 每步延遲 | 找出慢的步驟 |
 
-This separation improves debugging because model logic and external action failures no longer blur together.
+`stream_mode="values"` 每步輸出完整 state；`"updates"` 只輸出變更部分；`"messages"` 逐 token 串流。搭配 LangSmith 等 tracing 工具可視覺化整條路徑。
 
-## Binding Multiple Tools Needs Clear Contracts
+## 對話歷史管理
 
-A graph-based agent can expose several tools to the model, but each tool increases routing complexity.
-
-| Tool Design Concern | Why It Matters |
+| 策略 | 取捨 |
 | --- | --- |
-| clear name | helps the model choose the right tool |
-| strong description | reduces unnecessary or incorrect tool calls |
-| predictable input shape | makes invocation safer |
-| scoped behavior | limits what the tool is allowed to do |
+| 保留全部 | 連貫，但 token 成本與雜訊增加 |
+| 截斷（保留最近 N 則） | 便宜，可能遺失早期約定；注意不要把 tool call 與對應結果拆開 |
+| 摘要舊訊息 | 折衷，但多一個轉換步驟且可能失真 |
 
-Warning: Adding more tools without tightening their contracts usually makes the workflow less reliable, not more capable.
+## 單一 agent 還是多 agent
 
-## Conditional Continuation Controls the Loop
-
-Many LangGraph agent workflows use a continuation function that checks the latest state and decides what should happen next.
-
-Typical outcomes include:
-
-1. continue to a tool node if the model requested a tool
-2. continue to another reasoning step if more work is needed
-3. end the workflow if no tool call or follow-up step is required
-
-Key point: A healthy agent loop always has an explicit stopping rule.
-
-## Streaming Makes the Workflow Observable
-
-One practical advantage of graph execution is that events can be streamed as the workflow runs.
-
-| What You Can Observe | Why It Helps |
+| 圖的結構 | 解讀 |
 | --- | --- |
-| node transitions | see which path the workflow took |
-| model responses | inspect intermediate reasoning outputs at the message level |
-| tool calls | confirm which tools were selected and when |
-| final response | compare the end result with the steps that produced it |
+| 一個模型節點 + 工具 | 有狀態的單一 agent |
+| 多個專職節點、固定順序 | 多步驟工作流程（不一定是 agent） |
+| 多個 agent 節點 + 路由 | [多 agent 系統](multi-agent-patterns.md) |
 
-This is especially helpful when evaluating tool routing, latency, or repeated loop behavior.
+先用圖把流程控制理清楚；只有在專業分工確實帶來價值時才增加 agent。
 
-## Message History Is a Form of Working Memory
+## 檢查清單
 
-Graph state often carries the conversation forward as a list of messages.
-
-| Memory Choice | Trade-off |
+| 問題 | 對應 |
 | --- | --- |
-| keep full history | better continuity, but higher token cost and more noise |
-| trim history | lower cost, but higher risk of losing needed context |
-| summarize history | balances continuity and cost, but adds another transformation step |
-
-Tip: Message history should be designed deliberately. Treating it as an unbounded log usually leads to drift and rising cost.
-
-## Where This Fits Relative to Multi-Agent Design
-
-LangGraph does not automatically mean multi-agent architecture.
-
-| Pattern | Better Interpretation |
-| --- | --- |
-| one graph with one model node and tools | stateful single-agent workflow |
-| one graph with several specialist nodes | orchestrated multi-step workflow |
-| several agent nodes with routing logic | multi-agent system |
-
-Key point: Use graph structure first to clarify workflow control. Add multiple agents only when specialization creates real value.
-
-## Minimum Checklist
-
-Before calling a LangGraph agent workflow healthy, make sure you can explain:
-
-1. what state the graph carries between steps
-2. which nodes perform reasoning versus tool execution
-3. what condition causes a branch to the tool path
-4. how the workflow decides to stop
-5. what observability exists for streamed events, tool calls, and failures
+| State 裡傳遞了哪些資訊？是否足夠？ | 核心概念 |
+| 哪些節點推理、哪些節點執行工具？ | 最小的 agent |
+| 什麼條件走工具路徑？什麼條件結束？ | conditional edge、`recursion_limit` |
+| 哪些動作需要人工核准？ | 人工核准 |
+| 能否看到每一步的輸入、輸出與延遲？ | 串流與可觀測性 |

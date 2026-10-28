@@ -1,523 +1,182 @@
-# Privacy and Regulation
+[Data Science](../README.md) › [Responsible AI](README.md) › 隱私與法規
 
-> **待改寫（補內容）**：補 HIPAA（PHI、Safe Harbor vs Expert Determination de-identification）、基因資料的再識別風險，以及 dbGaP / EGA 等受控存取（controlled access）與 Data Use Agreement。
+# 隱私與法規 (Privacy and Regulation)
 
-本篇三部分：隱私的基本概念與 privacy by design、GDPR（合法基礎、data subject rights、DPIA、自動化決策）、資料安全（分類、控制措施、NIST CSF、社交工程）。匿名化實作見 [Anonymization in Python](anonymization-in-python.md)。
+處理病歷、基因或任何個人資料前，要先回答三件事：這是哪一類資料、適用哪些法規、需要什麼保護措施才能合法使用。本篇整理隱私基本概念、GDPR、HIPAA 與台灣個資法的比較、基因資料的特殊性與受控存取，以及資料安全的基本控制。匿名化實作見 [Python 匿名化](anonymization-in-python.md)；AI 專屬法規見 [EU AI Act](understanding-the-eu-ai-act.md)。
 
-## Data Privacy
+> 本篇是學習筆記，不是法律意見。實際專案請諮詢機構的 IRB、資料保護官或法務。法規條文以官方公告為準。
 
-Data privacy focuses on how personal data is collected, used, shared, protected, and controlled.
+## 基本概念
 
-Key point: Privacy is not only about secrecy. It is about meaningful control over personal data and clear limits on how organizations can use it.
-
-### What Privacy Means
-
-At a high level, privacy is often framed as the right to be left alone. In modern data systems, that idea extends into control over how personal information is collected and processed.
-
-| Privacy Question | Why It Matters |
+| 概念 | 意義 |
 | --- | --- |
-| What counts as personal data? | Organizations need to know what requires stronger protection |
-| Who controls the data? | People should not lose all agency once data is collected |
-| How is the data used? | Secondary use often creates the biggest privacy gap |
-| What happens if misuse occurs? | Harm can persist long after the original collection event |
+| 個人資料 (personal data) | 能直接或間接識別特定自然人的資料 |
+| 直接識別碼 | 姓名、身分證號、病歷號、email |
+| 準識別碼 (quasi-identifier) | 單獨無法識別，組合起來可以：出生日期 + 性別 + 郵遞區號 |
+| 敏感 / 特種個資 | 健康、基因、生物特徵、性生活、宗教、政治觀點等 |
+| 假名化 (pseudonymization) | 以代碼取代識別碼，但保留對照表 → **仍是個資** |
+| 匿名化 (anonymization) | 無法以合理手段再識別 → 多數法規下不再是個資；實務上很難達到 |
 
-### Personal Data
-
-Personal data is any data related to an identified or identifiable person.
-
-Common examples include:
-
-- name
-- date of birth
-- geolocation
-- contact details
-- behavioral and engagement data tied back to a user
-
-Tip: Privacy risk often comes from combinations of fields, not only obviously sensitive columns. Several harmless-looking attributes together can identify a person.
-
-### Why Privacy Has Become More Complex
-
-Privacy concerns expanded sharply in the 21st century because people leave larger digital footprints across the internet, apps, platforms, and connected devices.
-
-| Modern Driver | Privacy Concern |
+| 隱私 vs 資安 | 關心 |
 | --- | --- |
-| Apps and cloud services | Constant background data collection |
-| Big data analytics | Large-scale inference about users |
-| Cross-platform tracking | Profiles built across contexts |
-| Surveillance capabilities | Persistent observation without meaningful awareness |
+| 隱私 (privacy) | 收集與使用是否正當、必要、受當事人控制 |
+| 資安 (security) | 資料是否免於未授權存取、竄改、毀損（CIA：機密性、完整性、可用性） |
 
-Warning: Users often do not understand the full extent of what is collected, inferred, purchased, or shared about them.
-
-### Privacy vs. Security
-
-Privacy and security are related, but they are not identical.
-
-| Concept | Focus |
-| --- | --- |
-| Privacy | Whether data collection and use are justified, controlled, and respectful of individuals |
-| Security | Whether data is protected from unauthorized access, alteration, disruption, or destruction |
-
-Key point: Strong security does not automatically make a data practice private. A company can store data securely and still collect too much or use it in ways users would not expect.
-
-### A Simple Security Foundation: CIA Triad
-
-Privacy programs often depend on basic security controls. A common security model is the CIA triad:
-
-| Element | Meaning |
-| --- | --- |
-| Confidentiality | Only the right people and systems can access the data |
-| Integrity | Data is not improperly altered or corrupted |
-| Availability | Data and systems remain usable when needed |
-
-Confidentiality is especially important for privacy because it limits unnecessary access to personal information.
-
-### How Companies Use User Data
-
-Organizations collect more than one kind of data about users.
-
-| Data Type | Example Use |
-| --- | --- |
-| Personal data | Account management or identity-related functions |
-| Engagement data | Understanding how users interact with a product |
-| Behavioral data | Tracking actions, habits, or patterns |
-| Attitudinal data | Surveys, reviews, preferences, and opinions |
-
-Typical business motivations include:
-
-1. product and user-experience improvement
-2. targeted advertising and profiling
-3. data brokerage or resale
-4. broader business strategy and investment decisions
-
-Warning: The same data collected for convenience or personalization can later be reused for profiling, targeted selling, or pricing discrimination.
-
-### When Privacy Goes Wrong
-
-Privacy failures can harm users directly.
-
-| Failure Pattern | Possible Harm |
-| --- | --- |
-| Information stolen | Identity theft or fraud |
-| Over-sharing or resale | Sensitive profiles exposed to third parties |
-| Aggressive targeting | Manipulative advertising or unwanted inference |
-| Differential treatment | Pricing discrimination or exclusion |
-
-The "privacy paradox" adds a real challenge: people often express concern about privacy while still using data-intensive services because convenience and social dependence are hard to avoid.
+> 資安做得好不等於隱私做得好：資料可以被安全地保存，卻收集過多或被用在當事人無法預期的用途。
 
 ### Privacy by Design
 
-Privacy should be built into products and workflows from the start rather than added after a complaint or regulatory problem.
-
-| Privacy-by-Design Idea | Practical Meaning |
+| 原則 | 實務 |
 | --- | --- |
-| Build privacy early | Include privacy requirements during design, not after launch |
-| Keep users at the center | Make choices understandable and usable |
-| Fit naturally into the interface | Privacy controls should not feel hidden or obstructive |
-| Use timely notice | Explain collection at the moment it becomes relevant |
+| 設計階段就納入隱私需求 | 不要上線後才補 |
+| 資料最小化 | 只收集與保留必要的欄位；「先收再說」是常見錯誤 |
+| 預設保護 | 預設不分享、預設最小權限 |
+| 適時告知 (just-in-time notice) | 在收集的當下說明用途，而非埋在冗長條款 |
+| 資料分級 | 依敏感度決定存取、儲存、分享規則 |
 
-Tip: A good privacy interface should feel natural, not clunky. People make better choices when the request appears at the right time, in the right context, and with clear options.
+## 法規比較
 
-### Just-in-Time Notice
+| | GDPR（歐盟） | HIPAA（美國） | 個資法（台灣） |
+| --- | --- | --- | --- |
+| 適用對象 | 處理歐盟境內個人資料的組織（含境外組織） | Covered entities（醫療提供者、健康保險、清算機構）及其 business associates | 公務機關與非公務機關 |
+| 保護的資料 | 所有個人資料；健康、基因、生物特徵為特殊類別 | 受保護健康資訊 (PHI) | 所有個資；病歷、醫療、基因、性生活、健康檢查、犯罪前科為特種個資（第 6 條） |
+| 敏感資料處理 | 原則禁止，符合例外（明確同意、科學研究等）才可 | 治療、付款、營運外的用途需授權或符合例外 | 原則禁止，符合法定例外（如學術研究且資料經處理無從識別）才可 |
+| 研究用途 | 有科學研究的特別規定，需適當保護措施（如假名化） | 需授權，或 IRB / Privacy Board 核准免除授權，或使用去識別化資料 / limited data set | 依第 6 條例外及人體研究法、IRB 規範 |
+| 去識別化資料 | 匿名資料不適用；假名化資料仍適用 | 依 Safe Harbor 或 Expert Determination 去識別後不再是 PHI | 「無從識別特定當事人」的資料 |
+| 罰則 | 最高 2,000 萬歐元或全球營業額 4%（取高者） | 民事罰款分級，嚴重者有刑責 | 罰鍰與刑責 |
 
-Just-in-time notices present privacy information exactly when a user is about to share data or trigger a new type of collection.
+研究計畫通常還受**人體研究法、人體生物資料庫管理條例**（台灣）、Common Rule（美國）等研究倫理規範約束，需經 IRB 審查。
 
-This approach is useful because:
+## GDPR 要點
 
-- users are more likely to notice it
-- the context is clearer than in a long policy document
-- laws and user expectations increasingly favor timely explanation
-
-### Data Classification and Privacy Risk
-
-Organizations need a structure for classifying data so they can manage privacy and security proportionately.
-
-| Classification Question | Why It Matters |
+| 原則 | 意義 |
 | --- | --- |
-| Is this personal or sensitive data? | Higher sensitivity usually requires stronger controls |
-| Who should access it? | Limits internal misuse and accidental exposure |
-| How long should it be retained? | Reduces unnecessary long-term risk |
-| Can it be shared externally? | Forces review of jurisdiction, consent, and policy fit |
+| 合法、公平、透明 | 有合法基礎，且當事人能理解 |
+| 目的限制 | 依特定目的收集，不得做不相容的二次使用 |
+| 資料最小化 | 只處理必要的資料 |
+| 正確性 | 保持資料正確 |
+| 儲存限制 | 不保存超過必要的時間 |
+| 完整性與機密性 | 適當的資安措施 |
+| 可問責 | 控制者 (controller) 須能**證明**遵循 |
 
-Key point: Classification is the basis for organizing, managing, and protecting data. Without it, privacy controls become inconsistent and reactive.
-
-### Minimum Standard for a Privacy Program
-
-Before collecting or reusing personal data, you should be able to explain:
-
-1. what kinds of user data are being collected
-2. why each category is necessary
-3. who can access the data and under what controls
-4. how users are informed and what choices they have
-5. what harms could occur if the data is misused, breached, or resold
-
-## GDPR
-
-The General Data Protection Regulation (GDPR) is the European Union's core framework for personal data protection and lawful processing.
-
-Key point: GDPR is not just a privacy notice requirement. It is a full operating framework for how organizations collect, justify, use, protect, and govern personal data.
-
-### Why GDPR Matters
-
-GDPR is designed to protect privacy as a fundamental right in the digital age while creating a more harmonized data protection framework across the EU and EEA.
-
-| GDPR Goal | Why It Matters |
+| 合法基礎 | 說明 |
 | --- | --- |
-| Protect individuals' rights | Personal data is tied to dignity, autonomy, and control |
-| Harmonize rules | Organizations avoid fragmented country-by-country logic inside the EU framework |
-| Increase transparency | People should understand how their data is used |
-| Create accountability | Organizations must demonstrate, not merely claim, compliance |
+| 同意 | 明確、知情、自由；不是唯一也不一定是最適合的基礎 |
+| 契約 | 履行契約所必需 |
+| 法律義務 | 法律要求 |
+| 重大利益 | 保護生命安全 |
+| 公共任務 | 公共利益或官方職權（公立研究機構常用） |
+| 正當利益 | 需與當事人權利權衡；公部門執行職務時不適用 |
 
-### Scope
-
-GDPR applies to personal data relating to natural persons and covers both automated processing and certain structured manual processing.
-
-| Scope Question | GDPR View |
+| 其他重點 | 內容 |
 | --- | --- |
-| Whose data is protected? | Data subjects who are natural persons |
-| What counts as personal data? | Data that identifies or can identify a person directly or indirectly |
-| Which processing is covered? | Collection, storage, analysis, sharing, retrieval, erasure, and more |
-| Is it only about EU-based companies? | No. The reach can extend beyond the EU when EU personal data is involved |
+| 角色 | 控制者 (controller) 決定目的與方式；處理者 (processor) 代為處理（如雲端或 LLM API 供應商），需簽資料處理協議 (DPA) |
+| 當事人權利 | 被告知、存取、更正、刪除、限制處理、反對、資料可攜 |
+| DPIA | 高風險處理（大規模敏感資料、系統性監控、新技術、自動化決策）須做資料保護影響評估 |
+| 第 22 條 | 對個人有法律或重大影響的**純自動化決策**（含 profiling），當事人有權要求人工介入、表達意見與提出異議 |
+| 跨境傳輸 | 傳到歐盟以外需有適足性認定或標準契約條款等保障 |
 
-Tip: GDPR scope is broader than many teams expect. "We are not based in Europe" is not, by itself, a safe compliance shortcut.
+> 用 GDPR 涵蓋的資料呼叫雲端 LLM API，等於把資料交給處理者：需要 DPA、確認資料存放區域、是否用於訓練（見 [生醫 LLM 的隱私](../llm/bio-and-medical-llm.md#隱私與合規)）。
 
-### Personal Data and Special Categories
+## HIPAA 去識別化
 
-GDPR treats some data as especially sensitive.
-
-| Category | Examples |
-| --- | --- |
-| General personal data | Name, contact details, location, account-linked behavior |
-| Special category data | Health, biometric data, political or religious beliefs, sexuality, union membership |
-
-Sensitive data and vulnerable populations usually trigger stronger obligations and closer scrutiny.
-
-### Core GDPR Principles
-
-These principles are the backbone of GDPR thinking.
-
-| Principle | Practical Meaning |
-| --- | --- |
-| Lawfulness, fairness, and transparency | Processing must have a legal basis, be fair, and be explainable |
-| Purpose limitation | Data should be collected for specific purposes and not reused incompatibly |
-| Data minimization | Collect and process only what is adequate, relevant, and necessary |
-| Accuracy | Keep data correct and up to date |
-| Storage limitation | Do not retain personal data longer than justified |
-| Integrity and confidentiality | Use appropriate security and access controls |
-| Accountability | Controllers must implement and demonstrate compliance |
-
-Warning: These principles work together. A project can fail GDPR expectations even if it is strong on one principle but weak on purpose, minimization, or accountability.
-
-### Roles: Controller and Processor
-
-GDPR distinguishes who decides the purpose of processing from who handles data on behalf of others.
-
-| Role | Main Responsibility |
-| --- | --- |
-| Controller | Decides why and how personal data is processed |
-| Processor | Processes personal data on behalf of a controller |
-
-Key point: Accountability primarily sits with the controller, especially for showing that the principles above are actually implemented.
-
-### Legal Bases for Processing
-
-Personal data processing needs a valid legal basis.
-
-| Legal Basis | Typical Idea |
-| --- | --- |
-| Consent | Clear, informed, freely given agreement |
-| Contract | Processing is necessary to perform a contract |
-| Legal obligation | Processing is required by law |
-| Vital interests | Processing protects someone's life or safety |
-| Public task | Processing supports an official or public-interest task |
-| Legitimate interests | A reasonable and necessary interest balanced against the subject's rights |
-
-Tip: Consent is important, but it is not the only legal basis. Teams often over-assume consent when another basis may be more accurate or when consent would not be freely given.
-
-### Data Subject Rights
-
-GDPR gives individuals rights over their data.
-
-Common rights include:
-
-1. the right to be informed
-2. the right of access
-3. the right to rectification
-4. the right to erasure in certain cases
-5. the right to object or restrict certain processing
-
-Fairness and transparency depend heavily on whether these rights can be exercised in practice rather than only described on paper.
-
-### Purpose Limitation and Data Minimization
-
-Two of the most practical GDPR habits are:
-
-- define the purpose before collecting the data
-- avoid collecting data "just in case"
-
-| Principle | Bad Habit It Prevents |
-| --- | --- |
-| Purpose limitation | Reusing data for unrelated secondary purposes |
-| Data minimization | Collecting excessive data because storage is cheap |
-
-### Security and Integrity
-
-GDPR expects appropriate organizational and technical measures to protect personal data.
-
-| Measure Type | Examples |
-| --- | --- |
-| Organizational | Training, policies, role clarity, accountability, risk assessment |
-| Technical | Access control, secure storage, encryption, pseudonymization, device and network protections |
-
-Key point: Security is not separate from GDPR. Integrity and confidentiality are one of its core principles.
-
-### DPIA: Data Protection Impact Assessment
-
-A DPIA is used when processing is likely to create high risk for rights and freedoms.
-
-| DPIA Focus | What It Asks |
-| --- | --- |
-| Context and scope | What is being processed, at what scale, and for what purpose? |
-| Risk to people | What negative consequences could affect rights, dignity, or safety? |
-| Mitigation | Which controls reduce those risks? |
-| Residual risk | What risk remains after mitigation? |
-
-High-risk signals often include:
-
-- large-scale processing
-- sensitive or biometric data
-- systematic monitoring
-- combined datasets
-- vulnerable data subjects
-- automated decision-making
-- use of new technologies
-
-Tip: Even when not strictly required, DPIA-style thinking is a strong habit for responsible AI and privacy-sensitive systems.
-
-### GDPR and AI
-
-GDPR does not function as an AI law, but it creates important constraints for AI projects that process personal data.
-
-| AI Concern | GDPR Relevance |
-| --- | --- |
-| Large-scale data processing | Raises minimization, security, and proportionality questions |
-| Profiling | Triggers fairness, transparency, and sometimes special safeguards |
-| Black-box behavior | Makes explanation and accountability harder |
-| Sensitive inference | Can raise discrimination and special category issues |
-
-GDPR compliance for AI projects often depends on:
-
-- lawful basis
-- transparency
-- data minimization
-- accountability
-- security
-- DPIA or comparable risk review
-
-### Automated Decision-Making and Profiling
-
-Profiling means analyzing personal data to evaluate or predict aspects of a person's behavior, preferences, status, or likely actions.
-
-Article 22 is especially important in this area because it addresses certain automated individual decisions, including profiling, and points toward safeguards such as human intervention and explanation.
-
-Warning: If an AI system makes or strongly shapes individual decisions, teams should not treat profiling as a minor analytics feature. It can be a high-stakes compliance and ethics issue.
-
-### Minimum Standard Before a GDPR-Sensitive Project Launches
-
-Before launching a system that processes personal data, you should be able to explain:
-
-1. what personal data is processed and why
-2. which legal basis justifies that processing
-3. how the GDPR principles are implemented in practice
-4. whether a DPIA or equivalent risk review is needed
-5. what rights, safeguards, and human review paths exist for affected people
-
-## Data Security
-
-Data security is the practice of protecting digital information from unauthorized access, disclosure, alteration, or destruction.
-
-Key point: Data security is not only a technical control problem. It also depends on classification, access decisions, training, incident readiness, and organizational culture.
-
-### Why Data Security Matters
-
-Weak security creates operational, legal, and reputational harm long before a breach becomes a headline.
-
-| Risk | Why It Matters |
-| --- | --- |
-| Unauthorized access | Sensitive records can be exposed or misused |
-| Data alteration | Reports, models, and operational systems become unreliable |
-| Data loss or destruction | Critical business processes can stall or fail |
-| Compliance failure | Legal exposure, fines, and mandatory remediation increase |
-| Trust erosion | Customers and partners lose confidence after incidents |
-
-Tip: The cost of weak security is rarely limited to one compromised dataset. It often spreads into customer trust, regulatory scrutiny, and long cleanup programs.
-
-### Data Sensitivity and Classification
-
-Security becomes more practical when organizations classify data by impact and sensitivity.
-
-| Example Level | Practical Meaning | Example Content |
+| 方法 | 做法 | 適合 |
 | --- | --- | --- |
-| Public | Intended for broad sharing and low-impact exposure | Public website content, marketing material |
-| Internal | For employees or trusted partners only | Meeting notes, internal policies |
-| Confidential | Private data needing stronger restriction | Customer phone numbers, bank details, strategic plans |
-| Highly confidential or restricted | Severe impact if exposed | Government intelligence, scientific research, highly sensitive identifiers |
+| Safe Harbor | 移除 18 類識別碼，且不知道剩餘資訊可識別個人 | 規則明確、容易執行 |
+| Expert Determination | 由專家以統計方法判定再識別風險「非常小」並記錄 | 需要保留較多細節（如完整日期）時 |
+| Limited Data Set（不是去識別化） | 移除直接識別碼，但可保留日期、城市、郵遞區號等；需簽 Data Use Agreement | 研究、公衛 |
 
-Key point: Classification is not just labeling. It determines who should access data, how it should be stored, and what controls are required.
+Safe Harbor 的 18 類識別碼重點：
 
-### Personally Identifiable Information
-
-`PII` deserves special attention because misuse can directly harm individuals.
-
-| PII Concern | Why It Matters |
+| 類別 | 處理 |
 | --- | --- |
-| Identity exposure | Can enable fraud, impersonation, or targeted abuse |
-| Compliance obligations | Often triggers stricter legal and reporting duties |
-| Higher business impact | Breaches involving PII usually create stronger reputational damage |
+| 姓名、地址（州以下）、電話、傳真、email | 移除 |
+| 郵遞區號 | 可保留前 3 碼，但該區人口須超過 20,000，否則改為 000 |
+| 日期（出生、入院、出院、死亡） | 只保留年份；89 歲以上的年齡合併為 90+ |
+| 身分證號、病歷號、保險號、帳號、證照號 | 移除 |
+| 車牌、裝置序號、URL、IP | 移除 |
+| 生物特徵（指紋、聲紋）、全臉照片 | 移除 |
+| 其他任何唯一識別碼 | 移除（研究用的重新編碼可保留，但不能由識別碼推導） |
 
-What teams should know at a minimum:
+> 臨床文字（病程紀錄、出院摘要）中的識別資訊散落在自由文字裡，去識別化要用 NLP 工具（如 Philter、Presidio）並人工抽查，見 [Python 匿名化](anonymization-in-python.md)。
 
-1. the organization’s classification levels
-2. who may access each level
-3. what counts as `PII`
-4. how sensitive data must be handled
-5. how to report a suspected breach
+## 基因資料的特殊性
 
-### Compliance and Security Requirements
-
-Security obligations can come from both law and regulatory bodies.
-
-| Requirement Type | Meaning |
+| 特性 | 隱私後果 |
 | --- | --- |
-| Legal requirement | Mandated by law |
-| Mandatory regulatory requirement | Required by a regulator or industry authority |
-| Voluntary framework | Not legally binding, but useful for structure and maturity |
+| 本身就是唯一識別碼 | 移除姓名後仍可識別；全基因體資料幾乎不可能真正匿名化 |
+| 涉及親屬 | 一個人的基因資料會透露父母、手足、子女的資訊 |
+| 終身不變 | 外洩後無法「更換」 |
+| 預測未來健康 | 可能影響保險、就業（各國對基因歧視的保護不一） |
 
-Common compliance themes include:
-
-1. data minimization
-2. purpose limitation
-3. data subject rights
-4. data protection controls
-5. breach notification expectations
-
-Warning: Meeting the minimum legal requirement does not automatically mean the organization is secure enough for its real threat environment.
-
-### Voluntary Frameworks
-
-Organizations often use voluntary frameworks to create a more proactive security program.
-
-| Framework | Typical Use |
+| 已知的再識別途徑 | 說明 |
 | --- | --- |
-| `NIST CSF` | Organize cybersecurity risk management with a common operating language |
-| `ISO 27001` | Build and audit a formal information security management system |
-| `COBIT` | Align governance, controls, and enterprise IT management |
+| 姓氏推論 | 由 Y 染色體 STR 比對系譜資料庫推出姓氏，再結合年齡、地區識別個人（Gymrek et al., 2013） |
+| 長距離親屬搜尋 | 上傳到消費型系譜資料庫，透過遠房親屬比對身分（2018 年美國金州殺手案即以此破案） |
+| 彙總統計推論 | 由 GWAS 的等位基因頻率，可推斷某人是否參與研究（Homer et al., 2008） |
+| 表型連結 | 罕見疾病 + 年齡 + 地區即可能識別 |
 
-#### NIST CSF at a Glance
+### 受控存取 (Controlled Access)
 
-The extracted material emphasized the classic `NIST CSF` flow:
+因此基因資料分享多半不走「匿名化後公開」，而是：
 
-| Function | Main Question |
+| 機制 | 說明 |
 | --- | --- |
-| Identify | What assets, dependencies, and risks matter most? |
-| Protect | Which safeguards reduce the likelihood of harm? |
-| Detect | How will we notice suspicious activity or control failure? |
-| Respond | What do we do once an incident is underway? |
-| Recover | How do we restore service and learn from the event? |
+| 受控存取資料庫 | dbGaP（NIH）、EGA（歐洲）：個體層級資料需申請 |
+| 資料存取委員會 (DAC) | 審查申請者身分、研究目的是否符合原始同意範圍 |
+| Data Use Agreement (DUA) | 規定不得再識別、不得再分享、資安要求、發表規範、使用期限 |
+| 彙總結果 | GWAS summary statistics 多可公開取得，但特定敏感族群仍可能受限 |
+| 可信研究環境 (TRE / data enclave) | 資料不離開平台，研究者在平台內分析，只能匯出彙總結果（如 UK Biobank Research Analysis Platform、All of Us Researcher Workbench） |
+| 聯邦式分析 (federated analysis) | 模型或查詢到資料所在地執行，只回傳結果 |
 
-Tip: A framework is most useful when it creates a repeatable security rhythm, not when it becomes a documentation exercise.
+> 拿到受控存取資料後，DUA 通常禁止上傳到未經核准的雲端服務，包括把資料貼進外部 LLM。
 
-### Core Security Controls
+## 資料安全
 
-Most data security programs rely on a recurring set of controls.
+| 資料分級 | 例子 | 控制 |
+| --- | --- | --- |
+| 公開 | 已發表的彙總結果、公開資料集 | 基本完整性保護 |
+| 內部 | 實驗紀錄、內部文件 | 帳號驗證 |
+| 機密 | 去識別化病歷、未發表資料 | 存取申請、加密、稽核紀錄 |
+| 高度機密 | 可識別的病歷、基因資料、對照表 | 最小權限、隔離環境、多因素驗證、禁止下載 |
 
-| Control Area | Practical Examples |
+| 控制 | 實務 |
 | --- | --- |
-| Access control | Least privilege, role-based access, approval workflows |
-| Authentication | Strong passwords, MFA, credential hygiene |
-| Encryption | Protection for data at rest and in transit, key management |
-| Data loss prevention | Restrict or monitor risky exfiltration paths |
-| Backup and recovery | Tested restoration procedures for critical data and systems |
-| Incident response | Defined escalation and communication process during an event |
-| Patch and vendor management | Regular updates and third-party review |
+| 存取控制 | 最小權限、依角色授權、定期檢查帳號 |
+| 驗證 | 多因素驗證 (MFA)；憑證不寫進程式碼或 notebook |
+| 加密 | 傳輸中 (TLS) 與儲存時加密；金鑰與資料分開管理 |
+| 假名化對照表 | 與研究資料分開存放，僅限少數人存取 |
+| 備份與復原 | 定期測試能否還原 |
+| 稽核紀錄 | 誰在何時存取了什麼 |
+| 事故應變 | 外洩時的通報流程與時限（GDPR：知悉後 72 小時內通報主管機關） |
+| 供應商管理 | 雲端、LLM API 的資料處理條款 |
 
-Key point: Encryption is powerful, but it does not replace access control, incident response, or training.
-
-### Social Engineering Risk
-
-Many security incidents start by exploiting people rather than breaking software directly.
-
-| Technique | Practical Meaning |
+| 框架 | 用途 |
 | --- | --- |
-| Phishing | Pretending to be a trusted source to steal actions or credentials |
-| Smishing | Phishing over SMS or messaging channels |
-| Vishing | Voice-based phishing |
-| Spear phishing | Targeted phishing using specific knowledge about the victim |
-| Whaling | Targeting executives or high-value roles |
-| Business email compromise | Manipulating business communication for money or access |
-| Baiting | Using a tempting offer or object to trigger unsafe action |
-| Pretexting | Creating a false story to gain trust and extract information |
-| Piggybacking | Following someone physically into a restricted area |
-| Scareware | Using fear-based prompts to pressure a rash response |
+| NIST CSF | 以「治理、識別、保護、偵測、回應、復原」組織資安工作（2.0 版新增「治理」） |
+| ISO/IEC 27001 | 資訊安全管理系統 (ISMS) 驗證 |
 
-#### Common Red Flags
+### 社交工程
 
-People should slow down when they see:
+多數資安事件從騙人開始，而不是攻破軟體。
 
-1. urgent or threatening language
-2. unprofessional or inconsistent communication
-3. suspicious links or attachments
-4. unusual requests for sensitive information
-
-Tip: Social engineering defense starts with permission to pause, verify, and escalate without embarrassment.
-
-### Reactive vs Proactive Security
-
-Security programs often fail when they only react after something has already gone wrong.
-
-| Reactive Pattern | Proactive Pattern |
+| 手法 | 說明 |
 | --- | --- |
-| Focus on known incidents only | Assess known and emerging threats continuously |
-| Follow minimum requirements | Add controls based on actual business risk |
-| Act after damage appears | Audit, patch, train, and test ahead of time |
-| Depend on post-incident cleanup | Build resilience before incidents happen |
+| 釣魚 (phishing)、魚叉式釣魚 | 偽裝成可信來源騙取帳密或點擊；魚叉式針對特定對象 |
+| 簡訊 / 電話釣魚 (smishing / vishing) | 透過簡訊、通訊軟體或電話 |
+| 商業電子郵件詐騙 (BEC) | 冒充主管或廠商要求轉帳、提供資料 |
+| 假託 (pretexting) | 編造情境取得信任（「我是 IT，需要你的密碼」） |
+| 尾隨 (piggybacking) | 跟著別人進入管制區域 |
 
-Ways to be proactive include regular audits, third-party review, patching, technical best practices, and continuous training.
+警訊：急迫或威脅語氣、異常的資料請求、可疑連結或附件、與平常不同的溝通方式。要讓人能**安心暫停、查證、回報**，不因回報而受責。
 
-### Common Pitfalls
+## 處理個資前的檢查
 
-The source material repeatedly returned to the same failure modes.
-
-| Pitfall | Why It Hurts |
+| 問題 | 對應段落 |
 | --- | --- |
-| No clear strategy | Controls become fragmented and inconsistent |
-| Inadequate training | People become the easiest attack path |
-| Poor data classification | Sensitive data is not protected proportionately |
-| Weak incident response plan | Teams react slowly and inconsistently during breaches |
-| Overreliance on tools | Process and judgment gaps stay hidden |
-| Failure to update policies | Controls drift away from current threats and systems |
-| Ignoring insider threats | Authorized access is treated as inherently safe |
-
-Warning: Overly complex security measures can backfire if people cannot follow them consistently in real work.
-
-### Security Culture and Communication
-
-Strong security depends on communication, not only enforcement.
-
-| Cultural Need | Why It Matters |
-| --- | --- |
-| Shared responsibility | People treat security as part of the job |
-| Low-friction reporting | Suspicious events are surfaced early |
-| Practical communication | Teams know what to report, when, and to whom |
-| No fear of escalation | People are more likely to report mistakes quickly |
-
-Key point: A security culture works best when people feel responsible for protecting data without fear of punishment for raising concerns early.
-
-### Minimum Standard for a Healthy Data Security Practice
-
-Before calling a data security program credible, you should be able to explain:
-
-1. how the organization classifies sensitive data and `PII`
-2. which controls protect confidentiality, integrity, and availability
-3. how access, encryption, backup, and incident response are handled
-4. how social engineering risk is reduced through training and process
-5. how the program stays proactive instead of reacting only after breaches
+| 資料屬於哪一類？有哪些直接與準識別碼？ | [基本概念](#基本概念) |
+| 適用哪些法規？合法基礎是什麼？需要 IRB 嗎？ | [法規比較](#法規比較) |
+| 需要 DPIA 或同等的風險評估嗎？ | [GDPR 要點](#gdpr-要點) |
+| 去識別化用哪種方法？還剩多少再識別風險？ | [HIPAA 去識別化](#hipaa-去識別化) |
+| 基因資料的分享是否走受控存取？DUA 允許此用途嗎？ | [受控存取](#受控存取-controlled-access) |
+| 存取控制、加密、稽核、事故通報是否到位？ | [資料安全](#資料安全) |
