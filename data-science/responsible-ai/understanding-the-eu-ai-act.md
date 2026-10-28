@@ -4,6 +4,8 @@ The EU AI Act is a risk-based regulatory framework for AI systems and certain ge
 
 Key point: The Act does not treat all AI the same. Its core logic is proportionality: the higher the potential impact on people and society, the stronger the obligations.
 
+> **待改寫（補內容）**：補醫療器材情境——AI 醫療器材軟體（SaMD）多落在 high-risk 類別，需同時符合 MDR / IVDR 的符合性評鑑；以及 in-vitro diagnostic 演算法的要求。
+
 ## Why the EU AI Act Matters
 
 The Act aims to create an ecosystem of trust around AI by setting harmonized rules for systems that affect safety, rights, and public confidence.

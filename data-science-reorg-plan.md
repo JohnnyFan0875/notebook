@@ -132,39 +132,39 @@
 ## Phase 4：中間層整併（data-engineering / data-communication / responsible-ai / llm）
 
 **data-engineering**
-- [ ] `etl.md` 併入 `processing-and-pipelines.md`
-- [ ] ~~`ai-strategy` 的 `data-warehousing.md` 併入 `dimensional-modeling-and-star-schema.md`~~（Phase 2 已完成）；`data-modeling-foundations.md` 的 1NF–3NF 改連 `databases/database-normalization.md`
-- [ ] `databricks-foundations.md` + `databricks-data-management.md` + `databricks-sql.md` → `databricks.md`
-- [ ] `spark-and-pyspark.md` + `spark-sql-in-pyspark.md` → `spark.md`；`sparklyr.md` 保留；`scalable-processing-and-out-of-core.md` 保留並連 `python-foundations/performance-and-scaling/`、`r-foundations/parallel-programming-in-r.md`
-- [ ] `snowflake-foundations.md` + `bigquery-foundations.md` + `redshift-foundations.md` → `cloud-data-warehouses.md`（比較表為主）
-- [ ] `streaming-and-kafka.md` + `aws-streaming-with-kinesis-and-lambda.md` → `streaming.md`
-- [ ] `governance.md` + `responsible-ai/data-governance.md` → `data-engineering/governance.md`
-- [ ] `responsible-ai/data-quality.md` + `data-quality-with-great-expectations.md` → `data-engineering/data-quality-checks.md`；連 `statistics/descriptive-statistics/data-quality.md`
-- [ ] Power BI 剩下 8 篇 → `data-communication/bi-tools/`：`power-query.md`（data-connections + data-preparation + data-transformation）、`power-bi-modeling-and-dax.md`（overview + semantic-models + dax）、`power-bi-reports.md`（reports + report-design）
-- [ ] tableau 3 篇 → `data-communication/bi-tools/tableau.md`
+- [x] `etl.md` 併入 `processing-and-pipelines.md`
+- [x] ~~`ai-strategy` 的 `data-warehousing.md` 併入 `dimensional-modeling-and-star-schema.md`~~（Phase 2 已完成）；`data-modeling-foundations.md` 的 1NF–3NF 改連 `databases/database-normalization.md`
+- [x] `databricks-foundations.md` + `databricks-data-management.md` + `databricks-sql.md` → `databricks.md`
+- [x] `spark-and-pyspark.md` + `spark-sql-in-pyspark.md` → `spark.md`；`sparklyr.md` 保留；`scalable-processing-and-out-of-core.md` 保留並連 `python-foundations/performance-and-scaling/`、`r-foundations/parallel-programming-in-r.md`
+- [x] `snowflake-foundations.md` + `bigquery-foundations.md` + `redshift-foundations.md` → `cloud-data-warehouses.md`（比較表為主）
+- [x] `streaming-and-kafka.md` + `aws-streaming-with-kinesis-and-lambda.md` → `streaming.md`
+- [x] `governance.md` + `responsible-ai/data-governance.md` → `data-engineering/governance.md`
+- [x] `responsible-ai/data-quality.md` + `data-quality-with-great-expectations.md` → `data-engineering/data-quality-checks.md`；連 `statistics/descriptive-statistics/data-quality.md`（雙向）
+- [x] Power BI 剩下 8 篇 → `data-communication/bi-tools/`：`power-query.md`（data-connections + data-preparation + data-transformation）、`power-bi-modeling-and-dax.md`（overview + semantic-models + dax）、`power-bi-reports.md`（reports + report-design）
+- [x] tableau 3 篇 → `data-communication/bi-tools/tableau.md`（另建 `bi-tools/README.md` 索引，刪 `tableau/`）
 
 **data-communication**
-- [ ] `communicating-data-insights.md` + `reports-and-presentations.md` → `communicating-results.md`（加可重現報告角度，連 `r-foundations/reporting-with-r-markdown.md`）
-- [ ] 保留 `forming-analytical-questions.md`、`dashboard-design.md`、`bi-tools/`
+- [x] `communicating-data-insights.md` + `reports-and-presentations.md` → `communicating-results.md`（加可重現報告角度，連 `r-foundations/reporting-with-r-markdown.md`）
+- [x] 保留 `forming-analytical-questions.md`、`dashboard-design.md`、`bi-tools/`
 
 **responsible-ai**（原 ai-strategy-and-governance）
-- [ ] `ai-ethics.md` + `responsible-ai.md` + `data-ethics.md`（保留 FAIR）+ `responsible-ai-data-management.md` + `ai-governance.md` → `responsible-ai.md`
-- [ ] `data-bias-in-ai.md` → `data-bias-and-representativeness.md`（改寫時補 GWAS ancestry bias、EHR selection bias）
-- [ ] `data-privacy.md` + `understanding-gdpr.md` + `data-security.md` → `privacy-and-regulation.md`（改寫時補 HIPAA、de-identification、dbGaP 受控存取）
-- [ ] `understanding-the-eu-ai-act.md` 保留（改寫時補醫療器材 high-risk、MDR / IVDR）
-- [ ] `data-privacy-and-anonymization-in-python.md` → `anonymization-in-python.md`（改寫時補 k-anonymity 對基因型無效）
-- [ ] `ai-security-and-risk-management.md` 保留，連 `machine-learning/production/deployment-and-monitoring.md`
+- [x] `ai-ethics.md` + `responsible-ai.md` + `data-ethics.md`（保留 FAIR）+ `responsible-ai-data-management.md` + `ai-governance.md` → `responsible-ai.md`
+- [x] `data-bias-in-ai.md` → `data-bias-and-representativeness.md`（改寫時補 GWAS ancestry bias、EHR selection bias；已在檔頭加「待改寫」註記）
+- [x] `data-privacy.md` + `understanding-gdpr.md` + `data-security.md` → `privacy-and-regulation.md`（改寫時補 HIPAA、de-identification、dbGaP 受控存取；已加註記）
+- [x] `understanding-the-eu-ai-act.md` 保留（改寫時補醫療器材 high-risk、MDR / IVDR；已加註記）
+- [x] `data-privacy-and-anonymization-in-python.md` → `anonymization-in-python.md`（改寫時補 k-anonymity 對基因型無效；已加註記）
+- [x] `ai-security-and-risk-management.md` 保留，連 `machine-learning/production/deployment-and-monitoring.md`
 
 **llm**
-- [ ] foundations：`chatgpt-overview.md` + `generative-ai-overview.md` + `large-language-models.md` → `foundations/llm-foundations.md`（transformer 內部改連 deep-learning）
-- [ ] prompting：`prompt-engineering.md` + `chatbot-prompt-design.md` + `chatgpt-customization-and-reusable-workflows.md` → `prompt-engineering.md`
-- [ ] integration：`llm-application-patterns.md` + `llm-workflows-in-python.md`（API 部分）+ `openai-api-workflows.md` → `llm-api-patterns.md`；`managed-llm-platforms.md` 併入 `choosing-llm-providers-and-model-families.md`
-- [ ] integration：`multimodal-models-with-hugging-face.md` + `multimodal-openai-workflows.md` → `multimodal.md`
-- [ ] fine-tuning：`deep-learning/nlp-and-transformers/llm-fine-tuning.md` + `llm-workflows-in-python.md` 的 fine-tune / eval 段 → `llm/integration/fine-tuning.md`（prompt vs RAG vs fine-tune 決策 + LoRA / PEFT）
-- [ ] operations：`llmops.md` + `operating-agent-systems.md` → `llmops.md`
-- [ ] rag：`rag/README.md`（135 行完整筆記）內容抽成 `rag/rag-pipeline.md`，README 改回精簡索引
-- [ ] 資料夾只剩 1 篇的子資料夾（foundations、prompting、operations）考慮攤平到 `llm/` 根目錄
-- [ ] 連結檢查 → commit
+- [x] foundations：`chatgpt-overview.md` + `generative-ai-overview.md` + `large-language-models.md` → `foundations/llm-foundations.md`（transformer 內部改連 deep-learning）
+- [x] prompting：`prompt-engineering.md` + `chatbot-prompt-design.md` + `chatgpt-customization-and-reusable-workflows.md` → `prompt-engineering.md`
+- [x] integration：`llm-application-patterns.md` + `llm-workflows-in-python.md`（API 部分）+ `openai-api-workflows.md` → `llm-api-patterns.md`；`managed-llm-platforms.md` 併入 `choosing-llm-providers-and-model-families.md`
+- [x] integration：`multimodal-models-with-hugging-face.md` + `multimodal-openai-workflows.md` → `multimodal.md`
+- [x] fine-tuning：`deep-learning/nlp-and-transformers/llm-fine-tuning.md` + `llm-workflows-in-python.md` 的 fine-tune / eval 段 → `llm/integration/fine-tuning.md`（prompt vs RAG vs fine-tune 決策 + LoRA / PEFT，已補決策表與 LoRA / QLoRA 小節）
+- [x] operations：`llmops.md` + `operating-agent-systems.md` → `llmops.md`
+- [x] rag：`rag/README.md`（135 行完整筆記）內容抽成 `rag/rag-pipeline.md`，README 改回精簡索引
+- [x] 資料夾只剩 1 篇的子資料夾（foundations、prompting、operations）考慮攤平到 `llm/` 根目錄（已攤平：`llm/llm-foundations.md`、`llm/prompt-engineering.md`、`llm/llmops.md`）
+- [x] 連結檢查 → commit
 
 ## Phase 5：上層整併（statistics / ML / DL / applied-domains / network-analysis）
 
@@ -233,11 +233,11 @@
 
 | 來源 | 指向 |
 | --- | --- |
-| `computing/cloud/gcp-fundamentals.md` | `data-engineering/spark-sql-in-pyspark.md` |
-| `computing/cloud/boto3-for-aws-services.md`、`aws-services-overview.md` | `data-engineering/aws-streaming-with-kinesis-and-lambda.md`、`python-foundations/api-http.md`、`machine-learning/production/mlops-overview.md` |
-| `computing/cloud/azure-services-overview.md` | `data-engineering/databricks-foundations.md` |
+| `computing/cloud/gcp-fundamentals.md` | `data-engineering/spark.md#spark-sql` |
+| `computing/cloud/boto3-for-aws-services.md`、`aws-services-overview.md` | `data-engineering/streaming.md#aws-streaming-with-kinesis-and-lambda`、`python-foundations/api-http.md`、`machine-learning/production/mlops-overview.md` |
+| `computing/cloud/azure-services-overview.md` | `data-engineering/databricks.md` |
 | `computing/cloud/azure-management-and-governance.md` | `data-engineering/governance.md` |
 | `computing/cloud/azure-fundamentals.md` | `machine-learning/production/mlops-overview.md` |
-| `computing/workflow-engines/airflow/README.md` | `data-engineering/processing-and-pipelines.md`、`etl.md` |
+| `computing/workflow-engines/airflow/README.md` | `data-engineering/processing-and-pipelines.md`（含 `#etl-and-pipelines`） |
 | `computing/devops/devops-fundamentals.md` | `machine-learning/production/deployment-and-monitoring.md` |
 | `README.md`（notebook 根） | 只連 `data-science/README.md` |

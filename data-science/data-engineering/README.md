@@ -6,8 +6,8 @@
 
 1. 先讀核心觀念：從 [Foundations](foundations.md)、[Storage and Models](storage-and-models.md)、[Ingestion](ingestion.md)、[Processing and Pipelines](processing-and-pipelines.md) 建立資料流的基本語言。
 2. 再讀資料模型：用 [Data Modeling Foundations](data-modeling-foundations.md) 與 [Data Warehousing and Dimensional Modeling](dimensional-modeling-and-star-schema.md) 建立分析資料表設計能力。
-3. 再補可擴展與治理：讀 [Scalable Processing and Out-of-Core Workflows](scalable-processing-and-out-of-core.md)、[Governance](governance.md)、[Data Versioning and DVC](../machine-learning/production/dvc.md)。
-4. 接著選平台路線：如果偏資料平台，走 Spark / Databricks / warehouse；如果偏 BI 交付，走 Fabric / Power BI；如果偏即時資料流，再看 Kafka / Kinesis。
+3. 再補可擴展、品質與治理：讀 [Scalable Processing and Out-of-Core Workflows](scalable-processing-and-out-of-core.md)、[Data Quality Checks](data-quality-checks.md)、[Data Governance](governance.md)、[Data Versioning and DVC](../machine-learning/production/dvc.md)。
+4. 接著選平台路線：偏資料平台走 [Spark](spark.md) / [Databricks](databricks.md) / [Cloud Data Warehouses](cloud-data-warehouses.md)；偏即時資料流看 [Streaming](streaming.md)；偏 BI 交付看 [BI Tools](../data-communication/bi-tools/README.md)。
 
 ## 主題分組
 
@@ -16,49 +16,32 @@
 - [Foundations](foundations.md): data engineer 的角色、big data 與資料管線的基本脈絡
 - [Storage and Models](storage-and-models.md): structured、semi-structured、unstructured data，以及 database、warehouse、lake 的差異
 - [Ingestion](ingestion.md): 常見資料來源、flat files、JSON、web requests 與擷取時的資料型態判斷
-- [Processing and Pipelines](processing-and-pipelines.md): ETL、batch vs. stream、scheduling、parallel 與 cloud processing
-- [ETL](etl.md): 從商業需求拆出 extract / transform / load，並把一次性處理變成可重跑流程
+- [Processing and Pipelines](processing-and-pipelines.md): ETL / ELT 三階段、batch vs. stream、scheduling vs orchestration、pipeline testing、parallel 與 cloud processing
 
-### 資料建模與治理
+### 資料建模、品質與治理
 
-- [Data Modeling Foundations](data-modeling-foundations.md): entity / attribute / relationship、cardinality、primary / foreign key 與 normalization 的上游設計基礎
+- [Data Modeling Foundations](data-modeling-foundations.md): entity / attribute / relationship、cardinality、primary / foreign key、ER modeling（正規化見 [Database Normalization](../databases/database-normalization.md)）
 - [Data Warehousing and Dimensional Modeling](dimensional-modeling-and-star-schema.md): warehouse vs lake / mart、分層、Inmon vs Kimball、medallion 到 gold layer、fact / dimension、SCD、OLAP vs OLTP、ETL vs ELT
-- [Governance](governance.md): data catalog、lineage、access control、encryption 與合規
+- [Data Quality Checks](data-quality-checks.md): 品質維度、detective vs preventative rules、閾值與告警、remediation，以及用 Great Expectations 寫成可執行檢查
+- [Data Governance](governance.md): data catalog、lineage、access control、encryption、分類標籤，以及治理計畫的角色、策略與衡量
 - [Data Versioning and DVC](../machine-learning/production/dvc.md): data lineage、reproducibility、`params.yaml`、`dvc.yaml` 與資料版本管理
 
 ### 可擴展處理與分散式工作流
 
 - [Scalable Processing and Out-of-Core Workflows](scalable-processing-and-out-of-core.md): RAM 限制、disk-backed structures、chunk-wise processing 與 split-apply-combine
-- [Spark and PySpark](spark-and-pyspark.md): Spark 的分散式處理心智模型、RDD、DataFrame、partition 與 PySpark 的基本入口
-- [Spark SQL in PySpark](spark-sql-in-pyspark.md): `spark.sql()`、temp view、window functions、文字 ETL 與 Spark 內部 SQL 工作流
+- [Spark and PySpark](spark.md): 分散式處理心智模型、RDD、DataFrame、partition、清理與特徵工程，以及 Spark SQL（`spark.sql()`、temp view、window functions）
 - [Spark with sparklyr](sparklyr.md): `spark_connect()`、`compute()` / `collect()`、`DBI` SQL、`sdf_` / `ft_` / `ml_` 與 R 介面的 Spark workflow
 - [Scala Fundamentals](../../computing/programming-languages/scala-fundamentals.md): Scala 的語言定位、腳本 vs 應用程式、靜態型別與 Spark / JVM 生態的關聯
 
 ### 資料平台與雲端 Warehouse
 
-- [Databricks Foundations](databricks-foundations.md): lakehouse 平台心智模型、Delta、Unity Catalog、clusters、SQL warehouses 與 workspace 治理
-- [Databricks Data Management](databricks-data-management.md): Delta table lifecycle、time travel、managed vs unmanaged tables、views 與敏感資料治理
-- [Databricks SQL](databricks-sql.md): SQL warehouse、lakehouse-style querying、SQL ingestion、`MERGE`、`OPTIMIZE` 與 `Z-ORDER`
+- [Databricks](databricks.md): lakehouse、Delta、Unity Catalog、clusters vs SQL warehouses、managed vs unmanaged tables、time travel、Databricks SQL（`MERGE`、`OPTIMIZE`、`Z-ORDER`）
 - [dbt Foundations](dbt-foundations.md): dbt project 結構、`profiles.yml`、models、`dbt run`、`ref()`、documentation 與 lineage
-- [BigQuery Foundations](bigquery-foundations.md): serverless warehouse 心智模型、`project.dataset.table`、region 限制、資料載入與 query optimization
-- [Snowflake Foundations](snowflake-foundations.md): Snowflake 架構、virtual warehouse、roles、marketplace / stage 與 query / copy history
-- [Redshift Foundations](redshift-foundations.md): distributed columnar warehouse、`DISTKEY` / `SORTKEY`、distribution styles、external schemas 與 tuning views
-
-### BI 與語意層交付
-
-- [Power BI Overview](power-bi-overview.md): Desktop / Service、Power Query Editor、views、filter scope、互動式視覺化與報表工作流
-- [Data Connections in Power BI](data-connections-in-power-bi.md): data sources、`Import` / `DirectQuery` / `Live`、parameters、gateway 與 incremental refresh
-- [Data Preparation in Power BI](data-preparation-in-power-bi.md): Power Query、`Applied Steps`、preview features 與文字 / 數值 / 日期欄位清理
-- [Data Transformation in Power BI](data-transformation-in-power-bi.md): pivot / unpivot、append / merge、custom columns、`M language` 與 Advanced Editor
-- [Semantic Models and Power BI](semantic-models-and-power-bi.md): semantic layer、relationships、row/object-level security 與報表消費層
-- [DAX in Power BI](dax-in-power-bi.md): context、calculated columns vs measures、`CALCULATE()` 與模型層計算心智模型
-- [Report Design in Power BI](report-design-in-power-bi.md): progressive disclosure、themes、bookmarks、mobile layout 與報表 UX
-- [Reports in Power BI](reports-in-power-bi.md): dashboards vs reports、bookmark state、navigation、custom tooltips 與 Q&A
+- [Cloud Data Warehouses](cloud-data-warehouses.md): Snowflake / BigQuery / Redshift 比較表，virtual warehouse、`project.dataset.table`、`DISTKEY` / `SORTKEY` 等平台細節
 
 ### 串流與即時資料
 
-- [Streaming and Kafka](streaming-and-kafka.md): event streaming、topic / partition、producer / consumer、replication 與 Kafka 的實務定位
-- [AWS Streaming with Kinesis and Lambda](aws-streaming-with-kinesis-and-lambda.md): Kinesis、Firehose、Lambda、serverless transformation 與即時警示流程
+- [Streaming](streaming.md): event streaming、Kafka 的 topic / partition / replication、Celery vs Kafka vs Spark Streaming，以及 AWS Kinesis + Firehose + Lambda
 
 ## Why It Matters
 

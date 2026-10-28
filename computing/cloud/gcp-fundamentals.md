@@ -175,6 +175,6 @@ GCP 的資料服務很多，但入門時先分資料型態比較有效：
 - [Cloud Computing Fundamentals](cloud-computing-fundamentals.md)
 - [AWS Services Overview](aws-services-overview.md)
 - [Azure Fundamentals](azure-fundamentals.md)
-- [Spark SQL in PySpark](../../data-science/data-engineering/spark-sql-in-pyspark.md)
+- [Spark SQL](../../data-science/data-engineering/spark.md#spark-sql)
 
 [Back to Cloud](README.md)

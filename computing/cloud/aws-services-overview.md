@@ -223,7 +223,7 @@ AWS 的 AI / ML 服務可以先分成兩類：
 
 - [AWS Certified Cloud Practitioner](aws-certified-cloud-practitioner.md)
 - [Cloud Computing Fundamentals](cloud-computing-fundamentals.md)
-- [AWS Streaming with Kinesis and Lambda](../../data-science/data-engineering/aws-streaming-with-kinesis-and-lambda.md)
+- [Streaming: Kinesis and Lambda](../../data-science/data-engineering/streaming.md#aws-streaming-with-kinesis-and-lambda)
 - [MLOps Overview](../../data-science/machine-learning/production/mlops-overview.md)
 
 [Back to Cloud](README.md)

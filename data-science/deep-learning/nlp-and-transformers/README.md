@@ -7,7 +7,7 @@
 - [Text Representations and Embeddings](text-representations-and-embeddings.md)
 - [Sequence Models for Text](sequence-models-for-text.md)
 - [Transformers and Attention](transformers-and-attention.md)
-- [LLM Fine-Tuning](llm-fine-tuning.md)
+- LLM fine-tuning（prompt vs RAG vs fine-tune、LoRA / PEFT）已移到 [LLM: Fine-Tuning](../../llm/integration/fine-tuning.md)
 
 ## Suggested Order
 

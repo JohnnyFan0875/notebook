@@ -73,49 +73,9 @@ key 的角色，是讓資料表之間的識別與連結變得明確。
 
 ## Normalization
 
-normalization 是把資料整理成較少重複、較少異常更新風險的過程。
+normalization 是把資料整理成較少重複、較少異常更新風險的過程：同一個事實不要存在多處、更新不要牽動很多列、刪一筆資料不要順手刪掉其他資訊。它最常用在交易型或上游整合型的 relational design；分析型模型則常在可接受的前提下做部分反正規化。
 
-它背後的核心想法是：
-
-- 不要把同一個事實在多個地方重複保存
-- 不要讓一筆資料的更新需要同時改很多列
-- 不要讓刪掉一筆資料時，順手把不該消失的資訊一起刪掉
-
-normalization 最常被用在較偏交易型或上游整合型的 relational design；分析型模型則常會在可接受的前提下做部分反正規化。
-
-## First, Second, and Third Normal Form
-
-### First Normal Form (1NF)
-
-`1NF` 的重點是每個欄位都應該保存 atomic value，而不是一格裡塞一串列表或複合值。
-
-如果一個欄位裡同時塞了多個值，後續的查詢、過濾與關聯通常都會變得很不穩。
-
-### Second Normal Form (2NF)
-
-`2NF` 的重點是消除 `partial dependency`。
-
-也就是說，當主鍵是複合鍵時，每個 non-key attribute 都應該依賴整個 primary key，而不是只依賴其中一部分。
-
-如果某些欄位只依賴複合鍵的一部分，通常代表它們應該被拆到另一個 entity。
-
-### Third Normal Form (3NF)
-
-`3NF` 的重點是消除 `transitive dependency`。
-
-也就是說，non-key attributes 應該直接依賴 primary key，而不是依賴另一個 non-key attribute。
-
-如果欄位 A 依賴主鍵，但欄位 B 又依賴欄位 A，這往往代表表還能再拆。
-
-## Dependency Vocabulary
-
-理解正規化時，最常碰到三個依賴概念：
-
-- `functional dependency`: primary key 可以決定某個 attribute 的值
-- `partial dependency`: 只需要複合鍵的一部分就能決定某個 attribute
-- `transitive dependency`: 某個 attribute 依賴另一個非主鍵 attribute
-
-這些詞不只是考試術語。它們其實是在提醒我們：哪些欄位放在同一張表會讓資料出現重複、更新異常或語意混亂。
+1NF–3NF、functional / partial / transitive dependency 與 update / insert / delete anomaly 的完整說明見 [Database Normalization](../databases/database-normalization.md)。
 
 ## ER Modeling as an Intermediate Design Layer
 

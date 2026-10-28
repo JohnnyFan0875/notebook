@@ -131,3 +131,8 @@ Before shipping an AI system, you should be able to answer:
 3. what controls exist for bias, hallucination, manipulation, and drift
 4. how sensitive data is protected in training and inference
 5. who monitors the system and what triggers escalation or rollback
+
+## Related Notes
+
+- 模型上線後的監控、drift 偵測與回滾：[Deployment and Monitoring](../machine-learning/production/deployment-and-monitoring.md)
+- 組織面的治理流程：[Responsible AI](responsible-ai.md#ai-governance)

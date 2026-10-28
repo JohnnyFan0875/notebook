@@ -6,14 +6,12 @@ Key point: Training a language model and building a useful LLM product are diffe
 
 ## Recommended Learning Path
 
-If you are learning these topics in sequence, this order usually works well:
-
-1. [Foundations](./foundations/README.md): learn what an LLM is, how tokens, embeddings, transformers, and training stages fit together
-2. [Prompting](./prompting/README.md): learn how task definition, context, examples, and output constraints shape model behavior
-3. [Agents](./agents/README.md): understand what makes an agent different from a plain chatbot, and when tool use matters
-4. [RAG](./rag/README.md): learn how to connect an LLM to external knowledge through retrieval
-5. [Operations](./operations/README.md): learn how to version, test, deploy, monitor, and improve LLM applications
-6. [Integration](./integration/README.md): connect prompts, tools, state, and business workflows into a complete system
+1. [LLM Foundations](./llm-foundations.md): what an LLM is, how tokens, embeddings, transformers, and training stages fit together, plus generative-AI model families
+2. [Prompt Engineering](./prompt-engineering.md): how task definition, context, examples, system prompts, and output constraints shape model behavior
+3. [Integration](./integration/README.md): API patterns, structured output, tool calling, provider choice, multimodal workflows, and fine-tuning
+4. [RAG](./rag/README.md): connect an LLM to external knowledge through retrieval
+5. [Agents](./agents/README.md): what makes an agent different from a plain chatbot, and when tool use matters
+6. [LLMOps](./llmops.md): version, test, deploy, monitor, and improve LLM applications and agent systems
 
 Tip: Many LLM application errors are really system errors. The model may be fine, but the retrieval, tool design, prompt structure, or approval flow is weak.
 
@@ -21,12 +19,12 @@ Tip: Many LLM application errors are really system errors. The model may be fine
 
 | Module | Core Topics | Main Questions |
 | --- | --- | --- |
-| [Foundations](./foundations/README.md) | tokens, embeddings, transformers, training, and model limits | What is an LLM actually doing under the hood, and why does it fail in predictable ways? |
-| [Prompting](./prompting/README.md) | task framing, examples, formatting, and prompt iteration | How do you make the model understand the job clearly enough to answer reliably? |
+| [LLM Foundations](./llm-foundations.md) | tokens, embeddings, transformers, training, model families, and model limits | What is an LLM actually doing under the hood, and why does it fail in predictable ways? |
+| [Prompt Engineering](./prompt-engineering.md) | task framing, examples, formatting, system prompts, reusable prompt setups | How do you make the model understand the job clearly enough to answer reliably? |
+| [Integration](./integration/README.md) | API patterns, Hugging Face, LangChain, multimodal, fine-tuning | How do you turn model access into a usable development workflow? |
+| [RAG](./rag/README.md) | embeddings, vector databases, retrieval, grounding | How can an LLM answer from documents instead of memory alone? |
 | [Agents](./agents/README.md) | tool use, delegation, guardrails, and multi-agent patterns | When should an LLM act, call tools, or hand work to another agent? |
-| [RAG](./rag/README.md) | retrieval, grounding, and external knowledge access | How can an LLM answer from documents instead of memory alone? |
-| [Operations](./operations/README.md) | evaluation, deployment, monitoring, and feedback loops | How do you keep an LLM application reliable after it leaves the prototype stage? |
-| [Integration](./integration/README.md) | Python tooling, model interfaces, fine-tuning workflows, and evaluation choices | How do you turn model access into a usable development workflow? |
+| [LLMOps](./llmops.md) | evaluation, deployment, monitoring, feedback loops, scaling agents | How do you keep an LLM application reliable after it leaves the prototype stage? |
 
 ## A Practical System Map
 
@@ -42,3 +40,5 @@ Useful LLM systems usually combine several layers:
 | Evaluation | check quality, reliability, latency, and business usefulness |
 
 Warning: If you only evaluate model output quality and ignore latency, tool failure, stale context, or escalation behavior, the system can still fail in production.
+
+[Back to Data Science](../README.md)
