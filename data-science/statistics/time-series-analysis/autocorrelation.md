@@ -1,210 +1,70 @@
-# Autocorrelation: ACF & PACF
+[Statistics](../README.md) › [時間序列](README.md) › 自相關
 
-This note focuses on autocorrelation as a time-series modeling diagnostic. If you want the finance-specific interpretation around momentum, mean reversion, and trading usefulness, see [Autocorrelation in Finance](../../finance/autocorrelation.md).
+# 自相關：ACF 與 PACF (Autocorrelation)
 
-**Autocorrelation** measures how a time series is correlated with its own past values. ACF and PACF plots are the primary diagnostic tools for identifying the structure of a stationary time series — and for determining the orders p and q in an ARIMA model.
+衡量序列與**自己的過去**有多相關。ACF / PACF 圖是定態序列的「指紋」，也是選擇 ARIMA 階數 p、q 的核心工具。金融情境（動能、均值回歸）的解讀見 [Finance: Autocorrelation](../../finance/autocorrelation.md)。
 
-Key point: ACF and PACF are fingerprints of a time series: just like a scatter plot reveals the relationship between two variables, the ACF/PACF plot reveals the relationship between a series and its own history. Understanding these two graphs is the core skill for selecting ARIMA parameters.
+| | ACF 自相關函數 (autocorrelation function) | PACF 偏自相關函數 (partial ACF) |
+| --- | --- | --- |
+| 衡量 | yₜ 與 yₜ₋ₖ 的**總**相關（含經由中間期的間接效果） | 移除 yₜ₋₁…yₜ₋ₖ₊₁ 的影響後，yₜ 與 yₜ₋ₖ 的**直接**相關 |
+| 類比 | 一般相關係數 | 迴歸中的偏相關 |
+| 公式 | $\rho_k = \text{Cov}(Y_t, Y_{t-k}) / \text{Var}(Y_t)$ | — |
+| 用來決定 | MA 階數 **q** | AR 階數 **p** |
 
-## Autocorrelation Function (ACF)
+## 型態辨識表
 
-The ACF measures the **linear correlation between yₜ and yₜ₋ₖ** for each lag k, without controlling for the effect of intermediate lags.
+| 過程 | ACF | PACF |
+| --- | --- | --- |
+| **AR(p)** | 指數衰減（或震盪衰減） | **lag p 後截斷** |
+| **MA(q)** | **lag q 後截斷** | 指數衰減 |
+| ARMA(p, q) | 衰減 | 衰減 → 用 AIC 選 |
+| 白噪音 | 全在信賴帶內 | 全在信賴帶內 |
+| 非定態 | **非常緩慢地衰減**（接近 1） | lag 1 有大尖峰 |
+| 季節性未移除 | lag m（如 12）仍很大 | — |
 
-\[
-\rho_k = \frac{\text{Cov}(Y_t, Y_{t-k})}{\text{Var}(Y_t)}
-\]
-
-**Range**: −1 ≤ ρₖ ≤ 1, just like a regular Pearson correlation.
+> **口訣**：AR 看 PACF 截斷、MA 看 ACF 截斷。
+>
+> 藍色區域是 95% 信賴帶，超出者在 α = 0.05 下顯著。36 個 lag 中有一兩個稍微超出是正常的（多重比較）。
 
 ```python
+import numpy as np
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-
-url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
-df = pd.read_csv(url, parse_dates=['Month'], index_col='Month').asfreq('MS')
-df.columns = ['Passengers']
-
-# Work with log-differenced series (stationary)
-series = np.log(df['Passengers']).diff(1).dropna()
-
-fig, ax = plt.subplots(figsize=(10, 4))
-plot_acf(series, lags=36, ax=ax, alpha=0.05)
-ax.set_title('ACF — Log First-Differenced Airline Passengers')
-ax.set_xlabel('Lag (months)')
-plt.tight_layout()
-plt.show()
-```
-
-**How to read the ACF plot:**
-
-| Pattern | Interpretation | Suggests |
-| ---------------------------------------- | --------------------------------------- | ---------------- |
-| Spikes cut off sharply after lag q | Only short-term dependence | MA(q) process |
-| Spikes decay slowly / exponentially | Long-range dependence | AR process present |
-| Alternating positive/negative spikes | Oscillatory dependence | Check for AR(2) |
-| Spike at lag m (e.g., 12) still large | Seasonal pattern not yet removed | Need seasonal differencing |
-| All spikes within confidence bands | White noise ✅ | No more structure to model |
-
-Tip: The blue shaded region (or dashed lines) in the ACF plot represents the 95% confidence band. Spikes outside this band are statistically significant at α = 0.05. Spikes outside the blue region are statistically significant. It doesn't need to be that all spikes are perfectly within the band, one or two just outside the boundary is statistically normal.
-
-## Partial Autocorrelation Function (PACF)
-
-The PACF measures the correlation between yₜ and yₜ₋ₖ **after removing the linear effects of all intermediate lags** (yₜ₋₁, yₜ₋₂, ..., yₜ₋ₖ₊₁).
-
-This is analogous to partial correlation in regression: the PACF at lag k tells you **only the direct relationship** between the observation and its k-th lag, not the indirect path through shorter lags.
-
-```python
-fig, ax = plt.subplots(figsize=(10, 4))
-plot_pacf(series, lags=36, ax=ax, alpha=0.05, method='ywm')
-ax.set_title('PACF — Log First-Differenced Airline Passengers')
-ax.set_xlabel('Lag (months)')
-plt.tight_layout()
-plt.show()
-```
-
-**How to read the PACF plot:**
-
-| Pattern | Interpretation | Suggests |
-| --------------------------------------- | ---------------------------- | ---------------- |
-| Spikes cut off sharply after lag p | Direct AR dependence at p | AR(p) process |
-| Spikes decay slowly | MA structure dominant | MA process present |
-| Single spike at lag 1 | Strong one-step dependence | AR(1) |
-| Spikes cut off after lag p, with oscillation | Negative AR coefficients | AR(p) with negative φ |
-
-## The ACF/PACF Pattern Recognition Table
-
-This is the core of using ACF/PACF for model identification:
-
-| Process | ACF Pattern | PACF Pattern |
-| ---------- | ------------------------------ | ------------------------------ |
-| **AR(p)** | Decays exponentially (or oscillating) | Cuts off sharply after lag p |
-| **MA(q)** | Cuts off sharply after lag q | Decays exponentially |
-| **ARMA(p,q)** | Decays (exponentially or oscillating) | Decays (exponentially or oscillating) |
-| **White Noise** | All within confidence band | All within confidence band |
-| **Non-stationary** | Decays very slowly (near 1) | Large spike at lag 1 |
-
-Tip: Memory aid: - AR → look at PACF for the cut-off (p = where PACF cuts off) - MA → look at ACF for the cut-off (q = where ACF cuts off) AR looks at PACF, MA looks at ACF - each looks at "the picture they control".
-
-## Side-by-Side Diagnostic Plot
-
-Always plot ACF and PACF together for model identification:
-
-```python
-fig, axes = plt.subplots(2, 1, figsize=(10, 7))
-plot_acf( series, lags=36, ax=axes[0], alpha=0.05)
-plot_pacf(series, lags=36, ax=axes[1], alpha=0.05, method='ywm')
-axes[0].set_title('ACF')
-axes[1].set_title('PACF')
-axes[0].set_xlabel('Lag')
-axes[1].set_xlabel('Lag')
-plt.tight_layout()
-plt.show()
-```
-
-## Worked Example: Identifying AR vs MA Processes
-
-```python
-import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.arima_process import ArmaProcess
 
-np.random.seed(42)
-n = 300
+url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
+y = pd.read_csv(url, parse_dates=["Month"], index_col="Month").asfreq("MS")["Passengers"]
+series = np.log(y).diff().dropna()          # 先轉成定態
 
-# --- AR(2) process ---
-ar_params = np.array([1, -0.6, -0.3])   # AR: 1 - 0.6L - 0.3L²
-ma_params = np.array([1])               # MA: no terms
-ar2_process = ArmaProcess(ar_params, ma_params)
-ar2_series  = ar2_process.generate_sample(nsample=n)
+fig, ax = plt.subplots(2, 1, figsize=(10, 7))
+plot_acf(series, lags=36, ax=ax[0])
+plot_pacf(series, lags=36, ax=ax[1], method="ywm")
+plt.tight_layout(); plt.show()
 
-# --- MA(2) process ---
-ar_params2 = np.array([1])
-ma_params2 = np.array([1, 0.7, 0.4])   # MA(2) terms
-ma2_process = ArmaProcess(ar_params2, ma_params2)
-ma2_series  = ma2_process.generate_sample(nsample=n)
-
-fig, axes = plt.subplots(2, 3, figsize=(14, 7))
-
-# AR(2)
-axes[0,0].plot(ar2_series[:100], color='steelblue', linewidth=1)
-axes[0,0].set_title('AR(2) Series (first 100 obs)')
-plot_acf( ar2_series, lags=20, ax=axes[0,1], alpha=0.05)
-axes[0,1].set_title('AR(2) — ACF  (expect: decays slowly)')
-plot_pacf(ar2_series, lags=20, ax=axes[0,2], alpha=0.05, method='ywm')
-axes[0,2].set_title('AR(2) — PACF (expect: cuts off at lag 2)')
-
-# MA(2)
-axes[1,0].plot(ma2_series[:100], color='tomato', linewidth=1)
-axes[1,0].set_title('MA(2) Series (first 100 obs)')
-plot_acf( ma2_series, lags=20, ax=axes[1,1], alpha=0.05)
-axes[1,1].set_title('MA(2) — ACF  (expect: cuts off at lag 2)')
-plot_pacf(ma2_series, lags=20, ax=axes[1,2], alpha=0.05, method='ywm')
-axes[1,2].set_title('MA(2) — PACF (expect: decays slowly)')
-
-plt.tight_layout()
-plt.show()
+# 練習：模擬已知過程，驗證型態（注意 ArmaProcess 的 AR 係數要取負號）
+ar2 = ArmaProcess(ar=[1, -0.6, -0.3], ma=[1]).generate_sample(300)    # AR(2)：PACF 在 lag 2 截斷
+ma2 = ArmaProcess(ar=[1], ma=[1, 0.7, 0.4]).generate_sample(300)      # MA(2)：ACF 在 lag 2 截斷
 ```
 
-## Autocorrelation as a Stationarity Check
+![AR vs MA ACF/PACF patterns](src/autocorrelation-ar-ma-patterns.png)
 
-ACF is also used to confirm whether a series is stationary **before modeling**:
+## 用 ACF 檢查定態
 
-```python
-fig, axes = plt.subplots(2, 2, figsize=(13, 7))
+原始 log 序列的 ACF 緩慢衰減、長時間接近 1 → 非定態；差分後應快速下降。若仍緩慢衰減，再差分一次。見 [定態](stationarity.md)。
 
-# Non-stationary: original log series
-plot_acf(np.log(df['Passengers']),       lags=36, ax=axes[0,0])
-axes[0,0].set_title('ACF — Log Series (Non-Stationary)\nExpect: slow decay')
+## Ljung-Box 檢定：殘差還有自相關嗎？
 
-# After first difference
-plot_acf(np.log(df['Passengers']).diff(1).dropna(), lags=36, ax=axes[0,1])
-axes[0,1].set_title('ACF — Log + First Diff\nExpect: faster decay')
+配適模型後，檢查**殘差**是否為白噪音。
 
-# PACF of stationary
-plot_pacf(np.log(df['Passengers']),       lags=36, ax=axes[1,0], method='ywm')
-axes[1,0].set_title('PACF — Log Series (Non-Stationary)')
-
-plot_pacf(np.log(df['Passengers']).diff(1).dropna(), lags=36, ax=axes[1,1], method='ywm')
-axes[1,1].set_title('PACF — Log + First Diff')
-
-plt.tight_layout()
-plt.show()
-```
-
-Warning: Non-stationary series sign in ACF: The ACF decays very slowly, staying near 1 for many lags. After differencing, the ACF should drop much more quickly. If it still decays slowly, difference again.
-
-## Ljung-Box Test: Is There Remaining Autocorrelation?
-
-After fitting a model, use the Ljung-Box test to check whether the **residuals** still have autocorrelation. If they do, the model hasn't captured all the structure.
-
-**H₀: The residuals are white noise (no autocorrelation)**
-**H₁: Some autocorrelation remains**
+- H₀：殘差是白噪音（無自相關）
+- p > 0.05 → ✅ 模型已抓到結構；p < 0.05 → ❌ 還有結構沒建模
 
 ```python
 from statsmodels.stats.diagnostic import acorr_ljungbox
-
-residuals = series  # placeholder — use actual model residuals in practice
-
-lb_result = acorr_ljungbox(residuals, lags=[10, 20], return_df=True)
-print(lb_result)
-# p-value > 0.05 → residuals are white noise ✅
-# p-value < 0.05 → remaining autocorrelation ❌ — model needs adjustment
+acorr_ljungbox(model_result.resid, lags=[10, 20], return_df=True)
 ```
 
-## Key Takeaways
-
-| Concept | Key Point |
-| ---------------------------- | --------------------------------------------------------------------------------- |
-| **ACF = total correlation** | Includes direct and indirect effects of all intermediate lags |
-| **PACF = direct correlation** | Removes the influence of shorter lags — isolates the k-lag direct effect |
-| **AR → read PACF** | AR(p): PACF cuts off sharply after lag p; ACF decays |
-| **MA → read ACF** | MA(q): ACF cuts off sharply after lag q; PACF decays |
-| **Slow-decaying ACF = non-stationary** | Difference the series and check again |
-| **Ljung-Box after fitting** | Check residual ACF is white noise — if not, the model is misspecified |
-
-## ACF Is Structure, Not Causation
-
-Autocorrelation tells you how the series relates to its own past. It does not tell you why that structure exists. Trend leakage, seasonality, under-differencing, and true serial persistence can all produce similar ACF patterns.
+> ACF 描述結構，不說明原因。趨勢殘留、季節性、差分不足、真正的序列持續性都可能產生相似的 ACF。
+>
+> 迴歸殘差有自相關時（Durbin-Watson ≠ 2），一般 OLS 的 SE 會失準，見 [假設檢查](../inferential-statistics/assumption-checks.md#獨立性-independence)。

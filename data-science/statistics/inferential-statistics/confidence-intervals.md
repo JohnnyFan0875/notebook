@@ -1,340 +1,110 @@
-# Confidence Intervals
+[Statistics](../README.md) › [推論統計](README.md) › 信賴區間
 
-A **confidence interval (CI)** provides a range of plausible values for a population parameter, based on sample data. Instead of just saying "our estimate is 5.84 cm," a CI says "we're 95% confident the true value is between 5.71 and 5.97 cm." This communicates both the estimate _and_ the uncertainty.
+# 信賴區間 (Confidence Intervals, CI)
 
-Key point: Why confidence intervals are more useful than p-values: Confidence intervals tell you both the "size" and "precision" of an effect, while p-value only tells you whether the effect is significant. Modern statistics places increasing emphasis on reporting confidence intervals rather than just p-values.
+信賴區間給出母體參數的**合理範圍**，同時表達點估計與不確定性。比起只報 p 值，CI 還告訴你效果的**大小、方向與精確度**。
 
-## The Concept: What Does "95% Confident" Mean?
+$$
+\text{CI} = \text{點估計} \pm \underbrace{\text{臨界值} \times SE}_{\text{誤差界限 (margin of error)}}
+$$
 
-This is one of the most commonly misunderstood ideas in statistics.
+## 「95% 信賴」是什麼意思？
 
-## Interview Fast Answer
+| | 說法 |
+| --- | --- |
+| ✅ 正確 | 若**重複抽樣**並每次建構區間，長期下約 95% 的區間會包含真實參數 |
+| ❌ 錯誤 | 「μ 有 95% 機率落在這個區間」：μ 是固定值，這個區間要嘛包含、要嘛不包含 |
+| ❌ 錯誤 | 「95% 的資料落在這個區間」：那是預測區間 / 參考範圍，不是 CI |
+| ❌ 錯誤 | 「兩組 CI 有重疊 → 沒有顯著差異」：差異的顯著性要看**差值**的 CI |
 
-如果面試官直接問 confidence interval 是什麼，一個夠穩的短答通常是：
+機率描述的是**建構區間的程序**，不是某一個特定區間。
 
-- confidence interval 是對母體參數的 plausible range
-- 它同時表達 point estimate 和 uncertainty
-- `95% CI` 的意思不是「這次區間裡有 95% 機率包含真值」
-- 正確說法是：如果重複抽樣並重複建構區間，長期下約 95% 的區間會包含真實參數
+![100 repeated 95% CIs](src/confidence-intervals-coverage.png)比喻：撒網 100 次，約 95 次網住魚；但任何一次網要嘛有魚、要嘛沒有。
 
-如果被追問為什麼 CI 比只報 p-value 更有用，最值得先講的是：
+> 想要「參數有 95% 機率落在區間內」這種解讀，要用貝氏的 [可信區間 (credible interval)](../bayesian-statistics/posterior-inference.md)。
 
-- p-value 偏向 yes/no decision
-- confidence interval 會同時交代 effect size 和 precision
+## 平均數的 CI
 
-Why CIs work — the CLT connection: When we repeatedly draw samples of size n, the sample means $\bar{x}$ follow an approximately normal distribution (by the Central Limit Theorem). The CI is built from this sampling distribution — it marks the range where the center of that distribution plausibly lies.
+| 情況 | 公式 | 臨界值 |
+| --- | --- | --- |
+| σ 已知（少見） | $\bar{x} \pm z_{\alpha/2}\,\sigma/\sqrt{n}$ | z |
+| σ 未知（**標準情況**） | $\bar{x} \pm t_{\alpha/2,\,n-1}\,s/\sqrt{n}$ | t，df = n − 1 |
 
-Correct interpretation: If we repeated the sampling process many times and constructed a CI each time, 95% of those intervals would contain the true population parameter.
-
-Warning: Incorrect interpretations (very common): - ❌ "There is a 95% probability that μ is in this specific interval." - ❌ "95% of the data falls within this interval." - ❌ "This interval will contain μ 95% of the time." The parameter μ is a fixed (unknown) value — it either is or isn't in any given interval. The probability refers to the _procedure_, not the specific interval.
-
-## Common Interview Traps
-
-- 把 CI 解讀成「資料有 95% 落在這裡」
-- 把 CI 解讀成「這個固定區間有 95% 機率含真值」
-- 只會背公式，不會解釋 interval width 為什麼會隨 `n`、`s`、confidence level 改變
-- 用兩組 CI 是否 overlap 直接判定差異是否顯著
-
-Two analogies for the same idea:
-
-- 🎣 **Fishing net**: cast 100 times into a lake — 95 casts catch the fish (μ). Any single cast either catches it or not.
-- 🎯 **Archery**: shoot 100 arrows, each time drawing a ring around where the arrow lands. 95 rings contain the bullseye — but any single ring either covers it or doesn't.
-
-## Confidence Interval for a Mean
-
-### When σ is known — z-interval (rare in practice)
-
-\[
-CI = \bar{x} \pm z_{\alpha/2} \cdot \frac{\sigma}{\sqrt{n}}
-\]
-
-### When σ is unknown — t-interval (standard case)
-
-\[
-CI = \bar{x} \pm t_{\alpha/2,\, n-1} \cdot \frac{s}{\sqrt{n}}
-\]
-
-| Component | Meaning |
-| --------------- | -------------------------------------------------------------- |
-| x̄ | Sample mean (point estimate) |
-| t\_{α/2, n−1} | Critical value from t-distribution with n−1 degrees of freedom |
-| s / √n | Standard error (SE) |
-| Margin of Error | t \* SE — the ± half-width of the interval |
-
-**Margin of Error (E)** — the maximum expected distance between the sample mean and the true parameter:
-
-\[
-E = \begin{cases} z_{\alpha/2} \times \dfrac{\sigma}{\sqrt{n}} & \text{if } \sigma \text{ is known} \\ t_{\alpha/2,\,n-1} \times \dfrac{s}{\sqrt{n}} & \text{if } \sigma \text{ is unknown} \end{cases}
-\]
-
-So the interval is simply: $\text{CI} = \bar{x} \pm E$
-
-**Common critical values (z) for reference:**
-
-| Confidence Level | α | z\_{α/2} |
-| ---------------- | ---- | -------- |
+| 信賴水準 | α | $z_{\alpha/2}$ |
+| --- | --- | --- |
 | 90% | 0.10 | 1.645 |
 | 95% | 0.05 | 1.960 |
 | 99% | 0.01 | 2.576 |
 
-Tip: Use z when n is large (n > 30) and σ is known or well estimated. In practice, using t from `scipy` is usually safer because it converges to z as n grows. A full comparison appears later in this page.
+> **z vs t**：結構相同，差別只在分母用 σ（已知）或 s（估計）。σ 幾乎永遠未知，**預設用 t**；n 大時 t 自動趨近 z。
 
 ```python
 import numpy as np
 import scipy.stats as stats
 from sklearn.datasets import load_iris
 
-df = load_iris(as_frame=True).frame
-x = df['sepal length (cm)']
+x = load_iris(as_frame=True).frame["sepal length (cm)"]
+n, x_bar, se = len(x), x.mean(), x.std(ddof=1) / np.sqrt(len(x))
 
-n      = len(x)
-x_bar  = x.mean()
-s      = x.std(ddof=1)
-se     = s / np.sqrt(n)
+# 手算
+t_crit = stats.t.ppf(0.975, df=n - 1)
+(x_bar - t_crit * se, x_bar + t_crit * se)
 
-# 95% CI using t-distribution
-alpha  = 0.05
-t_crit = stats.t.ppf(1 - alpha / 2, df=n - 1)
-margin = t_crit * se
+# 一行版
+stats.t.interval(0.95, df=n - 1, loc=x_bar, scale=se)
 
-ci_lower = x_bar - margin
-ci_upper = x_bar + margin
-
-print(f"Sample mean:     {x_bar:.4f}")
-print(f"Standard error:  {se:.4f}")
-print(f"t critical value:{t_crit:.4f}")
-print(f"Margin of error: {margin:.4f}")
-print(f"95% CI:         ({ci_lower:.4f}, {ci_upper:.4f})")
-
-# One-liner using scipy
-ci = stats.t.interval(confidence=0.95, df=n-1, loc=x_bar, scale=se)
-print(f"95% CI (scipy):  ({ci[0]:.4f}, {ci[1]:.4f})")
+# 臨界值速查
+stats.norm.ppf(0.975)          # 雙尾 z = 1.96
+stats.norm.ppf(0.95)           # 單尾 z = 1.645（用於單尾檢定）
 ```
 
-**Simulation: visualizing the CI procedure** — showing that 95% of repeated intervals capture μ:
+## 比例的 CI
 
-```python
-import numpy as np
+Wald 公式：$\hat p \pm z_{\alpha/2}\sqrt{\hat p(1-\hat p)/n}$，需 $n\hat p \ge 10$ 且 $n(1-\hat p) \ge 10$。
 
-# Simulate sampling from a known population to see the CI procedure in action
-np.random.seed(42)
-population = np.random.normal(loc=100, scale=15, size=10_000)
-
-sample_size = 50
-n_samples = 1000
-
-sample_means = [np.mean(np.random.choice(population, size=sample_size, replace=False))
-                for _ in range(n_samples)]
-sample_means = np.array(sample_means)
-
-# The middle 95% of sample means — illustrates the sampling distribution
-lower = np.percentile(sample_means, 2.5)
-upper = np.percentile(sample_means, 97.5)
-
-print(f"Mean of sampling distribution: {sample_means.mean():.2f}  (≈ true μ = 100)")
-print(f"95% range of sample means:     ({lower:.2f}, {upper:.2f})")
-print(f"This is the sampling distribution basis for CI construction")
-```
-
-Tip: This simulation shows _why_ CIs work: the sampling distribution of x̄ is approximately normal (CLT), so the interval $\bar{x} \pm t \cdot SE$ reliably brackets μ across repeated samples.
-
-## Confidence Interval for a Proportion
-
-When the variable of interest is categorical (e.g., proportion of users who clicked), use the **proportion CI**.
-
-\[
-CI = \hat{p} \pm z_{\alpha/2} \cdot \sqrt{\frac{\hat{p}(1-\hat{p})}{n}}
-\]
-
-**Valid when**: n·p̂ ≥ 10 and n·(1−p̂) ≥ 10 (Normal approximation holds)
+| 方法 | 何時用 |
+| --- | --- |
+| Wald（常態近似） | n 大、p̂ 不接近 0 或 1 |
+| **Wilson** | **建議預設**，各種 n 與 p̂ 都表現好 |
+| Clopper-Pearson（exact） | n 很小；較保守 |
 
 ```python
 from statsmodels.stats.proportion import proportion_confint
 
-# Example: 82 out of 150 customers clicked an email
-successes = 82
-n = 150
-
-# Wilson method — more accurate than Normal approximation for small n or extreme p
-ci_lower, ci_upper = proportion_confint(count=successes, nobs=n, alpha=0.05, method='wilson')
-p_hat = successes / n
-
-print(f"Sample proportion p̂ = {p_hat:.4f}")
-print(f"95% CI (Wilson):     ({ci_lower:.4f}, {ci_upper:.4f})")
+proportion_confint(count=82, nobs=150, alpha=0.05, method="wilson")
 ```
 
-Tip: Which method to use for proportion CIs? | Method | When to Use | | --------------- | ------------------------------------------------------ | | Normal (Wald) | Large n, p̂ not too close to 0 or 1 | | Wilson | Recommended default — works well for all n and p̂ | | Clopper-Pearson | Exact method — conservative; good when n is very small |
+## 影響區間寬度的因素
 
-## Factors Affecting Interval Width
+| 因素 | 變化 | CI 寬度 | 直覺 |
+| --- | --- | --- | --- |
+| 樣本數 n | ↑ | ↓ 變窄（∝ 1/√n） | 資料越多越精確 |
+| 信賴水準 | ↑（95 → 99%） | ↑ 變寬 | 要更有把握就得撒更大的網 |
+| 資料變異 s | ↑ | ↑ 變寬 | 越分散越難定位平均 |
 
-| Factor | Change | Effect on CI width | Intuition |
-| -------------------- | ------------- | ------------------ | ------------------------------------------------ |
-| **Sample size (n)** | ↑ Increase | ↓ Narrower | More data → more precise estimates |
-| **Confidence level** | ↑ e.g. 95→99% | ↑ Wider | Higher certainty requires a wider net |
-| **Variability (s)** | ↑ More spread | ↑ Wider | More variable data → harder to pin down the mean |
+## CI 與 p 值的關係
+
+| | p 值 | 信賴區間 |
+| --- | --- | --- |
+| 回答 | 效果是否統計顯著？ | 效果的合理範圍是多少？ |
+| 資訊 | 二元：顯著 / 不顯著 | 大小 + 方向 + 精確度 |
+| 關係 | p < 0.05 ⇔ 95% CI 不包含 H₀ 的值 | 數學上等價 |
+
+> CI 為 [0.001, 0.003] 的結果可能「顯著」但毫無實務意義。兩者都報。
+
+## 視覺化：分組平均數 ± 95% CI
 
 ```python
 import matplotlib.pyplot as plt
-import numpy as np
-import scipy.stats as stats
-
-# Show how CI width changes with sample size
-np.random.seed(42)
-population_mean = 5.84
-population_std  = 0.83
-sample_sizes    = [10, 30, 50, 100, 200, 500]
-
-ci_widths = []
-for n in sample_sizes:
-    se    = population_std / np.sqrt(n)
-    t_crit = stats.t.ppf(0.975, df=n-1)
-    ci_widths.append(2 * t_crit * se)
-
-plt.plot(sample_sizes, ci_widths, marker='o', color='steelblue')
-plt.xlabel('Sample Size (n)')
-plt.ylabel('95% CI Width')
-plt.title('CI Width Decreases as Sample Size Increases')
-plt.grid(True, alpha=0.3)
-plt.show()
-```
-
-## Confidence Intervals vs. p-values
-
-Both are derived from the same calculation, but they convey different things:
-
-| Aspect | p-value | Confidence Interval |
-| ----------------- | ---------------------------------------- | ----------------------------------------------- |
-| **Answers** | Is the effect statistically significant? | What is the plausible range of the effect size? |
-| **Tells you** | Binary: significant or not | Magnitude + direction + precision |
-| **Practical use** | Decision: reject H₀ or not | Interpretation: is the effect meaningful? |
-| **Relation** | p < 0.05 ↔ 95% CI excludes H₀ value | They are mathematically equivalent |
-
-Tip: Modern best practice: Report both. A p-value tells you whether to reject H₀; a CI tells you what the effect actually looks like. A "statistically significant" result with a CI of [0.001, 0.003] may be practically irrelevant.
-
-## A Common Misread: CI Overlap Between Groups
-
-People often compare two group means by eye and conclude:
-
-- "The intervals overlap, so there is no difference."
-- "The intervals do not overlap, so the difference must be significant."
-
-Both shortcuts are unreliable.
-
-Why? Because significance of the **difference** depends on the sampling distribution of the contrast `(mean_1 - mean_2)`, not just on whether two separately computed intervals overlap.
-
-```python
-import numpy as np
-import pandas as pd
-import scipy.stats as stats
 import seaborn as sns
 
-tips = sns.load_dataset("tips").dropna(subset=["total_bill", "day"])
-
-summary = (
-    tips.groupby("day")["total_bill"]
-    .agg(["mean", "std", "count"])
-    .assign(
-        se=lambda d: d["std"] / np.sqrt(d["count"]),
-        tcrit=lambda d: stats.t.ppf(0.975, d["count"] - 1),
-    )
-)
-summary["ci_low"] = summary["mean"] - summary["tcrit"] * summary["se"]
-summary["ci_high"] = summary["mean"] + summary["tcrit"] * summary["se"]
-
-print(summary[["mean", "ci_low", "ci_high"]].round(2))
-```
-
-Tip: Use CIs to communicate effect size and uncertainty, but do not use simple overlap as a substitute for the correct inferential comparison.
-
-## Visualization: Plotting Confidence Intervals
-
-```python
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy.stats as stats
-from sklearn.datasets import load_iris
-
 iris = load_iris(as_frame=True)
-df = iris.frame
-df['species'] = iris.target_names[iris.target]
+df = iris.frame.assign(species=iris.target_names[iris.target])
 
-# Compute mean and 95% CI per species
-results = {}
-for species, group in df.groupby('species'):
-    x = group['sepal length (cm)']
-    n = len(x)
-    mean = x.mean()
-    se = x.std(ddof=1) / np.sqrt(n)
-    t_crit = stats.t.ppf(0.975, df=n-1)
-    results[species] = (mean, t_crit * se)
-
-species_names = list(results.keys())
-means  = [results[s][0] for s in species_names]
-errors = [results[s][1] for s in species_names]
-
-plt.figure(figsize=(7, 4))
-plt.errorbar(species_names, means, yerr=errors, fmt='o', capsize=6,
-             color='steelblue', markersize=8, linewidth=2)
-plt.ylabel('Sepal Length (cm)')
-plt.title('Mean Sepal Length with 95% Confidence Intervals by Species')
-plt.grid(axis='y', alpha=0.3)
+sns.pointplot(data=df, x="species", y="sepal length (cm)", errorbar=("ci", 95),
+              linestyle="none", capsize=0.2)
+plt.title("Mean Sepal Length with 95% CI")
 plt.show()
 ```
 
-## t-score and z-score
-
-The CI formula $\bar{x} \pm \text{critical value} \times SE$ requires a critical value — either a **z** or **t**. Both measure the same thing: how many standard errors the sample mean is from the target value μ.
-
-Key point: Core: z and t have the same structure, the only difference is in the denominator - z uses the known parent standard deviation σ, and t uses the sample estimated s.
-
-### Formulas
-
-|  | z-score | t-score |
-| ---------------- | ---------------------------------------------- | ----------------------------------------- |
-| **Formula** | $z = \dfrac{\bar{x} - \mu}{\sigma / \sqrt{n}}$ | $t = \dfrac{\bar{x} - \mu}{s / \sqrt{n}}$ |
-| **Denominator** | Population SD σ (known) | Sample SD s (estimated) |
-| **Distribution** | Standard normal | t-distribution (heavier tails) |
-| **Use when** | n ≥ 30 and σ known | σ unknown — the typical case |
-
-As $n \to \infty$, the t-distribution converges to the normal distribution, so t and z become interchangeable for large samples.
-
-Tip: Default: always use t. σ is almost never known in practice, and t converges to z automatically as n grows.
-
-### Getting Critical Values
-
-**Two-tailed** (standard for CIs):
-
-```python
-from scipy import stats
-
-alpha = 0.05
-z_crit = stats.norm.ppf(1 - alpha / 2)      # ±1.96
-t_crit = stats.t.ppf(1 - alpha / 2, df=n-1) # slightly wider than z for small n
-```
-
-Common reference values for $z_{\alpha/2}$:
-
-| Confidence Level | α | $z_{\alpha/2}$ |
-| ---------------- | ---- | -------------- |
-| 90% | 0.10 | 1.645 |
-| 95% | 0.05 | 1.960 |
-| 99% | 0.01 | 2.576 |
-
-**One-tailed** (used in hypothesis testing, not CIs):
-
-```python
-z_right = stats.norm.ppf(1 - alpha)  # right-tailed: +1.645
-z_left  = stats.norm.ppf(alpha)      # left-tailed:  −1.645
-```
-
-👉 One-tailed tests are covered in [Null and Alternative Hypotheses](./hypothesis-testing.md#null-and-alternative-hypotheses).
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ------------------------------- | ----------------------------------------------------------------------------------------- |
-| **CI = estimate + uncertainty** | Always pair a point estimate with its interval — never report one without the other |
-| **Correct interpretation** | The procedure captures μ 95% of the time — not a probability about this specific interval |
-| **t vs. z** | Use t in practice; it converges to z for large n and is always safer |
-| **Width trade-offs** | Larger n or lower confidence = narrower CI |
-| **CI vs. p-value** | Equivalent mathematically; CI gives more information about practical significance |
+> 要判斷兩組是否不同，請直接算**差值的 CI**（例如 [兩樣本 t 檢定](statistical-tests.md) 的輸出），不要用目測重疊判斷。

@@ -1,211 +1,89 @@
-# One-Way ANOVA
+[Statistics](../README.md) › [推論統計](README.md) › [ANOVA](anova-overview.md) › 單因子
 
-**One-way ANOVA** tests whether the means of **three or more independent groups** are equal when there is **one categorical grouping factor** and **one numerical outcome**.
+# 單因子變異數分析 (One-Way ANOVA)
 
-Key point: One-way ANOVA is an omnibus test. Its job is to answer "Is there evidence that at least one group mean differs?" It does not, by itself, tell you which groups differ or how large those differences are.
+**一個類別因子、三組以上獨立組別、一個數值結果**時，檢定各組平均數是否相等。
 
-## Why Not Just Run Many t-tests?
+| 條件 | 例子 |
+| --- | --- |
+| 數值結果 | 血壓、表現量、帳單金額 |
+| 一個類別因子，≥ 3 個水準 | 藥物 A / B / C、星期幾 |
+| 組別獨立 | 每位受試者只出現在一組 |
 
-If you compare three groups with pairwise t-tests:
+只有兩組 → t 檢定即可（F = t²）；同一受試者重複量測 → [重複量數 ANOVA](repeated-measures-anova.md)。
 
-- A vs B
-- A vs C
-- B vs C
+**為什麼不直接做很多 t 檢定？** 3 組要做 3 次比較，偽陽性機率累積上升。ANOVA 先控制整體問題的型一錯誤。
 
-you inflate the chance of a false positive. One-way ANOVA controls the overall Type I error rate for the global question before you move to post-hoc comparisons.
+## 假設與邏輯
 
-Tip: ANOVA is usually the correct first step whenever the design is "one factor, three or more groups, numerical outcome".
+| 假設 | 意義 |
+| --- | --- |
+| H₀ | μ₁ = μ₂ = … = μₖ |
+| H₁ | 至少一個平均數不同 |
 
-## When to Use
+把總變異拆成兩部分：
 
-| Requirement | Example |
-| ----------- | ------- |
-| Numerical outcome | exam score, blood pressure, total bill |
-| One categorical factor | treatment A/B/C, department, day of week |
-| Independent groups | each subject appears in only one group |
-| 3 or more levels | more than two means to compare |
+$$
+\underbrace{SS_{total}}_{\text{總變異}} = \underbrace{SS_{between}}_{\text{組平均離總平均多遠}} + \underbrace{SS_{within}}_{\text{組內資料多分散}}
+$$
 
-If you have only two groups, a t-test is the simpler equivalent. If you have repeated measurements on the same subjects, use repeated-measures ANOVA or a mixed model instead.
+| ANOVA 表欄位 | 意義 |
+| --- | --- |
+| Source: Between / Factor | 組別能解釋的變異 |
+| Source: Within / Residual | 組內未解釋的變異 |
+| df | 自由度（組間 k−1；組內 N−k） |
+| SS | 平方和 (sum of squares) |
+| MS | 均方 = SS / df |
+| F | MS_between / MS_within |
 
-## Hypotheses
-
-| Hypothesis | Meaning |
-| ---------- | ------- |
-| $H_0: \mu_1 = \mu_2 = \cdots = \mu_k$ | all group means are equal |
-| $H_1:$ at least one mean differs | not all group means are the same |
-
-ANOVA answers only the global question. After a significant result, the next step is post-hoc testing.
-
-## The Core Logic
-
-ANOVA compares two types of variability:
-
-1. **Between-group variation**: how far group means are from the overall mean
-2. **Within-group variation**: how spread out observations are inside each group
-
-If between-group variation is large relative to within-group variation, the groups are unlikely to all come from the same population mean.
-
-\[
-F = \frac{MS_{between}}{MS_{within}}
-\]
-
-| F value | Interpretation |
-| ------- | -------------- |
-| Around 1 | between-group variation is similar to within-group noise |
-| Much greater than 1 | evidence that at least one mean differs |
-
-## ANOVA Table Anatomy
-
-| Source | Meaning |
-| ------ | ------- |
-| **Between / Factor** | variation explained by group membership |
-| **Within / Residual** | unexplained variation inside groups |
-| **df** | degrees of freedom |
-| **SS** | sum of squares |
-| **MS** | mean square = SS / df |
-| **F** | ratio of explained to unexplained variation |
-| **p-value** | evidence against equal group means |
-
-## Assumptions
-
-| Assumption | What it means | How to check |
-| ---------- | ------------- | ------------ |
-| Independence | observations do not influence each other | study design |
-| Approximate normality within groups | each group's residual pattern is roughly normal | histogram, Q-Q plot |
-| Homogeneity of variance | groups have similar variance | Levene's test, residual plots |
-
-Tip: Independence is the most important assumption. Mild normality violations are often tolerable with moderate sample sizes, but dependence in the data can invalidate the analysis.
-
-## Example with a Built-in Dataset
-
-The example below compares `total_bill` across days in `seaborn`'s built-in `tips` dataset.
+## Python 範例
 
 ```python
-import pandas as pd
+import numpy as np
 import scipy.stats as stats
 import seaborn as sns
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
-tips = sns.load_dataset("tips").dropna(subset=["total_bill", "day"])
+tips = sns.load_dataset("tips")
 
-# scipy version
-groups = [g["total_bill"].to_numpy() for _, g in tips.groupby("day")]
-f_stat, p_value = stats.f_oneway(*groups)
-print(f"scipy one-way ANOVA: F = {f_stat:.4f}, p = {p_value:.4f}")
+# scipy：只回傳 F 與 p
+groups = [g["total_bill"].to_numpy() for _, g in tips.groupby("day", observed=True)]
+stats.f_oneway(*groups)
 
-# statsmodels version gives the ANOVA table
+# statsmodels：完整 ANOVA 表
 model = smf.ols("total_bill ~ C(day)", data=tips).fit()
-anova_table = sm.stats.anova_lm(model, typ=2)
-print(anova_table)
+anova = sm.stats.anova_lm(model, typ=2)
+
+# 效果量 η² = SS_between / SS_total
+eta2 = anova.loc["C(day)", "sum_sq"] / anova["sum_sq"].sum()
+
+# 變異數不等時：Welch's ANOVA
+import pingouin as pg
+pg.welch_anova(data=tips, dv="total_bill", between="day")
 ```
 
-## Reading the Result
+| η² | 解讀 |
+| --- | --- |
+| 0.01 | 小 |
+| 0.06 | 中 |
+| 0.14 | 大 |
 
-Suppose the ANOVA p-value is below 0.05:
+η² 回答「總變異有多少比例由組別解釋」，與顯著性是不同問題。小樣本時 η² 會高估，可改報 ω²，見 [事後檢定與效果量](post-hoc-effect-size.md)。
 
-- you reject the claim that all means are equal
-- you still do **not** know which pairs differ
-- you should move to post-hoc testing such as Tukey HSD
+## 解讀與下一步
 
-If the p-value is above 0.05:
+| 結果 | 意義 | 下一步 |
+| --- | --- | --- |
+| p < 0.05，變異數相近 | 至少一組不同 | Tukey HSD |
+| p < 0.05，變異數不等 | 同上 | Welch's ANOVA + Games-Howell |
+| p ≥ 0.05 | 證據不足（**不是**證明相等） | 討論檢定力與不確定性 |
+| 嚴重非常態 / Ordinal | — | [Kruskal-Wallis](../nonparametric-methods/kruskal-wallis.md) |
 
-- you do not have strong evidence that the group means differ
-- this is **not** proof that the means are identical
-- the study may still be underpowered
-
-## Effect Size
-
-ANOVA should not be reported with a p-value alone. Add an effect size such as **eta squared** or **omega squared**.
-
-\[
-\eta^2 = \frac{SS_{between}}{SS_{total}}
-\]
-
-```python
-ss_between = anova_table.loc["C(day)", "sum_sq"]
-ss_within = anova_table.loc["Residual", "sum_sq"]
-ss_total = ss_between + ss_within
-
-eta2 = ss_between / ss_total
-print(f"eta² = {eta2:.4f}")
-```
-
-Rule-of-thumb interpretation:
-
-| eta² | Interpretation |
-| ---- | -------------- |
-| 0.01 | small |
-| 0.06 | medium |
-| 0.14 | large |
-
-Tip: The effect size answers "How much of the total variation is explained by group membership?" That is a different question from statistical significance.
-
-## Visualizing Group Means
-
-```python
-import matplotlib.pyplot as plt
-import numpy as np
-
-summary = (
-    tips.groupby("day")["total_bill"]
-    .agg(["mean", "std", "count"])
-    .assign(se=lambda d: d["std"] / np.sqrt(d["count"]))
-)
-summary["tcrit"] = stats.t.ppf(0.975, summary["count"] - 1)
-summary["err"] = summary["tcrit"] * summary["se"]
-
-plt.figure(figsize=(7, 4))
-plt.errorbar(
-    x=summary.index,
-    y=summary["mean"],
-    yerr=summary["err"],
-    fmt="o",
-    capsize=6,
-    color="steelblue"
-)
-plt.ylabel("Mean total bill")
-plt.title("Group Means with 95% Confidence Intervals")
-plt.tight_layout()
-plt.show()
-```
-
-Tip: This plot is good for communication, but do not use visual CI overlap as a substitute for the formal ANOVA or post-hoc analysis.
-
-## What to Do After ANOVA
-
-| Situation | Next step |
-| --------- | --------- |
-| p < 0.05 and variances roughly equal | Tukey HSD |
-| p < 0.05 and variances unequal | Welch ANOVA + Games-Howell |
-| severe non-normality or ordinal outcome | Kruskal-Wallis |
-| repeated observations on same subject | repeated-measures ANOVA or mixed model |
-
-## Common Mistakes
-
-| Mistake | Why it's a problem | Better approach |
-| ------- | ------------------ | --------------- |
-| Many pairwise t-tests without correction | inflates false positives | ANOVA first, then post-hoc |
-| Reporting ANOVA p-value only | hides effect magnitude | add eta² / omega² |
-| Ignoring unequal variance | F test can mislead | use Welch ANOVA |
-| Treating non-significant ANOVA as proof of equality | absence of evidence is not evidence of absence | discuss uncertainty and power |
-
-## Reporting Template
+## 報告範本
 
 ```text
-A one-way ANOVA showed that mean total_bill differed across days,
-F(3, 240) = 3.45, p = .018, eta² = .041.
-Follow-up Tukey tests indicated that Saturday was higher than Thursday,
-while the other pairwise contrasts were not statistically significant.
+單因子 ANOVA 顯示平均帳單金額在不同星期有差異，
+F(3, 240) = 3.45，p = .018，η² = .041。
+Tukey 事後檢定顯示星期六高於星期四，其餘兩兩比較未達顯著。
 ```
-
-## Key Takeaways
-
-| Concept | Key point |
-| ------- | --------- |
-| **One factor, 3+ groups** | This is the core use case for one-way ANOVA |
-| **Omnibus test** | ANOVA tells whether at least one mean differs, not which ones |
-| **F ratio** | Compares between-group variation to within-group noise |
-| **Assumptions matter** | Especially independence and equal variance |
-| **Post-hoc testing** | Required after a significant global result |
-| **Effect size** | Always report more than the p-value |

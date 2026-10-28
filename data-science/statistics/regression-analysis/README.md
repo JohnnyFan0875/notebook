@@ -1,110 +1,36 @@
-# Regression Analysis
+[Statistics](../README.md) › 迴歸分析
 
-**Regression analysis** models the relationship between variables to understand how changes in one or more **predictor variables** (X) relate to changes in an **outcome variable** (Y). Unlike correlation, regression gives you a predictive equation and quantifies the effect of each variable.
+# 迴歸分析 (Regression Analysis)
 
-Key point: Regression is used to build predictive equations and estimate how strongly predictors relate to an outcome. It goes beyond correlation, but it still does not prove causation by itself.
+建立結果變數 Y 與一或多個預測變數 X 的關係。比相關係數多了「方程式」與「每個變數的效果」，但仍不自動代表因果。
 
-## The Core Mindset
+## 三種目的，不要混在一起
 
-Regression is easiest to learn when you separate three jobs that people often mix together:
+| 目的 | 問題 | 重視 |
+| --- | --- | --- |
+| 描述 (description) | X 與 Y 在這份資料中如何相關？ | 係數、圖 |
+| 預測 (prediction) | X 能多準地預測新資料的 Y？ | 測試集誤差、[交叉驗證](../../machine-learning/workflow/cross-validation.md) |
+| 解釋 (explanation) | 調整其他變數後，每個係數代表什麼？ | 係數 + CI、研究設計、[干擾因子](../experimental-design/confounding-bias.md) |
 
-1. **description**: how are X and Y associated in this dataset?
-2. **prediction**: how well can X help predict Y for new observations?
-3. **explanation**: after adjusting for other variables, what does each coefficient mean?
+## 依結果變數選模型
 
-These goals overlap, but they are not identical. A model that predicts well is not automatically easy to interpret, and a model with interpretable coefficients is not automatically causal.
+| 結果變數 | 模型 | 筆記 |
+| --- | --- | --- |
+| 連續，一個 X | 簡單線性迴歸 | [Simple Linear Regression](simple-linear-regression.md) |
+| 連續，多個 X | 多元線性迴歸 | [Multiple Linear Regression](multiple-linear-regression.md) |
+| 二元 (0/1) | 邏輯斯迴歸 | [Logistic Regression](logistic-regression.md) |
+| 計數 (0, 1, 2, …) | Poisson / 負二項迴歸 | [GLM 與計數模型](glm-count-models.md) |
+| 重複量測 / 群集 / 批次 | 混合效應模型 | [Mixed-Effects Models](mixed-effects-models.md) |
+| 存活時間（有設限） | Cox 模型 | [存活分析](../survival-analysis/cox-ph-model.md) |
+| 很多預測變數（p 大） | Ridge / Lasso | [ML: Regularization](../../machine-learning/foundations/regularization.md) |
 
-## Why This Order?
+診斷（共線性、殘差、影響點）的深入內容見 [多變量：假設與診斷](../multivariate-analysis/assumptions-diagnostics.md)。
 
-The sections follow a natural progression from the simplest case to more complex models:
+## 常見解讀陷阱
 
-```
-Two continuous variables? → Simple Linear Regression
-Multiple predictors?      → Multiple Linear Regression
-Binary outcome?           → Logistic Regression
-```
-
-Before fitting any regression model, you should already have done **descriptive statistics** and **bivariate analysis** (scatter plots, correlation) to understand your data.
-
-## Overview of Topics
-
-| Section | Level | Key Questions Answered |
-| -------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------- |
-| [**Simple Linear Regression**](./simple-linear-regression.md) | Foundation | How does X predict Y? What is the best-fit line? |
-| [**Multiple Linear Regression**](./multiple-linear-regression.md) | Intermediate | How do multiple X variables jointly predict Y? |
-| [**Logistic Regression**](./logistic-regression.md) | Intermediate | How do predictors relate to a binary outcome (Yes/No)? |
-
-## What's Inside Each Section
-
-### Simple Linear Regression
-
-- The regression equation: Y = β₀ + β₁X + ε
-- Ordinary Least Squares (OLS): what it minimizes and why
-- Interpreting intercept (β₀) and slope (β₁)
-- Model fit: R², Residual Standard Error
-- Key assumptions and how to check them (residual plots, Q–Q plot)
-
-### Multiple Linear Regression
-
-- Extending to multiple predictors: Y = β₀ + β₁X₁ + β₂X₂ + … + ε
-- Interpreting coefficients (holding other variables constant)
-- Adjusted R² vs R²
-- Multicollinearity: VIF and why it matters
-- Model selection: forward / backward / stepwise
-- Categorical predictors: dummy coding
-
-### Logistic Regression
-
-- When to use: binary outcomes (0/1, Yes/No, Pass/Fail)
-- The logit transformation and odds ratio interpretation
-- Model fit: Log-likelihood, AIC, pseudo-R²
-- Classification metrics: Confusion matrix, Accuracy, Precision, Recall, AUC-ROC
-- Assumptions and diagnostics
-
-## Visualization Quick Reference
-
-| Chart | Best For |
-| --------------------------- | ---------------------------------------------------- |
-| Scatter plot + regression line | Simple linear regression fit |
-| Residuals vs Fitted plot | Checking linearity and homoscedasticity |
-| Q–Q plot of residuals | Checking normality of residuals |
-| Coefficient plot | Comparing effect sizes in multiple regression |
-| Confusion matrix heatmap | Evaluating logistic regression classification |
-| ROC curve | Comparing model discrimination ability |
-| Correlation heatmap | Detecting multicollinearity before model fitting |
-
-## Key Assumptions Overview
-
-| Assumption | Simple LR | Multiple LR | Logistic |
-| --------------------- | --------- | ----------- | -------- |
-| Linearity | ✅ | ✅ | ✅ (log-odds) |
-| Independence | ✅ | ✅ | ✅ |
-| Homoscedasticity | ✅ | ✅ | ❌ (not required) |
-| Normality of residuals | ✅ | ✅ | ❌ (not required) |
-| No multicollinearity | — | ✅ | ✅ |
-
-Key point: Always check assumptions after fitting the model, not before. The assumptions are about the residuals, not the raw data.
-
-## A Recommended Reading Order
-
-If you are working on an actual dataset, this reading and analysis order is usually effective:
-
-1. start with scatter plots, distributions, and missingness checks
-2. fit the simplest defensible model first
-3. inspect residuals and diagnostics
-4. only then add complexity such as more predictors or classification thresholds
-
-Tip: Many regression problems become easier when you first write down the exact prediction question, target variable, and what each row of the dataset represents.
-
-## Common Interpretation Traps
-
-| Trap | Better interpretation |
-| ---- | --------------------- |
-| "A significant coefficient proves causation" | Significance only shows association under the model and assumptions |
-| "High R² means the model is good" | Also inspect residuals, generalization, and whether the form makes sense |
-| "A non-significant coefficient means no relationship exists" | It may reflect low power, collinearity, noise, or misspecification |
-| "Logistic regression coefficient equals probability change" | Logistic coefficients act on log-odds; convert to odds ratios or predicted probabilities |
-
-## Key Takeaway
-
-Regression analysis answers: "How can I predict Y, and how much does each X contribute?" Always visualize your data first, check assumptions after fitting, and remember that a good R² does not guarantee a good model.
+| 陷阱 | 正確解讀 |
+| --- | --- |
+| 係數顯著 → 因果 | 只代表在模型假設下有關聯 |
+| R² 高 → 模型好 | 還要看殘差、泛化能力、函數形式是否合理 |
+| 係數不顯著 → 沒有關係 | 可能是檢定力不足、共線性、雜訊或模型設定錯誤 |
+| 邏輯斯係數 = 機率變化 | 係數作用在 log-odds；轉成 odds ratio 或預測機率 |

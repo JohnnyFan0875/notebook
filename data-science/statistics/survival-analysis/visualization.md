@@ -1,214 +1,82 @@
-# Visualization in Survival Analysis
+[Statistics](../README.md) › [存活分析](README.md) › 視覺化
 
-This note covers survival-analysis graphics such as Kaplan-Meier curves, log-log plots, and Cox result displays. If you need quick exploratory plotting straight from a dataframe, use [Pandas: Visualization](../../python-foundations/pandas/visualization.md).
+# 存活分析視覺化 (Visualization)
 
-Visualization is a key component of survival analysis.
-It transforms statistical estimates into interpretable graphics — enabling researchers to evaluate survival patterns, check model assumptions, and communicate findings effectively.
+視覺化不是裝飾：KM 曲線是所有存活分析的起點、log-log 圖是 PH 假設的視覺檢查、森林圖是 Cox 結果的標準呈現。每種圖都有特定的診斷或溝通目的。從 DataFrame 快速作圖見 [Pandas: Visualization](../../python-foundations/pandas/visualization.md)。
 
-Key point: Visualization is not decoration: the KM curve is the starting point for all survival analyses; the log-log plot is a visual inspection of the pH hypothesis; the Forest plot is the standard presentation of Cox results. Each type of diagram has a specific diagnostic or communication purpose.
+## 圖表總覽
 
-This section covers the most common visualization techniques used in clinical and biomedical survival studies, with examples in **R** and **Python**.
+| 圖 | 目的 | 怎麼讀 | 詳見 |
+| --- | --- | --- | --- |
+| **Kaplan-Meier 曲線** | 各組隨時間的存活機率 | 事件 → 往下跳；設限 → 刻度標記；陰影為 CI | [Kaplan-Meier](kaplan-meier.md) |
+| **風險表** (at-risk table) | 各時點仍在追蹤中的人數 | 人數少的區段估計不穩 | [Kaplan-Meier](kaplan-meier.md) |
+| 累積風險圖 (Nelson-Aalen) | 累積風險隨時間 | 指數分配下為直線；各組大致成比例 → PH 合理 | [存活與風險函數](survival-hazard-functions.md) |
+| log-log 圖 | 檢查 PH 假設 | 平行 → PH 成立；交叉 → 違反 | [模型診斷](diagnostics.md) |
+| **森林圖** (forest plot) | Cox 模型各共變數的 HR 與 95% CI | 方塊 = HR、橫線 = CI、HR = 1 的垂直線 = 無效果 | [Cox 模型](cox-ph-model.md) |
+| 調整後存活曲線 | 控制共變數後，各組的預測存活 | 比原始 KM 更能反映調整後的差異 | [Cox 模型](cox-ph-model.md) |
+| Schoenfeld 殘差圖 | 係數是否隨時間改變 | LOWESS 水平 → PH 成立 | [模型診斷](diagnostics.md) |
+| Martingale 殘差圖 | 連續共變數的函數形式 | 非水平 → 考慮轉換或樣條 | [模型診斷](diagnostics.md) |
+| Deviance 殘差圖 | 離群個體 | \|值\| > 2 值得檢查 | [模型診斷](diagnostics.md) |
+| 校準圖 | 預測 vs 觀察存活 | 貼近 45° 線 = 校準良好 | [模型診斷](diagnostics.md#校準與驗證) |
+| 累積發生曲線 (CIF) | 競爭風險下各事件的累積發生率 | 取代 1 − KM | [核心概念](core-concepts.md#競爭風險-competing-risks) |
+| Heatmap | 依分層 / 風險分數 / 基因表現群的存活機率 | 多世代、omics 分析常用 | — |
 
-## Kaplan–Meier Curves
+Nelson-Aalen 累積風險估計：$\hat H(t) = \sum_{t_i \le t} d_i / n_i$。
 
-### Purpose
+## Python
 
-To display the estimated **survival probability over time** for one or more groups.
+```python
+import matplotlib.pyplot as plt
+from lifelines import KaplanMeierFitter, NelsonAalenFitter, CoxPHFitter
+from lifelines.plotting import add_at_risk_counts
+from lifelines.statistics import logrank_test, proportional_hazard_test
 
-### Key Features
+# KM + CI + 風險表 + log-rank p（df 含 time、status、group）
+fig, ax = plt.subplots(figsize=(8, 5))
+fits = []
+for g, sub in df.groupby("group"):
+    k = KaplanMeierFitter().fit(sub["time"], sub["status"], label=str(g))
+    k.plot_survival_function(ax=ax, ci_show=True, show_censors=True)
+    fits.append(k)
+add_at_risk_counts(*fits, ax=ax)
+a, b = [sub for _, sub in df.groupby("group")]
+p = logrank_test(a["time"], b["time"], a["status"], b["status"]).p_value
+ax.set(title=f"log-rank p = {p:.3f}", xlabel="Time (months)", ylabel="Survival probability")
+plt.tight_layout(); plt.show()
 
-- Stepwise curve reflecting survival probability $ \hat{S}(t) $
-- Vertical drops at event times
-- Tick marks (or crosses) indicating censored observations
-- Confidence intervals (optional shaded bands)
-- Group comparisons annotated with log-rank p-values
+# 累積風險
+NelsonAalenFitter().fit(df["time"], df["status"]).plot(); plt.show()
 
-### Example in R
+# 森林圖 + PH 檢定
+cph = CoxPHFitter().fit(df, duration_col="time", event_col="status")
+cph.plot(hazard_ratios=True); plt.show()
+proportional_hazard_test(cph, df, time_transform="rank").print_summary()
+```
+
+## R（survminer）
 
 ```r
-library(survival)
-library(survminer)
-
+library(survival); library(survminer)
 fit <- survfit(Surv(time, status) ~ treatment, data = clinical_data)
 
-ggsurvplot(fit,
-           data = clinical_data,
-           pval = TRUE,
-           conf.int = TRUE,
-           risk.table = TRUE,
-           surv.median.line = "hv",
-           xlab = "Time (months)",
-           ylab = "Survival probability",
-           ggtheme = theme_minimal())
+ggsurvplot(fit, data = clinical_data, pval = TRUE, conf.int = TRUE, risk.table = TRUE,
+           surv.median.line = "hv", xlab = "Time (months)", ggtheme = theme_minimal())
+ggsurvplot(fit, fun = "cumhaz", data = clinical_data)       # 累積風險
+ggforest(cox_model, data = clinical_data)                     # 森林圖
+plot(cox.zph(cox_model))                                      # Schoenfeld 殘差
+# 校準：rms::calibrate()
 ```
 
-### Example in Python
+## 發表級圖表建議
 
-```python
-from lifelines import KaplanMeierFitter
-import matplotlib.pyplot as plt
+| 元素 | 建議 |
+| --- | --- |
+| 顏色 | 跨圖一致（如處理 A = 藍、B = 紅）；考慮色盲友善配色 |
+| 座標軸 | 標示時間單位（月、年）；y 軸從 0 到 1 |
+| 信賴區間 | 適當時以半透明陰影呈現 |
+| 圖例 | 清楚標示組別與樣本數 |
+| 標註 | 中位存活時間、log-rank p 值、HR（95% CI） |
+| 風險表 | **放在 KM 圖下方** |
+| 時間範圍 | 截在風險集仍合理的時間點，避免過度強調不穩定的尾端 |
 
-kmf = KaplanMeierFitter()
-kmf.fit(durations, event_observed, label="Treatment A")
-
-kmf.plot_survival_function(ci_show=True)
-plt.title("Kaplan–Meier Survival Curve")
-plt.xlabel("Time (months)")
-plt.ylabel("Survival probability")
-plt.show()
-```
-
-Interpretation:
-
-- The separation between curves indicates potential survival differences.
-- The number-at-risk table below the plot clarifies how many subjects remain under observation at each time point.
-
-## Cumulative Hazard Plots
-
-### Purpose
-
-To visualize the **accumulated risk over time**, or to assess the **proportional hazards assumption** in Cox models.
-
-The cumulative hazard is estimated via the **Nelson–Aalen estimator**:
-
-\[
-\hat{H}(t) = \sum_{t_i \le t} \frac{d_i}{n_i}
-\]
-
-Parallel cumulative hazard curves between groups suggest that the proportional hazards assumption is reasonable.
-
-#### Example in R
-
-```r
-ggsurvplot(fit, fun = "cumhaz", data = clinical_data)
-```
-
-#### Example in Python
-
-```python
-from lifelines import NelsonAalenFitter
-
-naf = NelsonAalenFitter()
-naf.fit(durations, event_observed, label="Treatment A")
-
-naf.plot()
-plt.title("Cumulative Hazard Plot")
-plt.xlabel("Time (months)")
-plt.ylabel("Cumulative hazard")
-plt.show()
-```
-
-## Forest Plots
-
-### Purpose
-
-To summarize **hazard ratios (HRs)** from Cox regression models, showing effect sizes and confidence intervals for multiple covariates.
-
-#### Example in R
-
-```r
-ggforest(cox_model, data = clinical_data)
-```
-
-Each line represents a covariate:
-
-- The **box** marks the HR estimate.
-- The **horizontal line** shows the 95% confidence interval.
-- A **vertical line at HR = 1** indicates no effect.
-
-#### Example in Python
-
-```python
-from lifelines import CoxPHFitter
-
-cph = CoxPHFitter()
-cph.fit(df, duration_col="time", event_col="status")
-cph.plot()
-plt.title("Forest Plot of Cox Model Hazard Ratios")
-plt.show()
-```
-
-## Residual and Diagnostic Plots
-
-Diagnostic plots help evaluate **model fit** and **assumption validity**.
-
-| Plot Type | Purpose | Notes |
-| ------------------------ | -------------------------- | ------------------------------------------ |
-| **Schoenfeld residuals** | Test proportional hazards | Random scatter → assumption holds |
-| **Martingale residuals** | Assess covariate linearity | Non-random pattern → consider splines |
-| **Deviance residuals** | Detect outliers | Large values indicate influential subjects |
-
-#### Example in R
-
-```r
-cox.zph(cox_model)      # Test proportional hazards
-plot(cox.zph(cox_model))  # Schoenfeld residual plot
-```
-
-#### Example in Python
-
-```python
-from lifelines.statistics import proportional_hazard_test
-
-results = proportional_hazard_test(cph, df, time_transform='rank')
-results.print_summary()
-```
-
-## Calibration and Validation Plots
-
-### Purpose
-
-To compare **predicted vs. observed survival probabilities** and assess **model calibration**.
-
-- A perfectly calibrated model aligns predictions with the 45° diagonal.
-- Deviations suggest over- or under-estimation of risk.
-
-**In R:**
-Use `rms::calibrate()` for calibration curves.
-
-**In Python:**
-Use `scikit-survival` functions such as `calibration_curve`.
-
-These are often combined with **internal validation** (bootstrapping or cross-validation) to evaluate model generalizability.
-
-## Risk Tables and Heatmaps
-
-### Risk Tables
-
-Show the number of individuals **still at risk** at specified time intervals — an essential annotation below Kaplan–Meier plots.
-
-### Heatmaps
-
-Display **survival probabilities** across strata or risk scores (e.g., gene-expression clusters).
-They are particularly useful in **omics-driven** or **multi-cohort** survival analyses.
-
-## Publication-Ready Figures: Best Practices
-
-| Element | Recommendation |
-| ------------------------ | ------------------------------------------------------------------------------------- |
-| **Color** | Use consistent palette across analyses (e.g., Treatment A = blue, Treatment B = red). |
-| **Axis labels** | Include time units (months, years). |
-| **Confidence intervals** | Display as shaded ribbons when relevant. |
-| **Legends** | Clearly indicate groups and sample sizes. |
-| **Annotations** | Include median survival and log-rank p-value. |
-| **Risk table** | Add below survival plots for transparency. |
-
-## Summary
-
-- **Kaplan–Meier curves**: visualize group survival over time.
-- **Cumulative hazard plots**: check proportional hazards assumption.
-- **Forest plots**: summarize hazard ratios with confidence intervals.
-- **Residual plots**: test model fit and detect violations.
-- **Calibration and heatmaps**: communicate predictive accuracy and subgroup effects.
-
-Effective visualization bridges statistical modeling and clinical interpretation — transforming numerical results into insights that guide real-world decisions.
-
-## Plotting Priority
-
-If you can only show a few visuals, prioritize:
-
-1. Kaplan–Meier curve with confidence bands
-2. risk table
-3. hazard-ratio forest plot if a Cox model is fitted
-
-Tip: A minimalist survival plot without a risk table is often less informative than a slightly denser plot with the right context.
+> 只能放幾張圖時，優先順序：(1) KM 曲線 + CI；(2) 風險表；(3) 有配適 Cox 時的 HR 森林圖。沒有風險表的極簡存活圖，通常比稍微擁擠但有正確脈絡的圖資訊更少。

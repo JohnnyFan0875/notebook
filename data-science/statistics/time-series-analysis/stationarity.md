@@ -1,249 +1,90 @@
-# Stationarity
+[Statistics](../README.md) › [時間序列](README.md) › 定態
 
-**Stationarity** is the most important concept in classical time series analysis. Most models — ARIMA, VAR, cointegration — are built on the assumption that the series is stationary. Applying them to non-stationary data produces unreliable estimates and spurious results.
+# 定態 (Stationarity)
 
-Key point: Why stationarity is so important: The statistical properties (mean, variation) of non-stationary series change over time, which means that past patterns cannot be used to predict the future. What's even more dangerous is that when you perform regression on two non-stationary series, even if there is no relationship between the two, you may still get a very high R² and a significant p-value - this is the "spurious regression" problem.
+ARIMA、VAR 等多數古典模型都假設序列是定態的。非定態序列的統計性質隨時間改變，過去的規律無法用來預測未來。
 
-## What Is Stationarity?
+> **偽迴歸 (spurious regression)**：兩個無關的非定態序列（例如都有上升趨勢）做迴歸，也可能得到很高的 R² 與顯著 p 值。
 
-A time series is **strictly stationary** if its joint probability distribution does not change over time. In practice, we use the weaker and more testable condition of **weak (covariance) stationarity**:
+## 定義：弱定態 (weak / covariance stationarity)
 
-| Condition | Meaning |
-| ----------------------------- | ---------------------------------------------------- |
-| **Constant mean** | E[Yₜ] = μ for all t |
-| **Constant variance** | Var(Yₜ) = σ² for all t |
-| **Constant autocovariance** | Cov(Yₜ, Yₜ₋ₖ) depends only on lag k, not on t |
+| 條件 | 意義 |
+| --- | --- |
+| 平均固定 | E[Yₜ] = μ |
+| 變異固定 | Var(Yₜ) = σ² |
+| 自共變異只依落後期數 | Cov(Yₜ, Yₜ₋ₖ) 只與 k 有關，與 t 無關 |
 
-Tip: The key intuition: a stationary series looks the same regardless of when you observe it. It has no trend, no systematic change in variance, and no seasonality (in the strict sense).
+直覺：不論從哪個時間點看，序列都「長得一樣」：沒有趨勢、沒有變異改變、沒有季節性。
 
-## Visual Identification
+| 序列 | 定態？ |
+| --- | --- |
+| 白噪音 (white noise) | ✅ |
+| 隨機漫步 (random walk) $y_t = y_{t-1} + \varepsilon_t$ | ❌ 隨機趨勢，差分後定態 |
+| 確定性趨勢 + 雜訊 | ❌ 去趨勢後定態 |
+| 變異隨時間變大 | ❌ log / Box-Cox |
 
-Always plot the series before running any formal test. A visual check reveals most non-stationarity instantly.
+![Stationary vs non-stationary series](src/stationarity-examples.png)
+
+## 檢定：ADF + KPSS 一起用
+
+| 檢定 | H₀ | H₁ |
+| --- | --- | --- |
+| **ADF** (Augmented Dickey-Fuller) | 有單根 (unit root)，**非定態** | 定態 |
+| **KPSS** | **定態** | 非定態 |
+
+兩者虛無假設相反，搭配使用較可靠（ADF 檢定力偏低，常無法拒絕單根）。
+
+| ADF | KPSS | 結論 |
+| --- | --- | --- |
+| 拒絕 H₀ | 不拒絕 H₀ | ✅ 定態 |
+| 不拒絕 | 拒絕 | ❌ 非定態（單根）→ 差分 |
+| 拒絕 | 拒絕 | ⚠️ 趨勢定態 (trend-stationary) → 去趨勢後再測 |
+| 不拒絕 | 不拒絕 | ⚠️ 無法判斷 → 看圖 |
 
 ```python
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
-np.random.seed(42)
-n = 200
-t = np.arange(n)
-
-# Stationary: white noise
-stationary    = np.random.normal(0, 1, n)
-
-# Non-stationary: random walk (no drift)
-random_walk   = np.cumsum(np.random.normal(0, 1, n))
-
-# Non-stationary: trend + noise
-trend_series  = 0.5 * t + np.random.normal(0, 5, n)
-
-# Non-stationary: growing variance
-hetero        = np.random.normal(0, 1 + 0.05 * t, n)
-
-fig, axes = plt.subplots(2, 2, figsize=(12, 7))
-
-axes[0, 0].plot(stationary,   color='seagreen',  linewidth=1)
-axes[0, 0].set_title('✅ Stationary — White Noise')
-
-axes[0, 1].plot(random_walk,  color='steelblue', linewidth=1)
-axes[0, 1].set_title('❌ Non-Stationary — Random Walk')
-
-axes[1, 0].plot(trend_series, color='tomato',    linewidth=1)
-axes[1, 0].set_title('❌ Non-Stationary — Deterministic Trend')
-
-axes[1, 1].plot(hetero,       color='orange',    linewidth=1)
-axes[1, 1].set_title('❌ Non-Stationary — Growing Variance')
-
-for ax in axes.flat:
-    ax.axhline(0, color='black', linestyle='--', alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-```
-
-## Formal Tests for Stationarity
-
-Visual inspection is necessary but not sufficient. Use statistical tests to confirm.
-
-### ADF Test (Augmented Dickey-Fuller)
-
-**H₀: The series has a unit root (non-stationary)**
-**H₁: The series is stationary**
-
-```python
-from statsmodels.tsa.stattools import adfuller
-import pandas as pd
+from statsmodels.tsa.stattools import adfuller, kpss
 
 url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
-df = pd.read_csv(url, parse_dates=['Month'], index_col='Month').asfreq('MS')
-df.columns = ['Passengers']
+y = pd.read_csv(url, parse_dates=["Month"], index_col="Month").asfreq("MS")["Passengers"]
 
-def adf_report(series, label='Series'):
-    result = adfuller(series.dropna(), autolag='AIC')
-    print(f"\n{'='*40}")
-    print(f"ADF Test — {label}")
-    print(f"{'='*40}")
-    print(f"Test Statistic : {result[0]:.4f}")
-    print(f"p-value        : {result[1]:.4f}")
-    print(f"Lags Used      : {result[2]}")
-    print(f"Critical Values:")
-    for key, val in result[4].items():
-        print(f"   {key}: {val:.4f}")
-    conclusion = "✅ Stationary (reject H₀)" if result[1] < 0.05 else "❌ Non-Stationary (fail to reject H₀)"
-    print(f"Conclusion: {conclusion}")
+def stationarity_report(s):
+    s = s.dropna()
+    adf_p = adfuller(s, autolag="AIC")[1]
+    kpss_p = kpss(s, regression="c", nlags="auto")[1]
+    return {"ADF p": round(adf_p, 4), "KPSS p": round(kpss_p, 4)}
 
-adf_report(df['Passengers'], 'Original Series')
-adf_report(np.log(df['Passengers']).diff(1), 'Log First Difference')
+stationarity_report(y)                    # 原始序列：非定態
+stationarity_report(np.log(y).diff())     # log + 一階差分
 ```
 
-Warning: ADF is biased toward rejecting stationarity (i.e., biased toward finding a unit root). Always pair it with KPSS for a more complete picture.
+## 轉換成定態
 
-### KPSS Test (Kwiatkowski-Phillips-Schmidt-Shin)
-
-**H₀: The series is stationary (trend-stationary)**
-**H₁: The series has a unit root (non-stationary)**
-
-Tip: KPSS has the opposite null hypothesis from ADF. This is intentional — using both together gives a more reliable conclusion.
-
-```python
-from statsmodels.tsa.stattools import kpss
-
-def kpss_report(series, label='Series', regression='c'):
-    result = kpss(series.dropna(), regression=regression, nlags='auto')
-    print(f"\n{'='*40}")
-    print(f"KPSS Test — {label}")
-    print(f"{'='*40}")
-    print(f"Test Statistic : {result[0]:.4f}")
-    print(f"p-value        : {result[1]:.4f}")
-    print(f"Critical Values:")
-    for key, val in result[3].items():
-        print(f"   {key}: {val:.4f}")
-    conclusion = "❌ Non-Stationary (reject H₀)" if result[1] < 0.05 else "✅ Stationary (fail to reject H₀)"
-    print(f"Conclusion: {conclusion}")
-
-kpss_report(df['Passengers'], 'Original Series')
-kpss_report(np.log(df['Passengers']).diff(1).dropna(), 'Log First Difference')
-```
-
-### Interpreting ADF + KPSS Together
-
-| ADF Result | KPSS Result | Conclusion |
-| ---------------- | ---------------- | ------------------------------------------------ |
-| Reject H₀ (p<0.05) | Fail to reject H₀ (p>0.05) | ✅ **Stationary** |
-| Fail to reject H₀ | Reject H₀ | ❌ **Non-Stationary** (unit root) |
-| Reject H₀ | Reject H₀ | ⚠️ **Trend-stationary** — detrend and retest |
-| Fail to reject H₀ | Fail to reject H₀ | ⚠️ **Inconclusive** — check visually |
-
-## Making a Series Stationary
-
-### Strategy 1: Differencing (for stochastic trends / random walks)
-
-\[
-\Delta y_t = y_t - y_{t-1}
-\]
-
-```python
-import numpy as np
-
-log_passengers = np.log(df['Passengers'])
-
-# First difference removes linear trend
-diff_1 = log_passengers.diff(1)
-
-# Second difference — rarely needed; only if first diff still non-stationary
-diff_2 = log_passengers.diff(1).diff(1)
-
-adf_report(diff_1.dropna(), 'Log + First Difference')
-```
-
-Warning: Don't over-difference. If d=1 achieves stationarity, don't use d=2. Over-differencing introduces unnecessary MA structure and makes models harder to interpret. A sign of over-differencing: the ACF of the differenced series starts at a large *negative* lag-1 value.
-
-### Strategy 2: Log Transformation (for growing variance)
-
-Applies when the variance of the series increases proportionally with its level (multiplicative structure).
-
-```python
-import matplotlib.pyplot as plt
-
-fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-
-df['Passengers'].plot(             ax=axes[0], title='Original — Growing Variance',  color='steelblue')
-np.log(df['Passengers']).plot(     ax=axes[1], title='Log Transform — Stabilized Variance', color='tomato')
-
-plt.tight_layout()
-plt.show()
-```
-
-### Strategy 3: Box-Cox Transformation (generalized power transform)
-
-The Box-Cox transform finds the optimal power λ to stabilize variance:
-
-\[
-y_t^{(\lambda)} = \begin{cases} \frac{y_t^\lambda - 1}{\lambda} & \lambda \neq 0 \\ \log(y_t) & \lambda = 0 \end{cases}
-\]
-
-| λ value | Transformation |
-| ------- | ------------------ |
-| 1 | No transformation |
-| 0.5 | Square root |
-| 0 | Log (natural) |
-| −1 | Reciprocal |
+| 問題 | 轉換 | 備註 |
+| --- | --- | --- |
+| 隨機趨勢 | 一階差分 Δyₜ = yₜ − yₜ₋₁ | d = 1 能處理多數情況 |
+| 仍非定態 | 二階差分 | 很少需要 |
+| 季節性 | 季節差分 yₜ − yₜ₋ₘ | 見 [SARIMA](seasonality-sarima.md) |
+| 變異隨水準增加 | log | 乘法結構 |
+| 不確定用哪個冪次 | Box-Cox（λ = 1 不轉換、0.5 開根號、0 log、−1 倒數） | `scipy.stats.boxcox` |
 
 ```python
 from scipy.stats import boxcox
-
-transformed, lam = boxcox(df['Passengers'])
-print(f"Optimal λ = {lam:.4f}")
-# λ ≈ 0 → log is optimal; λ ≈ 0.5 → square root is optimal
-```
-
-## Choosing the Right Number of Differences (d)
-
-| Method | How It Works |
-| ------------------------------- | ---------------------------------------------------------------------- |
-| **ADF + KPSS sequence** | Difference once, retest; repeat until stationary |
-| **ACF inspection** | Slow-decaying ACF → non-stationary; after differencing should drop off quickly |
-| **`pmdarima.arima.ndiffs()`** | Automated test-based selection of d |
-
-```python
 from pmdarima.arima import ndiffs
 
-d = ndiffs(np.log(df['Passengers']), test='adf')
-print(f"Recommended d = {d}")
+_, lam = boxcox(y)                         # λ ≈ 0 → log 最適合
+ndiffs(np.log(y), test="adf")              # 自動建議差分次數 d
 ```
 
-## Complete Stationarity Workflow
+> **不要過度差分**：d = 1 已定態就不要用 d = 2。過度差分會引入不必要的 MA 結構；徵兆是差分後 ACF 在 lag 1 出現很大的**負值**（接近 −0.5）。
+
+## 流程
 
 ```
-Plot raw series
-      ↓
-Growing variance? → Log transform (or Box-Cox)
-      ↓
-Run ADF + KPSS
-      ↓
-Both say stationary? → ✅ Done
-      ↓
-Non-stationary → Apply first difference
-      ↓
-Retest ADF + KPSS
-      ↓
-Still non-stationary → Second difference (rare)
-      ↓
-Visually inspect ACF — should decay quickly
+畫圖 → 變異變大？→ log / Box-Cox → ADF + KPSS → 定態？→ 完成
+                                              ↓ 否
+                                    一階差分 → 再檢定 → 看 ACF 是否快速衰減
 ```
 
-## Key Takeaways
-
-| Concept | Key Point |
-| --------------------------------- | -------------------------------------------------------------------------------- |
-| **Stationarity = stable statistics** | Constant mean, variance, and autocovariance structure over time |
-| **ADF and KPSS have opposite H₀** | Use both together for reliable conclusions |
-| **Differencing removes trend** | d=1 handles most stochastic trends; d=2 is rare |
-| **Log stabilizes variance** | Use when seasonal amplitude grows proportionally with level |
-| **Don't over-difference** | d should be the minimum needed to achieve stationarity |
-| **Spurious regression is real** | Regressing two non-stationary series produces meaningless R² — always test first |
-
-## The Real Goal of Stationarity Work
-
-The goal is not merely to "pass ADF". The goal is to obtain a series whose mean and dependence structure are stable enough for the chosen model family to learn from.
+目標不是「通過 ADF」，而是讓序列的平均與相依結構夠穩定，讓模型學得到。

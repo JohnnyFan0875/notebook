@@ -1,139 +1,36 @@
-# Time Series Analysis
+[Statistics](../README.md) › 時間序列
 
-**Time series analysis** is the study of data collected sequentially over time. Unlike cross-sectional data, time series observations are **not independent** — what happened yesterday influences what happens today. This temporal dependence is both the defining challenge and the greatest source of insight.
+# 時間序列分析 (Time Series Analysis)
 
-Key point: In time series, order matters. You cannot shuffle observations or ignore temporal dependence, because the whole point is to learn what the past says about the future.
+依時間順序蒐集的資料。觀測值**不獨立**：昨天影響今天。這種時間相依性既是挑戰，也是能夠預測的原因。順序不能打亂。
 
-## Why This Order?
-
-The sections follow a natural time series workflow:
+## 建議順序
 
 ```
-Understand the structure of time series data
-        ↓
-Decompose: Trend + Seasonality + Residual
-        ↓
-Check stationarity — transform if needed
-        ↓
-Model the dependence structure (AR, MA, ARIMA)
-        ↓
-Handle seasonality (SARIMA, STL)
-        ↓
-Evaluate forecasts and diagnose residuals
+認識資料 → 分解（趨勢 + 季節 + 殘差）→ 定態檢查與轉換 → ACF / PACF → ARIMA → SARIMA → 預測評估
 ```
 
-This order matters because **most time series models assume stationarity**. Skipping decomposition and stationarity testing before modeling is one of the most common mistakes in practice.
+多數古典模型假設**定態 (stationarity)**，跳過分解與定態檢查是最常見的錯誤。
 
-## Overview of Topics
+## 筆記
 
-| Section | Level | Key Questions Answered |
-| ------------------------------------------------------------------------ | ----------- | -------------------------------------------------------------------- |
-| [**Time Series Fundamentals**](./fundamentals.md) | Foundation | What is a time series? What are its components? How do I load and plot it? |
-| [**Decomposition**](./decomposition.md) | Foundation | How do I separate trend, seasonality, and noise? |
-| [**Stationarity**](./stationarity.md) | Core | Is my series stationary? How do I test and transform it? |
-| [**Autocorrelation: ACF & PACF**](./autocorrelation.md) | Core | How does the past correlate with the present? How do I read ACF/PACF plots? |
-| [**ARIMA Models**](./arima.md) | Modeling | How do I fit AR, MA, and ARIMA models? How do I choose orders? |
-| [**Seasonality & SARIMA**](./seasonality-sarima.md) | Modeling | How do I handle regular seasonal patterns? |
-| [**Forecast Evaluation**](./forecast-evaluation.md) | Evaluation | How do I measure forecast accuracy? How do I diagnose residuals? |
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [基礎](fundamentals.md) | 四種成分、DatetimeIndex、resample、rolling、lag | 時間序列資料怎麼整理？ |
+| [分解](decomposition.md) | 加法 / 乘法、Classical、STL | 趨勢與季節性各佔多少？ |
+| [定態](stationarity.md) | ADF、KPSS、差分、log、Box-Cox | 序列穩定嗎？怎麼轉換？ |
+| [自相關](autocorrelation.md) | ACF、PACF、Ljung-Box | 過去與現在有多相關？ |
+| [ARIMA](arima.md) | AR、MA、ARIMA、階數選擇 | 怎麼建模相依結構？ |
+| [季節性與 SARIMA](seasonality-sarima.md) | SARIMA、STL + ARIMA、Prophet | 怎麼處理季節性？ |
+| [預測評估](forecast-evaluation.md) | MAE、RMSE、MASE、時間序列交叉驗證 | 預測準不準？ |
 
-## What's Inside Each Section
+## 常用工具
 
-### Time Series Fundamentals
+| 套件 | 用途 |
+| --- | --- |
+| `pandas` | 時間索引、resample、rolling |
+| `statsmodels` | ARIMA、SARIMAX、分解、ADF / KPSS |
+| `pmdarima` | 自動選擇 ARIMA 階數 |
+| `prophet` | 趨勢 + 季節性自動建模 |
 
-- What distinguishes time series from cross-sectional data
-- The four components: Trend, Seasonality, Cyclicality, Irregular
-- Loading, indexing, and resampling with pandas DatetimeIndex
-- Plotting conventions and visual inspection
-
-### Decomposition
-
-Two decomposition models:
-
-| Model | Formula | When to Use |
-| --------------- | --------------------------------- | ----------------------------------- |
-| **Additive** | Y = Trend + Seasonal + Residual | Seasonal variation is roughly constant |
-| **Multiplicative** | Y = Trend × Seasonal × Residual | Seasonal variation grows with level |
-
-Methods: Classical decomposition, STL (Seasonal-Trend using Loess)
-
-### Stationarity
-
-- What stationarity means (constant mean, variance, autocorrelation)
-- Why it matters for ARIMA and most classical models
-- Tests: ADF, KPSS
-- Transformations: differencing, log transform, Box-Cox
-
-### Autocorrelation: ACF & PACF
-
-The two key diagnostic plots for time series:
-
-| Plot | What It Shows | Use For |
-| -------- | -------------------------------------------------- | --------------------------- |
-| **ACF** | Correlation of series with its own lags | Identifying MA order (q) |
-| **PACF** | Partial correlation after removing intermediate lags | Identifying AR order (p) |
-
-### ARIMA Models
-
-The core classical time series framework:
-
-| Component | Name | Controls |
-| --------- | --------------------- | ---------------------------- |
-| **AR(p)** | Autoregressive | How many past values to use |
-| **I(d)** | Integrated (differencing) | How many times to difference |
-| **MA(q)** | Moving Average | How many past errors to use |
-
-### Seasonality & SARIMA
-
-- SARIMA(p,d,q)(P,D,Q)[m]: adding seasonal AR, I, and MA terms
-- STL decomposition for flexible seasonality handling
-- Prophet for automatic trend + seasonality modeling
-
-### Forecast Evaluation
-
-Error metrics and diagnostic tools:
-
-| Metric | Full Name | Interpretation |
-| -------- | ------------------------------ | ------------------------------ |
-| **MAE** | Mean Absolute Error | Average absolute deviation |
-| **RMSE** | Root Mean Squared Error | Penalizes large errors heavily |
-| **MAPE** | Mean Absolute Percentage Error | Scale-free; easy to communicate |
-| **AIC / BIC** | Information Criteria | Model selection (lower = better) |
-
-## Visualization Quick Reference
-
-| Chart | Best For |
-| ------------------------- | ----------------------------------------------------- |
-| Line plot | Raw series — trend and seasonality inspection |
-| Decomposition plot | Separating trend, seasonal, and residual components |
-| ACF plot | Identifying moving average order; checking stationarity |
-| PACF plot | Identifying autoregressive order |
-| Forecast plot with CI | Communicating predictions with uncertainty |
-| Residual diagnostic plot | Checking model assumptions after fitting |
-
-## Tools Used in This Module
-
-| Library | Purpose |
-| ---------------- | ---------------------------------------------------- |
-| `pandas` | Time series indexing, resampling, rolling statistics |
-| `numpy` | Numerical computation |
-| `matplotlib` / `seaborn` | Visualization |
-| `statsmodels` | ARIMA, SARIMA, decomposition, ADF/KPSS tests |
-| `pmdarima` | Auto ARIMA order selection |
-| `prophet` | Additive trend + seasonality modeling (Meta) |
-| `sklearn` | Error metrics for forecast evaluation |
-
-## Key Takeaway
-
-Time series analysis answers: "What patterns exist in this sequence, and what will likely come next?" Always visualize before modeling, always test stationarity before fitting ARIMA, and always evaluate on held-out data — never on the training period.
-
-## Deep-Study Priorities
-
-The most useful path through this module is:
-
-1. visualize the raw series
-2. understand components and stationarity
-3. read ACF / PACF and differencing
-4. fit ARIMA / SARIMA only after preprocessing
-5. evaluate on a chronological split
-
-Tip: In time series, preprocessing choices are part of the model, not a separate cleanup stage.
+> 相關應用：[Finance: Autocorrelation](../../finance/autocorrelation.md)、[時間序列異常偵測](../../machine-learning/unsupervised-learning/anomaly-detection/time-series-anomalies.md)。

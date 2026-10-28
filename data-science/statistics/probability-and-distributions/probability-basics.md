@@ -1,245 +1,110 @@
-# Probability Basics
+[Statistics](../README.md) › [機率與分配](README.md) › 機率基礎
 
-**Probability** is a number between 0 and 1 that expresses how likely an event is to occur. It is the mathematical language for reasoning under uncertainty.
+# 機率基礎 (Probability Basics)
 
-## Three Interpretations of Probability
+機率是 0 到 1 之間的數字，表示事件發生的可能性。
 
-| Interpretation  | Definition                                                        | Example                                              |
-| --------------- | ----------------------------------------------------------------- | ---------------------------------------------------- |
-| **Classical**   | Equal likelihood — count favorable outcomes / total outcomes      | Probability of rolling a 3 on a fair die = 1/6       |
-| **Frequentist** | Long-run relative frequency of an event over many repeated trials | Flip a coin 10,000 times; heads appears ~50%         |
-| **Subjective**  | Degree of personal belief, based on available evidence            | "I think there's a 70% chance it will rain tomorrow" |
+## 三種詮釋
 
-In practice, most statistics you'll encounter uses the **frequentist** interpretation — probability is defined by what would happen if you repeated an experiment many times.
+| 詮釋 | 定義 | 例子 |
+| --- | --- | --- |
+| 古典 (classical) | 有利結果數 ÷ 總結果數（各結果等可能） | 骰到 3 的機率 = 1/6 |
+| 頻率學派 (frequentist) | 重複無限多次後的長期相對次數 | 擲 10,000 次硬幣，正面約 50% |
+| 主觀 / 貝氏 (subjective / Bayesian) | 根據現有證據的信念程度 | 「明天 70% 會下雨」 |
 
-## Core Terminology
+多數傳統統計使用頻率學派詮釋；兩者比較見 [貝氏 vs 頻率學派](../bayesian-statistics/bayesian-vs-frequentist.md)。
 
-| Term                 | Definition                         | Example                      |
-| -------------------- | ---------------------------------- | ---------------------------- |
-| **Experiment**       | Any process with uncertain outcome | Rolling a die                |
-| **Sample Space (S)** | Set of all possible outcomes       | S = {1, 2, 3, 4, 5, 6}       |
-| **Event (E)**        | A subset of the sample space       | E = {2, 4, 6} (rolling even) |
-| **Probability P(E)** | Likelihood of event E occurring    | P(even) = 3/6 = 0.5          |
-| **Complement (Eᶜ)**  | All outcomes NOT in E              | Eᶜ = {1, 3, 5}               |
+## 基本名詞與規則
 
-**Basic probability rules:**
+| 名詞 | 定義 | 例子（擲骰） |
+| --- | --- | --- |
+| 樣本空間 (sample space, S) | 所有可能結果 | {1, 2, 3, 4, 5, 6} |
+| 事件 (event, E) | 樣本空間的子集合 | 偶數 {2, 4, 6} |
+| 餘事件 (complement, Eᶜ) | 不在 E 中的結果 | {1, 3, 5} |
+| 聯集 (union, A ∪ B) | A **或** B 至少一個發生 | 偶數或 > 4 |
+| 交集 (intersection, A ∩ B) | A **且** B 都發生 | 偶數且 > 4 |
+
+| 聯集 | 交集 | 餘事件 | 互斥 |
+| --- | --- | --- | --- |
+| ![Union](src/probability-venn-union.svg) | ![Intersection](src/probability-venn-intersection.svg) | ![Complement](src/probability-venn-complement.svg) | ![Mutually exclusive](src/probability-venn-mutually-exclusive.svg) |
+
+| 規則 | 公式 | 特例 |
+| --- | --- | --- |
+| 範圍 | $0 \le P(E) \le 1$，$P(S)=1$ | — |
+| 餘事件法則 (complement rule) | $P(E^c) = 1 - P(E)$ | 「至少一次」通常用 1 − P(一次都沒有) 算 |
+| 加法法則 (addition rule) | $P(A \cup B) = P(A) + P(B) - P(A \cap B)$ | 互斥時 $P(A \cap B)=0$ |
+| 乘法法則 (multiplication rule) | $P(A \cap B) = P(A)\,P(B \mid A)$ | 獨立時 $P(A \cap B)=P(A)P(B)$ |
+
+## 條件機率 (Conditional Probability)
 
 $$
-0 \leq P(E) \leq 1
+P(A \mid B) = \frac{P(A \cap B)}{P(B)}
 $$
 
-$$
-P(S) = 1
-$$
+直覺：已知 B 發生，就把樣本空間「縮小」到 B，再看 A 在其中佔多少。
+
+### 獨立 vs 互斥
+
+| 概念 | 定義 | 意義 |
+| --- | --- | --- |
+| 獨立 (independent) | $P(A \mid B) = P(A)$ | B 不提供 A 的任何資訊，**可以同時發生** |
+| 互斥 (mutually exclusive) | $P(A \cap B) = 0$ | **不能同時發生** |
+
+兩個機率都 > 0 的互斥事件**一定不獨立**：知道 B 發生，就知道 A 沒發生。
+
+## 全機率定律 (Law of Total Probability)
+
+若 B₁…Bₙ 互斥且涵蓋整個樣本空間：
 
 $$
-P(E^c) = 1 - P(E)
+P(A) = \sum_i P(A \mid B_i)\,P(B_i)
 $$
+
+例：機台 1 產出 60%、不良率 2%；機台 2 產出 40%、不良率 5% → $P(\text{不良}) = 0.6(0.02) + 0.4(0.05) = 0.032$。
+
+## 貝氏定理 (Bayes' Theorem)
+
+$$
+P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)}
+$$
+
+| 項 | 名稱 | 意義 |
+| --- | --- | --- |
+| $P(A)$ | 先驗 (prior) | 看到證據前的信念 |
+| $P(B \mid A)$ | 概似 (likelihood) | 若 A 為真，看到 B 的機率 |
+| $P(B)$ | 證據 (evidence) | 看到 B 的總機率（用全機率定律算） |
+| $P(A \mid B)$ | 後驗 (posterior) | 看到 B 之後更新的信念 |
+
+**經典例子：篩檢陽性**
+
+盛行率 1%、敏感度 (sensitivity) 95%、偽陽性率 (false positive rate) 5%。驗出陽性，真的有病的機率？
 
 ```python
-# Simple probability calculation
-outcomes = [1, 2, 3, 4, 5, 6]
-even = [2, 4, 6]
+prior = 0.01          # 盛行率 P(D)
+sens  = 0.95          # P(+ | D)
+fpr   = 0.05          # P(+ | 非 D)
 
-p_even = len(even) / len(outcomes)
-p_odd  = 1 - p_even  # complement rule
-
-print(f"P(even) = {p_even:.3f}")
-print(f"P(odd)  = {p_odd:.3f}")
+p_pos = sens * prior + fpr * (1 - prior)   # 全機率定律
+ppv   = sens * prior / p_pos               # 貝氏定理
+print(f"P(D | +) = {ppv:.3f}")             # ≈ 0.161
 ```
 
-## Combining Events
+> **基礎率 (base rate) 很重要**：檢驗再準，疾病罕見時，陽性者大多仍是偽陽性。
+>
+> - 這裡的 $P(D \mid +)$ 就是 ML 分類中的 **precision / PPV**，敏感度就是 **recall**，見 [Confusion Metrics](../../machine-learning/evaluation/confusion-metrics.md)。
+> - 同樣的邏輯解釋了為什麼在不平衡資料上 precision 會很低，見 [Class Imbalance](../../machine-learning/evaluation/class-imbalance.md)。
+> - 完整的貝氏推論見 [貝氏定理（貝氏統計）](../bayesian-statistics/bayes-theorem.md)。
 
-### Union and Intersection
+## 用模擬驗證公式
 
-| Operation        | Symbol | Meaning                          | Example                          |
-| ---------------- | ------ | -------------------------------- | -------------------------------- |
-| **Union**        | A ∪ B  | A **or** B occurs (at least one) | Rolling even **or** rolling > 4  |
-| **Intersection** | A ∩ B  | A **and** B both occur           | Rolling even **and** rolling > 4 |
-| **Complement**   | Aᶜ     | A does **not** occur             | Not rolling even                 |
-
-| Union                                           | Intersection                                                  | Complement                                                |
-| ----------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
-| ![Union venn](./src/probability-venn-union.svg) | ![Intersection venn](./src/probability-venn-intersection.svg) | ![Complement venn](./src/probability-venn-complement.svg) |
-
-### Addition Rule
-
-$$
-P(A \cup B) = P(A) + P(B) - P(A \cap B)
-$$
-
-**Special case — Mutually Exclusive Events:**
-If A and B cannot both happen, then P(A ∩ B) = 0, so:
-
-$$
-P(A \cup B) = P(A) + P(B)
-$$
-
-![Mutually exclusive venn diagram](./src/probability-venn-mutually-exclusive.svg)
-
-```python
-# Example: die rolling
-# A = rolling even {2,4,6}, B = rolling > 4 {5,6}
-p_A   = 3/6   # P(even)
-p_B   = 2/6   # P(> 4)
-
-p_AandB = 1/6 # 1/6 {6}
-p_AorB = p_A + p_B - p_AandB # 4/6 {2,4,5,6}
-```
-
-### Multiplication Rule
-
-$$
-P(A \cap B) = P(A) \times P(B|A)
-$$
-
-- $P(B|A)$: After A has happened, what is the probability that B also happens.
-
-**Special case — Independent Events:**
-If A and B are independent (one doesn't affect the other):
-
-$$
-P(A \cap B) = P(A) \times P(B)
-$$
-
-```python
-# Two independent coin flips
-p_heads = 0.5
-p_two_heads = p_heads * p_heads  # independent events
-print(f"P(HH) = {p_two_heads:.3f}")  # 0.25
-```
-
-## Conditional Probability
-
-The probability of A **given** that B has already occurred.
-
-$$
-P(A|B) = \frac{P(A \cap B)}{P(B)}
-$$
-
-**Tip:**
-
-- Conditional probability is to recalculate the probability of A after reducing the sample space under the premise that "B is known to occur". Think of it as "zooming in" on the subset of the sample space where B is true, then asking how often A also occurs within that subset.
-
-```python
-# Example: drawing cards
-# P(King | face card drawn)?
-# Face cards = Jack, Queen, King (3 per suit × 4 suits = 12)
-# Kings = 4
-
-p_king_and_face = 4/52   # P(King AND face card) — all kings are face cards
-p_face          = 12/52  # P(face card)
-
-p_king_given_face = p_king_and_face / p_face
-print(f"P(King | Face card) = {p_king_given_face:.3f}")  # 0.333
-```
-
-### Independence vs Mutual Exclusivity
-
-| Concept                | Definition                                              | Implication                     |
-| ---------------------- | ------------------------------------------------------- | ------------------------------- |
-| **Independent**        | $P(A \mid B)=P(A)$<br>B provides no information about A | They can occur at the same time |
-| **Mutually Exclusive** | $P(A \cap B)=0$<br>they cannot both occur               | If B occurs, A did not occur    |
-
-If two events are mutually exclusive and both have non-zero probability, they cannot be independent — knowing one happened tells you the other didn't.
-
-## Law of Total Probability
-
-If events B₁, B₂, ..., Bₙ are mutually exclusive and cover the entire sample space:
-
-$$
-P(A) = \sum_{i=1}^{n} P(A|B_i) \cdot P(B_i)
-$$
-
-```python
-# Example: Factory quality control
-# Two machines: Machine 1 produces 60% of items, Machine 2 produces 40%
-# Defect rate: Machine 1 = 2%, Machine 2 = 5%
-
-p_m1 = 0.60; p_defect_given_m1 = 0.02
-p_m2 = 0.40; p_defect_given_m2 = 0.05
-
-p_defect = p_m1 * p_defect_given_m1 + p_m2 * p_defect_given_m2
-print(f"P(defect) = {p_defect:.4f}")  # 0.0320
-```
-
-## Bayes' Theorem
-
-Bayes' Theorem allows you to **update a prior belief** when new evidence arrives.
-
-$$
-P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)}
-$$
-
-| Term        | Meaning               | Description                                        |
-| ----------- | --------------------- | -------------------------------------------------- |
-| **P(A)**    | Prior probability     | Your initial belief about A before seeing evidence |
-| **P(B\|A)** | Likelihood            | How likely you'd see B if A were true              |
-| **P(B)**    | Evidence              | Overall probability of observing B                 |
-| **P(A\|B)** | Posterior probability | Updated belief about A after seeing evidence B     |
-
-**Classic Example — Medical Test:**
-
-A disease affects 1% of the population. A test is 95% accurate (sensitivity = 95%, false positive rate = 5%).
-**If you test positive, what is the probability you actually have the disease?**
-
-```python
-p_disease          = 0.01   # prior: 1% of population has disease
-p_positive_given_disease  = 0.95   # sensitivity
-p_positive_given_no_disease = 0.05 # false positive rate
-p_no_disease       = 1 - p_disease
-
-# P(positive) using total probability law
-p_true_positive  = p_positive_given_disease * p_disease
-p_false_positive = p_positive_given_no_disease * p_no_disease
-p_positive       = p_true_positive + p_false_positive
-
-# Bayes' Theorem
-p_disease_given_positive = p_true_positive / p_positive
-
-print(f"P(positive)                = {p_positive:.4f}")
-print(f"P(disease | positive test) = {p_disease_given_positive:.4f}")  # ~16%
-```
-
-**Note:**
-
-- Even with a 95% accurate test, if the disease is rare (1%), a positive result only means ~16% chance of actually having it.
-- This is why **base rates** matter.
-
-## From Formula to Simulation
-
-Probability rules give the exact answer when the sample space is simple. When the system becomes complicated, a useful habit is to **approximate probability empirically** by repeated simulation and compare the result back to the formula.
-
-Example: the probability of getting at least one head in three fair coin flips is
-
-$$
-1 - P(\text{all tails}) = 1 - \left(\frac{1}{2}\right)^3 = \frac{7}{8} = 0.875
-$$
+公式複雜時，可以用重複隨機抽樣近似機率，再跟公式比對。
 
 ```python
 import numpy as np
 
 rng = np.random.default_rng(42)
-n_trials = 200_000
-
-# 1 = heads, 0 = tails
-flips = rng.integers(0, 2, size=(n_trials, 3))
-p_at_least_one_head = (flips.sum(axis=1) >= 1).mean()
-
-print(f"Simulated P(at least one head) = {p_at_least_one_head:.4f}")
-print("Exact probability              = 0.8750")
+flips = rng.integers(0, 2, size=(200_000, 3))     # 擲 3 次硬幣，重複 20 萬回
+(flips.sum(axis=1) >= 1).mean()                   # ≈ 0.875 = 1 − (1/2)^3
 ```
 
-This is the basic idea of **Monte Carlo simulation**: estimate a probability by repeated random sampling. For a fuller treatment, see [Monte Carlo Simulation](./monte-carlo-simulation.md).
-
-## Key Takeaways
-
-| Concept                               | Key Point                                                                  |
-| ------------------------------------- | -------------------------------------------------------------------------- |
-| **Probability range**                 | Always between 0 and 1; \(P(S)=1\)                                         |
-| **Complement rule**                   | \(P(A^c)=1-P(A)\) often easier than computing \(P(A)\) directly          |
-| **Addition rule**                     | Subtract the intersection to avoid double-counting                         |
-| **Multiplication rule**               | For independent events: \(P(A \cap B)=P(A)\times P(B)\)                    |
-| **Conditional probability**           | \(P(A\mid B)\) updates the sample space — \(B\) becomes the new “universe” |
-| **Independence ≠ Mutual exclusivity** | These are opposite concepts — don't confuse them                           |
-| **Bayes' Theorem**                    | Prior belief + new evidence → updated belief; base rate matters enormously |
+這就是 [蒙地卡羅模擬](monte-carlo-simulation.md) 的基本概念。

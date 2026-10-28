@@ -1,297 +1,110 @@
-# Sample Size & Statistical Power
+[Statistics](../README.md) › [實驗設計](README.md) › 樣本數與檢定力
 
-One of the most important — and most neglected — steps in experimental design is determining **how many observations you need**. Too few and you miss real effects; too many and you waste resources.
+# 樣本數與檢定力 (Sample Size & Statistical Power)
 
-Key point: Why is it necessary to calculate the number of samples before collecting data: If it is later found that the number of samples is insufficient, the experiment can only be redone. P-hacking by optional stopping is a serious research misbehavior that can inflate Type 1 errors. Sample number calculation must be completed before starting the experiment.
+樣本太少會錯過真實效果；太多會浪費資源。樣本數必須在**蒐集資料前**計算：事後發現不足只能重做，而「不顯著就再多收一點」的 optional stopping 會膨脹型一錯誤。
 
-## The Error Framework: α, β, and Power
+α、β、power 的定義與型一 / 型二錯誤表見 [假設檢定](../inferential-statistics/hypothesis-testing.md#型一與型二錯誤-type-i--type-ii-errors)。慣例 α = 0.05、power = 0.80；高風險情境用 α = 0.01，探索性研究可放寬到 0.10。
 
-When you run a hypothesis test, there are four possible outcomes:
+## 樣本數的四個輸入
 
-|  | H₀ Is True (no real effect) | H₀ Is False (real effect exists) |
-| ------------------------ | ----------------------------- | ---------------------------------- |
-| **Reject H₀** | ❌ Type I Error (α) | ✅ Correct (Power = 1−β) |
-| **Fail to reject H₀** | ✅ Correct | ❌ Type II Error (β) |
+給定其中三個就能解出第四個：
 
-| Symbol | Definition | Typical Value |
-| ------------ | ---------------------------------------------------------------- | ------------- |
-| **α** | Probability of rejecting H₀ when it is actually true (false positive) | 0.05 |
-| **β** | Probability of failing to reject H₀ when it is actually false (false negative) | 0.20 |
-| **Power (1−β)** | Probability of correctly detecting a real effect | 0.80 |
+| 輸入 | 對所需 n 的影響 |
+| --- | --- |
+| **效果量**（最重要） | 越小 → n 越大（∝ 1/d²） |
+| α | 越嚴格 → n 越大 |
+| 目標 power | 越高 → n 越大 |
+| 樣本數 n | — |
 
-Tip: The α = 0.05 convention is arbitrary. Use α = 0.01 in high-stakes applications (e.g., drug approval) or when multiple tests increase false positive risk. Use α = 0.10 in exploratory research where missing real effects is costly. The significance level of 0.05 is just a convention and should be determined based on the research context and the cost of errors.
+其他會增加 n 的因素：母體變異 σ 越大、雙尾檢定、各組不等大小（平衡設計最有效率）、多重比較（每個檢定的 α 更嚴）、預期流失率。
 
-## Effect Size
+## 效果量 (Effect Size)
 
-Effect size quantifies the **magnitude** of a difference or relationship — separate from whether it is statistically significant. It is the most important input to power calculations.
+| 指標 | 用於 | 公式 | 小 | 中 | 大 |
+| --- | --- | --- | --- | --- | --- |
+| Cohen's d | 兩組平均數 | (μ₁ − μ₂) / σ_pooled | 0.2 | 0.5 | 0.8 |
+| Cohen's f | ANOVA | σ_means / σ_within | 0.1 | 0.25 | 0.4 |
+| Cohen's w | 卡方 | √Σ(p₁ − p₀)² / p₀ | 0.1 | 0.3 | 0.5 |
+| Cohen's h | 兩比例 | 2·arcsin√p₁ − 2·arcsin√p₂ | 0.2 | 0.5 | 0.8 |
+| r | 相關 | Pearson r | 0.1 | 0.3 | 0.5 |
 
-### Common Effect Size Measures
+> Cohen 的小 / 中 / 大是脫離情境的預設值。醫學上「小」效果（每千人少 1 人死亡）可能極重要。**先定義實務上有意義的最小效果**（MDE），再據此計算 n；為一個小到不重要的效果規劃檢定力是浪費。效果量的估計來源：先導研究、文獻、或領域上的最小有意義差異。
 
-| Measure | Used For | Formula | Small | Medium | Large |
-| ---------- | -------------------------------- | ------------------------------------ | ----- | ------ | ----- |
-| **Cohen's d** | Comparing two means | d = (μ₁ − μ₂) / σ_pooled | 0.2 | 0.5 | 0.8 |
-| **Cohen's f** | ANOVA (multiple groups) | f = σ_means / σ_within | 0.1 | 0.25 | 0.4 |
-| **Cohen's w** | Chi-square tests | Based on effect in contingency table | 0.1 | 0.3 | 0.5 |
-| **r** | Correlation | Pearson or point-biserial r | 0.1 | 0.3 | 0.5 |
+**經驗公式**（雙尾 α = 0.05、power = 0.80、兩組等大）：每組 $n \approx 16 / d^2$。d = 0.5 → 64、d = 0.2 → 約 400。
 
-Warning: Cohen's benchmarks (small/medium/large) are context-free defaults. A "small" effect in medical research (preventing 1 in 1000 deaths) may be clinically critical. Always define what effect size is practically meaningful in your domain before running power calculations. What is a "meaningful" effect size should be judged based on the field and actual cost, rather than applying Cohen's standard classification.
+## Python：statsmodels
 
 ```python
 import numpy as np
-from scipy import stats
-
-def cohen_d(group1, group2):
-    """Cohen's d for two independent groups."""
-    n1, n2 = len(group1), len(group2)
-    var1, var2 = np.var(group1, ddof=1), np.var(group2, ddof=1)
-    pooled_sd = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2))
-    return (np.mean(group1) - np.mean(group2)) / pooled_sd
-
-np.random.seed(0)
-control   = np.random.normal(100, 15, 30)
-treatment = np.random.normal(108, 15, 30)
-
-d = cohen_d(treatment, control)
-t_stat, p_val = stats.ttest_ind(treatment, control)
-
-print(f"Mean difference: {treatment.mean() - control.mean():.2f}")
-print(f"Cohen's d:       {d:.3f}  ({'small' if abs(d) < 0.5 else 'medium' if abs(d) < 0.8 else 'large'})")
-print(f"t-test: t = {t_stat:.3f}, p = {p_val:.4f}")
-```
-
-## Power Analysis in Python
-
-The `statsmodels` library provides power analysis functions for common tests.
-
-### Independent Samples t-test
-
-The most common scenario: comparing two group means.
-
-```python
-from statsmodels.stats.power import TTestIndPower
-
-analysis = TTestIndPower()
-
-# Scenario 1: What sample size do I need?
-n = analysis.solve_power(
-    effect_size=0.5,    # Cohen's d (medium effect)
-    alpha=0.05,
-    power=0.80,
-    ratio=1.0,          # equal group sizes
-    alternative='two-sided'
-)
-print(f"Required n per group: {np.ceil(n):.0f}")
-
-# Scenario 2: What power do I have given my n?
-power = analysis.solve_power(
-    effect_size=0.5,
-    alpha=0.05,
-    nobs1=30,           # n in group 1
-    ratio=1.0,
-    alternative='two-sided'
-)
-print(f"Power with n=30 per group: {power:.3f}")
-
-# Scenario 3: What effect size can I detect?
-es = analysis.solve_power(
-    alpha=0.05,
-    power=0.80,
-    nobs1=50,
-    ratio=1.0,
-    alternative='two-sided'
-)
-print(f"Detectable effect size with n=50: {es:.3f}")
-```
-
-### One-Way ANOVA (Multiple Groups)
-
-```python
-from statsmodels.stats.power import FTestAnovaPower
-
-analysis_anova = FTestAnovaPower()
-
-# Required n per group for ANOVA with 3 groups
-n_anova = analysis_anova.solve_power(
-    effect_size=0.25,   # Cohen's f (medium)
-    alpha=0.05,
-    power=0.80,
-    k_groups=3
-)
-print(f"Required n per group (3-group ANOVA): {np.ceil(n_anova):.0f}")
-```
-
-### Chi-Square Test of Independence
-
-```python
-from statsmodels.stats.power import GofChisquarePower
-
-analysis_chi = GofChisquarePower()
-
-n_chi = analysis_chi.solve_power(
-    effect_size=0.3,   # Cohen's w (medium)
-    alpha=0.05,
-    power=0.80,
-    n_bins=4           # number of categories
-)
-print(f"Required n (chi-square, 4 categories): {np.ceil(n_chi):.0f}")
-```
-
-## Power Curves
-
-A power curve visualizes how power changes as a function of sample size — essential for communicating with stakeholders and making resource decisions.
-
-```python
-import matplotlib.pyplot as plt
-import numpy as np
-from statsmodels.stats.power import TTestIndPower
-
-analysis = TTestIndPower()
-sample_sizes = np.arange(10, 201, 5)
-
-effect_sizes = [0.2, 0.5, 0.8]   # small, medium, large
-colors = ['#3B82F6', '#F59E0B', '#EF4444']
-
-fig, ax = plt.subplots(figsize=(8, 5))
-
-for es, color in zip(effect_sizes, colors):
-    powers = [
-        analysis.solve_power(effect_size=es, alpha=0.05, nobs1=n, ratio=1.0)
-        for n in sample_sizes
-    ]
-    label = f"d = {es} ({'small' if es == 0.2 else 'medium' if es == 0.5 else 'large'})"
-    ax.plot(sample_sizes, powers, label=label, color=color, linewidth=2)
-
-ax.axhline(0.80, color='gray', linestyle='--', linewidth=1, label='Power = 0.80')
-ax.axhline(0.95, color='gray', linestyle=':',  linewidth=1, label='Power = 0.95')
-ax.set_xlabel('Sample Size per Group')
-ax.set_ylabel('Statistical Power (1−β)')
-ax.set_title('Power Curves — Independent t-test (α = 0.05)')
-ax.legend()
-ax.set_ylim(0, 1.05)
-ax.grid(alpha=0.3)
-plt.tight_layout()
-plt.show()
-```
-
-Tip: Reading the power curve: Find the effect size you care about, then read across to find the n that gives you power ≥ 0.80. The flattening of curves at large n shows diminishing returns — going from n=200 to n=400 buys much less power than going from n=20 to n=40.
-
-## Factors That Increase Required Sample Size
-
-| Factor | Effect on n | Intuition |
-| ----------------------------------- | ----------- | ---------------------------------------------------- |
-| Smaller effect size (d ↓) | n ↑ | Harder to detect subtle differences |
-| Stricter α (e.g., 0.05 → 0.01) | n ↑ | Need more evidence to reject H₀ |
-| Higher desired power (0.80 → 0.95) | n ↑ | Want to be more confident of detecting real effects |
-| Higher population variance (σ ↑) | n ↑ | More noise requires larger signal-to-noise ratio |
-| Two-sided vs. one-sided test | n ↑ (two-sided) | Two-sided tests distribute α across both tails |
-| Unequal group sizes | n ↑ (total) | Balanced designs are most efficient |
-| Multiple comparisons (k groups ↑) | n ↑ | Stricter α per test to control familywise error |
-
-```python
-# Demonstrating the effect of variance on required n
-from statsmodels.stats.power import TTestIndPower
-
-analysis = TTestIndPower()
-
-# Mean difference is fixed at 5 units
-# What happens to required n as population SD increases?
-mean_diff = 5
-sds = [5, 10, 15, 20, 25]
-
-print("SD  | Cohen's d | Required n per group (power=0.80)")
-print("----|-----------|-----------------------------------")
-for sd in sds:
-    d = mean_diff / sd
-    n = analysis.solve_power(effect_size=d, alpha=0.05, power=0.80, ratio=1.0)
-    print(f"{sd:3d} | {d:.3f}     | {int(np.ceil(n))}")
-```
-
-**Output:**
-
-```
-SD  | Cohen's d | Required n per group (power=0.80)
-----|-----------|-----------------------------------
-  5 | 1.000     | 17
- 10 | 0.500     | 64
- 15 | 0.333     | 145
- 20 | 0.250     | 253
- 25 | 0.200     | 394
-```
-
-## Post-hoc Power Analysis — When NOT to Use It
-
-Warning: Post-hoc power analysis (computing power after a non-significant result using the observed effect size) is controversial and generally misleading. If the test was not significant, the observed effect size is a noisy estimate; a post-hoc power calculation using it will almost always show low power — but this tells you nothing useful. What to do instead: Report your confidence interval. A wide CI tells stakeholders the study was under-powered without the circularity of post-hoc power. If the observed effect size is used to calculate the detection power afterwards, the result will almost certainly be "insufficient detection power." This is a logical cycle without substantial information. Please report the width of the confidence interval instead.
-
-```python
-from scipy import stats
-import numpy as np
-
-# Underpowered study: n=10 per group
-np.random.seed(2)
-n = 10
-g1 = np.random.normal(100, 15, n)
-g2 = np.random.normal(106, 15, n)
-
-t, p = stats.ttest_ind(g1, g2)
-diff = g2.mean() - g1.mean()
-
-# Pooled SE for CI
-se = np.sqrt(g1.var(ddof=1)/n + g2.var(ddof=1)/n)
-ci_low, ci_high = diff - 1.96*se, diff + 1.96*se
-
-print(f"Mean difference: {diff:.2f}")
-print(f"p-value:         {p:.4f}  (not significant)")
-print(f"95% CI:          [{ci_low:.2f}, {ci_high:.2f}]")
-print(f"\nThe wide CI tells us this study cannot rule out effects")
-print(f"ranging from {ci_low:.1f} to {ci_high:.1f} — much more informative")
-print(f"than saying 'post-hoc power was low'.")
-```
-
-## Practical Sample Size Cheat Sheet
-
-| Test | Python Function | Effect Size Measure |
-| ----------------------------- | ---------------------------------------- | ------------------- |
-| Independent t-test | `TTestIndPower().solve_power()` | Cohen's d |
-| Paired t-test | `TTestPower().solve_power()` | Cohen's d |
-| One-way ANOVA | `FTestAnovaPower().solve_power()` | Cohen's f |
-| Chi-square goodness of fit | `GofChisquarePower().solve_power()` | Cohen's w |
-| Correlation (Pearson r) | `TTestPower().solve_power()` (convert r→d) | r |
-| Proportion test | `proportion_effectsize()` + `NormalIndPower()` | h |
-
-```python
-# Proportion test example: comparing two conversion rates
+from statsmodels.stats.power import (TTestIndPower, TTestPower, FTestAnovaPower,
+                                     GofChisquarePower, NormalIndPower)
 from statsmodels.stats.proportion import proportion_effectsize
-from statsmodels.stats.power import NormalIndPower
 
-# Current conversion rate: 10%; expect treatment to lift to 15%
-es_prop = proportion_effectsize(0.10, 0.15)
-n_prop = NormalIndPower().solve_power(
-    effect_size=es_prop,
-    alpha=0.05,
-    power=0.80,
-    ratio=1.0
-)
-print(f"Effect size h: {es_prop:.3f}")
-print(f"Required n per group: {int(np.ceil(n_prop))}")
+t_ind = TTestIndPower()
+t_ind.solve_power(effect_size=0.5, alpha=0.05, power=0.8)          # 每組需要 n ≈ 64
+t_ind.solve_power(effect_size=0.5, alpha=0.05, nobs1=30)           # n = 30 時 power ≈ 0.48
+t_ind.solve_power(alpha=0.05, power=0.8, nobs1=50)                 # n = 50 可偵測的 d ≈ 0.57
+
+TTestPower().solve_power(effect_size=0.5, alpha=0.05, power=0.8)   # 配對 t（d 以差值的 SD 計）
+FTestAnovaPower().solve_power(effect_size=0.25, alpha=0.05, power=0.8, k_groups=3)   # 回傳「總」樣本數
+GofChisquarePower().solve_power(effect_size=0.3, alpha=0.05, power=0.8, n_bins=4)
+
+# 兩比例：轉換率 10% → 15%
+h = proportion_effectsize(0.15, 0.10)                              # ≈ 0.15
+NormalIndPower().solve_power(effect_size=h, alpha=0.05, power=0.8) # 每組約 340
+
+# 檢定力曲線
+t_ind.plot_power(dep_var="nobs", nobs=np.arange(10, 200), effect_size=[0.2, 0.5, 0.8])
 ```
 
-## Key Takeaways
+| 檢定 | statsmodels 類別 | 效果量 |
+| --- | --- | --- |
+| 獨立 t | `TTestIndPower` | Cohen's d |
+| 配對 t / 單一樣本 t | `TTestPower` | Cohen's d |
+| 單因子 ANOVA | `FTestAnovaPower` | Cohen's f |
+| 卡方適合度 | `GofChisquarePower` | Cohen's w |
+| 兩比例 | `NormalIndPower` + `proportion_effectsize` | Cohen's h |
 
-| Concept | Key Point |
-| ----------------------------- | ------------------------------------------------------------------------- |
-| **Power = 1−β** | The probability of detecting a real effect; target ≥ 0.80 |
-| **Effect size is primary** | Define the minimum meaningful effect first, then solve for n |
-| **α and power tradeoff** | Stricter α requires larger n to maintain the same power |
-| **Calculate before collecting** | Post-hoc sample size justifications are circular and misleading |
-| **Balanced designs** | Equal group sizes maximize power for a given total n |
-| **Report CIs, not post-hoc power** | A wide CI communicates under-precision without the logical circularity |
+![Power curves](src/sample-size-power-curves.png)
 
-## Minimum Detectable Effect
+> **讀檢定力曲線**：找到你在意的效果量，往右找 power ≥ 0.8 的 n。曲線在大 n 處趨平代表邊際效益遞減：n 從 200 → 400 換來的 power 遠少於 20 → 40。
+>
+> 固定平均差為 5：SD 從 5 → 10 → 20，d 從 1 → 0.5 → 0.25，每組所需 n 約 17 → 64 → 253。**降低變異**（更精準的量測、配對 / 區集設計、共變數調整）與增加樣本一樣有效。
 
-The most practical sample-size question is often:
+## 複雜設計：用模擬
 
-> What is the smallest effect worth detecting?
+分析方法複雜（混合模型、GLM、存活分析、群集隨機化）時，公式常不存在。用 [蒙地卡羅模擬](../probability-and-distributions/monte-carlo-simulation.md)：假設真實效果與變異 → 模擬資料 → 跑預定的分析 → 重複上千次 → 拒絕 H₀ 的比例就是 power。
 
-That is the effect you should usually power the study around.
+```python
+from scipy import stats
 
-Tip: Powering for an effect that is too tiny to matter can waste time and data-collection budget.
+def sim_power(n, d, n_sim=2000, rng=np.random.default_rng(0)):
+    hits = 0
+    for _ in range(n_sim):
+        a, b = rng.normal(0, 1, n), rng.normal(d, 1, n)
+        hits += stats.mannwhitneyu(a, b).pvalue < 0.05     # 任何預定分析都可以換進來
+    return hits / n_sim
+
+sim_power(n=64, d=0.5)          # 約 0.78（Mann-Whitney 效率略低於 t 檢定）
+```
+
+| 特殊情境 | 調整 |
+| --- | --- |
+| 群集隨機化 | 乘上設計效應 (design effect) $1 + (m-1)\rho$，m = 群大小、ρ = ICC |
+| 預期流失 20% | n ÷ 0.8 |
+| 多重檢定 | 用校正後的 α 計算 |
+| RNA-seq | 檢定力依定序深度、生物變異（dispersion）、效果大小而定；專用工具如 `RNASeqPower`、`PROPER`；通常增加生物重複比增加定序深度更有效 |
+
+## 不要做事後檢定力分析 (Post-hoc Power)
+
+用**觀察到的**效果量去算「事後 power」是循環論證：不顯著的結果幾乎必然得到「power 低」，沒有提供新資訊。改為**報告信賴區間**：寬的 CI 直接說明研究的精確度不足，以及哪些效果大小仍無法排除。
+
+```python
+from scipy import stats
+
+rng = np.random.default_rng(2)
+g1, g2 = rng.normal(100, 15, 10), rng.normal(106, 15, 10)
+res = stats.ttest_ind(g2, g1)
+res.pvalue, res.confidence_interval()        # 不顯著，但 CI 很寬 → 無法排除有意義的效果
+```

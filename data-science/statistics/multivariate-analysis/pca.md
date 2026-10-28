@@ -1,273 +1,117 @@
-# Principal Component Analysis (PCA)
+[Statistics](../README.md) › [多變量分析](README.md) › PCA
 
-**PCA** is a dimension reduction technique that transforms a set of correlated variables into a smaller set of **uncorrelated components**, each capturing as much variance as possible. It is one of the most widely used techniques in multivariate analysis — both as a standalone analysis and as a preprocessing step before clustering or regression.
+# 主成分分析 (Principal Component Analysis, PCA)
 
-This note focuses on **multivariate interpretation**: eigendecomposition, loadings, explained variance, and how PCA helps you understand structure in correlated variables. If you want the shorter scikit-learn preprocessing view, see [Machine Learning: PCA](../../machine-learning/unsupervised-learning/dimensionality-reduction/pca.md).
+把一組相關的變數轉成少數**互不相關**的成分，每個成分盡可能保留最多變異。可單獨用來理解結構，也常是分群或迴歸前的前處理。ML 前處理角度見 [ML: PCA](../../machine-learning/unsupervised-learning/dimensionality-reduction/pca.md)。
 
-Key point: The core idea of ​​PCA: In high-dimensional space, data is usually not evenly spread out - it is much spread out along some directions and almost unchanged along other directions. PCA finds these "directions of maximum variation" (principal components), allowing you to retain the most information with fewer dimensions. This is not to abandon the data, but to find the most essential structure of the data.
+> 高維資料通常不是均勻散開的：沿某些方向變化很大，其他方向幾乎不變。PCA 找出這些「最大變異方向」。它是**座標軸的旋轉**，不是丟資料；只是選擇保留前 k 個最重要的方向。
 
-## Intuition: What PCA Does
+## 原理
 
-Imagine you have 4 highly correlated variables. PCA finds a new coordinate system where:
+| 性質 | 說明 |
+| --- | --- |
+| PC1 | 資料變異最大的方向 |
+| PC2 | 與 PC1 **正交**、剩餘變異最大的方向 |
+| PC3 … | 依此類推，解釋的變異遞減 |
+| 成分彼此 | 不相關 (uncorrelated) |
 
-- **PC1** points in the direction of maximum variance in the data
-- **PC2** points in the direction of maximum remaining variance, **orthogonal** (perpendicular) to PC1
-- **PC3** captures the next most variance, orthogonal to PC1 and PC2
-- ... and so on
+數學上是（標準化後）共變異矩陣的特徵分解 $\Sigma = V\Lambda V^\top$，或中心化資料的 SVD，見 [線性代數基礎](linear-algebra-foundations.md)。
 
-The key properties:
-- Principal components are **uncorrelated** by construction
-- Each successive PC captures less variance than the previous one
-- The first few PCs often capture most of the total variance
+| 輸出 | 意義 | sklearn |
+| --- | --- | --- |
+| 特徵值 (eigenvalue) | 每個成分捕捉的變異 | `explained_variance_` |
+| 解釋變異比例 | 特徵值 / 總和 | `explained_variance_ratio_` |
+| 負荷量 (loadings) | 每個成分是原始變數的哪種線性組合 | `components_`（列 = 成分） |
+| 分數 (scores) | 每筆觀測在新座標的位置 | `fit_transform()` 的輸出 |
 
-Tip: PCA is a rotation of the original coordinate axes — no data is added or removed. Every observation can be expressed exactly in the new PC coordinate system; we just choose to keep only the first k components. PCA is a rotation of the coordinate system, not a discard of data. The original data can be completely represented by principal components, we just choose to retain the most important directions.
+> **PCA 對量尺敏感**：單位大的變數會主導前幾個成分。除非所有變數單位相同，**一定要先標準化**（等同對相關矩陣做 PCA）。
 
-## The Math Behind PCA
-
-PCA is based on the **eigendecomposition of the covariance matrix** (or equivalently, the SVD of the centered data matrix).
-
-\[
-\Sigma = V \Lambda V^T
-\]
-
-where:
-- Σ = covariance matrix of the (standardized) data
-- V = matrix of eigenvectors (the principal component directions = **loadings**)
-- Λ = diagonal matrix of eigenvalues (= variance captured by each PC)
-
-Warning: PCA is scale-sensitive. Variables measured in large units dominate the first components. Always standardize (subtract mean, divide by SD) before applying PCA unless all variables are already on the same scale. PCA is scale-sensitive: Variables measured in large units dominate the analysis. Standardization is a necessary step, not optional.
-
-## Applying PCA with scikit-learn
+## Python 範例
 
 ```python
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
-# Load data
 iris = load_iris(as_frame=True)
-df = iris.frame
-df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names)
+X = iris.data
+X_scaled = StandardScaler().fit_transform(X)
 
-num_cols = ['sepal length (cm)', 'sepal width (cm)',
-            'petal length (cm)', 'petal width (cm)']
+pca = PCA().fit(X_scaled)                       # 先保留全部成分來診斷
+pca.explained_variance_ratio_.round(3)          # [0.730, 0.229, 0.037, 0.005]
+np.cumsum(pca.explained_variance_ratio_)        # 前 2 個成分已解釋 95.8%
 
-# Step 1: Standardize
-scaler  = StandardScaler()
-X_scaled = scaler.fit_transform(df[num_cols])
+# Scree plot + 累積變異
+k = np.arange(1, X.shape[1] + 1)
+plt.bar(k, pca.explained_variance_ratio_)
+plt.plot(k, np.cumsum(pca.explained_variance_ratio_), "o-", color="tomato")
+plt.axhline(0.9, ls="--"); plt.show()
 
-# Step 2: Fit PCA (keep all components first to diagnose)
-pca = PCA()
-X_pca = pca.fit_transform(X_scaled)
+# 分數圖：軸標籤要寫解釋變異百分比
+scores = PCA(n_components=2).fit(X_scaled)
+Z = scores.transform(X_scaled)
+plt.scatter(Z[:, 0], Z[:, 1], c=iris.target, cmap="Set1", alpha=0.7)
+plt.xlabel(f"PC1 ({scores.explained_variance_ratio_[0]:.1%})")
+plt.ylabel(f"PC2 ({scores.explained_variance_ratio_[1]:.1%})")
 
-print("Explained variance ratio per component:")
-for i, var in enumerate(pca.explained_variance_ratio_):
-    print(f"  PC{i+1}: {var:.3f} ({var*100:.1f}%)")
-print(f"\nCumulative: {np.cumsum(pca.explained_variance_ratio_).round(3)}")
-```
-
-**Expected output:**
-```
-  PC1: 0.730 (73.0%)
-  PC2: 0.229 (22.9%)
-  PC3: 0.037 (3.7%)
-  PC4: 0.005 (0.5%)
-
-Cumulative: [0.730 0.958 0.995 1.000]
-```
-
-Tip: Two components already capture 95.8% of total variance for this dataset. The 4-dimensional iris data is effectively 2-dimensional.
-
-## Scree Plot: Choosing the Number of Components
-
-The **scree plot** shows the variance explained by each component. Look for an "elbow" — the point where additional components add little new information.
-
-```python
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-
-# Individual explained variance
-axes[0].bar(range(1, len(pca.explained_variance_ratio_) + 1),
-            pca.explained_variance_ratio_,
-            color='steelblue', edgecolor='white', alpha=0.85)
-axes[0].plot(range(1, len(pca.explained_variance_ratio_) + 1),
-             pca.explained_variance_ratio_,
-             'o-', color='tomato', linewidth=2)
-axes[0].set_xlabel('Principal Component')
-axes[0].set_ylabel('Explained Variance Ratio')
-axes[0].set_title('Scree Plot')
-axes[0].set_xticks(range(1, 5))
-
-# Cumulative explained variance
-cumvar = np.cumsum(pca.explained_variance_ratio_)
-axes[1].plot(range(1, len(cumvar) + 1), cumvar, 'o-',
-             color='steelblue', linewidth=2, markersize=8)
-axes[1].axhline(0.95, color='tomato', linestyle='--', label='95% threshold')
-axes[1].axhline(0.90, color='seagreen', linestyle='--', label='90% threshold')
-axes[1].set_xlabel('Number of Components')
-axes[1].set_ylabel('Cumulative Explained Variance')
-axes[1].set_title('Cumulative Explained Variance')
-axes[1].set_xticks(range(1, 5))
-axes[1].legend()
-
-plt.tight_layout()
+# 負荷量 + biplot 箭頭
+loadings = pd.DataFrame(scores.components_.T, index=X.columns, columns=["PC1", "PC2"])
+for var, (x, y) in loadings.iterrows():
+    plt.arrow(0, 0, 3 * x, 3 * y, color="k", head_width=0.05)
+    plt.text(3.3 * x, 3.3 * y, var, fontsize=8)
 plt.show()
 ```
 
-**Common rules for choosing k (number of components):**
+![Scree plot and biplot](src/pca-scree-biplot.png)
 
-| Rule | Description | Caution |
-| ----------------------------- | ----------------------------------------------------- | ------------------------------------ |
-| **Elbow rule** | Choose k at the "elbow" in the scree plot | Subjective when elbow is unclear |
-| **Cumulative variance ≥ 95%** | Keep enough components to explain 95% of variance | May keep too many for noisy data |
-| **Eigenvalue > 1 (Kaiser)** | Keep PCs with eigenvalue > 1 (for standardized data) | Can be overly liberal |
-| **Domain-driven** | Choose k based on how many dimensions make sense | Most reliable when context is clear |
+## 選擇成分數 k
 
-## PCA Score Plot (2D Projection)
+| 規則 | 說明 | 注意 |
+| --- | --- | --- |
+| 手肘法 (elbow) | scree plot 的轉折點 | 轉折不明顯時很主觀 |
+| 累積變異 ≥ 90–95% | 保留到解釋足夠變異 | 雜訊多時可能保留太多 |
+| Kaiser 準則 | 標準化資料中保留特徵值 > 1 | 常保留過多 |
+| 用途導向 | 視覺化取 2–3；下游模型用 CV 選 | 最可靠 |
 
-Project the data onto the first two principal components and visualize the result — this is the most common use of PCA.
+## 解讀負荷量與 biplot
 
-```python
-# Re-fit with 2 components
-pca2 = PCA(n_components=2)
-X_2d = pca2.fit_transform(X_scaled)
+| 負荷量 | 意義 |
+| --- | --- |
+| 接近 ±1 | 該變數與此成分高度一致 |
+| 接近 0 | 對此成分幾乎沒貢獻 |
+| 同號 | 沿此成分一起變動 |
+| 異號 | 沿此成分反向變動 |
 
-pca_df = pd.DataFrame(X_2d, columns=['PC1', 'PC2'])
-pca_df['species'] = df['species'].values
+為成分命名讓結果好溝通：iris 的 PC1 負荷量為花萼長 0.52、花萼寬 −0.27、花瓣長 0.58、花瓣寬 0.56 →「花朵大小（主要是花瓣）」；PC2 幾乎只由花萼寬主導（0.92，其餘 ≤ 0.38）→「花萼寬度」。負荷量的正負號是任意的，整個成分翻號意義不變。
 
-plt.figure(figsize=(8, 6))
-colors = {'setosa': '#4CAF50', 'versicolor': '#2196F3', 'virginica': '#F44336'}
+| Biplot | 意義 |
+| --- | --- |
+| 箭頭方向相同 | 變數高度正相關 |
+| 箭頭方向相反 | 負相關 |
+| 箭頭長 | 在此 2D 平面中表現良好 |
+| 箭頭短 | 前兩個成分無法代表此變數 |
 
-for species, group in pca_df.groupby('species'):
-    plt.scatter(group['PC1'], group['PC2'],
-                label=species, color=colors[species], alpha=0.7, s=60)
+## 生資應用：基因表現 PCA
 
-plt.xlabel(f"PC1 ({pca2.explained_variance_ratio_[0]*100:.1f}% variance)")
-plt.ylabel(f"PC2 ({pca2.explained_variance_ratio_[1]*100:.1f}% variance)")
-plt.title('PCA Score Plot — Iris Dataset')
-plt.legend(title='Species')
-plt.tight_layout()
-plt.show()
-```
+| 步驟 | 原因 |
+| --- | --- |
+| 先 log 轉換（如 log₂(count + 1)、DESeq2 的 VST） | 計數資料右偏，變異隨平均增加 |
+| 選最具變異的基因（如前 500–2,000 個） | 去除雜訊基因 |
+| 中心化（是否縮放依目的） | 縮放會放大低表現基因的雜訊 |
+| 依**生物條件**與**批次**分別上色 | PC1 若對應批次而非處理，先處理 [批次效應](../experimental-design/confounding-bias.md) |
+| 檢查離群樣本 | 遠離其他樣本的點可能是品質問題或標籤錯誤 |
 
-Tip: Always label axes with the percentage of variance explained. This tells the viewer how much information the 2D projection actually retains — critical for interpreting how meaningful the separation is.
+> 單細胞分析中，PCA（約 30–50 個成分）是 t-SNE / UMAP 與分群之前的標準步驟。非線性結構 PCA 抓不到，見 [ML: t-SNE](../../machine-learning/unsupervised-learning/dimensionality-reduction/tsne.md)。
 
-## Loadings: What Does Each Component Mean?
+## 注意事項
 
-**Loadings** are the weights (eigenvectors) that define each principal component as a linear combination of the original variables. They tell you which variables drive each component.
-
-```python
-loadings = pd.DataFrame(
-    pca2.components_.T,
-    columns=['PC1', 'PC2'],
-    index=num_cols
-)
-print("PCA Loadings:")
-print(loadings.round(3))
-```
-
-**Visualizing loadings:**
-
-```python
-fig, ax = plt.subplots(figsize=(7, 5))
-loadings.plot(kind='bar', ax=ax, color=['steelblue', 'tomato'],
-              edgecolor='white', alpha=0.85)
-ax.axhline(0, color='black', linewidth=0.8)
-ax.set_title('PCA Loadings — PC1 and PC2')
-ax.set_ylabel('Loading Weight')
-ax.set_xlabel('Original Variable')
-ax.set_xticklabels(ax.get_xticklabels(), rotation=25, ha='right')
-plt.tight_layout()
-plt.show()
-```
-
-**Interpreting loadings:**
-
-| Loading Magnitude | Interpretation |
-| ----------------- | --------------------------------------------------- |
-| Close to ±1 | This variable is strongly aligned with the component |
-| Near 0 | This variable contributes little to the component |
-| Same sign | Variables move together along this component |
-| Opposite sign | Variables move in opposite directions |
-
-Tip: Naming components: If PC1 has high positive loadings on all four iris measurements, it represents "overall flower size." If PC2 has high positive loading on sepal width and high negative loading on petal dimensions, it represents "sepal-vs-petal shape contrast." Meaningful names make PCA results interpretable to non-statisticians.
-
-## Biplot: Observations and Variables Together
-
-A **biplot** overlays the PCA scores (observations) and the loading vectors (variables) in the same 2D space. It shows both *how observations are distributed* and *which variables are responsible* for the separation.
-
-```python
-fig, ax = plt.subplots(figsize=(9, 7))
-
-# Plot observations
-for species, group in pca_df.groupby('species'):
-    ax.scatter(group['PC1'], group['PC2'],
-               label=species, color=colors[species], alpha=0.5, s=50)
-
-# Plot loading arrows
-scale = 3.0  # scale factor for visibility
-for i, var in enumerate(num_cols):
-    ax.annotate('',
-        xy=(pca2.components_[0, i] * scale,
-            pca2.components_[1, i] * scale),
-        xytext=(0, 0),
-        arrowprops=dict(arrowstyle='->', color='black', lw=1.5))
-    ax.text(pca2.components_[0, i] * scale * 1.12,
-            pca2.components_[1, i] * scale * 1.12,
-            var, fontsize=9, ha='center')
-
-ax.axhline(0, color='gray', linestyle='--', alpha=0.4)
-ax.axvline(0, color='gray', linestyle='--', alpha=0.4)
-ax.set_xlabel(f"PC1 ({pca2.explained_variance_ratio_[0]*100:.1f}%)")
-ax.set_ylabel(f"PC2 ({pca2.explained_variance_ratio_[1]*100:.1f}%)")
-ax.set_title('PCA Biplot — Iris Dataset')
-ax.legend(title='Species')
-plt.tight_layout()
-plt.show()
-```
-
-**Reading the biplot:**
-- Arrows pointing in the same direction → those variables are highly correlated
-- Arrows pointing in opposite directions → those variables are negatively correlated
-- Long arrows → variable has strong influence in this 2D space
-- Short arrows → variable is not well represented by the first two components
-
-## PCA as Preprocessing
-
-PCA components can be used as inputs to downstream models — particularly useful when you have many correlated features.
-
-```python
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-
-# Keep 2 components for downstream use
-pca_pre = PCA(n_components=2)
-X_reduced = pca_pre.fit_transform(X_scaled)
-
-# X_reduced can now be fed into clustering, regression, or classification
-print(f"Original shape: {X_scaled.shape}")
-print(f"Reduced shape:  {X_reduced.shape}")
-print(f"Variance retained: {pca_pre.explained_variance_ratio_.sum()*100:.1f}%")
-```
-
-Warning: Fit PCA on training data only. If you have a train/test split, fit the scaler and PCA on the training set, then use `transform()` (not `fit_transform()`) on the test set. Otherwise you leak test-set information into the transformation.
-
-## Key Takeaways
-
-| Concept | Key Point |
-| -------------------------------- | --------------------------------------------------------------------------------- |
-| **Always standardize first** | PCA is scale-sensitive — skip standardization only if all variables share units |
-| **Scree plot guides k** | Use cumulative variance ≥ 95% as a starting point; validate with domain knowledge |
-| **Loadings reveal meaning** | Name each component based on which variables load most strongly |
-| **Biplot combines both views** | Shows observations and variable contributions in the same reduced space |
-| **PCA captures linear structure** | Non-linear relationships won't be captured — consider kernel PCA or UMAP |
-| **Fit only on training data** | Never fit-transform on the test set — transform only |
-
-## PCA Is Not Feature Importance
-
-PCA identifies directions of variance, not variables that best predict a target.
-
-Tip: A variable can load strongly on PC1 and still be weak for supervised prediction. PCA is unsupervised structure discovery, not importance ranking.
+| 項目 | 說明 |
+| --- | --- |
+| 只在訓練集 fit | 有 train / test 時，scaler 與 PCA 都只 `fit` 訓練集，測試集用 `transform()`，否則 [資料洩漏](../../machine-learning/foundations/data-leakage.md) |
+| 只抓線性結構 | 非線性用 kernel PCA、UMAP、t-SNE |
+| **不是特徵重要性** | PCA 找變異方向，不是預測目標的方向；某變數在 PC1 負荷大，對監督式預測仍可能很弱（需要的話用 PLS 或 LDA） |
+| 對離群值敏感 | 極端點會拉走主成分方向；考慮 robust PCA |
+| 符號任意 | 不同軟體 PC 的正負號可能相反，解讀時看相對方向 |

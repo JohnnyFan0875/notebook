@@ -1,242 +1,142 @@
-# Confounding, Bias & Validity
+[Statistics](../README.md) › [實驗設計](README.md) › 干擾、偏誤與效度
 
-Even well-intentioned experiments can produce misleading results. Understanding the threats to validity is essential for designing studies that produce credible, generalizable conclusions.
+# 干擾、偏誤與效度 (Confounding, Bias & Validity)
 
-Key point: Core question: Is what this experiment measures really what I want to measure? Can the conclusions be generalized to other contexts? These two questions correspond to "internal validity" and "external validity" respectively.
+核心問題：這個研究量到的真的是我想量的嗎？（內部效度）結論能推廣到其他情境嗎？（外部效度）
 
-## Confounding
+## 干擾 (Confounding)
 
-A **confounding variable** is one that is associated with both the independent variable (treatment) and the dependent variable (outcome), creating a spurious apparent relationship.
-
-### The Confounding Structure
+干擾變數**同時**與處理（暴露）和結果有關，製造出虛假的關係或扭曲真實效果。
 
 ```
-   Confounder
-      ↙    ↘
-Treatment → Outcome
+     干擾因子 (C)
+       ↙     ↘
+處理 (X) ──?──▶ 結果 (Y)
 ```
 
-If you don't account for the confounder, the treatment-outcome relationship you observe is **distorted** — the effect you estimate is not the true causal effect.
-
-### Classic Example: Shoe Size and Reading Ability
-
-Children with larger shoe sizes tend to read better. Is shoe size a cause of reading ability?
-
-- **Confound**: Age. Older children have both larger feet and better reading skills.
-- Without controlling for age, shoe size and reading appear correlated.
-- Once you control for age, the association disappears.
+**經典例子**：鞋子越大的孩子閱讀能力越好。干擾因子是**年齡**：年紀大的孩子腳大、閱讀也好。控制年齡後關聯消失。
 
 ```python
 import numpy as np
 import pandas as pd
-from scipy import stats
+import statsmodels.formula.api as smf
 
-np.random.seed(42)
-n = 200
+rng = np.random.default_rng(42)
+age = rng.normal(10, 2, 200)
+df = pd.DataFrame({"age": age,
+                   "shoe": 0.8 * age + rng.normal(0, 0.5, 200),
+                   "reading": 3 * age + rng.normal(0, 2, 200)})
 
-# Simulate: Age drives both shoe size and reading ability
-age = np.random.normal(10, 2, n)                       # ages 6–14
-shoe_size = age * 0.8 + np.random.normal(0, 0.5, n)   # age → shoe size
-reading = age * 3 + np.random.normal(0, 2, n)          # age → reading
-
-df = pd.DataFrame({'age': age, 'shoe_size': shoe_size, 'reading': reading})
-
-# Naive correlation: ignores confound
-r_naive, p_naive = stats.pearsonr(shoe_size, reading)
-print(f"Naive r(shoe, reading)   = {r_naive:.3f}  (p = {p_naive:.4f})")
-
-# Partial correlation: controlling for age (residualize both variables)
-res_shoe = np.polyfit(age, shoe_size, 1)
-shoe_resid = shoe_size - np.polyval(res_shoe, age)
-
-res_read = np.polyfit(age, reading, 1)
-reading_resid = reading - np.polyval(res_read, age)
-
-r_partial, p_partial = stats.pearsonr(shoe_resid, reading_resid)
-print(f"Partial r(shoe, reading) = {r_partial:.3f}  (p = {p_partial:.4f})")
-print("(True causal effect of shoe size on reading is 0)")
+df["shoe"].corr(df["reading"])                          # ≈ 0.96：強相關
+smf.ols("reading ~ shoe", data=df).fit().params          # 鞋子「效果」很大
+smf.ols("reading ~ shoe + age", data=df).fit().params    # 控制年齡後 ≈ 0
 ```
 
-**Output:**
+### 處理干擾的方法
 
-```
-Naive r(shoe, reading)   = 0.963  (p = 0.0000)
-Partial r(shoe, reading) = 0.019  (p = 0.7862)
-```
+| 方法 | 適用 | 做法 |
+| --- | --- | --- |
+| **隨機化** | 實驗 | 已知與**未知**干擾因子隨機分散到各組 |
+| 限制 (restriction) | 皆可 | 只納入干擾因子的某一水準（例如只看 50 歲以上） |
+| 配對 (matching) | 觀察研究 | 依干擾因子配對病例與對照 |
+| 統計調整 (adjustment) | 皆可 | 把干擾因子放進模型當共變數 |
+| 分層 (stratification) | 皆可 | 在每層內分別分析，再合併（Mantel-Haenszel） |
+| 傾向分數 (propensity score) | 觀察研究 | 以「接受處理的機率」配對或加權 |
 
-The naive correlation is 0.96 — extremely strong. The partial correlation controlling for age is essentially zero. This is confounding in action.
+> 統計調整只能處理**已測量**的干擾因子；隨機化是唯一能處理**未測量**干擾因子的方法，這是實驗優於觀察研究的核心理由。
 
-### How to Handle Confounding
+### 生資最常見的干擾：批次效應 (Batch Effect)
 
-| Strategy | When Available | How It Works |
-| ------------------- | -------------------- | ------------------------------------------------------ |
-| **Randomization** | Experimental studies | Distributes all confounders (known + unknown) randomly |
-| **Restriction** | Either | Limit sample to one level of the confounder |
-| **Matching** | Observational | Match cases and controls on confounder values |
-| **Statistical control** | Either | Include confounder as covariate in the model |
-| **Stratification** | Either | Analyze separately within each level of confounder |
+不同處理批次、定序機台、日期、試劑批號造成的系統性差異。
 
-Warning: Statistical control only adjusts for measured confounders. Randomization is the only method that handles unmeasured confounders. This is the core argument for why experiments > observational studies for causal claims.
+| 情況 | 後果 | 對策 |
+| --- | --- | --- |
+| 批次與生物條件**完全混淆**（對照全在批次 1、處理全在批次 2） | **無法分辨**生物效果與批次效果，任何方法都救不回來 | **設計階段**就讓每批次包含各組樣本（區集化 + 隨機化） |
+| 批次與條件部分交錯 | 可校正 | 把 batch 放進模型（如 DESeq2 `design = ~ batch + condition`），或 ComBat / limma `removeBatchEffect`（後者僅用於視覺化） |
+| 未知的批次 | 隱藏的變異 | SVA（surrogate variable analysis）估計潛在因子 |
 
-## Types of Bias
+用 [PCA](../multivariate-analysis/pca.md) 檢查：樣本若依批次而非生物條件分群，就是警訊。
 
-Bias is any systematic (non-random) error that causes the estimated effect to consistently differ from the true effect. Unlike random error, **more data does not fix bias**.
+### 干擾、中介、碰撞：用 DAG 判斷該調整什麼
 
-| Type | Description | Prevention |
-| ------------------------ | ----------------------------------------------------------------------- | ----------------------------------- |
-| **Selection bias** | Treatment and control groups differ at baseline due to non-random assignment | Randomization |
-| **Attrition bias** | Participants drop out non-randomly (dropouts differ from completers) | Intention-to-treat analysis |
-| **Observer bias** | Researchers assess outcomes differently based on knowing treatment | Blinding |
-| **Response bias** | Participants answer differently due to social desirability or demand | Anonymous surveys, neutral wording |
-| **Recall bias** | Past events recalled differently by cases vs. controls | Objective records, prospective data |
-| **Ascertainment bias** | Cases are detected more thoroughly in one group than another | Standardized diagnosis criteria |
-| **Hawthorne effect** | Participants change behavior because they know they are being observed | Blind subjects, naturalistic setting |
-| **Regression to the mean** | Extreme measurements naturally tend toward the mean on re-testing | Control group, pre-post design with control |
+| 角色 | 結構 | 該不該調整 |
+| --- | --- | --- |
+| **干擾因子 (confounder)** | X ← C → Y | ✅ **要**調整，否則有偏 |
+| **中介變數 (mediator)** | X → M → Y | ❌ 估計總效果時**不要**調整，否則會移除你想估計的部分效果 |
+| **碰撞變數 (collider)** | X → K ← Y | ❌ **不要**調整；調整或依它篩選樣本會**製造**虛假關聯 |
 
-## Blinding
-
-**Blinding** prevents knowledge of treatment assignment from influencing the outcome assessment or participant behavior.
-
-| Type | Who Is Blinded | When Necessary |
-| --------------------- | ------------------------------------------- | ------------------------------------------------- |
-| **Single-blind** | Participants only | When participant behavior can affect outcomes |
-| **Double-blind** | Participants + outcome assessors | Most clinical trials; subjective outcomes |
-| **Triple-blind** | Participants + assessors + data analysts | When analytical decisions could introduce bias |
-| **Unblinded (Open)** | Nobody blinded | When blinding is impossible (e.g., surgical trial) |
-
-```python
-# Demonstrating observer bias impact (simulation)
-np.random.seed(1)
-n = 50
-true_effect = 2.0
-
-# Unblinded assessors: subtly inflate scores in treatment group
-observer_inflation = 1.5   # systematic inflation when assessor knows treatment
-
-control_scores_unblinded = np.random.normal(50, 8, n)
-treatment_scores_unblinded = np.random.normal(50 + true_effect + observer_inflation, 8, n)
-
-# Blinded assessors: no inflation
-control_scores_blinded = np.random.normal(50, 8, n)
-treatment_scores_blinded = np.random.normal(50 + true_effect, 8, n)
-
-diff_unblinded = treatment_scores_unblinded.mean() - control_scores_unblinded.mean()
-diff_blinded   = treatment_scores_blinded.mean() - control_scores_blinded.mean()
-
-print(f"True effect:              {true_effect:.1f}")
-print(f"Estimated (unblinded):    {diff_unblinded:.2f}  (inflated by observer bias)")
-print(f"Estimated (blinded):      {diff_blinded:.2f}  (closer to truth)")
-```
-
-## Validity Framework
-
-**Validity** refers to the degree to which a study accurately measures what it intends to measure and whether conclusions can be extended beyond the study context.
-
-### Four Types of Validity
-
-| Type | Question It Asks | Main Threats |
-| --------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------- |
-| **Internal validity** | Did the treatment actually cause the observed difference? | Confounding, selection bias, attrition |
-| **External validity** | Can findings be generalized beyond this study's sample/setting? | Unrepresentative sample, artificial setting |
-| **Statistical conclusion validity** | Are the statistical inferences correct? | Low power, violated assumptions, multiple testing |
-| **Construct validity** | Did the measures actually capture the intended concepts? | Poor operationalization, observer bias |
-
-### Internal Validity Threats (Campbell & Stanley)
-
-| Threat | Description |
-| ---------------------- | -------------------------------------------------------------------------- |
-| **History** | An external event occurs between pre- and post-test measurements |
-| **Maturation** | Participants naturally change over time during the study |
-| **Testing effect** | Taking a pre-test improves post-test performance regardless of treatment |
-| **Instrumentation** | Measurement tools or criteria change over the course of the study |
-| **Statistical regression** | Extreme scores at baseline naturally move toward the mean at follow-up |
-| **Selection** | Groups differ systematically at baseline (non-random assignment) |
-| **Attrition** | Non-random dropout produces groups that differ at follow-up |
-
-Tip: Randomization controls for History, Maturation, Testing effect, Instrumentation, Regression, and Selection — all at once. This is why randomized experiments have stronger internal validity than observational studies.
-
-### Internal vs. External Validity Tradeoff
-
-Tightly controlled experiments maximize internal validity but may sacrifice external validity — lab conditions often don't reflect the real world.
-
-```
-Highly controlled lab experiment:
-  ✅ Internal validity (confounders controlled)
-  ❌ External validity (artificial setting, unrepresentative subjects)
-
-Real-world observational study:
-  ❌ Internal validity (cannot rule out confounders)
-  ✅ External validity (natural setting, representative population)
-```
-
-Tip: Pragmatic trials and field experiments attempt to balance both — they randomize but within naturalistic settings. A/B tests in industry often achieve this balance naturally.
+> 碰撞偏誤的例子：只分析住院病人（住院同時受疾病 A 與疾病 B 影響）時，兩種疾病會看起來負相關（Berkson's paradox）。畫出因果圖（directed acyclic graph, DAG）再決定共變數，比「把能放的變數都放進模型」可靠。
 
 ## Simpson's Paradox
 
-A striking form of confounding where a trend that appears in **combined data** disappears or **reverses** when data is disaggregated by subgroups.
+合併資料的趨勢，在分組後消失或**反轉**。經典腎結石資料：
+
+| 結石大小 | 處理 A 治癒率 | 處理 B 治癒率 |
+| --- | --- | --- |
+| 小 | **93%**（81/87） | 87%（234/270） |
+| 大 | **73%**（192/263） | 69%（55/80） |
+| **合併** | 78%（273/350） | **83%**（289/350） |
+
+A 在兩個子群都較好，合併後卻較差。原因：較難治的大結石病人多半接受 A；結石大小同時影響處理選擇與結果（干擾）。
 
 ```python
-import pandas as pd
-
-# Simpson's Paradox: Treatment appears harmful overall, but helps both subgroups
-data = {
-    'Group':     ['Mild', 'Mild', 'Severe', 'Severe'],
-    'Treatment': ['Yes',  'No',   'Yes',    'No'],
-    'Recovered': [81,     234,    192,      55],
-    'Total':     [270,    270,    263,      80],
-}
-df = pd.DataFrame(data)
-df['Recovery_rate'] = (df['Recovered'] / df['Total'] * 100).round(1)
-
-print(df[['Group', 'Treatment', 'Recovery_rate']])
-
-# Combined (aggregated) rates
-mild_yes    = 81 / 270
-mild_no     = 234 / 270
-severe_yes  = 192 / 263
-severe_no   = 55 / 80
-
-combined_yes = (81 + 192) / (270 + 263)
-combined_no  = (234 + 55)  / (270 + 80)
-
-print(f"\nWithin Mild:    Treatment {mild_yes:.1%} vs Control {mild_no:.1%}")
-print(f"Within Severe:  Treatment {severe_yes:.1%} vs Control {severe_no:.1%}")
-print(f"Combined:       Treatment {combined_yes:.1%} vs Control {combined_no:.1%}")
-print("\n→ Treatment helps in BOTH subgroups but appears harmful in combined data!")
-print("→ Reason: severe patients were more likely to receive treatment AND less likely to recover")
+d = pd.DataFrame({"size": ["Small", "Small", "Large", "Large"], "trt": ["A", "B", "A", "B"],
+                  "cured": [81, 234, 192, 55], "total": [87, 270, 263, 80]})
+d.assign(rate=d.cured / d.total)                                    # 分層
+d.groupby("trt")[["cured", "total"]].sum().pipe(lambda g: g.cured / g.total)   # 合併
 ```
 
-**Output:**
+> 真實案例：UC Berkeley 入學資料、COVID 疫苗效果報告、棒球打擊率。一定要依重要子群分層檢查。
 
-```
-Within Mild:    Treatment 30.0% vs Control 86.7%   ← Wait...
-Within Severe:  Treatment 73.0% vs Control 68.8%
-Combined:       Treatment 50.9% vs Control 83.0%
+## 偏誤類型 (Types of Bias)
 
-→ Treatment helps in Severe subgroup but appears harmful in combined data!
-→ Confound: severity is associated with both treatment assignment and outcome
-```
+偏誤是**系統性**誤差，讓估計值一致地偏離真值。與隨機誤差不同，**增加資料無法修正偏誤**。
 
-Warning: Simpson's Paradox is not just a curiosity — it has appeared in real data about UC Berkeley admissions, COVID vaccine effectiveness reports, and baseball batting averages. Always stratify to check.
+| 偏誤 | 說明 | 預防 |
+| --- | --- | --- |
+| 選擇偏誤 (selection) | 基線時各組就不同（非隨機分派、非隨機抽樣） | 隨機化 |
+| 流失偏誤 (attrition) | 退出者與完成者不同 | 意向治療分析 (intention-to-treat, ITT) |
+| 觀察者偏誤 (observer) | 評估者知道分組而影響判讀 | 盲化 |
+| 反應偏誤 (response) | 社會期望、迎合研究者 | 匿名、中性措辭 |
+| 回憶偏誤 (recall) | 病例與對照回憶過去的方式不同 | 客觀紀錄、前瞻性資料 |
+| 確認偏誤 (ascertainment) | 某組被更徹底地檢查 | 標準化診斷準則 |
+| 霍桑效應 (Hawthorne) | 知道被觀察而改變行為 | 盲化、自然情境 |
+| 存活者偏誤 (survivorship) | 只看到「存活下來」的樣本 | 納入所有起始樣本 |
+| 不朽時間偏誤 (immortal time) | 把處理開始前的存活時間算給處理組 | 見 [存活分析核心概念](../survival-analysis/core-concepts.md) |
+| 趨中迴歸 | 極端值重測時自然往平均靠 | 對照組 |
 
-## Key Takeaways
+## 盲化 (Blinding)
 
-| Concept | Key Point |
-| ------------------------- | -------------------------------------------------------------------------- |
-| **Confounding** | Distorts causal estimates; randomization is the only complete solution |
-| **Bias vs. variability** | Bias is systematic and cannot be fixed by adding data; variability can |
-| **Blinding** | Prevents observer and response biases; always use when possible |
-| **Internal validity** | Randomization is the strongest protection |
-| **External validity** | Requires representative sampling and realistic settings |
-| **Simpson's Paradox** | Always stratify by important subgroups; aggregated trends can be misleading |
+| 類型 | 誰不知道分組 | 何時需要 |
+| --- | --- | --- |
+| 單盲 (single-blind) | 受試者 | 受試者行為可能影響結果 |
+| 雙盲 (double-blind) | 受試者 + 結果評估者 | 多數臨床試驗、主觀結果 |
+| 三盲 (triple-blind) | + 資料分析者 | 分析決策可能引入偏誤 |
+| 開放 (open-label) | 無 | 無法盲化（如手術試驗） |
 
-## Confounder vs. Mediator
+不盲化時，評估者可能不自覺地高估處理組分數；實驗室中，影像判讀、細胞計數、病理評分都應盲化。
 
-These two roles are easy to confuse:
+## 效度框架 (Validity)
 
-| Variable role | Meaning |
-| ------------- | ------- |
-| **Confounder** | Distorts the exposure-outcome comparison |
-| **Mediator** | Lies on the causal pathway from exposure to outcome |
+| 效度 | 問題 | 主要威脅 |
+| --- | --- | --- |
+| 內部效度 (internal) | 處理真的造成觀察到的差異嗎？ | 干擾、選擇偏誤、流失 |
+| 外部效度 (external) | 結果能推廣到研究之外嗎？ | 樣本不具代表性、情境不真實 |
+| 統計結論效度 (statistical conclusion) | 統計推論正確嗎？ | 檢定力不足、假設違反、多重檢定 |
+| 建構效度 (construct) | 量測真的捕捉到想要的概念嗎？ | 操作化不佳、觀察者偏誤 |
 
-Tip: Controlling for a mediator can remove part of the effect you actually want to estimate.
+**內部效度的威脅（Campbell & Stanley）**
+
+| 威脅 | 說明 |
+| --- | --- |
+| 歷史 (history) | 前後測之間發生外部事件 |
+| 成熟 (maturation) | 受試者隨時間自然改變 |
+| 測驗效應 (testing) | 做過前測讓後測表現變好 |
+| 工具 (instrumentation) | 量測工具或標準在研究中改變（例如換了定序平台） |
+| 統計迴歸 | 極端基線分數自然往平均移動 |
+| 選擇 (selection) | 各組基線就系統性不同 |
+| 流失 (attrition) | 非隨機退出 |
+
+> 有對照組的隨機化實驗能一次控制上述所有威脅（流失除外），這就是隨機化實驗內部效度最強的原因。
+
+**內部 vs 外部效度的取捨**：嚴格控制的實驗室實驗內部效度高、外部效度低；真實世界的觀察研究相反。實用性試驗 (pragmatic trial) 與田野實驗 (field experiment) 嘗試兼顧，業界 A/B 測試通常自然達到這種平衡。

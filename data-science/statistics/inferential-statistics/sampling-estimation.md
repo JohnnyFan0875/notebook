@@ -1,318 +1,71 @@
-# Sampling & Estimation
+[Statistics](../README.md) › [推論統計](README.md) › 抽樣與估計
 
-Before testing any hypothesis, you need to understand **where your data comes from** and **what it can tell you about the broader population**. This section covers how samples relate to populations, and how we use sample statistics to estimate unknown population parameters.
+# 抽樣與估計 (Sampling & Estimation)
 
-> Key point:<br>Sample can reasonably represent the target population.
+推論的前提是：**樣本能合理代表目標母體**。這篇談資料從哪來、怎麼用樣本統計量估計母體參數。
 
-## Population vs. Sample
+母體 / 樣本 / 參數 / 統計量的定義與 CLT 見 [抽樣分配與 CLT](../probability-and-distributions/sampling-distributions.md)。慣例：希臘字母（μ, σ, π）表示母體參數，英文字母（x̄, s, p̂）表示樣本統計量。
 
-| Term               | Definition                                                       | Example                                        |
-| ------------------ | ---------------------------------------------------------------- | ---------------------------------------------- |
-| **Population**     | The entire group you want to draw conclusions about              | All adults in Taiwan                           |
-| **Sample**         | A subset of the population actually observed                     | 1,000 adults surveyed in Taipei                |
-| **Parameter**      | A numerical summary of the population (usually unknown)          | True population mean income μ                  |
-| **Statistic**      | A numerical summary computed from the sample                     | Sample mean income x̄                           |
-| **Sampling error** | The difference between a sample statistic and the true parameter | x̄ ≠ μ simply because we didn't survey everyone |
+## 抽樣方法 (Sampling Methods)
 
-**Tip:**
+| 方法 | 做法 | 優點 | 缺點 |
+| --- | --- | --- | --- |
+| 簡單隨機抽樣 (simple random) | 每個個體被抽中機率相同 | 無偏 | 母體大或分散時成本高 |
+| 分層抽樣 (stratified) | 先分層 (strata)，**每層都抽** | 確保子群體都有代表 | 需要分層資訊 |
+| 群集抽樣 (cluster) | **隨機抽幾個群**（如學校、醫院），群內全查或再抽 | 便宜 | 變異較大（群內相似） |
+| 系統抽樣 (systematic) | 每隔 k 筆抽一筆 | 容易執行 | 資料順序有週期時會偏，先 shuffle |
+| 便利抽樣 (convenience) | 抽容易取得的 | 快、便宜 | **選擇偏誤 (selection bias)**，不宜推論 |
+| 加權抽樣 (weighted) | 各觀測被抽中的機率不同 | 可加抽稀有子群 | 分析時需再加權才能還原母體估計 |
 
-- Roman letters (x̄, s, p̂) for sample statistics
-- Greek letters (μ, σ, π) for population parameters.
+| | 分層抽樣 | 群集抽樣 |
+| --- | --- | --- |
+| 目標 | 保留子群代表性 | 降低蒐集成本 |
+| 抽的是 | 每一層裡的個體 | 部分的群 |
 
-## Sampling Methods
+> 分層抽樣的 ML 版本是 stratified train/test split 與 stratified K-fold，見 [Train-Test Split](../../machine-learning/preprocessing/train-test-split.md)、[Sampling and Representativeness](../../machine-learning/foundations/sampling-and-representativeness.md)。
 
-| Method                     | Description                                                          | Pros                                          | Cons                                              |
-| -------------------------- | -------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
-| **Simple random sampling** | Every individual has an equal probability of being selected          | Unbiased                                      | Expensive if population is large/dispersed        |
-| **Stratified sampling**    | Divide into subgroups (**strata**), then randomly sample within each | Ensures representation of subgroups           | Requires strata info                              |
-| **Cluster sampling**       | Randomly select whole clusters (e.g., schools), then sample within   | Cheaper for geographically spread populations | Higher variance                                   |
-| **Systematic sampling**    | Select every k-th individual from a list                             | Easy to implement                             | Periodic pattern can introduce bias               |
-| **Convenience sampling**   | Select whoever is easily accessible                                  | Fast and cheap                                | High risk of selection bias — avoid for inference |
+## 點估計 (Point Estimation)
 
-**Bias vs. Variance tradeoff in sampling**
+| 母體參數 | 點估計量 (estimator) |
+| --- | --- |
+| μ | x̄ |
+| σ² | s²（除以 n−1） |
+| π（比例） | p̂ |
+| β（迴歸係數） | $\hat\beta$（OLS / MLE） |
 
-- **Bias** (systematic error): the sampling process consistently pushes estimates away from the true population value.
-- **Variance** (random fluctuation): estimates change from sample to sample because different individuals were selected.
-- Random sampling generally reduces selection bias, but small random samples may have high sampling variance.
-- Non-random sampling is often faster and easier, but may introduce systematic selection bias.
-
-### Systematic Sampling
-
-Systematic sampling means choosing every `k`-th observation after a starting point.
-
-- Operationally convenient, but it has one major caveat: if the row order contains a hidden pattern, systematic sampling can become biased.
-- Systematic sampling is acceptable when row order is already **random-like**. Otherwise, **shuffle** first, then apply systematic selection
-
-Example:
-
-With 10,000 rows, setting k = 10 and selecting every 10th row will produce approximately 1,000 observations.
-
-### Stratified vs. Cluster Sampling
-
-| Method                  | What you do                                     | Main goal                        |
-| ----------------------- | ----------------------------------------------- | -------------------------------- |
-| **Stratified sampling** | sample from every subgroup                      | preserve subgroup representation |
-| **Cluster sampling**    | sample some subgroups, then observe within them | reduce collection cost           |
-
-Use stratified sampling when:
-
-- subgroup representation matters
-- groups differ meaningfully on the outcome
-- you want more stable estimates for subgroup comparisons
-
-Use cluster sampling when:
-
-- the population is geographically or operationally spread out
-- it is expensive to reach every subgroup
-- you can tolerate higher variance in exchange for lower collection cost
-
-Key mental model:
-
-- stratified sampling spreads effort across all important groups
-- cluster sampling concentrates effort inside a subset of groups
-
-### Weighted Sampling
-
-Sometimes not every row should have the same probability of being selected.
-
-Weighted sampling changes the relative selection probability of each observation.
-
-This is useful when:
-
-- some subgroups are rare but analytically important
-- you want to oversample a specific category for modeling or inspection
-- you are simulating a sampling scheme with unequal probabilities
-
-Important caution:
-
-- weighted sampling changes who enters the sample
-- it does **not** automatically make later estimates unbiased
-- if you oversample a subgroup, you often need weighting again at analysis time to recover population-level estimates
-
-This distinction matters because "sampling weights" and "analysis weights" are related but not interchangeable.
-
-## Point Estimation
-
-A **point estimate** is a single-value guess for a population parameter, calculated from the sample.
-
-| Population Parameter  | Symbol | Point Estimate    | Symbol |
-| --------------------- | ------ | ----------------- | ------ |
-| Population mean       | μ      | Sample mean       | x̄      |
-| Population variance   | σ²     | Sample variance   | s²     |
-| Population SD         | σ      | Sample SD         | s      |
-| Population proportion | π      | Sample proportion | p̂      |
-
-**Key limitation**: A point estimate is almost certainly not exactly equal to the true parameter. To communicate this uncertainty, we use **confidence intervals**.
+點估計幾乎不可能剛好等於真值，所以要搭配 [信賴區間](confidence-intervals.md)。
 
 ```python
-import pandas as pd
-import numpy as np
-from sklearn.datasets import load_iris
-
-df = load_iris(as_frame=True).frame
-
-# Point estimates for sepal length
-n       = df['sepal length (cm)'].count()
-x_bar   = df['sepal length (cm)'].mean()
-s       = df['sepal length (cm)'].std(ddof=1)   # sample SD (ddof=1)
-s_sq    = df['sepal length (cm)'].var(ddof=1)   # sample variance
-
-print(f"n     = {n}")
-print(f"x̄    = {x_bar:.4f}")
-print(f"s     = {s:.4f}")
-print(f"s²    = {s_sq:.4f}")
+x = df["sepal length (cm)"]
+x.count(), x.mean(), x.std(ddof=1), x.var(ddof=1)   # n, x̄, s, s²
+x.std(ddof=1) / np.sqrt(x.count())                  # SE
 ```
 
-Tip: Why `ddof=1`? The sample variance uses n−1 in the denominator (not n) to produce an unbiased estimate of σ². This correction is called Bessel's correction. Pandas' default for `.var()` and `.std()` is already `ddof=1`.
+## 估計量的好壞：偏誤與變異
 
-## The Central Limit Theorem (CLT)
+| 性質 | 定義 | 例子 |
+| --- | --- | --- |
+| 偏誤 (bias) | $E(\hat\theta) - \theta$，系統性偏離 | s² 除以 n 會低估 σ² |
+| 變異 (variance) | $\hat\theta$ 在不同樣本間的波動 | 小樣本的 x̄ 波動大 |
+| 均方誤差 (MSE) | $E[(\hat\theta-\theta)^2] = \text{Bias}^2 + \text{Variance}$ | 綜合指標 |
+| 一致性 (consistency) | n → ∞ 時 $\hat\theta \to \theta$ | — |
 
-The **Central Limit Theorem** is the theoretical backbone of inferential statistics.
+> 這就是 ML 的 **bias-variance tradeoff**：正則化（Ridge、Lasso）刻意引入一點偏誤，換取變異大幅下降，讓 MSE 更小。見 [Bias-Variance Tradeoff](../../machine-learning/foundations/bias-variance-tradeoff.md)。
 
-CLT Statement: If you draw many random samples of size n from _any_ population with mean μ and finite variance σ², the distribution of sample means (x̄) will approach a Normal distribution as n increases, regardless of the shape of the original population.
+| 抽樣層面 | 偏誤 | 變異 |
+| --- | --- | --- |
+| 來源 | 抽樣方式系統性地偏離母體（便利抽樣、存活者偏誤） | 恰好抽到哪些人 |
+| 解法 | 改善抽樣設計，**樣本變大也沒用** | 增加樣本數 |
 
-\[ \bar{x} \sim N\left(\mu,\ \frac{\sigma^2}{n}\right) \quad \text{as } n \to \infty ]
+## 理論重複抽樣 vs Bootstrap
 
-| Condition                    | Practical Rule of Thumb       |
-| ---------------------------- | ----------------------------- |
-| Population is normal         | CLT holds for any n           |
-| Population is mildly skewed  | n ≥ 30 is usually sufficient  |
-| Population is heavily skewed | n ≥ 100 or more may be needed |
+| | 樣本來自 | 用途 |
+| --- | --- | --- |
+| 重複抽樣（理論） | 從母體重新抽很多組 | 定義真正的抽樣分配，推出 $SE = s/\sqrt{n}$ 等公式 |
+| [Bootstrap](../probability-and-distributions/monte-carlo-simulation.md#拔靴法-bootstrap)（實務） | 從手上這一份樣本放回抽樣 | 公式難推時近似抽樣分配（中位數、比值、AUC） |
 
-**What CLT enables:**
+![Sampling distribution example](src/sampling-distribution-mean-salaries.png)
 
-- We can use z-tests and t-tests even when the original population isn't normal
-- The Normal distribution becomes our tool for computing probabilities about sample means
+重複抽樣後，「平均薪資」不再是一個數字，而是一個分配，這正是推論統計處理的對象。
 
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-
-np.random.seed(42)
-
-# Simulate CLT: sample means from a right-skewed (exponential) population
-population = np.random.exponential(scale=2, size=100_000)
-sample_means = [np.mean(np.random.choice(population, size=30)) for _ in range(5000)]
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-
-axes[0].hist(population, bins=80, color='steelblue', edgecolor='white')
-axes[0].set_title('Original Population (Exponential — Skewed)')
-axes[0].set_xlabel('Value')
-
-axes[1].hist(sample_means, bins=60, color='coral', edgecolor='white')
-axes[1].set_title('Distribution of Sample Means (n=30)\n→ Approximately Normal (CLT)')
-axes[1].set_xlabel('Sample Mean')
-
-plt.tight_layout()
-plt.show()
-```
-
-![Sampling distribution example](sampling-distribution-mean-salaries.png)
-
-The chart above is a helpful teaching bridge from the source materials: once you repeatedly re-sample, the "mean salary" stops being one number and becomes a distribution. That distribution is exactly what inferential statistics works with.
-
-## Standard Error (SE)
-
-**Standard Error** measures how much the sample statistic (e.g., x̄) varies from sample to sample. It is the **standard deviation of the sampling distribution**.
-
-\[ SE\_{\bar{x\}} = \frac{s}{\sqrt{n\}} ]
-
-| n (sample size) | SE behavior | Implication                                       |
-| --------------- | ----------- | ------------------------------------------------- |
-| Small           | Large SE    | Estimates are imprecise; wide confidence interval |
-| Large           | Small SE    | Estimates are precise; narrow confidence interval |
-
-```python
-se = s / np.sqrt(n)
-print(f"Standard Error (SE) = {se:.4f}")
-```
-
-Tip: SE vs. SD: Standard Deviation (s) describes how spread out individual observations are. Standard Error (SE) describes how spread out _sample means_ are. As n increases, SE decreases — SD does not change much.
-
-| Statistic     | What it describes                          | Changes with n?            |
-| ------------- | ------------------------------------------ | -------------------------- |
-| **SD (s)**    | Spread of individual data points           | Not much                   |
-| **SE (s/√n)** | Spread of sample means across many samples | Yes — decreases as n grows |
-
-As sample size grows, the sampling distribution of the mean gets narrower. This is why larger samples usually produce more stable point estimates and tighter confidence intervals.
-
-## Repeated Sampling vs. Bootstrap
-
-These two ideas are easy to mix up:
-
-| Idea                  | Where samples come from                             | Main purpose                                       |
-| --------------------- | --------------------------------------------------- | -------------------------------------------------- |
-| **Repeated sampling** | Hypothetical fresh samples from the population      | Define the true sampling distribution              |
-| **Bootstrap**         | Resamples from the one dataset you already observed | Approximate that sampling distribution in practice |
-
-Repeated sampling is usually the **theoretical object** behind formulas like `SE = s / sqrt(n)`. Bootstrap is the **practical workaround** when the theoretical formula is unavailable or inconvenient.
-
-```python
-import numpy as np
-import seaborn as sns
-
-rng = np.random.default_rng(42)
-tips = sns.load_dataset("tips")
-sample = tips["tip"].dropna().to_numpy()
-
-boot_medians = np.array([
-    np.median(rng.choice(sample, size=len(sample), replace=True))
-    for _ in range(4000)
-])
-
-print(f"Observed median:     {np.median(sample):.2f}")
-print(f"Bootstrap SE median: {boot_medians.std(ddof=1):.3f}")
-print(f"Bootstrap 95% CI:    {np.percentile(boot_medians, [2.5, 97.5])}")
-```
-
-Tip: The median is a good example because its standard error is less convenient to derive analytically than the mean, but bootstrap handles it naturally.
-
-## Bootstrap
-
-**Bootstrapping** estimates uncertainty by repeatedly resampling from the observed sample with replacement.
-
-Key point: Bootstrap treats the observed sample as a stand-in for the population, then repeatedly resamples it to see how the statistic changes. It is especially useful when the analytic formula for uncertainty is difficult to derive.
-
-| Use                 | What It Estimates                           |
-| ------------------- | ------------------------------------------- |
-| Standard error      | Variability of a statistic                  |
-| Confidence interval | Plausible range without analytic formula    |
-| Model stability     | How sensitive results are to sample changes |
-
-```python
-import numpy as np
-
-np.random.seed(42)
-sample = df['sepal length (cm)'].to_numpy()
-
-boot_means = [
-    np.random.choice(sample, size=len(sample), replace=True).mean()
-    for _ in range(5000)
-]
-
-ci_low, ci_high = np.percentile(boot_means, [2.5, 97.5])
-print(f"Bootstrap 95% CI: ({ci_low:.3f}, {ci_high:.3f})")
-```
-
-| Action                                        |
-| --------------------------------------------- |
-| Resample the original sample with replacement |
-| Compute the statistic for that resample       |
-| Repeat many times                             |
-| Use the bootstrap distribution for SE or CI   |
-
-### What Bootstrap Can and Cannot Fix
-
-Bootstrap is powerful, but it is not magic.
-
-It can help approximate:
-
-- standard errors
-- confidence intervals
-- stability of a statistic
-
-It cannot fix:
-
-- selection bias
-- measurement bias
-- badly unrepresentative original samples
-
-If the original sample is biased, bootstrap usually just reproduces that bias many times.
-
-### Quantile vs. Standard-Error Confidence Intervals
-
-Two common bootstrap CI patterns are:
-
-1. quantile / percentile method
-2. standard-error method
-
-Percentile method:
-
-```python
-ci_low, ci_high = np.percentile(boot_means, [2.5, 97.5])
-```
-
-Standard-error method, normal approximation:
-
-```python
-boot_se = np.std(boot_means, ddof=1)
-ci_low = sample.mean() - 1.96 * boot_se
-ci_high = sample.mean() + 1.96 * boot_se
-```
-
-Rule of thumb:
-
-- percentile intervals are convenient and widely used
-- normal-approximation intervals are simpler, but rely more on the bootstrap distribution being reasonably symmetric
-
-## Key Takeaways
-
-| Principle                        | Details                                                                  |
-| -------------------------------- | ------------------------------------------------------------------------ |
-| **Sample ≠ Population**          | Statistics from samples always contain sampling error                    |
-| **Sampling method matters**      | Non-random samples introduce bias that invalidates inference             |
-| **CLT is foundational**          | Enables use of Normal-based tests even when the population is non-normal |
-| **SE quantifies precision**      | Larger n → smaller SE → more precise estimates                           |
-| **Bootstrap is practical**       | Resampling can estimate uncertainty when formulas are hard               |
-| **Point estimates need context** | Always accompany point estimates with confidence intervals               |
+> **Bootstrap 修不了的**：選擇偏誤、量測偏誤、不具代表性的原始樣本。原始樣本有偏，bootstrap 只會把偏誤複製很多次。

@@ -1,277 +1,67 @@
-# Time Series Fundamentals
+[Statistics](../README.md) › [時間序列](README.md) › 基礎
 
-A **time series** is a sequence of observations indexed in time order. The defining property is that **the order of observations matters** — you cannot shuffle them without destroying information.
+# 時間序列基礎 (Time Series Fundamentals)
 
-Key point: Why time series are special: General statistics assume that observations are independent of each other (i.i.d.). Time series violate this assumption: yesterday's stock price affects today's stock price, and last month's sales affect this month's inventory. This "time dependence" is both a challenge and the reason why we can predict it.
+一般統計假設觀測獨立同分配 (i.i.d.)；時間序列違反這個假設：昨天的股價影響今天、上個月的銷售影響本月庫存。
 
-## The Four Components of a Time Series
+## 四種成分
 
-Every time series can be thought of as a combination of four underlying components:
+| 成分 | 說明 | 例子 |
+| --- | --- | --- |
+| 趨勢 (trend, T) | 長期上升或下降 | 全球氣溫上升 |
+| 季節性 (seasonality, S) | **固定週期**的規律 | 每年 12 月銷售高峰、晝夜節律 |
+| 循環 (cyclicality, C) | 長期波動，**沒有固定週期** | 景氣循環（3–10 年不等） |
+| 不規則 (irregular, I) | 隨機雜訊 | 單一事件、量測誤差 |
 
-| Component | Description | Example |
-| ----------------- | ---------------------------------------------------- | ---------------------------------------------- |
-| **Trend (T)** | Long-run upward or downward direction | Rising global temperatures, growing user base |
-| **Seasonality (S)** | Regular, periodic patterns at fixed frequency | Holiday sales spikes every December |
-| **Cyclicality (C)** | Irregular long-run fluctuations — no fixed period | Business cycles (expansion/recession) |
-| **Irregular (I)** | Random noise; unexplained variation | A one-off event, measurement error |
+季節性週期固定，循環不固定。多數古典模型明確處理季節性，循環則併入趨勢。
 
-Tip: Seasonality vs Cyclicality: Seasonality repeats at a known, fixed period (weekly, monthly, yearly). Cyclicality has no fixed period — business cycles might last 3 years or 10 years. In practice, most classical models handle seasonality explicitly but treat cyclicality as part of the trend. Seasonality has a fixed period, cyclicity does not. The two are often confused, but have a great impact on modeling strategies.
+## pandas 時間序列操作
 
-## Loading and Indexing Time Series in pandas
-
-A proper **DatetimeIndex** is essential. It enables resampling, slicing, rolling windows, and frequency inference.
-
-```python
-import pandas as pd
-import matplotlib.pyplot as plt
-import statsmodels.api as sm
-
-# Example: load built-in atmospheric CO2 data from statsmodels
-df = sm.datasets.co2.load_pandas().data
-df = df.rename(columns={'co2': 'CO2'}).dropna()
-df = df.asfreq('W-SAT').interpolate()
-
-print(df.head())
-print(f"\nFrequency: {df.index.freq}")
-print(f"Date range: {df.index.min()} to {df.index.max()}")
-print(f"Shape: {df.shape}")
-```
-
-**Setting or inferring frequency:**
-
-```python
-# If frequency isn't set automatically, set it manually
-df = df.asfreq('MS')  # MS = month start frequency
-
-# Common frequency strings
-# 'D'   — calendar day
-# 'B'   — business day
-# 'W'   — weekly
-# 'MS'  — month start
-# 'ME'  — month end
-# 'QS'  — quarter start
-# 'YS'  — year start
-# 'h'   — hourly
-# 'min' — minute
-```
-
-Warning: Always set or verify the frequency. If pandas can't infer it, most statsmodels functions will raise an error or produce incorrect results. Without setting the time frequency correctly, statsmodels models will almost certainly go wrong. This is the most common environmental problem.
-
-## Simulating a Time Series from Scratch
-
-Understanding components is easier when we build them up manually:
+正確的 **DatetimeIndex** 與**頻率 (freq)** 是一切的前提；沒設好，statsmodels 幾乎一定出錯。
 
 ```python
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import statsmodels.api as sm
 
-np.random.seed(42)
-n = 120  # 10 years of monthly data
+df = sm.datasets.co2.load_pandas().data.rename(columns={"co2": "CO2"})
+df = df.asfreq("W-SAT").interpolate()      # 設定頻率並補值
+df.index.freq, df.index.min(), df.index.max()
 
-t = np.arange(n)
-dates = pd.date_range(start='2014-01', periods=n, freq='MS')
+# 頻率字串：'D' 日、'B' 營業日、'W' 週、'MS' 月初、'ME' 月底、'QS' 季初、'YS' 年初、'h' 小時、'min' 分鐘
 
-# Components
-trend      = 100 + 0.8 * t
-seasonality = 20 * np.sin(2 * np.pi * t / 12)
-noise      = np.random.normal(0, 5, n)
-
-series = trend + seasonality + noise
-
-df = pd.Series(series, index=dates, name='Value')
-
-# Plot each component
-fig, axes = plt.subplots(4, 1, figsize=(11, 9), sharex=True)
-
-axes[0].plot(dates, series,      color='steelblue',  linewidth=1.5)
-axes[0].set_title('Observed Series (Trend + Seasonality + Noise)')
-
-axes[1].plot(dates, trend,       color='tomato',     linewidth=1.5)
-axes[1].set_title('Trend Component')
-
-axes[2].plot(dates, seasonality, color='seagreen',   linewidth=1.5)
-axes[2].set_title('Seasonal Component')
-
-axes[3].plot(dates, noise,       color='gray',       linewidth=1, alpha=0.8)
-axes[3].set_title('Irregular (Noise) Component')
-
-plt.tight_layout()
-plt.show()
+df.resample("MS").mean()                    # 降頻：週 → 月平均
+df["CO2"].rolling(12, center=True).mean()   # 移動平均（平滑、看局部趨勢）
+df["CO2"].rolling(12, center=True).std()    # 移動標準差（看變異是否改變）
+df["CO2"].shift(1)                          # 落後一期 (lag)，AR 模型與自相關的基礎
+df["CO2"].diff(1)                           # 一階差分：去除趨勢
+df["CO2"].diff(52)                          # 季節差分：去除年週期（週資料 m = 52）
+np.log(df["CO2"]).diff()                    # log + 差分 ≈ 成長率
 ```
 
-## Essential Time Series Operations in pandas
+### 事件紀錄轉時間序列
 
-### Resampling
-
-Change the frequency of the data by aggregating (downsampling) or interpolating (upsampling).
+感測器 / IoT / 日誌資料常是長格式 `timestamp, device, value`：
 
 ```python
-# Weekly CO2 data resampled to monthly / annual summaries
-df_monthly = df.resample('MS').mean()   # monthly average
-df_annual  = df.resample('YS').mean()   # annual average
+df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")             # Unix 毫秒
+wide = df.pivot_table(index="timestamp", columns="device", values="value")
+
+# 不同頻率的來源對齊
+env = pd.concat([temp, sun], axis=1)
+env.resample("1h").agg({"temperature": "max", "sunshine": "sum"})          # 定義共同頻率與彙總方式
+env.ffill()                                                               # 假設上次讀值持續有效
 ```
 
-Tip: Resampling is not just for finance or macro data. It is also the core cleanup step for sensor and IoT data, where different devices often report at different cadences.
+> `ffill()` 適合狀態型量測（溫度），不適合累積計數或突發事件計數。先想清楚分析單位：單一裝置隨時間、同時間多裝置、還是跨裝置的彙總。
 
-## Sensor and IoT Tables Often Start as Event Logs
+## 建模前的視覺檢查
 
-Many real-world time series do not begin as a clean, evenly spaced matrix. They often start as event-style records such as:
+| 問題 | 看什麼 | 意義 |
+| --- | --- | --- |
+| 有趨勢嗎？ | 長期漂移 | 需要差分或去趨勢 |
+| 有季節性嗎？ | 規律重複 | SARIMA 或分解 |
+| 變異隨時間變大嗎？ | 振幅隨水準增加 | 乘法模型或 log 轉換 |
+| 結構斷點或離群？ | 突然的水準移動、尖峰 | 介入變數或穩健方法 |
 
-- `timestamp`
-- `device`
-- `value`
-
-That means the first task is often to convert a long event table into a time-indexed structure that is easier to analyze.
-
-For example, device timestamps may arrive as Unix milliseconds:
-
-```python
-df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
-```
-
-Then a long table can be pivoted into a wide sensor matrix:
-
-```python
-wide = pd.pivot_table(
-    data=df,
-    index="timestamp",
-    columns="device",
-    values="value",
-)
-```
-
-Key point: Before modeling or plotting, decide whether your real analysis unit is:
-
-- one device over time
-- many devices at the same timestamp
-- one derived aggregate across devices
-
-That choice determines whether wide format, long format, or a grouped panel structure is the most natural representation.
-
-## Aligning Series with Different Sampling Frequencies
-
-IoT and operational data often combine sources with mismatched frequencies. One sensor may report every hour, another every 30 minutes, and an event counter may only update when something happens.
-
-If you concatenate them directly, missing values will appear even when nothing is wrong. The real question is whether those gaps mean:
-
-- no reading was produced
-- the signal is unchanged and can reasonably be carried forward
-- the data should first be resampled to a shared clock
-
-Two common patterns are:
-
-```python
-environ = pd.concat([temp, sun], axis=1)
-
-agg_dict = {"temperature": "max", "sunshine": "sum"}
-env1h = environ.resample("1h").agg(agg_dict)
-```
-
-and:
-
-```python
-env30min = environ.ffill()
-```
-
-These encode different assumptions:
-
-- `resample(...).agg(...)` defines a target frequency and how each variable should summarize within a bin
-- forward fill assumes the last known reading remains valid until a new observation arrives
-
-Warning: `ffill()` is reasonable for state-like measurements, but much less safe for cumulative counters or bursty event counts.
-
-### Rolling Statistics
-
-Compute statistics over a sliding window — useful for smoothing and detecting local trends.
-
-```python
-# 12-month rolling mean and standard deviation
-rolling_mean = df['CO2'].rolling(window=12, center=True).mean()
-rolling_std  = df['CO2'].rolling(window=12, center=True).std()
-
-plt.figure(figsize=(10, 4))
-plt.plot(df['CO2'],  label='Original',      color='steelblue', alpha=0.6)
-plt.plot(rolling_mean,       label='Rolling Mean (12)', color='tomato',    linewidth=2)
-plt.fill_between(df.index,
-                 rolling_mean - rolling_std,
-                 rolling_mean + rolling_std,
-                 alpha=0.15, color='tomato', label='±1 Rolling SD')
-plt.title('Rolling Statistics — Atmospheric CO2')
-plt.legend()
-plt.tight_layout()
-plt.show()
-```
-
-### Lag and Shift
-
-Create lagged versions of the series — fundamental for building AR models and computing autocorrelation.
-
-```python
-df['lag_1']  = df['CO2'].shift(1)   # previous week
-df['lag_52'] = df['CO2'].shift(52)  # roughly same week last year
-
-print(df[['CO2', 'lag_1', 'lag_52']].head(15))
-```
-
-### Differencing
-
-Subtract consecutive observations to remove trend. First difference: Δyₜ = yₜ − yₜ₋₁.
-
-```python
-df['diff_1']  = df['CO2'].diff(1)    # first difference
-df['diff_52'] = df['CO2'].diff(52)   # seasonal difference for yearly cycle
-
-fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-df['CO2'].plot(ax=axes[0], title='Original Series',         color='steelblue')
-df['diff_1'].plot(    ax=axes[1], title='First Difference (d=1)',  color='tomato')
-df['diff_52'].plot(   ax=axes[2], title='Seasonal Difference (D=1, m=52)', color='seagreen')
-plt.tight_layout()
-plt.show()
-```
-
-## First Look: Visual Inspection Checklist
-
-Before any modeling, always plot the raw series and ask:
-
-| Question | What to Look For | Why It Matters |
-| ------------------------------------------- | --------------------------------------------- | ----------------------------------------- |
-| Is there a trend? | Upward or downward drift over time | May need differencing or detrending |
-| Is there seasonality? | Regular repeating patterns | Need seasonal model (SARIMA) or decomposition |
-| Is the variance growing over time? | Wider oscillations as level increases | Suggests multiplicative model or log transform |
-| Are there structural breaks or outliers? | Sudden level shifts, spikes | May need intervention variables or robust methods |
-| Is the series relatively smooth or noisy? | High-frequency noise vs clear patterns | Informs smoothing and model complexity |
-
-```python
-# Quick visual inspection
-fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-
-# Raw series
-df['CO2'].plot(ax=axes[0,0], title='Raw Series', color='steelblue')
-
-# Log transform — stabilizes variance
-np.log(df['CO2']).plot(ax=axes[0,1], title='Log Transform', color='tomato')
-
-# First difference of log
-np.log(df['CO2']).diff(1).plot(ax=axes[1,0], title='Log + First Diff', color='seagreen')
-
-# Seasonal diff of log first diff
-np.log(df['CO2']).diff(1).diff(52).plot(
-    ax=axes[1,1], title='Log + First Diff + Seasonal Diff', color='orange')
-
-plt.tight_layout()
-plt.show()
-```
-
-Tip: Log + differencing is one of the most common preprocessing pipelines for economic and business time series with growing variance. It often converts a non-stationary multiplicative series into something approximately stationary.
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ------------------------------ | --------------------------------------------------------------------------------- |
-| **Observations are ordered** | Time series data cannot be shuffled — temporal dependence is the core property |
-| **Four components** | Trend, Seasonality, Cyclicality, Irregular — understand which are present |
-| **DatetimeIndex is essential** | Set `parse_dates` and `asfreq()` before doing anything else |
-| **Rolling stats smooth noise** | Use rolling mean/SD for trend visualization and anomaly detection |
-| **Differencing removes trend** | First difference removes linear trend; seasonal difference removes annual pattern |
-| **Visual inspection first** | Always plot raw series before choosing transformations or models |
+> **log + 差分**是經濟 / 商業資料最常見的前處理：常把非定態、乘法結構的序列轉成近似定態。下一步見 [分解](decomposition.md) 與 [定態](stationarity.md)。

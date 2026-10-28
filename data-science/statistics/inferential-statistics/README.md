@@ -1,139 +1,34 @@
-# Inferential Statistics
+[Statistics](../README.md) › 推論統計
 
-**Inferential statistics** uses sample data to draw conclusions about a larger population. Unlike descriptive statistics (which only summarizes what you observe), inferential statistics **quantifies uncertainty and tests hypotheses** — enabling you to make evidence-based decisions.
+# 推論統計 (Inferential Statistics)
 
-**Note:**
+用樣本對母體下結論。永遠無法確定，但可以**量化不確定性**，並在明確的錯誤率下做決策。
 
-- Inferential statistics uses samples to say something about a population.
-- We never get certainty, but we can quantify uncertainty and make decisions with explicit error rates.
-
-## Why This Order?
+## 建議順序
 
 ```
-What is the population parameter I want to estimate?
-        ↓
-Estimate it with confidence intervals (Point Estimate + Uncertainty)
-        ↓
-Test a specific hypothesis (Is there a real effect, or just noise?)
-        ↓
-Understand the risks of being wrong (Type I & Type II errors)
-        ↓
-Choose the right test based on data type and assumptions
+抽樣與估計 → 信賴區間 → 假設檢定 → 多重檢定校正 → 假設檢查 → 選擇檢定 → ANOVA
 ```
 
-**Note:**
+## 筆記
 
-- **Hypothesis testing without understanding confidence intervals and error types** leads to misinterpretation — the most common mistake in applied statistics.
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [抽樣與估計](sampling-estimation.md) | 抽樣方法、點估計、估計量的偏誤與變異 | 樣本如何代表母體？ |
+| [信賴區間](confidence-intervals.md) | 平均數 / 比例的 CI、正確解讀 | 真值可能落在哪個範圍？ |
+| [假設檢定](hypothesis-testing.md) | H₀ / H₁、p 值、型一 / 型二錯誤、檢定力、效果量 | 效果是真的還是雜訊？ |
+| [多重檢定校正](multiple-testing.md) | Bonferroni、Holm、FDR (Benjamini-Hochberg) | 一次做上千個檢定怎麼辦？ |
+| [假設檢查](assumption-checks.md) | 常態、變異數同質、獨立性 | 檢定的前提成立嗎？ |
+| [常用檢定](statistical-tests.md) | t 檢定、比例檢定、相關檢定、選擇流程 | 我該用哪個檢定？ |
 
-## Overview of Topics
+### ANOVA 系列
 
-| Section                                                       | Level       | Key Questions Answered                                        |
-| ------------------------------------------------------------- | ----------- | ------------------------------------------------------------- |
-| [**Sampling & Estimation**](./sampling-estimation.md)         | Foundation  | How do we estimate population parameters from a sample?       |
-| [**Confidence Intervals**](./confidence-intervals.md)         | Core        | What range of values is the true parameter likely to fall in? |
-| [**Hypothesis Testing Framework**](./hypothesis-testing.md)   | Core        | How do we decide if an effect is real or due to chance?       |
-| [**ANOVA Overview**](./anova-overview.md)                     | Core        | How do we compare three or more means in a structured way?    |
-| [**One-Way ANOVA**](./one-way-anova.md)                       | Application | Do three or more independent group means differ?              |
-| [**Two-Way ANOVA**](./two-way-anova.md)                       | Application | How do two factors and their interaction affect an outcome?   |
-| [**Repeated-Measures ANOVA**](./repeated-measures-anova.md)   | Application | How do repeated observations from the same subject differ?    |
-| [**Post-hoc Tests & Effect Size**](./post-hoc-effect-size.md) | Application | Which groups differ, and how large is the effect?             |
-| [**Common Statistical Tests**](./statistical-tests.md)        | Application | Which test do I use, and how do I run it in Python?           |
-| [**Assumption Checks**](./assumption-checks.md)               | Application | How do I verify normality, equal variance, and independence?  |
+| 筆記 | 回答的問題 |
+| --- | --- |
+| [ANOVA 總覽](anova-overview.md) | 三組以上的平均數如何比較？ |
+| [單因子 ANOVA](one-way-anova.md) | 一個因子、多個組別 |
+| [二因子 ANOVA](two-way-anova.md) | 兩個因子與交互作用 |
+| [重複量數 ANOVA](repeated-measures-anova.md) | 同一受試者多次量測 |
+| [事後檢定與效果量](post-hoc-effect-size.md) | 哪幾組不同？差多大？ |
 
-## What's Inside Each Section
-
-### Sampling & Estimation
-
-- Population vs. sample — key terminology
-- Sampling methods (random, stratified, cluster)
-- Point estimates and why they're never exactly right
-- The Central Limit Theorem — why sample means are normally distributed
-- Standard Error (SE): how much estimates vary across samples
-- Bootstrap: estimating uncertainty by resampling
-
-### Confidence Intervals
-
-- What a confidence interval (CI) actually means — and common misconceptions
-- Constructing CIs for means and proportions
-- How sample size and confidence level affect interval width
-- Interpreting CIs vs. p-values
-
-### Hypothesis Testing Framework
-
-- Null and alternative hypothesis (H₀ vs. H₁)
-- p-value: what it is and what it is not
-- Significance level (α) and how to choose it
-- Type I error (false positive) and Type II error (false negative)
-- Statistical power and effect size
-
-### ANOVA
-
-- Omnibus testing for three or more means
-- One-way, two-way, and repeated-measures designs
-- Post-hoc comparisons after a significant global test
-- Effect sizes such as η² and partial η²
-
-### Assumption Checks
-
-- Three core assumptions: independence, normality, equal variance
-- Normality: visual (histogram, Q–Q plot) + formal (Shapiro–Wilk, K–S, Anderson–Darling)
-- Variance: Levene's, Bartlett's, Brown–Forsythe — when to use each
-- Independence: Durbin–Watson (autocorrelation), Runs test (randomness)
-- t-score vs. z-score — when to use each and how to compute critical values
-- Full pre-test checklist
-
-### Common Statistical Tests
-
-Organized by data type and number of groups:
-
-| Scenario                                  | Test                            |
-| ----------------------------------------- | ------------------------------- |
-| One sample mean vs. known value           | One-sample t-test               |
-| Two independent group means               | Independent samples t-test      |
-| Two related/paired group means            | Paired t-test                   |
-| One proportion vs. known value            | One-proportion z-test           |
-| Two proportions                           | Two-proportion z-test           |
-| Association between categorical variables | Chi-square test of independence |
-
-## Visualization Quick Reference
-
-| Chart / Tool              | Best For                                              |
-| ------------------------- | ----------------------------------------------------- |
-| Error bar plot            | Visualizing point estimates with confidence intervals |
-| Power curve               | Showing trade-off between sample size and power       |
-| p-value distribution plot | Understanding null hypothesis behavior                |
-| Sampling distribution     | Illustrating Central Limit Theorem                    |
-| Bootstrap distribution    | Showing uncertainty from resampling                   |
-
-## Key Concepts at a Glance
-
-| Concept            | Symbol   | Plain Language                                                  |
-| ------------------ | -------- | --------------------------------------------------------------- |
-| Significance level | α        | The maximum acceptable probability of a false positive          |
-| p-value            | p        | Probability of seeing data this extreme if H₀ were true         |
-| Confidence level   | 1 − α    | How often the interval would contain the true value if repeated |
-| Standard Error     | SE       | How much a sample statistic varies from sample to sample        |
-| Effect size        | d, r, η² | Magnitude of the effect, independent of sample size             |
-| Statistical power  | 1 − β    | Probability of detecting a real effect when it exists           |
-| Bootstrap          | —        | Repeated resampling to estimate uncertainty                     |
-
-## Key Takeaway
-
-Inferential statistics answers: "What can my sample tell me about the world?" Always pair a p-value with an effect size and confidence interval — a result can be statistically significant but practically meaningless (or vice versa).
-
-## Suggested Paths Through This Module
-
-If you are studying for understanding:
-
-1. sampling and estimation
-2. confidence intervals
-3. hypothesis testing
-4. assumption checks
-5. ANOVA and post-hoc comparisons
-
-If you are solving a practical analysis problem:
-
-1. identify the parameter or comparison you care about
-2. inspect assumptions and study design
-3. choose the test
-4. report effect size and uncertainty with the result
+> 報告 p 值時，永遠搭配**效果量**與**信賴區間**：顯著不等於重要，不顯著也不等於沒有效果。

@@ -1,177 +1,83 @@
-# Core Concepts & Bayes' Theorem
+[Statistics](../README.md) › [貝氏統計](README.md) › 貝氏定理
 
-Bayesian statistics is built on a single, powerful idea: **probability is a measure of belief, and beliefs should be updated when new evidence arrives**. This section introduces the philosophical foundation and the mathematical engine behind it all.
+# 貝氏定理與核心概念 (Bayes' Theorem)
 
-Key point: Why is Bayesian statistics important: Frequent statistics can only answer "Assuming that the null hypothesis is true, how extreme is this data?" while Bayesian statistics can directly answer "After reading the data, what is my belief about the parameters?" This is a fundamental difference in epistemology.
+頻率學派只能回答「若 H₀ 為真，這筆資料有多極端？」；貝氏可以直接回答「看完資料後，我對參數的信念是什麼？」
 
-## Two Views of Probability
+| 觀點 | 機率代表 | 例子 |
+| --- | --- | --- |
+| 頻率學派 (frequentist) | 長期相對次數 | 「公平硬幣多次擲出正面的比例是 50%」 |
+| 貝氏 (Bayesian) | 信念 / 不確定性 | 「我有 70% 把握這枚硬幣是公平的」 |
 
-Before deriving Bayes' theorem, it's essential to understand what "probability" even means. There are two fundamentally different interpretations:
+貝氏觀點可以對**一次性事件**與**參數**給機率；頻率學派把參數視為固定的未知常數。
 
-| View            | Probability Represents          | Example Statement                                       |
-| --------------- | ------------------------------- | ------------------------------------------------------- |
-| **Frequentist** | Long-run frequency of an event  | "A fair coin lands heads 50% of the time in many flips" |
-| **Bayesian**    | Degree of belief or uncertainty | "I am 70% confident this coin is fair"                  |
+## 貝氏定理
 
-Tip: The Bayesian view allows us to assign probabilities to one-time events and to model parameters — things a frequentist treats as fixed unknown constants, not as random variables.
+由條件機率 $P(A \cap B) = P(A \mid B)P(B) = P(B \mid A)P(A)$ 移項即得。基礎版（事件、篩檢例子）見 [機率基礎](../probability-and-distributions/probability-basics.md#貝氏定理-bayes-theorem)。
 
-## Bayes' Theorem
+把事件換成**參數 θ** 與**資料 D**：
 
-Bayes' theorem follows directly from the definition of conditional probability.
+$$
+\underbrace{P(\theta \mid D)}_{\text{後驗}} = \frac{\overbrace{P(D \mid \theta)}^{\text{概似}} \cdot \overbrace{P(\theta)}^{\text{先驗}}}{\underbrace{P(D)}_{\text{證據}}}
+\qquad\Longrightarrow\qquad
+\text{後驗} \propto \text{概似} \times \text{先驗}
+$$
 
-### Derivation
+| 項 | 名稱 | 回答 |
+| --- | --- | --- |
+| P(θ) | 先驗 (prior) | 看資料前相信什麼？ |
+| P(D \| θ) | 概似 (likelihood) | 哪些參數值讓觀察到的資料合理？ |
+| P(θ \| D) | 後驗 (posterior) | 結合兩者後該相信什麼？ |
+| P(D) = ∫P(D \| θ)P(θ)dθ | 證據 / 邊際概似 (marginal likelihood) | 正規化常數，讓後驗積分為 1 |
 
-\[ P(A \cap B) = P(A|B) \cdot P(B) = P(B|A) \cdot P(A) ]
+> P(D) 的積分在複雜模型中通常算不出來，這就是 [MCMC](mcmc.md) 存在的原因：只需要「後驗 ∝ 概似 × 先驗」就能抽樣。
 
-Rearranging:
-
-\[ \boxed{P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)\}} ]
-
-### In Statistical Inference Context
-
-Replace generic events with **parameter θ** and **data D**:
-
-\[ \boxed{P(\theta | D) = \frac{P(D | \theta) \cdot P(\theta)}{P(D)\}} ]
-
-| Term               | Name                   | Meaning                                            |
-| ------------------ | ---------------------- | -------------------------------------------------- |
-| $P(\theta \mid D)$ | posterior distribution | Belief about θ **after** seeing data               |
-| $P(D \mid \theta)$ | likelihood             | How probable is this data given parameter θ?       |
-| $P(\theta)$        | **Prior**              | Belief about θ **before** seeing data              |
-| $P(D)$             | **Evidence**           | Normalizing constant — ensures posterior sums to 1 |
-
-Tip: The practical shorthand is Posterior ∝ Likelihood × Prior. Because $P(D)$ is just a constant that does not depend on θ, we often work with the unnormalized form $P(\theta \mid D) \propto P(D \mid \theta) \cdot P(\theta)$.
-
-## Intuition: The Update Cycle
-
-Bayesian inference is fundamentally **iterative**. You start with a prior belief, observe data, and produce a posterior — which then becomes the prior for the next observation.
+## 更新循環
 
 ```
-Prior Belief → [Observe Data] → Posterior Belief → [Observe More Data] → Updated Posterior → ...
+先驗 → [觀察資料] → 後驗 → [更多資料] → 更新後的後驗 → …
 ```
 
-This is how beliefs rationally evolve with accumulating evidence. Crucially:
+| 情況 | 結果 |
+| --- | --- |
+| 強先驗 | 需要更多資料才能推翻 |
+| 弱先驗 | 資料很快主導 |
+| 資料越多 | 不論先驗為何，後驗都集中到真值附近，趨近 MLE |
 
-* **Strong priors** require more data to overcome
-* **Weak (vague) priors** let the data dominate quickly
-* **More data** → Posterior concentrates around the true value regardless of prior choice
+## 範例：擲硬幣
 
-## Worked Example: Coin Flipping
-
-Suppose we want to estimate θ = probability of heads for a coin we suspect might be biased.
-
-**Setup:**
-
-* Prior: We believe θ is probably near 0.5 (fair coin), but we're uncertain → Beta(2, 2)
-* We flip 10 times and observe 7 heads
+先驗 Beta(2, 2)（大概公平，但不確定），擲 10 次得 7 次正面。Beta 先驗 + Binomial 資料 → 後驗仍是 Beta（[共軛](likelihood-conjugate.md)）：Beta(2 + 7, 2 + 3) = Beta(9, 5)。
 
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import beta
 
-# Parameter space
 theta = np.linspace(0, 1, 300)
+a0, b0, heads, tails = 2, 2, 7, 3
 
-# Prior: Beta(2, 2) — weak belief in fairness
-prior_a, prior_b = 2, 2
-prior = beta.pdf(theta, prior_a, prior_b)
-
-# Data: 7 heads out of 10 flips
-heads = 7
-tails = 3
-
-# Posterior: Beta(prior_a + heads, prior_b + tails)
-# This is the Beta-Binomial conjugate result (expanded in the conjugate priors chapter)
-post_a = prior_a + heads
-post_b = prior_b + tails
-posterior = beta.pdf(theta, post_a, post_b)
-
-# Likelihood: proportional to theta^heads * (1-theta)^tails
+prior = beta.pdf(theta, a0, b0)
+posterior = beta.pdf(theta, a0 + heads, b0 + tails)
 likelihood = theta**heads * (1 - theta)**tails
-likelihood /= likelihood.max()  # normalize for visualization only
+likelihood /= likelihood.max()                     # 只為了畫圖縮放
 
-# Plot
-plt.figure(figsize=(9, 5))
-plt.plot(theta, prior,      label=f'Prior: Beta({prior_a}, {prior_b})',  linestyle='--', color='gray')
-plt.plot(theta, likelihood, label='Likelihood (scaled)',                  linestyle=':',  color='steelblue')
-plt.plot(theta, posterior,  label=f'Posterior: Beta({post_a}, {post_b})', linewidth=2.5,  color='tomato')
-plt.axvline(heads / (heads + tails), color='black', linestyle='--', alpha=0.4, label='MLE (7/10 = 0.7)')
-plt.xlabel('θ (probability of heads)')
-plt.ylabel('Density')
-plt.title("Bayesian Update: Coin Flip Example")
-plt.legend()
-plt.tight_layout()
-plt.show()
-```
+plt.plot(theta, prior, "--", color="gray", label="Prior Beta(2,2)")
+plt.plot(theta, likelihood, ":", label="Likelihood (scaled)")
+plt.plot(theta, posterior, lw=2.5, color="tomato", label="Posterior Beta(9,5)")
+plt.axvline(0.7, ls="--", alpha=0.4, label="MLE = 0.7")
+plt.legend(); plt.show()
 
-**Reading the plot:**
-
-* The **prior** (gray dashed) reflects our initial belief — symmetric, centered at 0.5
-* The **likelihood** (blue dotted) peaks at 0.7, driven purely by data
-* The **posterior** (red solid) is a compromise — pulled toward 0.7 by data, but moderated by the prior
-
-Tip: With only 10 flips, the prior still has visible influence. With 1000 flips at the same rate, the posterior would nearly coincide with the likelihood. Data dominates as n grows. The larger the amount of data, the smaller the influence of the prior, and the closer the posterior is to the maximum likelihood estimate (MLE). This also explains why frequentist statistics and Bayesian statistics tend to reach similar conclusions when using large samples.
-
-## Reading Prior, Likelihood, and Posterior Together
-
-One of the biggest learning jumps in Bayesian statistics is recognizing that these three objects play different roles:
-
-| Object         | Question it answers                                      |
-| -------------- | -------------------------------------------------------- |
-| **Prior**      | What did I believe before seeing the data?               |
-| **Likelihood** | Which parameter values make the observed data plausible? |
-| **Posterior**  | What should I believe now after combining both?          |
-
-![Posterior density example](bayes-posterior-density-example.png)
-
-In the source material, this type of plot is useful because it makes Bayesian updating tangible: the posterior is not just "a formula result", but a reshaped belief distribution. In practice, when you read a posterior density plot, look for:
-
-1. Where the mass is concentrated.
-2. How wide the distribution is.
-3. Whether the distribution is symmetric or skewed.
-
-Tip: A narrow posterior means the data plus prior together support a relatively precise claim. A wide posterior means substantial uncertainty remains, even after observing the data.
-
-## A Sequential Update Example
-
-Bayesian reasoning is especially natural when data arrives over time. Instead of refitting from scratch conceptually, the old posterior becomes the new prior.
-
-```python
-from scipy.stats import beta
-
-# Start with a weakly informative prior
+# 逐批更新：上一批的後驗 = 下一批的先驗
 a, b = 2, 2
-
-# Batch 1: 8 flips, 5 heads
-a, b = a + 5, b + 3
-print("After batch 1:", beta(a, b).mean())
-
-# Batch 2: 12 more flips, 9 heads
-a, b = a + 9, b + 3
-print("After batch 2:", beta(a, b).mean())
-
-# Batch 3: 20 more flips, 11 heads
-a, b = a + 11, b + 9
-print("After batch 3:", beta(a, b).mean())
+for h, t in [(5, 3), (9, 3), (11, 9)]:
+    a, b = a + h, b + t
+    print(round(beta(a, b).mean(), 3))
 ```
 
-This sequential view is part of what makes Bayesian methods attractive in experimentation, online learning, and monitoring problems where evidence accumulates gradually.
+後驗是先驗與資料的**折衷**：被資料拉向 0.7，但被先驗往 0.5 修正。只擲 10 次時先驗影響明顯；擲 1,000 次時後驗幾乎與概似重合，這也是大樣本下兩學派結論相近的原因。
 
-## The Evidence Term P(D)
+![Posterior density example](src/bayes-posterior-density-example.png)
 
-The denominator $P(D)$ is the **marginal likelihood** — the probability of observing the data averaged over all possible parameter values:
+**讀後驗密度圖**：(1) 機率質量集中在哪；(2) 有多寬（窄 = 較精確的主張）；(3) 是否對稱。
 
-\[ P(D) = \int P(D | \theta) \cdot P(\theta) , d\theta ]
-
-Warning: This integral is often analytically intractable for complex models, which is why MCMC methods exist. In practice, we often work with Posterior ∝ Likelihood × Prior and let sampling methods handle the normalization constant implicitly.
-
-## Key Takeaways
-
-| Concept                            | Key Point                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------- |
-| **Probability = degree of belief** | In Bayesian stats, parameters have distributions — they are not fixed constants |
-| **Bayes' theorem**                 | Posterior ∝ Likelihood × Prior — the complete update formula                    |
-| **The update cycle**               | Each posterior can become the prior for the next round of data                  |
-| **Prior influence shrinks**        | As n → ∞, the posterior is dominated by the likelihood regardless of prior      |
-| **P(D) is just a normalizer**      | Often skipped; sampling methods handle it without computing it directly         |
+> 逐批更新的特性讓貝氏方法很適合 A/B 測試、線上學習、監控等資料逐步累積的情境。

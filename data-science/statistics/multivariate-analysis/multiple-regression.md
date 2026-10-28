@@ -1,287 +1,97 @@
-# Multiple Linear Regression
+[Statistics](../README.md) › [多變量分析](README.md) › 多元迴歸：預測與正則化
 
-**Multiple linear regression** extends simple regression to model a continuous outcome as a linear function of **two or more predictors**. It is the most widely used statistical model in practice — foundational to econometrics, social science, epidemiology, and machine learning.
+# 多元迴歸：預測與正則化 (Multiple Regression for Prediction)
 
-Key point: The core value of multiple regression: it allows you to estimate the independent effect of each predictor variable while "controlling other variables". This is the starting point for causal inference and a fundamental tool for understanding "net effect" and "confounding factors." The interpretation of each coefficient is: "With all other variables held constant, how much will the result change if this variable is increased by one unit?"
+多元迴歸的基礎（偏迴歸係數、調整 R²、VIF、虛擬編碼、交互作用、遺漏變數偏誤）見 [迴歸分析：多元線性迴歸](../regression-analysis/multiple-linear-regression.md)。這篇著重多變量情境：**以預測為目的的工作流程**，以及**預測變數很多**時怎麼辦。
 
-## The Model
+| 目的 | 工具 | 重視 |
+| --- | --- | --- |
+| 解釋 / 推論 | `statsmodels` | 係數、SE、p 值、CI |
+| 預測 | `sklearn` | 測試集誤差、交叉驗證、pipeline |
 
-\[
-\hat{y} = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \cdots + \beta_p x_p + \varepsilon
-\]
-
-| Symbol | Name | Meaning |
-| ------------ | ----------------- | ---------------------------------------------- |
-| $\hat{y}$ | Fitted value | Model's predicted outcome |
-| $\beta_0$ | Intercept | Expected y when all predictors = 0 |
-| $\beta_j$ | Slope coefficient | Change in y per unit increase in xⱼ, **holding all other variables constant** |
-| $\varepsilon$ | Error | The part of y not explained by the model |
-
-Warning: The phrase "holding all other variables constant" is the single most important concept in multiple regression. It's what separates a partial effect from a simple correlation. Misunderstanding this leads to the most common misinterpretations of regression output. Without this condition, the meaning of the coefficient is completely different.
-
-## Dataset
-
-We use the **California Housing dataset** — a realistic regression problem with multiple numerical predictors.
+## 以預測為目的的流程
 
 ```python
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import statsmodels.api as sm
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-
-housing = fetch_california_housing(as_frame=True)
-df = housing.frame
-print(df.shape)
-print(df.describe().round(2))
-```
-
-## Fitting OLS with statsmodels
-
-Use **statsmodels** when you need full statistical output (standard errors, p-values, confidence intervals, F-test). Use **sklearn** when you need to integrate into a machine learning pipeline.
-
-```python
-import statsmodels.api as sm
-
-# Select predictors
-feature_cols = ['MedInc', 'HouseAge', 'AveRooms', 'AveBedrms',
-                'Population', 'AveOccup', 'Latitude', 'Longitude']
-target_col   = 'MedHouseVal'
-
-X = df[feature_cols]
-y = df[target_col]
-
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42)
-
-# Add constant for intercept
-X_train_sm = sm.add_constant(X_train)
-X_test_sm  = sm.add_constant(X_test)
-
-# Fit OLS
-model = sm.OLS(y_train, X_train_sm)
-result = model.fit()
-
-print(result.summary())
-```
-
-**Key sections of the OLS summary:**
-
-| Section | What to Check |
-| --------------------- | ---------------------------------------------------------------------- |
-| **R-squared** | Proportion of variance explained (0–1); higher is better |
-| **Adj. R-squared** | R² penalized for number of predictors — use this for model comparison |
-| **F-statistic / Prob(F)** | Overall model significance — is any predictor useful at all? |
-| **coef (coefficient)** | Partial effect of each predictor |
-| **P>\ | t\ | ** | Is this coefficient significantly different from zero? (< 0.05) |
-| **[0.025   0.975]** | 95% confidence interval for each coefficient |
-| **AIC / BIC** | Model selection criteria (lower = better) |
-
-## Interpreting Coefficients
-
-Coefficients only have clear interpretations when you understand the **units and scale** of each variable.
-
-```python
-# Display coefficient table with confidence intervals
-coef_df = pd.DataFrame({
-    'Coefficient':  result.params,
-    'Std Error':    result.bse,
-    't-stat':       result.tvalues,
-    'p-value':      result.pvalues,
-    'CI Lower':     result.conf_int()[0],
-    'CI Upper':     result.conf_int()[1]
-}).drop('const').round(4)
-
-print(coef_df.sort_values('Coefficient', ascending=False).to_string())
-```
-
-**Coefficient plot — the clearest way to communicate regression results:**
-
-```python
-coefs = result.params.drop('const')
-ci    = result.conf_int().drop('const')
-
-fig, ax = plt.subplots(figsize=(8, 5))
-y_pos = range(len(coefs))
-
-ax.barh(y_pos, coefs.values,
-        xerr=[(coefs.values - ci[0].values),
-              (ci[1].values - coefs.values)],
-        align='center', color=['tomato' if c > 0 else 'steelblue' for c in coefs],
-        alpha=0.7, capsize=4)
-ax.axvline(0, color='black', linewidth=1)
-ax.set_yticks(y_pos)
-ax.set_yticklabels(coefs.index)
-ax.set_xlabel('Coefficient (with 95% CI)')
-ax.set_title('OLS Coefficients — California Housing')
-plt.tight_layout()
-plt.show()
-```
-
-Tip: A coefficient whose 95% confidence interval does not cross zero is statistically significant at α = 0.05. The plot makes this immediately visible without reading p-values.
-
-## Multicollinearity: VIF
-
-Before trusting coefficient estimates, verify that predictors are not too highly correlated with each other.
-
-```python
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-
-X_vif = sm.add_constant(X_train)
-vif = pd.DataFrame({
-    'Feature': X_train.columns,
-    'VIF':     [variance_inflation_factor(X_vif.values, i + 1)
-                for i in range(len(X_train.columns))]
-}).sort_values('VIF', ascending=False).round(2)
-
-print(vif)
-```
-
-Warning: If VIF > 10 for any predictor, coefficients are unreliable. Consider: removing one of the correlated predictors, combining them (e.g., create a ratio), or switching to Ridge regression which handles multicollinearity more gracefully.
-
-## Interaction Terms
-
-An **interaction term** captures cases where the effect of one predictor depends on the value of another.
-
-\[
-\hat{y} = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 (x_1 \times x_2) + \varepsilon
-\]
-
-The effect of x₁ on y is now: $\beta_1 + \beta_3 x_2$ — it changes depending on x₂.
-
-```python
-import statsmodels.formula.api as smf
-
-# Use a subset for clarity
-df_sub = df[['MedHouseVal', 'MedInc', 'HouseAge']].copy()
-
-# Model with interaction term
-model_interact = smf.ols('MedHouseVal ~ MedInc + HouseAge + MedInc:HouseAge',
-                          data=df_sub).fit()
-print(model_interact.summary().tables[1])
-```
-
-Tip: When to include interactions: Use interactions when you have a domain reason to believe the effect of X₁ *changes* at different levels of X₂. For example: "Does the effect of income on house value differ for older vs newer homes?" Test significance of the interaction term before including it.
-
-## Variable Selection
-
-With many potential predictors, choosing which to include is a key modeling decision.
-
-### Method 1: Stepwise Selection (AIC-based)
-
-```python
-# Forward selection using AIC
-def forward_selection(data, response, significance_level=None):
-    """AIC-based forward selection."""
-    remaining = set(data.columns) - {response}
-    selected  = []
-    current_aic = smf.ols(f'{response} ~ 1', data=data).fit().aic
-
-    while remaining:
-        aic_with_candidate = []
-        for candidate in remaining:
-            formula = f"{response} ~ {' + '.join(selected + [candidate])}"
-            try:
-                aic = smf.ols(formula, data=data).fit().aic
-                aic_with_candidate.append((aic, candidate))
-            except:
-                pass
-        aic_with_candidate.sort()
-        best_aic, best_candidate = aic_with_candidate[0]
-        if best_aic < current_aic:
-            selected.append(best_candidate)
-            remaining.remove(best_candidate)
-            current_aic = best_aic
-        else:
-            break
-
-    return selected
-
-selected_vars = forward_selection(df[feature_cols + [target_col]], target_col)
-print(f"Selected variables: {selected_vars}")
-```
-
-### Method 2: Regularization with LASSO and Ridge
-
-LASSO (L1) and Ridge (L2) add a penalty term to the OLS loss function that shrinks coefficients toward zero.
-
-| Method | Penalty | Effect on Coefficients | Best For |
-| --------- | ----------- | ---------------------------------------------- | ------------------------------------- |
-| **Ridge** | Σβⱼ² | Shrinks all coefficients proportionally | Many small predictors; multicollinearity |
-| **LASSO** | Σ\ | βⱼ\ |  | Can shrink some coefficients exactly to **zero** | Automatic variable selection |
-| **ElasticNet** | Mix of both | Between Ridge and LASSO | High-dimensional, correlated predictors |
-
-```python
-from sklearn.linear_model import Ridge, Lasso
-from sklearn.model_selection import cross_val_score
-
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled  = scaler.transform(X_test)
-
-# LASSO — performs variable selection
-lasso = Lasso(alpha=0.01, random_state=42)
-lasso.fit(X_train_scaled, y_train)
-
-coef_lasso = pd.Series(lasso.coef_, index=feature_cols)
-print("LASSO coefficients (zero = excluded):")
-print(coef_lasso.round(4))
-print(f"\nNon-zero predictors: {(coef_lasso != 0).sum()} of {len(feature_cols)}")
-```
-
-Tip: Choosing alpha: Use cross-validation (`LassoCV`, `RidgeCV`) to select the regularization strength — don't tune alpha by hand on the test set.
-
-## Prediction and Evaluation
-
-```python
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Predict on test set (using statsmodels result)
-y_pred_sm = result.predict(X_test_sm)
+df = fetch_california_housing(as_frame=True).frame
+X, y = df.drop(columns="MedHouseVal"), df["MedHouseVal"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-mae  = mean_absolute_error(y_test, y_pred_sm)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred_sm))
-r2   = r2_score(y_test, y_pred_sm)
+res = sm.OLS(y_train, sm.add_constant(X_train)).fit()
+res.summary()                                   # 推論：只看訓練資料
 
-print(f"Test MAE:  {mae:.4f}")
-print(f"Test RMSE: {rmse:.4f}")
-print(f"Test R²:   {r2:.4f}")
-
-# Predicted vs actual plot
-plt.figure(figsize=(7, 6))
-plt.scatter(y_test, y_pred_sm, alpha=0.3, s=20, color='steelblue')
-plt.plot([y_test.min(), y_test.max()],
-         [y_test.min(), y_test.max()], 'r--', linewidth=2, label='Perfect fit')
-plt.xlabel('Actual Values')
-plt.ylabel('Predicted Values')
-plt.title(f'Predicted vs Actual  (Test R² = {r2:.3f})')
-plt.legend()
-plt.tight_layout()
-plt.show()
+y_pred = res.predict(sm.add_constant(X_test))   # 預測：一定要在測試集評估
+mean_absolute_error(y_test, y_pred), np.sqrt(mean_squared_error(y_test, y_pred)), r2_score(y_test, y_pred)
 ```
 
-Warning: Always evaluate on the test set, not training data. Training R² is always optimistic — it rewards complexity even when it doesn't generalize.
+| summary 欄位 | 看什麼 |
+| --- | --- |
+| R² / Adj. R² | 樣本內解釋力 |
+| F-statistic / Prob(F) | 是否至少有一個預測變數有用 |
+| coef、P>\|t\|、[0.025, 0.975] | 偏效果、顯著性、95% CI |
+| AIC / BIC | 模型比較 |
 
-## Key Takeaways
+> 訓練 R² 永遠偏樂觀（模型越複雜越高）；測試 R² 才代表泛化能力。見 [ML: Generalization](../../machine-learning/foundations/generalization.md)。
 
-| Concept | Key Point |
-| ------------------------------------ | ----------------------------------------------------------------------------------- |
-| **"All else equal" interpretation** | Every coefficient is a partial effect — its meaning depends on what else is in the model |
-| **Adj. R² for model comparison** | Regular R² always increases with more predictors; adjusted R² penalizes complexity |
-| **Check VIF before interpreting** | Multicollinear predictors have unstable, unreliable coefficients |
-| **Interaction = conditional effect** | Include when the effect of X₁ plausibly differs across levels of X₂ |
-| **LASSO for variable selection** | Shrinks unimportant coefficients exactly to zero — built-in selection |
-| **Evaluate on test set** | Training R² is optimistic; test R² tells you how well the model generalizes |
+## 正則化：Ridge、Lasso、Elastic Net
 
-## Multivariate Regression Is a Geometry Problem
+在 OLS 損失上加懲罰項，把係數往 0 收縮，以少量偏誤換取變異大幅下降（[bias-variance tradeoff](../inferential-statistics/sampling-estimation.md#估計量的好壞偏誤與變異)）。
 
-With many predictors, interpretation becomes geometric:
+$$
+\min_\beta \ \sum (y_i - x_i^\top\beta)^2 + \lambda \cdot \text{penalty}(\beta)
+$$
 
-- partial slopes depend on the full predictor space
-- leverage becomes multivariate
-- collinearity changes uncertainty shape
+| 方法 | 懲罰 | 效果 | 適合 | 貝氏解釋 |
+| --- | --- | --- | --- | --- |
+| **Ridge** (L2) | $\sum \beta_j^2$ | 所有係數等比例收縮，不會變 0 | 共線性、很多小效果 | 常態先驗 |
+| **Lasso** (L1) | $\sum \lvert\beta_j\rvert$ | 部分係數**剛好變 0** → 自動選變數 | 稀疏訊號、想要精簡模型 | Laplace 先驗 |
+| **Elastic Net** | 兩者混合 | 介於之間；相關變數會一起被選 | 高維且變數相關（基因資料） | — |
 
-Tip: "Holding all else equal" is mathematically precise, but in real applications it may describe combinations that are rare or unrealistic.
+```python
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import RidgeCV, LassoCV, ElasticNetCV
+
+# 懲罰對量尺敏感 → 一定要先標準化；λ（sklearn 叫 alpha）用交叉驗證選，不要在測試集上調
+lasso = make_pipeline(StandardScaler(), LassoCV(cv=5, random_state=42)).fit(X_train, y_train)
+coef = pd.Series(lasso[-1].coef_, index=X.columns)
+(coef != 0).sum()                                 # 被保留的變數數
+
+ridge = make_pipeline(StandardScaler(), RidgeCV(alphas=np.logspace(-3, 3, 50))).fit(X_train, y_train)
+enet = make_pipeline(StandardScaler(), ElasticNetCV(l1_ratio=[0.1, 0.5, 0.9], cv=5)).fit(X_train, y_train)
+```
+
+![Ridge vs Lasso coefficient paths](src/multiple-regression-regularization-paths.png)
+
+<sub>sklearn diabetes 資料（10 個標準化預測變數）。λ 由右往左減小，係數逐漸回到 OLS 值。</sub>
+
+> 正則化後的係數是**有偏的**，一般的 SE 與 p 值不再適用。若需要推論，要用專門方法（如 post-selection inference），或把 Lasso 當作篩選、再於獨立資料上檢定。ML 筆記：[Ridge](../../machine-learning/supervised-learning/regression/ridge.md)、[Lasso](../../machine-learning/supervised-learning/regression/lasso.md)、[Elastic Net](../../machine-learning/supervised-learning/regression/elastic-net.md)。
+
+## 高維資料：p > n
+
+基因體、蛋白質體資料常見「特徵數遠多於樣本數」（20,000 個基因、50 個樣本）。
+
+| 問題 | 原因 | 對策 |
+| --- | --- | --- |
+| OLS 無唯一解 | $X^\top X$ 不可逆（rank < p） | Ridge / Lasso / Elastic Net |
+| 完美配適訓練資料 | 參數比資料多 | 交叉驗證、獨立測試集 |
+| 偽相關 | 隨機也能找到「有關」的特徵 | 正則化、[多重檢定校正](../inferential-statistics/multiple-testing.md) |
+| 特徵選擇洩漏 | 用全部資料選特徵再做 CV | **特徵選擇要放在 CV 迴圈內**，見 [Data Leakage](../../machine-learning/foundations/data-leakage.md) |
+| 難以解釋 | 特徵太多 | 先降維（[PCA](pca.md)）或用 pathway 層級的特徵 |
+
+## 變數選擇方法比較
+
+| 方法 | 評價 |
+| --- | --- |
+| 領域知識 | 首選，尤其以解釋為目的 |
+| Lasso / Elastic Net + CV | 以預測為目的、變數多 |
+| AIC / BIC 比較少數候選模型 | 可以 |
+| 逐步選擇 (stepwise) | 不建議：不穩定、p 值與 CI 失真、易過擬合 |
+
+> 「其他條件不變」在數學上很精確，但在變數高度相關的真實資料中，那種組合可能很少見甚至不存在。

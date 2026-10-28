@@ -1,179 +1,50 @@
-# What are non-parametric tests?
+[Statistics](../README.md) › [無母數方法](README.md) › 何時使用
 
-Non-parametric tests are used when data do **not meet the assumptions** of parametric tests (e.g., normality, homogeneity of variance).
-They are based on **ranks** instead of raw values, making them more robust for skewed distributions, ordinal data, or small samples.
+# 何時使用無母數方法 (When & Why)
 
-# When & Why Non-parametric Methods
+第一步是判斷**是否真的需要**無母數方法。資料符合母數假設時硬用無母數，會白白損失檢定力。
 
-The first and most important step is deciding **whether you actually need** a non-parametric method. This section gives you a systematic way to make that decision.
+## 考慮無母數的情況
 
-Key point: We use non-parametric methods when the data do not support the assumptions required by parametric methods, not simply because they feel safer. Choosing them unnecessarily usually costs statistical power.
+| 情況 | 原因 |
+| --- | --- |
+| 資料是 Ordinal（Likert、分期、評分） | 間距不等，平均數沒有意義 |
+| 小樣本且明顯非常態 | CLT 無法保證 |
+| 嚴重離群值 | 主導平均數與變異數 |
+| 嚴重偏態且關心的是「典型值」 | 平均數不具代表性 |
 
-## What Are the Assumptions of Common Parametric Tests?
+各母數檢定需要的假設與檢查方法見 [假設檢查](../inferential-statistics/assumption-checks.md)；離群值偵測見 [單變數：數值型](../descriptive-statistics/univariate-numerical.md#四分位距與離群值-iqr--outliers)。
 
-| Parametric Test | Key Assumptions |
-| ------------------------- | ------------------------------------------------------------------------------- |
-| **One-sample t-test** | Data is normally distributed (or n is large enough for CLT) |
-| **Independent t-test** | Normality in each group; equal variance (homoscedasticity) |
-| **Paired t-test** | The *differences* between pairs are normally distributed |
-| **One-way ANOVA** | Normality in each group; equal variance across groups |
-| **Pearson correlation** | Both variables are continuous and normally distributed; linear relationship |
-
-Tip: Central Limit Theorem (CLT): When n ≥ 30, the sampling distribution of the mean is approximately normal regardless of the original distribution. This means parametric tests become more robust with larger samples. Central Limit Theorem: When n ≥ 30, the sampling distribution of the mean is approximately normal regardless of the original distribution.
-
-## Checking Normality
-
-### Step 1: Visual Checks
-
-Always start with visuals — they give intuition that formal tests can miss.
-
-**Histogram + KDE:**
-```python
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-sns.histplot(data, kde=True, color='steelblue')
-plt.title('Distribution Check')
-plt.show()
-```
-
-**Q–Q Plot:**
-```python
-import scipy.stats as stats
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots()
-stats.probplot(data, dist="norm", plot=ax)
-ax.set_title('Q–Q Plot')
-plt.show()
-```
-
-| Q–Q Plot Pattern | Interpretation |
-| --------------------------------- | ------------------------------- |
-| Points fall along the diagonal | Approximately normal ✅ |
-| S-shaped curve | Skewed distribution ⚠️ |
-| Points bow at both ends | Heavy tails (leptokurtic) ⚠️ |
-| Single extreme outlier at one end | Outlier present ⚠️ |
-
-### Step 2: Formal Normality Tests
-
-Formal tests are hypothesis tests where:
-- **H₀**: The data follows a normal distribution
-- **H₁**: The data does not follow a normal distribution
-
-```python
-from scipy import stats
-import numpy as np
-
-data = np.array([...])  # your data here
-
-# Shapiro-Wilk — best for small samples (n < 50)
-stat, p = stats.shapiro(data)
-print(f"Shapiro-Wilk: W = {stat:.4f}, p = {p:.4f}")
-
-# Kolmogorov-Smirnov — for larger samples; requires estimated parameters
-stat, p = stats.kstest(data, 'norm', args=(data.mean(), data.std()))
-print(f"KS Test: D = {stat:.4f}, p = {p:.4f}")
-
-# D'Agostino-Pearson — uses skewness and kurtosis
-stat, p = stats.normaltest(data)
-print(f"D'Agostino K²: stat = {stat:.4f}, p = {p:.4f}")
-```
-
-| Test | Best For | Limitations |
-| ----------------------- | ---------------------- | ------------------------------------------------------ |
-| **Shapiro-Wilk** | n < 50 (small samples) | Less reliable for n > 2000 |
-| **Kolmogorov-Smirnov** | n > 50 | Less powerful; sensitive to parameter estimation |
-| **D'Agostino-Pearson** | General use | Needs n ≥ 20 |
-
-Warning: Normality tests must be interpreted carefully. With large samples (n > 200), even tiny and practically unimportant deviations can produce a significant p-value. With very small samples (n < 15), these tests often have too little power to detect real non-normality. Always combine the formal test with visual inspection.
-
-## Other Assumptions to Check
-
-### Equal Variance
-
-For tests comparing two or more groups:
-
-```python
-# Levene's Test — robust to non-normality
-stat, p = stats.levene(group1, group2)
-print(f"Levene's Test: stat = {stat:.4f}, p = {p:.4f}")
-
-# Bartlett's Test — assumes normality; more powerful when data is normal
-stat, p = stats.bartlett(group1, group2)
-print(f"Bartlett's Test: stat = {stat:.4f}, p = {p:.4f}")
-```
-
-If p < 0.05 → variances are unequal → consider Welch's t-test (parametric but robust) or a non-parametric alternative.
-
-### Outlier Detection
-
-```python
-import numpy as np
-
-# Z-score method
-z_scores = np.abs(stats.zscore(data))
-outliers_z = np.where(z_scores > 3)[0]
-print(f"Outliers (Z > 3): indices {outliers_z}")
-
-# IQR method
-Q1 = np.percentile(data, 25)
-Q3 = np.percentile(data, 75)
-IQR = Q3 - Q1
-lower = Q1 - 1.5 * IQR
-upper = Q3 + 1.5 * IQR
-outliers_iqr = data[(data < lower) | (data > upper)]
-print(f"Outliers (IQR method): {outliers_iqr}")
-```
-
-## Decision Flowchart
+## 決策流程
 
 ```
-Is the data ordinal (e.g., Likert scale)?
-        │
-        ├─── YES → Use non-parametric method
-        │
-        └─── NO (data is continuous)
-                  │
-                  Is n < 30?
-                  │
-                  ├─── YES → Check normality carefully (Shapiro-Wilk + Q-Q plot)
-                  │           │
-                  │           ├─── Approx. normal → Parametric OK
-                  │           └─── Non-normal → Non-parametric
-                  │
-                  └─── NO (n ≥ 30)
-                            │
-                            Are there severe outliers?
-                            │
-                            ├─── YES → Non-parametric more appropriate
-                            └─── NO → Parametric OK (CLT applies)
+資料是 Ordinal？ ── 是 ──▶ 無母數
+      │否
+n 小（< 30）？ ── 是 ──▶ Q–Q 圖 + Shapiro-Wilk ── 近似常態 ──▶ 母數
+      │否                                    └─ 非常態 ──▶ 無母數（或轉換、置換檢定）
+嚴重離群值 / 極端偏態？ ── 是 ──▶ 無母數（或轉換後用母數）
+      │否
+母數方法（CLT 支撐）
 ```
 
-## The Cost of Choosing Non-parametric: Statistical Power
+> 偏態資料也可以先 [log 轉換](../descriptive-statistics/univariate-numerical.md#資料轉換-transformation) 再用母數方法。這樣比較的是幾何平均，常比無母數更有檢定力、也更好解讀（例如 fold change）。
 
-**Statistical power** is the probability of correctly detecting a true effect (i.e., rejecting H₀ when it is false).
+## 代價：檢定力
 
-| Situation | Power Trade-off |
-| -------------------------------------------------- | ---------------------------------------------------------------- |
-| Data is truly normal; using non-parametric anyway | Power loss ~5–15% — you need a larger sample for same detection |
-| Data is non-normal; using parametric | Results may be invalid (inflated Type I error) |
-| Data is ordinal; using parametric | Assumptions violated; conclusions unreliable |
+| 情況 | 後果 |
+| --- | --- |
+| 資料真的常態，卻用無母數 | 檢定力損失小（Mann-Whitney 約為 t 檢定的 95% 效率），但需要稍大樣本 |
+| 資料非常態（厚尾），卻用母數 | 可能**反而是母數檢定力較低**，結果也可能失準 |
+| Ordinal 資料用母數 | 假設不成立，結論不可靠 |
 
-Tip: Use parametric tests when their assumptions are reasonably met, because they are usually more powerful and efficient. Switch to non-parametric methods when the data truly call for them, not as a default safety move.
+> **小樣本的陷阱**：n = 3 vs 3 時，Mann-Whitney 最小可能的雙尾 p 值是 0.1，**永遠不可能顯著**。生物實驗常見的小樣本，無母數未必是解方。
 
-## Key Takeaways
+## 無母數檢定其實在檢定什麼
 
-| Principle | Details |
-| --------------------------------- | -------------------------------------------------------------------------------- |
-| **Check assumptions first** | Always verify normality, equal variance, and outliers before choosing a test |
-| **Visual + formal** | Combine Q–Q plots with Shapiro-Wilk; never rely on a single check |
-| **n matters** | Normality tests are unreliable at very small or very large n — use judgment |
-| **Power cost** | Non-parametric methods are less powerful; avoid using them unnecessarily |
-| **Ordinal data → non-parametric** | Ordinal variables should never be analyzed with parametric means and SD |
+| 檢定 | 嚴格來說檢定的是 | 何時可解讀為「中位數差異」 |
+| --- | --- | --- |
+| Mann-Whitney U | 一組的值是否**傾向**大於另一組，P(X > Y) ≠ 0.5（隨機優勢 stochastic dominance） | 兩組分配**形狀相同**、只差位移 |
+| Wilcoxon signed-rank | 差值是否對稱於 0 | 差值分配對稱 |
+| Kruskal-Wallis | 至少一組的排名分配不同 | 各組形狀相同 |
 
-## What Non-parametric Tests Usually Compare
-
-Many non-parametric tests are not literally testing mean differences. They are often testing rank displacement, stochastic dominance, or median shift under extra shape assumptions.
-
-Tip: A significant non-parametric result should be interpreted in the language of ordered distributions unless stronger assumptions justify a simpler median interpretation.
+顯著的無母數結果，原則上用「分配 / 排名的差異」來描述，除非有更強的形狀假設才說「中位數不同」。

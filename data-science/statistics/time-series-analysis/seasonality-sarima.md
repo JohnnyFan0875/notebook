@@ -1,269 +1,103 @@
-# Seasonality & SARIMA
+[Statistics](../README.md) › [時間序列](README.md) › 季節性與 SARIMA
 
-Many real-world time series exhibit **seasonal patterns** — regular, predictable fluctuations that repeat at a fixed period. Monthly retail sales peak in December, weekly website traffic dips on weekends, daily power demand spikes at noon. A standard ARIMA model ignores this structure. **SARIMA** extends ARIMA to handle it explicitly.
+# 季節性與 SARIMA (Seasonality & SARIMA)
 
-Key point: Seasonality is one of the most common patterns in time series: if your data has obvious cyclical repeats and you do not use a seasonal model, there will be a lot of exploitable structure in the residuals. SARIMA is the most important classical method for processing seasonal time series.
+固定週期重複的規律（12 月銷售高峰、週末流量下降、晝夜節律）。有明顯季節性卻不用季節模型，殘差裡會留下大量可利用的結構。
 
-## Identifying Seasonality
+## 確認季節性與週期 m
 
-Before choosing a model, confirm that seasonality is present and determine its period m.
+| 方法 | 看什麼 |
+| --- | --- |
+| 季節子序列圖 (seasonal subseries plot) | 每年一條線：哪幾個月高 / 低、型態是否逐年放大（→ 乘法） |
+| 依月份的 boxplot | 各月分布 |
+| [STL 分解](decomposition.md) | 季節成分強度 |
+| ACF | lag m、2m 有尖峰 |
 
 ```python
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
-df = pd.read_csv(url, parse_dates=['Month'], index_col='Month').asfreq('MS')
-df.columns = ['Passengers']
+y = pd.read_csv(url, parse_dates=["Month"], index_col="Month").asfreq("MS")["Passengers"]
 
-# Method 1: Seasonal subseries plot
-df['Month_num'] = df.index.month
-df['Year']      = df.index.year
-
-fig, ax = plt.subplots(figsize=(10, 4))
-for year, group in df.groupby('Year'):
-    ax.plot(group['Month_num'], group['Passengers'],
-            alpha=0.5, color='steelblue', linewidth=1)
-ax.set_xticks(range(1, 13))
-ax.set_xticklabels(['Jan','Feb','Mar','Apr','May','Jun',
-                    'Jul','Aug','Sep','Oct','Nov','Dec'])
-ax.set_title('Seasonal Subseries Plot — Each Line = One Year')
-ax.set_ylabel('Passengers (thousands)')
-plt.tight_layout()
-plt.show()
-
-# Method 2: Boxplot by month
-import seaborn as sns
-fig, ax = plt.subplots(figsize=(10, 4))
-sns.boxplot(x='Month_num', y='Passengers', data=df, ax=ax, palette='Set2')
-ax.set_xticklabels(['Jan','Feb','Mar','Apr','May','Jun',
-                    'Jul','Aug','Sep','Oct','Nov','Dec'])
-ax.set_title('Monthly Distribution of Passenger Counts')
-plt.tight_layout()
-plt.show()
+d = y.to_frame("y").assign(month=y.index.month, year=y.index.year)
+sns.lineplot(data=d, x="month", y="y", hue="year", legend=False)    # 子序列圖
+sns.boxplot(data=d, x="month", y="y")                               # 依月 boxplot
 ```
 
-Tip: The subseries plot shows the within-year pattern (which months are high/low) as well as the year-over-year trend (is the pattern growing?). If each month's lines trend upward together, you likely need a multiplicative model.
+## SARIMA(p, d, q)(P, D, Q)[m]
 
-## SARIMA: Adding Seasonal Terms
+在 ARIMA 之外，再加一組作用在**季節落後 (m, 2m, …)** 的 AR、差分、MA。
 
-**SARIMA(p, d, q)(P, D, Q)[m]** extends ARIMA by adding a second set of AR, I, and MA terms that operate at the **seasonal lag** (multiples of m).
+| 參數 | 層級 | 控制 |
+| --- | --- | --- |
+| p, d, q | 非季節 | 短期結構（lag 1, 2, …） |
+| P | 季節 | 季節 AR：lag m, 2m, …, Pm |
+| D | 季節 | 季節差分次數（通常 1） |
+| Q | 季節 | 季節 MA：lag m, 2m, …, Qm |
+| **m** | — | **季節週期**：月資料 12、季資料 4、日資料（週週期）7 |
 
-| Parameter | Level | Controls |
-| --------- | --------- | -------------------------------------------- |
-| p | Non-seasonal | AR order — lags 1 to p |
-| d | Non-seasonal | Differencing order |
-| q | Non-seasonal | MA order — lags 1 to q |
-| P | Seasonal | Seasonal AR order — lags m, 2m, ..., Pm |
-| D | Seasonal | Seasonal differencing order |
-| Q | Seasonal | Seasonal MA order — lags m, 2m, ..., Qm |
-| **m** | — | **Seasonal period** (12 for monthly, 7 for daily, 4 for quarterly) |
+**讀季節 ACF / PACF**（先做 log + 一階差分 + 季節差分）：
 
-**The full SARIMA model equation:**
-
-\[
-\Phi_P(B^m) \phi_p(B) (1-B)^d (1-B^m)^D y_t = \Theta_Q(B^m) \theta_q(B) \varepsilon_t
-\]
-
-Tip: Don't be intimidated by the notation. In practice: fit SARIMA(p,d,q)(P,D,Q)[m] where m is your seasonal period, and let the ACF/PACF at seasonal lags guide P and Q.
-
-## Seasonal ACF/PACF: Reading the Seasonal Structure
-
-After seasonal differencing, look for spikes at **multiples of m** in the ACF and PACF:
-
-```python
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-
-# Apply log + first difference + seasonal difference (m=12)
-log_pass    = np.log(df['Passengers'])
-diff_series = log_pass.diff(1).diff(12).dropna()
-
-fig, axes = plt.subplots(2, 1, figsize=(11, 8))
-plot_acf( diff_series, lags=48, ax=axes[0], alpha=0.05)
-plot_pacf(diff_series, lags=48, ax=axes[1], alpha=0.05, method='ywm')
-axes[0].set_title('ACF — Log + Diff(1) + Seasonal Diff(12)')
-axes[1].set_title('PACF — Log + Diff(1) + Seasonal Diff(12)')
-for ax in axes:
-    for lag in [12, 24, 36, 48]:
-        ax.axvline(lag, color='tomato', linestyle=':', alpha=0.5)
-plt.tight_layout()
-plt.show()
-```
-
-**Reading seasonal lags in ACF/PACF:**
-
-| Location of Spike | Look At | Suggests |
-| ---------------------------- | -------- | --------------------------------- |
-| Spike at lag m (e.g., 12) | ACF | Seasonal MA term (Q=1) |
-| Spike at lag m in PACF | PACF | Seasonal AR term (P=1) |
-| Spikes at m, 2m in ACF | ACF | Possible Q=2 (or slow seasonal decay → P>0) |
-| No significant seasonal lags | Both | Seasonal differencing was sufficient |
-
-## Fitting SARIMA with statsmodels
+| 尖峰位置 | 建議 |
+| --- | --- |
+| ACF 在 lag m 有尖峰 | 季節 MA，Q = 1 |
+| PACF 在 lag m 有尖峰 | 季節 AR，P = 1 |
+| ACF 在 m、2m 都有 | Q = 2，或季節衰減緩慢 → P > 0 |
+| 季節 lag 都不顯著 | 季節差分已足夠 |
 
 ```python
 from statsmodels.tsa.statespace.sarimax import SARIMAX
-import warnings
-warnings.filterwarnings('ignore')
-
-log_pass = np.log(df['Passengers'])
-
-# SARIMA(1,1,1)(1,1,1)[12] — a common starting point for monthly data
-model = SARIMAX(
-    log_pass,
-    order=(1, 1, 1),
-    seasonal_order=(1, 1, 1, 12),
-    enforce_stationarity=False,
-    enforce_invertibility=False
-)
-result = model.fit(disp=False)
-
-print(result.summary())
-print(f"\nAIC: {result.aic:.2f}")
-print(f"BIC: {result.bic:.2f}")
-```
-
-## Automatic Seasonal Order Selection
-
-```python
+from statsmodels.tsa.forecasting.stl import STLForecast
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from pmdarima import auto_arima
 
-auto_model = auto_arima(
-    log_pass,
-    m=12,                 # monthly seasonality
-    d=1, D=1,             # fix non-seasonal and seasonal differencing
-    start_p=0, max_p=3,
-    start_q=0, max_q=3,
-    start_P=0, max_P=2,
-    start_Q=0, max_Q=2,
-    seasonal=True,
-    information_criterion='aic',
-    stepwise=True,
-    trace=True
-)
+log_y = np.log(y)
+plot_acf(log_y.diff().diff(12).dropna(), lags=48)          # 看 lag 12, 24, 36 …
 
-print(f"\nSelected: SARIMA{auto_model.order}{auto_model.seasonal_order}")
+# SARIMA(1,1,1)(1,1,1)[12]：月資料常見的起點（「airline model」是 (0,1,1)(0,1,1)[12]）
+res = SARIMAX(log_y, order=(1, 1, 1), seasonal_order=(1, 1, 1, 12)).fit(disp=False)
+res.aic, res.bic
+fc = np.exp(res.get_forecast(36).predicted_mean)
+
+# 自動選階
+auto = auto_arima(log_y, m=12, d=1, D=1, max_p=3, max_q=3, max_P=2, max_Q=2,
+                  seasonal=True, information_criterion="aic", stepwise=True)
+auto.order, auto.seasonal_order
+
+# 替代：STL 去季節 → ARIMA 建模去季節化序列 → 季節成分另外外推
+stl_res = STLForecast(log_y, ARIMA, model_kwargs={"order": (1, 1, 0)}, period=12).fit()
+np.exp(stl_res.forecast(36))
 ```
 
-## Forecasting with SARIMA
+## 多重季節性：Prophet
 
-```python
-forecast_steps = 36   # 3 years ahead
-forecast = result.get_forecast(steps=forecast_steps)
-fc_mean  = np.exp(forecast.predicted_mean)
-fc_ci    = np.exp(forecast.conf_int(alpha=0.05))
-
-fig, ax = plt.subplots(figsize=(12, 5))
-df['Passengers'].plot(ax=ax, label='Observed', color='steelblue', linewidth=1.5)
-fc_mean.plot(ax=ax, label='SARIMA Forecast', color='tomato', linewidth=2)
-ax.fill_between(fc_ci.index, fc_ci.iloc[:,0], fc_ci.iloc[:,1],
-                color='tomato', alpha=0.2, label='95% CI')
-ax.set_title('SARIMA(1,1,1)(1,1,1)[12] — Airline Passenger Forecast')
-ax.set_ylabel('Passengers (thousands)')
-ax.legend()
-plt.tight_layout()
-plt.show()
-```
-
-## Alternative: STL + ARIMA (STL Forecasting)
-
-A powerful modern alternative: decompose with STL, then model the seasonally-adjusted series with ARIMA, and forecast the seasonal component separately.
-
-```python
-from statsmodels.tsa.forecasting.stl import STLForecast
-
-stl_forecast = STLForecast(
-    log_pass,
-    ARIMA,
-    model_kwargs=dict(order=(1, 1, 0)),
-    period=12
-)
-stl_result = stl_forecast.fit(disp=False)
-
-forecast_stl = stl_result.forecast(36)
-fc_stl_exp   = np.exp(forecast_stl)
-
-fig, ax = plt.subplots(figsize=(12, 5))
-df['Passengers'].plot(ax=ax, label='Observed', color='steelblue', linewidth=1.5)
-fc_stl_exp.plot(ax=ax, label='STL + ARIMA Forecast', color='seagreen', linewidth=2)
-ax.set_title('STL + ARIMA Forecast — Airline Passengers')
-ax.set_ylabel('Passengers (thousands)')
-ax.legend()
-plt.tight_layout()
-plt.show()
-```
-
-Tip: STL + ARIMA vs SARIMA: STL handles non-linear and evolving seasonal patterns better than SARIMA's rigid multiplicative/additive structure. For complex seasonality, STL + ARIMA often outperforms SARIMA.
-
-## Handling Multiple Seasonalities: Prophet
-
-When data has **more than one seasonal period** (e.g., daily data with both weekly and yearly cycles), SARIMA becomes impractical. Meta's **Prophet** library is designed for this.
+日資料同時有週與年週期時，SARIMA 不實用。
 
 ```python
 from prophet import Prophet
-import pandas as pd
 
-# Prophet requires columns 'ds' (datetime) and 'y' (values)
-prophet_df = df[['Passengers']].reset_index()
-prophet_df.columns = ['ds', 'y']
-
-model_prophet = Prophet(
-    yearly_seasonality=True,
-    weekly_seasonality=False,  # monthly data — no weekly cycle
-    daily_seasonality=False,
-    seasonality_mode='multiplicative'  # because variance grows with level
-)
-model_prophet.fit(prophet_df)
-
-future   = model_prophet.make_future_dataframe(periods=36, freq='MS')
-forecast_p = model_prophet.predict(future)
-
-model_prophet.plot(forecast_p)
-plt.title('Prophet Forecast — Airline Passengers')
-plt.tight_layout()
-plt.show()
-
-model_prophet.plot_components(forecast_p)
-plt.tight_layout()
-plt.show()
+dfp = y.reset_index().rename(columns={"Month": "ds", "Passengers": "y"})   # Prophet 需要 ds / y 欄位
+m = Prophet(yearly_seasonality=True, seasonality_mode="multiplicative").fit(dfp)
+fc = m.predict(m.make_future_dataframe(periods=36, freq="MS"))
+m.plot(fc); m.plot_components(fc)
 ```
 
-**Prophet strengths and limitations:**
+| Prophet 優點 | 限制 |
+| --- | --- |
+| 自動處理多重季節性、假日 | 解釋性不如 ARIMA |
+| 對缺失與離群值穩健 | 需要足夠歷史；短序列易過擬合 |
+| 不需要讀 ACF / PACF | 不適合高頻金融資料 |
 
-| Strength | Limitation |
-| ---------------------------------------- | --------------------------------------------- |
-| Automatic multiple seasonality handling | Less interpretable than ARIMA |
-| Handles holidays and special events | Requires sufficient history |
-| Robust to missing data and outliers | May overfit short series |
-| Easy to use without ACF/PACF expertise | Less suitable for high-frequency financial data |
+## 選哪個模型
 
-## Choosing a Seasonal Model
+| 情境 | 建議 |
+| --- | --- |
+| 月 / 季資料、單一季節週期 | **SARIMA** |
+| 季節型態複雜或會演變 | **STL + ARIMA** |
+| 多重季節週期 | **Prophet** 或 **MSTL + ARIMA** |
+| 需要解釋性 | SARIMA 或 STL + ARIMA |
 
-| Scenario | Recommended Model |
-| ------------------------------------------- | ----------------------------------------- |
-| Monthly/quarterly data, one seasonal period | **SARIMA** |
-| Complex or evolving seasonality | **STL + ARIMA** |
-| Multiple seasonal periods (weekly + yearly) | **Prophet** or **MSTL + ARIMA** |
-| Few data points, strong prior knowledge | **Prophet** with custom seasonality |
-| Interpretability required | **SARIMA** or **STL + ARIMA** |
-
-## Key Takeaways
-
-| Concept | Key Point |
-| --------------------------------- | ---------------------------------------------------------------------------------- |
-| **Seasonal period m is critical** | Always identify m correctly before fitting (12 for monthly, 4 for quarterly, etc.) |
-| **Seasonal differencing (D=1)** | Removes the seasonal unit root; usually needed alongside regular differencing |
-| **Seasonal ACF/PACF at lag m** | Spikes at m in ACF → Q=1; spikes at m in PACF → P=1 |
-| **SARIMA notation** | (p,d,q)(P,D,Q)[m] — two sets of parameters at two time scales |
-| **STL + ARIMA is more flexible** | Better for non-linear or evolving seasonal patterns |
-| **Prophet for multiple seasons** | When data has daily + weekly + yearly seasonality, SARIMA is impractical |
-
-## Seasonal vs. Non-seasonal Orders
-
-Keep these roles separate:
-
-- `(p, d, q)` models short-range non-seasonal structure
-- `(P, D, Q)[m]` models repeated seasonal structure
-
-Tip: Confusing these roles is one of the fastest ways to overcomplicate a SARIMA model.
+> 把兩組角色分清楚：(p, d, q) 是短期非季節結構；(P, D, Q)[m] 是重複的季節結構。混淆兩者是把 SARIMA 搞得過度複雜的最快方式。

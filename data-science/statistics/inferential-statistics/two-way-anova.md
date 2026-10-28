@@ -1,191 +1,99 @@
-# Two-Way ANOVA
+[Statistics](../README.md) › [推論統計](README.md) › [ANOVA](anova-overview.md) › 二因子
 
-**Two-way ANOVA** extends one-way ANOVA to **two categorical factors** and asks three questions at once:
+# 二因子變異數分析 (Two-Way ANOVA)
 
-1. Does factor A affect the outcome?
-2. Does factor B affect the outcome?
-3. Does the effect of A depend on the level of B?
+把單因子 ANOVA 擴展到**兩個類別因子**，同時回答三個問題：
 
-Key point: The interaction term is the defining feature. Two-way ANOVA is valuable not just because it tests more than one factor, but because it can detect when one factor's effect changes across subgroups.
+| 效果 | 問題 |
+| --- | --- |
+| 主效果 A (main effect) | 平均而言，A 影響結果嗎？ |
+| 主效果 B | 平均而言，B 影響結果嗎？ |
+| **交互作用 A × B** (interaction) | A 的效果是否**取決於** B 的水準？ |
 
-## When to Use
+例：藥物 × 性別、基因型 × 處理、飲食 × 運動。
 
-| Requirement | Example |
-| ----------- | ------- |
-| Numerical outcome | test score, reaction time, revenue |
-| Two categorical factors | treatment and gender, diet and exercise |
-| Independent observations | each row is one independent subject |
-| Interest in subgroup behavior | treatment may work differently across categories |
+$$
+Y_{ijk} = \mu + \alpha_i + \beta_j + (\alpha\beta)_{ij} + \varepsilon_{ijk}
+$$
 
-## The Three Effects
+## 先看交互作用
 
-| Effect | Question |
-| ------ | -------- |
-| **Main effect A** | Does factor A affect the outcome on average? |
-| **Main effect B** | Does factor B affect the outcome on average? |
-| **Interaction A × B** | Does the effect of A depend on B? |
+交互作用顯著時，主效果可能誤導：「平均效果」可能掩蓋了不同子群體相反的反應。例如藥物對男性很有效、對女性幾乎無效，平均下來看似「中等有效」，但真正重要的是子群體差異。
 
-## Why Interaction Comes First
+| 情況 | 怎麼做 |
+| --- | --- |
+| 交互作用顯著 | 做**單純效果 (simple effects)**：在每個 B 水準內比較 A |
+| 交互作用不顯著 | 直接解讀主效果 |
+| 兩個主效果都顯著、無交互作用 | 兩因子各自獨立地影響結果 |
 
-If the interaction is significant, the main effects can become misleading because "the average effect" may hide opposite subgroup patterns.
-
-Example:
-
-- treatment helps men a lot
-- treatment helps women very little
-
-The average treatment effect might still look moderate, but the scientifically meaningful story is the difference in subgroup response.
-
-Tip: In interpretation order, always read the interaction first, then the main effects only if the interaction is negligible or substantively unimportant.
-
-## Model Formula
-
-\[
-Y = \mu + \alpha_i + \beta_j + (\alpha\beta)_{ij} + \varepsilon_{ijk}
-\]
-
-Where:
-
-- \(\alpha_i\) = effect of factor A level \(i\)
-- \(\beta_j\) = effect of factor B level \(j\)
-- \((\alpha\beta)_{ij}\) = interaction between A and B
-
-## Example with Simulated Data
+## Python 範例
 
 ```python
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-
-rng = np.random.default_rng(42)
-
-rows = []
-for treatment in ["Control", "Drug"]:
-    for gender in ["Female", "Male"]:
-        for _ in range(12):
-            base = 70
-            treat_eff = 4 if treatment == "Drug" else 0
-            gender_eff = 2 if gender == "Male" else 0
-            interaction = 5 if (treatment == "Drug" and gender == "Male") else 0
-            score = base + treat_eff + gender_eff + interaction + rng.normal(0, 4)
-            rows.append({"treatment": treatment, "gender": gender, "score": score})
-
-df = pd.DataFrame(rows)
-
-model = smf.ols("score ~ C(treatment) * C(gender)", data=df).fit()
-anova_table = sm.stats.anova_lm(model, typ=2)
-print(anova_table)
-```
-
-## Reading the ANOVA Table
-
-| Row | Meaning |
-| --- | ------- |
-| `C(treatment)` | main effect of treatment |
-| `C(gender)` | main effect of gender |
-| `C(treatment):C(gender)` | interaction |
-| `Residual` | within-cell variation |
-
-## Interpretation Order
-
-| Situation | What to do |
-| --------- | ---------- |
-| Interaction significant | focus on simple effects or subgroup comparisons |
-| Interaction not significant | interpret main effects more directly |
-| Both main effects significant, interaction not | both factors shift the outcome independently |
-
-Warning: A significant interaction means you should not summarize the story with only one overall treatment coefficient or one pooled group difference.
-
-## Visualization: Interaction Plot
-
-```python
 import matplotlib.pyplot as plt
 
-cell_means = df.groupby(["treatment", "gender"])["score"].mean().unstack()
+# 模擬資料：藥物只對男性額外有效（交互作用）
+rng = np.random.default_rng(42)
+rows = [
+    {"treatment": t, "gender": g,
+     "score": 70 + 4*(t == "Drug") + 2*(g == "Male") + 5*(t == "Drug")*(g == "Male") + rng.normal(0, 4)}
+    for t in ["Control", "Drug"] for g in ["Female", "Male"] for _ in range(12)
+]
+df = pd.DataFrame(rows)
 
-cell_means.T.plot(marker="o", figsize=(6, 4))
-plt.xlabel("Gender")
-plt.ylabel("Mean score")
-plt.title("Interaction Plot: Treatment × Gender")
-plt.tight_layout()
-plt.show()
+# A * B = A + B + A:B
+model = smf.ols("score ~ C(treatment) * C(gender)", data=df).fit()
+anova = sm.stats.anova_lm(model, typ=2)
+
+# 每個效果的 partial η²
+ss_err = anova.loc["Residual", "sum_sq"]
+anova["eta_p2"] = anova["sum_sq"] / (anova["sum_sq"] + ss_err)
+
+# 交互作用圖
+df.groupby(["gender", "treatment"])["score"].mean().unstack().plot(marker="o")
+plt.ylabel("Mean score"); plt.show()
 ```
 
-How to read it:
+| ANOVA 表列 | 意義 |
+| --- | --- |
+| `C(treatment)` | 處理的主效果 |
+| `C(gender)` | 性別的主效果 |
+| `C(treatment):C(gender)` | 交互作用 |
+| `Residual` | 各格 (cell) 內的變異 |
 
-| Pattern | Interpretation |
-| ------- | -------------- |
-| Roughly parallel lines | little or no interaction |
-| Clearly non-parallel lines | interaction likely present |
-| Crossing lines | strong interaction, main effects alone can mislead badly |
+**交互作用圖判讀**
 
-## Assumptions
+| 圖形 | 意義 |
+| --- | --- |
+| 線大致平行 | 幾乎沒有交互作用 |
+| 明顯不平行 | 可能有交互作用 |
+| 交叉 | 強交互作用，只看主效果會嚴重誤導 |
 
-| Assumption | Meaning | Check |
-| ---------- | ------- | ----- |
-| Independence | observations are unrelated | study design |
-| Normality within cells | residuals in each factor combination are roughly normal | residual plots, Q-Q plot |
-| Homogeneity of variance | cell variances are reasonably similar | Levene's test, residual plots |
+![Interaction plot patterns](src/two-way-anova-interaction-plots.png)
 
-Tip: The assumptions apply to the residual structure inside the design cells, not just to the pooled raw outcome.
+## 假設與效果量
 
-## Effect Size
+- 假設同單因子 ANOVA，但針對**每一格**的殘差：獨立、近似常態、各格變異數相近。
+- 效果量用 **partial η²** = SS_effect / (SS_effect + SS_error)。
 
-Two-way ANOVA is usually reported with **partial eta squared** for each effect.
+> **不平衡設計**（各格 n 不同）時，Type I / II / III 平方和結果會不同。有交互作用時常用 Type III（需搭配 sum-to-zero 編碼：`C(x, Sum)`）；無交互作用時 Type II 較合適。
 
-\[
-\eta_p^2 = \frac{SS_{effect}}{SS_{effect} + SS_{error}}
-\]
+## 常見錯誤
 
-```python
-ss_error = anova_table.loc["Residual", "sum_sq"]
+| 錯誤 | 更好的做法 |
+| --- | --- |
+| 忽略交互作用 | 先看 A × B |
+| 交互作用顯著仍只報主效果 | 報告單純效果與各格平均 ± CI |
+| 其中一個預測變數是連續的 | 改用 ANCOVA / [迴歸](../regression-analysis/multiple-linear-regression.md) |
+| 沒有結構地做很多子群 t 檢定 | 事先計畫比較並做 [多重檢定校正](multiple-testing.md) |
 
-for effect in ["C(treatment)", "C(gender)", "C(treatment):C(gender)"]:
-    ss_effect = anova_table.loc[effect, "sum_sq"]
-    eta_p2 = ss_effect / (ss_effect + ss_error)
-    print(f"{effect}: partial eta² = {eta_p2:.4f}")
-```
-
-## Follow-up After a Significant Interaction
-
-If the interaction matters, follow-up questions often become:
-
-- compare treatment within each gender
-- compare gender within each treatment
-- estimate cell means with confidence intervals
-
-In practice, this often means:
-
-1. plotting the interaction
-2. running simple-effects tests
-3. reporting subgroup mean differences with CIs
-
-## Common Mistakes
-
-| Mistake | Why it's a problem | Better approach |
-| ------- | ------------------ | --------------- |
-| Ignoring interaction | can hide the real pattern | inspect A × B first |
-| Reporting only main effects | can be misleading under interaction | report simple effects |
-| Treating factors as interchangeable with covariates | changes model meaning | use ANCOVA when one predictor is continuous |
-| Using many subgroup t-tests without structure | inflates Type I error | keep ANOVA hierarchy and planned follow-up |
-
-## Reporting Template
+## 報告範本
 
 ```text
-A two-way ANOVA tested the effects of treatment and gender on score.
-There was a significant treatment × gender interaction,
-F(1, 44) = 6.82, p = .012, partial eta² = .134,
-indicating that the treatment effect differed by gender.
-Follow-up comparisons showed that the drug improved scores more strongly in men than in women.
+二因子 ANOVA 檢驗處理與性別對分數的影響。處理 × 性別交互作用顯著，
+F(1, 44) = 6.82，p = .012，partial η² = .134，表示處理效果因性別而異；
+後續比較顯示藥物對男性的改善幅度大於女性。
 ```
-
-## Key Takeaways
-
-| Concept | Key point |
-| ------- | --------- |
-| **Two factors** | Two-way ANOVA studies two grouping variables at the same time |
-| **Interaction is central** | It tells whether one factor changes the effect of the other |
-| **Interpretation order** | Read interaction before main effects |
-| **Partial eta²** | Useful effect size for each ANOVA component |
-| **Plots matter** | Interaction plots often reveal the story faster than tables |

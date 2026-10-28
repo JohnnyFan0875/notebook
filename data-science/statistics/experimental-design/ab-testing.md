@@ -1,230 +1,119 @@
-# A/B Testing
+[Statistics](../README.md) › [實驗設計](README.md) › A/B 測試
 
-**A/B testing** is a randomized experiment used to compare a current experience against one or more variants. It is one of the most common modern applications of experimental design because it connects causal inference, product decisions, and large-scale behavioral data.
+# A/B 測試 (A/B Testing)
 
-Key point: An A/B test is not just "compare two dashboards and look at the p-value." The design has to specify the unit of randomization, the metric, the stopping rule, and the decision threshold before results are inspected.
+比較現有版本與一或多個變體的**隨機化實驗**，是實驗設計在產品上最常見的應用。A/B 測試不只是「看兩個 dashboard 比 p 值」：上線前就要定好**隨機化單位、指標、停止規則、決策門檻**。
 
-## When A/B Testing Is A Good Fit
+## 適用性
 
-A/B testing is especially useful when:
+| 適合 | 不適合 / 要小心 |
+| --- | --- |
+| 比較現有體驗與提議的改變 | 流量太少，達不到有意義的樣本數 |
+| 可在操作上隨機分派 | 沒有明確可檢定的假設 |
+| 指標能在上線前明確定義 | 倫理上不適合隨機分派 |
+| 預期效果是漸進的 | 延遲決策的機會成本太高 |
+| 使用者可獨立隨機化 | **網路效應 / 外溢**：使用者互相影響（社群、雙邊市場） |
+| 結果能在合理時間內觀察 | 介入改變的是整個市場或系統條件 |
 
-- you want to compare a current experience against a proposed change
-- random assignment is operationally feasible
-- the metric can be defined clearly before launch
-- the expected effect is incremental rather than dramatic
+> 第一個問題不是「能不能測？」而是「透過實驗得知答案，會讓決策實質變好嗎？」
 
-Common examples:
+## 流程
 
-- conversion-rate optimization
-- signup or checkout flow changes
-- ad or notification experiments
-- feature-release experiments
+1. 定義決策、指標、變體
+2. 寫出假設與**最小可偵測效果 (minimum detectable effect, MDE)**
+3. 估計樣本數與停止規則，見 [樣本數與檢定力](sample-size-power.md)
+4. 隨機分派使用者
+5. 驗證紀錄 (logging) 與健全性檢查 (sanity checks)
+6. 在**正確的分析單位**彙總指標
+7. 選擇對應的統計檢定
+8. 一起解讀效果量、信賴區間、商業影響
 
-The fit is strongest when:
+上線後才更換主要指標，屬於研究者自由度 (researcher degrees of freedom)，等同 p-hacking。
 
-- users can be randomized independently
-- the product change affects user behavior directly
-- the outcome can be observed within a reasonable measurement window
-
-Do not default to an A/B test when:
-
-- traffic is too low to reach a meaningful sample size
-- there is no clear, testable hypothesis
-- ethical constraints make random assignment inappropriate
-- the opportunity cost of delaying a decision is too high
-
-Be especially careful when:
-
-- users influence each other heavily, creating network effects
-- spillovers between control and treatment are hard to prevent
-- the intervention changes market-wide or system-wide conditions rather than individual behavior
-
-Tip: A/B testing is best for decisions with clean unit-level assignment. It is a weaker fit when the treatment effect is entangled across users and cannot be isolated cleanly.
-
-Tip: "Can we run a test?" is not the first question. The first question is "Would this decision become materially better if we learned the answer experimentally?"
-
-## A Practical Workflow
-
-An A/B test usually follows this sequence:
-
-1. define the decision, metric, and variants
-2. state the hypothesis and the minimum effect worth detecting
-3. estimate the required sample size and stopping rule
-4. randomize users into control and treatment
-5. validate logging and perform sanity checks
-6. aggregate the metric at the correct analysis unit
-7. run the appropriate statistical test
-8. interpret the effect size, confidence interval, and business impact together
-
-Tip: The metric definition is part of the design, not a post-hoc analytics choice. Changing the primary metric after launch is usually a form of researcher degrees of freedom.
-
-## Metric Definitions Need Eligibility Rules
-
-A metric is not fully defined until the inclusion rules are explicit. This matters whenever users enter the funnel at different times or have different exposure windows.
-
-Example: suppose the metric is **week-two conversion rate after a free trial**. The eligible population might be:
-
-- users who completed the free trial
-- users who did not subscribe during week one
-- users who had a full second week in which conversion could be observed
-
-Without those rules, the same phrase can describe multiple different denominators.
-
-Tip: Before launch, write the metric as if an analyst had to implement it from scratch with no extra verbal explanation.
-
-## Writing A Better Product Hypothesis
-
-A useful A/B-test hypothesis is concrete enough to connect a product change to a measurable outcome:
+## 假設與指標定義
 
 ```text
-Based on X, we believe that if we do Y,
-then Z will happen,
-as measured by metric M.
+根據 X（使用者研究），我們相信若做 Y（簡化結帳頁），
+則 Z 會發生（購買比例上升），以指標 M（購買率）衡量。
 ```
 
-Example:
+對應統計框架：H₀ 改變不影響主要指標；H₁ 有影響（事先指定單尾或雙尾）。
 
-```text
-Based on user-research evidence, we believe that if we simplify the checkout page,
-then the percentage of purchasing users will increase,
-as measured by purchase rate.
-```
+**指標要包含資格規則 (eligibility)**。例如「免費試用後第二週轉換率」的分母必須明確：完成試用、第一週未訂閱、且有完整第二週可觀察的使用者。寫指標時，要寫到一個沒聽過口頭說明的分析師也能從零實作。
 
-This naturally maps to the statistical framing:
+## 分析單位 = 隨機化單位
 
-- **Null hypothesis (H0):** the change does not affect the primary metric
-- **Alternative hypothesis (H1):** the change affects the primary metric in the prespecified direction or in either direction
-
-Tip: Good product hypotheses are testable, concise, and action-oriented. Vague statements like "make the page better" are hard to falsify and even harder to learn from.
-
-## The Analysis Unit Matters More Than Many Teams Realize
-
-In digital experiments, raw logs often contain repeated events from the same user. That means the row in the table is not always the independent unit for inference.
-
-Warning: If treatment is assigned at the **user** level, the analysis should usually also be performed at the **user** level. Treating repeated events from the same user as if they were independent observations inflates precision and can produce misleadingly small p-values.
-
-For binary outcomes such as signup or purchase, a common pattern is:
+原始紀錄常含同一使用者的多個事件。**以使用者為單位隨機化，就要以使用者為單位分析**；把事件當獨立觀測會誇大精確度、p 值過小（[假重複](core-concepts.md#實驗單位-vs-觀測單位)）。
 
 ```python
-# One row per user after aggregation
-summary = (
-    events
-    .groupby(['variant', 'user_id'])['purchased']
-    .max()
-    .reset_index()
-)
+import pandas as pd
 
-conversion = summary.groupby('variant')['purchased'].agg(['sum', 'count'])
-conversion['rate'] = conversion['sum'] / conversion['count']
-print(conversion)
+# 二元指標：每位使用者「至少轉換一次」
+user = events.groupby(["variant", "user_id"], as_index=False)["purchased"].max()
+conv = user.groupby("variant")["purchased"].agg(["sum", "count"])
+conv["rate"] = conv["sum"] / conv["count"]
+
+from statsmodels.stats.proportion import proportions_ztest, confint_proportions_2indep
+proportions_ztest(conv["sum"], conv["count"])
+confint_proportions_2indep(conv.loc["B", "sum"], conv.loc["B", "count"],
+                           conv.loc["A", "sum"], conv.loc["A", "count"])   # 差值的 CI
 ```
 
-Why use `.max()` here: if a user purchases multiple times, the conversion question is usually "did the user convert at least once?" That is a user-level event, not an event-counting problem.
+資料用**長格式**（每列一個單位、一欄 variant、一欄結果），比每個 variant 一欄的寬格式更容易驗證與分析。
 
-For between-subject A/B tests, long/tidy data is usually the cleanest storage pattern:
+## 指標型態決定檢定
 
-| Format | Structure | Better Choice? |
-| ------ | --------- | -------------- |
-| Wide | one column per variant, many structural missing values | usually no |
-| Long | one row per unit, one column for variant, one for outcome | yes |
+| 指標 | 例子 | 檢定 |
+| --- | --- | --- |
+| 二元比例 | 註冊、點擊、購買 | 兩比例 z 檢定、卡方 |
+| 連續平均 | 停留時間、每位使用者營收 | Welch t 檢定（營收高度偏態時考慮 bootstrap 或 log） |
+| 比率指標 | 每 session 營收、每人點擊數 | **Delta method** 或 bootstrap |
 
-Tip: Long format is usually easier to validate, group, visualize, and pass into statistical workflows. A/B test data with separate columns for each variant often creates unnecessary missing values and fragile code.
+一般選檢定邏輯見 [常用檢定](../inferential-statistics/statistical-tests.md)。
 
-## Metric Type Drives Test Choice
-
-The statistical test should follow the metric structure, not team habit.
-
-| Metric Type | Common Example | Typical Comparison |
-| ----------- | -------------- | ------------------ |
-| Binary proportion | signup, click, purchase | two-proportion z-test or chi-square |
-| Continuous mean | time on page, revenue per user | Welch's t-test |
-| Ratio metric | revenue per session, clicks per user | ratio-aware methods such as the delta method |
-
-See [Common Statistical Tests](../inferential-statistics/statistical-tests.md) for the core test-selection logic.
-
-Tip: Many product metrics are better defined per user than per event. "Revenue per user" and "clicks per user" usually align with user-level randomization more naturally than raw event totals.
-
-## Ratio Metrics Need Extra Care
-
-Ratio metrics are common in product analytics:
-
-- revenue per session
-- clicks per user
-- orders per visitor
-
-These are not simple means of independent rows when each user contributes both a numerator and a denominator.
-
-A robust workflow is:
-
-1. aggregate numerator and denominator at the user level
-2. compute the ratio metric per variant
-3. use a method that accounts for ratio variance, such as a delta-method approximation
+**比率指標**：每位使用者同時貢獻分子與分母，不是獨立列的簡單平均。做法：(1) 在使用者層級彙總分子與分母；(2) 計算各 variant 的比率；(3) 用考慮比率變異的方法推論。
 
 ```python
-A_per_user = pd.DataFrame({
-    'order_value': checkout[checkout['checkout_page'] == 'A'].groupby('user_id')['order_value'].sum(),
-    'page_view': checkout[checkout['checkout_page'] == 'A'].groupby('user_id')['user_id'].count(),
-})
-
-B_per_user = pd.DataFrame({
-    'order_value': checkout[checkout['checkout_page'] == 'B'].groupby('user_id')['order_value'].sum(),
-    'page_view': checkout[checkout['checkout_page'] == 'B'].groupby('user_id')['user_id'].count(),
-})
+per_user = (checkout.groupby(["checkout_page", "user_id"])
+                    .agg(order_value=("order_value", "sum"), page_view=("user_id", "size")))
 ```
 
-Tip: The main design lesson is more important than the specific formula. Build ratio metrics from the same independent unit that was randomized, then choose an inference method that respects that structure.
+## 上線後、推論前的健全性檢查
 
-## Sanity Checks Before Inference
+| 檢查 | 目的 |
+| --- | --- |
+| **樣本比例不符 (sample ratio mismatch, SRM)** | 50/50 分派卻得到 52/48？用卡方適合度檢定；顯著代表分派或紀錄出問題 |
+| 可觀察特徵的平衡 | 各組使用者特徵相近 |
+| 紀錄覆蓋率一致 | 某組漏記事件 |
+| 資格規則正確套用 | — |
+| 去除重複事件 | instrumentation 造成的重複 |
+| 指標隨時間的趨勢合理 | 週間 / 週末、節日、重大事件 |
 
-Before testing the main outcome, check whether the experiment behaved as designed:
+```python
+from scipy.stats import chisquare
+chisquare([50_812, 49_188])        # SRM 檢查：p 很小 → 先修資料，不要解讀結果
+```
 
-- assignment counts are reasonably balanced
-- observable user characteristics are reasonably balanced across variants
-- logging coverage is consistent across variants
-- eligibility rules were applied correctly
-- duplicates caused by instrumentation issues were removed
-- the metric trend over time looks operationally plausible
-- important time effects such as weekday vs. weekend exposure were not ignored
-- unusual calendar effects such as holidays or major events are accounted for
+> 壞掉的 instrumentation 產生的顯著結果，仍然是壞證據。介入前指標異常高或低時，看似的「改善」可能只是 [趨中迴歸](../regression-analysis/simple-linear-regression.md#趨中迴歸-regression-to-the-mean)。
 
-Warning: A statistically significant result from broken instrumentation is still broken evidence.
+## 偷看與多重比較
 
-Tip: Balance checks do not prove that randomization worked perfectly, but they are a strong first filter for obvious assignment or data-pipeline problems.
+反覆檢查顯著性、一顯著就停止（**偷看 peeking**），等同做了多次未校正的比較，偽陽性率遠超過 α。上線前就要定好：
 
-Warning: Be careful when a metric was unusually high or low before the intervention. Some apparent "improvements" are simply **regression to the mean** rather than a real treatment effect.
+- 固定樣本數，或
+- 固定實驗期間，或
+- 正式的**序列檢定 (sequential testing)** 設計（如 group sequential、always-valid p-values）
 
-## Peeking And Multiple Comparisons
+多個變體或多個主要指標時，偽陽性風險再上升，見 [多重檢定校正](../inferential-statistics/multiple-testing.md)。
 
-One of the most common mistakes in experimentation is repeatedly checking significance during data collection and stopping as soon as the result looks favorable.
+> **降低變異的技巧 CUPED**：用實驗前的同一指標當共變數調整（即 ANCOVA），可大幅縮小 CI、減少所需樣本數。
 
-Warning: Optional stopping inflates false positive rates. In practical terms, repeatedly "peeking" at the p-value behaves like running multiple comparisons without correcting for them.
+## 解讀結果
 
-That is why the stopping rule should be specified before launch:
+1. 估計的提升 / 差異是多少？
+2. 信賴區間？
+3. 與「無效果」相容嗎？
+4. 效果大到實務上有意義嗎？
+5. 還有哪些設計或資料品質風險？
 
-- fixed sample size
-- fixed experiment duration
-- or a formal sequential-testing design
-
-If you compare multiple variants or many primary outcomes, your false-positive risk rises further. This connects directly to the multiple-comparisons issue covered elsewhere in statistics.
-
-## Interpreting Results Like A Decision-Maker
-
-A mature A/B-test readout should answer all of these:
-
-1. What is the estimated lift or difference?
-2. What is the confidence interval?
-3. Is the result statistically compatible with no effect?
-4. Is the effect large enough to matter in practice?
-5. What design or data-quality risks remain?
-
-Tip: Statistical significance alone is rarely the business decision. A tiny but precise uplift may be unimportant, while a meaningful uplift with a wide interval may justify a longer follow-up test.
-
-## Key Takeaways
-
-| Idea | Why It Matters |
-| ---- | -------------- |
-| Randomization unit drives analysis unit | Prevents pseudoreplication and inflated certainty |
-| Metrics must be defined before launch | Protects against p-hacking and post-hoc storytelling |
-| Ratio metrics are special | They often require user-level aggregation and ratio-aware inference |
-| Peeking is a design problem, not a dashboard habit | It inflates false positives |
-| Effect size + CI + business value | Better decision rule than p-value alone |
+微小但精確的提升可能不重要；有意義但 CI 很寬的提升可能值得延長測試。貝氏的 A/B 測試解讀見 [貝氏 vs 頻率學派](../bayesian-statistics/bayesian-vs-frequentist.md#範例ab-測試)；行銷情境見 [Campaign Measurement](../../marketing-analytics/campaign-measurement.md)。

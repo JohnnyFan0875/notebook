@@ -1,72 +1,51 @@
-# Introduction
+[Statistics](../README.md) › [推論統計](README.md) › ANOVA 總覽
 
-**ANOVA** compares means across three or more groups. It asks whether group differences are larger than the random variation within groups.
+# 變異數分析總覽 (ANOVA Overview)
 
-Key point: ANOVA tells you whether at least one group mean differs, but it does not identify which groups differ. If the omnibus test is significant, follow it with an appropriate post-hoc comparison.
+ANOVA (analysis of variance) 比較三組以上的平均數，問的是：**組間差異是否大於組內的隨機變異？**
 
-## Where ANOVA Fits in the Big Picture
+$$
+F = \frac{MS_{between}}{MS_{within}} = \frac{\text{組別能解釋的變異}}{\text{組內隨機變異}}
+$$
 
-ANOVA is part of the broader family of linear models. Conceptually, it is doing the same job as regression: explaining variation in a numerical outcome. The difference is that the predictors are categorical group labels rather than continuous covariates.
+F ≈ 1 → 組間差異與雜訊差不多；F ≫ 1 → 至少一組平均數不同。
 
-This is why ANOVA should not be memorized as an isolated recipe. It is better understood as a structured way to compare explained variation against unexplained variation.
+> ANOVA 是**整體檢定 (omnibus test)**：只回答「是否至少一組不同」，不回答「是哪幾組」。顯著後需要 [事後檢定](post-hoc-effect-size.md)。
+>
+> ANOVA 本質是**類別自變數的線性迴歸**（`y ~ C(group)`），不必當成孤立的公式背。
 
-## Quick Guide
+## 選哪一種
 
-| Need | Use | Core Idea |
-| ---- | --- | --------- |
-| Compare 3+ independent groups | One-way ANOVA | One categorical factor |
-| Test two factors together | Two-way ANOVA | Main effects + interaction |
-| Same subject measured repeatedly | Repeated-measures ANOVA | Accounts for within-subject dependence |
-| Find which groups differ | Post-hoc tests | Pairwise tests with p-value correction |
+| 設計 | 方法 | 筆記 |
+| --- | --- | --- |
+| 一個因子、3+ 獨立組 | 單因子 ANOVA | [One-Way ANOVA](one-way-anova.md) |
+| 兩個因子（含交互作用） | 二因子 ANOVA | [Two-Way ANOVA](two-way-anova.md) |
+| 同一受試者重複量測 | 重複量數 ANOVA | [Repeated-Measures ANOVA](repeated-measures-anova.md) |
+| 找出哪幾組不同、差多大 | 事後檢定 + 效果量 | [Post-hoc & Effect Size](post-hoc-effect-size.md) |
+| 加入連續共變數 | ANCOVA | `y ~ C(group) + covariate` |
+| 多個結果變數 | MANOVA | [多變量分析](../multivariate-analysis/README.md) |
 
-## Sections
+## 假設
 
-| Section | Question |
-| --------- | ---------- |
-| [One-Way ANOVA](./one-way-anova.md) | Do 3+ independent group means differ? |
-| [Two-Way ANOVA](./two-way-anova.md) | Do two factors affect the outcome? |
-| [Repeated-Measures ANOVA](./repeated-measures-anova.md) | Do repeated measurements differ over time or condition? |
-| [Post-hoc & Effect Size](./post-hoc-effect-size.md) | Which groups differ, and how large is the effect? |
+| 假設 | 檢查 | 不成立時 |
+| --- | --- | --- |
+| 觀測獨立 | 研究設計 | 重複量數 ANOVA、混合模型 |
+| 組內殘差近似常態 | Q–Q 圖 | Kruskal-Wallis、資料轉換 |
+| 各組變異數相等 | Levene's | Welch's ANOVA + Games-Howell |
 
-## Must-Know Formula
+## 解讀順序
 
-\[
-F = \frac{MS_{between}}{MS_{within}}
-\]
+1. 確認研究設計與 ANOVA 類型相符
+2. 先畫 boxplot / violin，看各組分布與樣本數
+3. 看整體 F 檢定
+4. 顯著 → 事後檢定
+5. 報告效果量與各組平均，不只 p 值
 
-| Term | Meaning |
-| ---- | ------- |
-| `MS_between` | Variation explained by group differences |
-| `MS_within` | Random variation inside groups |
-| Large F | Group means differ more than expected by noise |
+## 常見錯誤
 
-## Assumptions
-
-| Assumption | Check | If Violated |
-| ---------- | ----- | ----------- |
-| Independent observations | Study design | Use paired/repeated or mixed models |
-| Approximate normality | Histogram, Q-Q plot, Shapiro-Wilk | Use Kruskal-Wallis or transform |
-| Equal variances | Levene's test | Use Welch's ANOVA |
-
-Tip: Start with a boxplot or violin plot before running ANOVA. A quick visual check of the group distributions often catches problems before the formal test does.
-
-## Interpretation Order
-
-When reading ANOVA output, this order usually prevents confusion:
-
-1. confirm the study design matches the ANOVA type
-2. inspect group plots and sample sizes
-3. read the omnibus F test
-4. if significant, move to post-hoc comparisons
-5. report an effect size, not just a p-value
-
-Warning: A significant ANOVA result does not automatically imply a large or practically important difference. Always pair the test result with the observed group means and an effect-size measure.
-
-## Common Mistakes
-
-| Mistake | Why it is a problem |
-| ------- | ------------------- |
-| Running many t-tests instead of one ANOVA | Inflates Type I error |
-| Interpreting ANOVA without checking plots | Can miss outliers, skew, or unequal spread |
-| Reporting only p-values | Hides the size and direction of group differences |
-| Ignoring unequal variances | Standard ANOVA can become unreliable |
+| 錯誤 | 問題 |
+| --- | --- |
+| 用很多個 t 檢定取代 ANOVA | 型一錯誤膨脹（3 組要比 3 次，10 組要比 45 次） |
+| 不看圖就解讀 | 漏掉離群值、偏態、變異不等 |
+| 只報 p 值 | 看不出差異的大小與方向 |
+| 忽略變異不等（尤其各組 n 不同時） | 標準 F 檢定不可靠 |

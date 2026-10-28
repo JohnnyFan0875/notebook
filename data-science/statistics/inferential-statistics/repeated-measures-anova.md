@@ -1,207 +1,88 @@
-# Repeated-Measures ANOVA
+[Statistics](../README.md) › [推論統計](README.md) › [ANOVA](anova-overview.md) › 重複量數
 
-**Repeated-measures ANOVA** compares means when the **same subjects** are measured under multiple conditions or across multiple time points.
+# 重複量數變異數分析 (Repeated-Measures ANOVA)
 
-Key point: Repeated measurements are not independent. The main advantage of repeated-measures designs is that each subject acts as their own partial control, which often reduces unexplained variability and increases power.
+**同一受試者**在多個條件或時間點被量測時，比較各條件的平均數。
 
-## When to Use
+| 情境 | 例子 |
+| --- | --- |
+| 同一受試者、多個時間點 | 治療前、第 1 週、第 1 個月 |
+| 同一受試者、多個條件 | 安慰劑、低劑量、高劑量 |
 
-| Situation | Example |
-| --------- | ------- |
-| Same subject, multiple time points | before treatment, week 1, month 1 |
-| Same subject, multiple conditions | placebo, low dose, high dose |
-| Numerical outcome | blood pressure, score, reaction time |
+只有兩個時間點 → [配對 t 檢定](statistical-tests.md)。
 
-If there are only two repeated measurements, a paired t-test is often enough. If there are missing repeated observations or more complex nesting, mixed models are usually better.
+> 重複量測**不獨立**，不能用一般單因子 ANOVA。但這也是優點：每個人都是自己的對照，**個體間差異被移除**，殘差變小、檢定力提高。
 
-## Why Not Use One-Way ANOVA?
+變異拆解：
 
-Standard one-way ANOVA assumes all observations are independent. Repeated-measures data violates that assumption because measurements from the same subject tend to be correlated.
+| 來源 | 意義 |
+| --- | --- |
+| 受試者間 (between-subject) | 人與人之間穩定的差異（被移除） |
+| 條件 / 時間 (within-subject) | 想檢定的效果 |
+| 殘差 | 剩下的雜訊 |
 
-Ignoring this structure can:
+## 球形假設 (Sphericity)
 
-- underestimate or misrepresent error
-- distort p-values
-- waste the within-subject information that makes the design valuable
+各條件**兩兩差值的變異數**大致相等（例如 T1−T2、T1−T3、T2−T3 的變異數相近）。違反時 F 檢定過於寬鬆（偽陽性增加）。
 
-## Core Idea
+- 檢查：Mauchly's test
+- 違反時：使用 **Greenhouse-Geisser**（保守）或 Huynh-Feldt 校正後的 p 值
+- 只有兩個條件時球形假設必然成立
 
-Repeated-measures ANOVA partitions variability into:
-
-- **between-subject variation**: stable differences across people
-- **within-subject condition variation**: differences due to time or condition
-- **residual variation**: leftover noise
-
-This is why repeated-measures designs are often more efficient than independent-group designs.
-
-## Hypotheses
-
-For a within-subject factor with \(k\) conditions:
-
-| Hypothesis | Meaning |
-| ---------- | ------- |
-| \(H_0\) | all condition means are equal |
-| \(H_1\) | at least one condition mean differs |
-
-## The Key Assumption: Sphericity
-
-Sphericity means that the **variance of the pairwise differences** between conditions is roughly equal.
-
-Examples of pairwise differences:
-
-- condition 1 minus condition 2
-- condition 1 minus condition 3
-- condition 2 minus condition 3
-
-If those difference variances are very unequal, the standard F test becomes too liberal.
-
-| Assumption | Meaning | If violated |
-| ---------- | ------- | ----------- |
-| Sphericity | pairwise difference variances are similar | use Greenhouse-Geisser or Huynh-Feldt correction |
-
-Tip: Sphericity is special to repeated-measures ANOVA. It is one of the main reasons this design has its own analysis framework.
-
-## Example with Simulated Data
+## Python 範例
 
 ```python
 import numpy as np
 import pandas as pd
 import pingouin as pg
-
-rng = np.random.default_rng(42)
-n_subjects = 20
-
-rows = []
-for subject in range(n_subjects):
-    baseline = rng.normal(100, 8)
-    scores = {
-        "baseline": baseline + rng.normal(0, 3),
-        "week_1": baseline - 4 + rng.normal(0, 3),
-        "month_1": baseline - 8 + rng.normal(0, 3),
-    }
-    for condition, score in scores.items():
-        rows.append({
-            "subject": subject,
-            "condition": condition,
-            "score": score
-        })
-
-df = pd.DataFrame(rows)
-
-result = pg.rm_anova(
-    data=df,
-    dv="score",
-    within="condition",
-    subject="subject",
-    detailed=True
-)
-print(result)
-```
-
-## Checking Sphericity
-
-```python
-spher = pg.sphericity(data=df, dv="score", within="condition", subject="subject")
-print(spher)
-```
-
-If sphericity is violated, look at the corrected p-values from Greenhouse-Geisser or Huynh-Feldt output rather than the uncorrected F test alone.
-
-## Visualizing Repeated Data
-
-Two plots are especially useful:
-
-1. subject trajectories
-2. mean profile with uncertainty
-
-```python
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-plt.figure(figsize=(8, 4))
-sns.lineplot(
-    data=df,
-    x="condition",
-    y="score",
-    units="subject",
-    estimator=None,
-    alpha=0.25,
-    color="gray"
-)
-sns.pointplot(
-    data=df,
-    x="condition",
-    y="score",
-    errorbar=("ci", 95),
-    color="steelblue"
-)
-plt.title("Repeated Measurements by Subject")
-plt.tight_layout()
+# 長格式 (long format)：每列 = 一位受試者在一個條件下的量測
+rng = np.random.default_rng(42)
+rows = []
+for s in range(20):
+    base = rng.normal(100, 8)
+    for cond, shift in [("baseline", 0), ("week_1", -4), ("month_1", -8)]:
+        rows.append({"subject": s, "condition": cond, "score": base + shift + rng.normal(0, 3)})
+df = pd.DataFrame(rows)
+
+pg.rm_anova(data=df, dv="score", within="condition", subject="subject",
+            detailed=True, correction=True)          # 含 GG 校正 p 值、ng2
+pg.sphericity(data=df, dv="score", within="condition", subject="subject")
+pg.pairwise_tests(data=df, dv="score", within="condition", subject="subject",
+                  padjust="holm")                    # 事後兩兩比較
+
+# 視覺化：每位受試者的軌跡（灰）+ 平均 ± 95% CI（藍）
+sns.lineplot(data=df, x="condition", y="score", units="subject", estimator=None, alpha=0.25, color="gray")
+sns.pointplot(data=df, x="condition", y="score", errorbar=("ci", 95), color="steelblue")
 plt.show()
 ```
 
-Tip: Subject-level lines show whether the average trend is consistent across individuals or driven by only a few participants.
+個體軌跡圖能看出平均趨勢是否一致，還是只被少數人帶動。
 
-## Effect Size
+**效果量**：pingouin 輸出 `np2`（partial η²）或 `ng2`（generalized η²）；generalized η² 較適合跨研究設計比較。
 
-Repeated-measures ANOVA commonly reports **partial eta squared**.
+## 何時改用混合效應模型
 
-```python
-print(result[["Source", "F", "p-unc", "ng2"]])
-```
+重複量數 ANOVA 在以下情況很受限，應改用 [線性混合效應模型](../regression-analysis/mixed-effects-models.md)：
 
-Depending on the package, you may see:
+| 情況 | 原因 |
+| --- | --- |
+| 有缺失的量測 | RM-ANOVA 會整個刪除該受試者 |
+| 量測時間不規則、各人次數不同 | RM-ANOVA 需要完整的平衡設計 |
+| 同時有受試者內與受試者間的預測變數 | 混合模型更有彈性 |
+| 想估計每個人的斜率（成長曲線） | 隨機斜率 |
 
-- `np2`: partial eta squared
-- `ng2`: generalized eta squared
+| 其他替代方法 | 情境 |
+| --- | --- |
+| [Friedman test](../nonparametric-methods/kruskal-wallis.md) | Ordinal 或嚴重非常態的重複資料 |
+| GEE | 關心族群平均效果、結果為二元或計數 |
 
-Tip: Generalized eta squared is often easier to compare across designs because it is less sensitive to the specific ANOVA structure.
-
-## When to Prefer a Mixed Model
-
-Repeated-measures ANOVA is useful, but it becomes restrictive when:
-
-- there are missing observations
-- observation times are uneven
-- subjects have different numbers of measurements
-- you need both within- and between-subject predictors
-
-In those cases, a **linear mixed model** is usually the better framework.
-
-## Alternatives
-
-| Case | Better method |
-| ---- | ------------- |
-| Only two time points | paired t-test |
-| Missing repeated observations | linear mixed model |
-| Ordinal or highly non-normal repeated data | Friedman test |
-| Time-varying slopes or irregular timing | mixed model / longitudinal model |
-
-## Common Mistakes
-
-| Mistake | Why it matters | Better approach |
-| ------- | -------------- | --------------- |
-| Treating repeated rows as independent | invalid standard errors | use repeated-measures methods |
-| Ignoring sphericity | inflated Type I error | apply GG/HF correction |
-| Reporting only omnibus significance | hides pattern across time | add plots and pairwise follow-up |
-| Forcing complete-case ANOVA when many values are missing | wastes data and may bias results | consider mixed models |
-
-## Reporting Template
+## 報告範本
 
 ```text
-A repeated-measures ANOVA tested whether mean score changed across three visits.
-There was a significant effect of condition,
-F(2, 38) = 15.21, p < .001, generalized eta² = .24.
-Scores decreased from baseline to week 1 and declined further by month 1.
-Mauchly's test indicated that sphericity was not violated.
+重複量數 ANOVA 顯示分數在三次回診間有顯著變化，
+F(2, 38) = 15.21，p < .001，generalized η² = .24。
+分數從 baseline 到第 1 週下降，到第 1 個月進一步下降。Mauchly 檢定未顯示違反球形假設。
 ```
-
-## Key Takeaways
-
-| Concept | Key point |
-| ------- | --------- |
-| **Same subject, multiple measurements** | This is the core repeated-measures design |
-| **Dependence is expected** | Repeated data should not be analyzed as independent groups |
-| **Sphericity matters** | Use corrected p-values if it fails |
-| **Plots are essential** | Subject trajectories often reveal the real pattern |
-| **Mixed models are the flexible extension** | Especially for missing or irregular repeated data |

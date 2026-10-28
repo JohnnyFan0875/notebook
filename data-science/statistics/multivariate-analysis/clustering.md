@@ -1,326 +1,123 @@
-# Clustering
+[Statistics](../README.md) › [多變量分析](README.md) › 分群
 
-**Clustering** is an **unsupervised** learning task — it finds natural groupings in data without using any labels. Where classification learns from known group memberships, clustering *discovers* group structure from the data itself.
+# 分群 (Clustering)
 
-Key point: The core question of cluster analysis: "There are several natural groups in the data. What are the characteristics of each group?" This question is conducted without a standard answer. There is no absolute criterion for whether a clustering result is good or bad - you have to combine mathematical metrics and domain knowledge to judge whether the results are meaningful.
+**非監督式 (unsupervised)**：不使用標籤，從資料本身找出自然群組。沒有標準答案，結果好不好要結合數學指標與領域知識判斷。各演算法的 ML 筆記：[K-Means](../../machine-learning/unsupervised-learning/clustering/kmeans.md)、[Hierarchical](../../machine-learning/unsupervised-learning/clustering/hierarchical.md)、[DBSCAN](../../machine-learning/unsupervised-learning/clustering/dbscan.md)、[Gaussian Mixture](../../machine-learning/unsupervised-learning/clustering/gaussian-mixture.md)。
 
-## Three Families of Clustering
+## 方法比較
 
-| Family | Representative Method | Core Idea | Key Parameter |
-| ----------------- | --------------------- | ---------------------------------------------- | --------------------- |
-| **Partitional** | K-Means | Assign each point to the nearest centroid | k (number of clusters) |
-| **Hierarchical** | Agglomerative HC | Merge closest clusters bottom-up | Linkage method, cut height |
-| **Density-based** | DBSCAN | Clusters are dense regions separated by sparse space | ε, min_samples |
+| 方法 | 類型 | 核心概念 | 關鍵參數 | 適合 | 弱點 |
+| --- | --- | --- | --- | --- | --- |
+| **K-Means** | 分割式 (partitional) | 每點分到最近的中心，重複更新中心 | k | 緊密、球狀、大小相近的群；大資料最快 | 需指定 k；對離群值與量尺敏感 |
+| **階層式** (hierarchical, agglomerative) | 階層 | 由下而上合併最近的群，得樹狀圖 | 連結方法、切割高度 | 未知 k、想看巢狀結構 | 大資料慢（O(n²) 記憶體） |
+| **DBSCAN** | 密度 (density-based) | 群 = 稀疏區隔開的高密度區 | ε、min_samples | 非球狀、有雜訊 / 離群 | 群密度差異大時難調 |
+| **GMM** | 模型式 | 資料來自多個常態分配的混合 | 成分數、共變異型態 | 橢圓群、需要軟分配機率 | 假設常態 |
+| **Leiden / Louvain** | 圖 (graph-based) | 在 kNN 圖上找社群 | resolution | **單細胞 RNA-seq 標準** | 群數依 resolution 而定 |
 
-## Preprocessing for Clustering
+> 距離型方法對量尺很敏感，**分群前一定要標準化**（或先 PCA）。
 
-Like PCA, clustering algorithms are **distance-based** and highly sensitive to scale. Always standardize before clustering.
+![Clustering method comparison](src/clustering-method-comparison.png)
+
+K-Means 與 Ward 偏好球狀群，會把月牙形切成兩半；DBSCAN 能沿密度追出非凸形狀，並把稀疏點標為雜訊。
+
+## Python 範例
 
 ```python
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.metrics import silhouette_score, adjusted_rand_score
+from sklearn.neighbors import NearestNeighbors
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 
 iris = load_iris(as_frame=True)
-df = iris.frame
-df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names)
+X = StandardScaler().fit_transform(iris.data)
 
-num_cols = ['sepal length (cm)', 'sepal width (cm)',
-            'petal length (cm)', 'petal width (cm)']
+# K-Means：用手肘法 + 輪廓係數選 k
+for k in range(2, 8):
+    km = KMeans(n_clusters=k, n_init=10, random_state=42).fit(X)
+    print(k, round(km.inertia_, 1), round(silhouette_score(X, km.labels_), 3))
+labels_km = KMeans(n_clusters=3, n_init=10, random_state=42).fit_predict(X)
 
-scaler   = StandardScaler()
-X_scaled = scaler.fit_transform(df[num_cols])
+# 階層式（Ward）：畫樹狀圖，再切成 k 群
+Z = linkage(X, method="ward")
+dendrogram(Z, no_labels=True); plt.show()
+labels_hc = fcluster(Z, t=3, criterion="maxclust")
+
+# DBSCAN：用 k-distance 圖的「膝點」選 ε
+d, _ = NearestNeighbors(n_neighbors=5).fit(X).kneighbors(X)
+plt.plot(np.sort(d[:, -1])); plt.show()
+labels_db = DBSCAN(eps=0.8, min_samples=5).fit_predict(X)     # -1 = 雜訊點
+
+# 有真實標籤時（僅供驗證）：ARI
+adjusted_rand_score(iris.target, labels_km)
 ```
 
-## K-Means Clustering
+## 選擇群數 k
 
-K-Means partitions n observations into k clusters by iteratively:
-1. Assigning each observation to the **nearest centroid**
-2. Recomputing each centroid as the **mean of its assigned observations**
-3. Repeating until assignments stop changing
+| 訊號 | 建議 |
+| --- | --- |
+| 手肘在 k = 3 且輪廓係數在 k = 3 最高 | 強烈支持 k = 3 |
+| 手肘不明顯，輪廓係數在 k = 2 最高 | 傾向較簡單的 k |
+| 兩條曲線都單調下降 | 資料可能沒有明顯群結構 |
+| 兩者不一致 | 都檢查，用領域知識判斷 |
+
+![Elbow and silhouette on iris](src/clustering-choose-k.png)
+
+iris 是「兩者不一致」的例子：手肘不明顯，輪廓係數在 k = 2 最高（setosa vs 另外兩種），但真實有 3 個物種。versicolor 與 virginica 在量測空間中重疊，統計指標無法替你決定 k。
+
+## 評估指標
+
+| 指標 | 需要真實標籤？ | 範圍 | 意義 |
+| --- | --- | --- | --- |
+| 輪廓係數 (silhouette) | 否 | −1 ~ 1 | 群內緊密、群間分離的程度 |
+| Inertia (WCSS) | 否 | ≥ 0 | 群內平方和，k 越大越小（用於手肘法） |
+| Davies-Bouldin | 否 | ≥ 0，越小越好 | 群間相似度 |
+| ARI (adjusted Rand index) | **是** | ≈ 0 隨機、1 完全一致 | 與已知分類的一致性（校正機率） |
+
+## 階層式的連結方法
+
+| 連結 (linkage) | 合併依據 | 適合 | 弱點 |
+| --- | --- | --- | --- |
+| **Ward** | 群內變異增加最少 | 緊密、大小相近的群；**建議起點** | 假設群大小相近 |
+| Complete | 兩群間最遠距離 | 分離良好的緊密群 | 對離群值敏感 |
+| Average | 兩群間平均距離 | 平衡 | — |
+| Single | 兩群間最近距離 | 細長、鏈狀的群 | 「鏈結效應 (chaining)」 |
+
+> 基因表現 heatmap 的樹狀圖常用 **1 − Pearson 相關**作為距離 + average linkage，看的是「表現型態相似」而非絕對量相近。
+
+## DBSCAN 參數
+
+| 參數 | 調大 | 調小 |
+| --- | --- | --- |
+| ε (eps) | 群更少、更大 | 群更多、雜訊點更多 |
+| min_samples | 群更少、雜訊更多 | 能找到較小的群 |
+
+## 描述各群 (Cluster Profiling)
+
+找出群只完成一半，還要描述每群的特徵，把「Cluster 2」變成「花瓣長的大花」或「高表現免疫基因的 T 細胞」。
 
 ```python
-from sklearn.cluster import KMeans
-import warnings
-warnings.filterwarnings('ignore')
-
-# Fit K-Means with k=3 (we know iris has 3 species)
-kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
-labels_km = kmeans.fit_predict(X_scaled)
-
-df['cluster_km'] = labels_km
-
-# Compare clusters to true labels
-from sklearn.metrics import adjusted_rand_score, silhouette_score
-ari = adjusted_rand_score(iris.target, labels_km)
-sil = silhouette_score(X_scaled, labels_km)
-
-print(f"Adjusted Rand Index: {ari:.3f}  (1.0 = perfect match with true labels)")
-print(f"Silhouette Score:    {sil:.3f}  (higher = more distinct clusters)")
+df = iris.data.assign(cluster=labels_km)
+profile = df.groupby("cluster").mean()                       # 偏態變數用 median
+sns.heatmap((profile - profile.mean()) / profile.std(), annot=True, cmap="RdBu_r", center=0)
 ```
 
-### Choosing k: The Elbow Method
+單細胞資料中，這一步就是找各群的 **marker genes**（常用 [Wilcoxon rank-sum](../nonparametric-methods/two-independent-samples.md)）。
 
-```python
-inertias   = []   # within-cluster sum of squares (WCSS)
-sil_scores = []
-k_range    = range(2, 11)
+## 分群是假設，不是結論
 
-for k in k_range:
-    km = KMeans(n_clusters=k, random_state=42, n_init=10)
-    km.fit(X_scaled)
-    inertias.append(km.inertia_)
-    sil_scores.append(silhouette_score(X_scaled, km.labels_))
+分群演算法**一定會**分出群，即使資料沒有真正的群結構。驗證方式：
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+| 檢查 | 做法 |
+| --- | --- |
+| 穩定性 | Bootstrap / 子抽樣後重新分群，看群是否一致（consensus clustering） |
+| 前處理敏感度 | 換標準化方式、特徵子集、PCA 成分數，結果是否改變 |
+| 領域可解釋性 | 各群在領域語言中是否有意義 |
+| 外部驗證 | 在獨立資料上是否重現 |
 
-# Elbow plot
-axes[0].plot(k_range, inertias, 'o-', color='steelblue', linewidth=2)
-axes[0].set_xlabel('Number of Clusters (k)')
-axes[0].set_ylabel('Inertia (WCSS)')
-axes[0].set_title('Elbow Method')
-axes[0].set_xticks(list(k_range))
-
-# Silhouette score
-axes[1].plot(k_range, sil_scores, 'o-', color='tomato', linewidth=2)
-axes[1].set_xlabel('Number of Clusters (k)')
-axes[1].set_ylabel('Silhouette Score')
-axes[1].set_title('Silhouette Score by k')
-axes[1].set_xticks(list(k_range))
-
-plt.tight_layout()
-plt.show()
-```
-
-**Interpreting the elbow and silhouette together:**
-
-| Signal | Recommendation |
-| ------------------------------------------- | ---------------------------------------- |
-| Clear elbow at k=3 AND silhouette peaks at k=3 | Strong evidence for k=3 |
-| Elbow unclear, silhouette peaks at k=2 | Trust silhouette — simpler is better |
-| Both curves decrease monotonically | Data may not have clear cluster structure |
-| Elbow at 3 but silhouette peaks at 5 | Investigate both; use domain knowledge |
-
-Warning: There is no single "correct" k. The elbow and silhouette give guidance, but the final choice must make sense for your problem. Ask: "Do these k groups have distinct, interpretable profiles?"
-
-### Visualizing K-Means Results
-
-```python
-from sklearn.decomposition import PCA
-
-# Project to 2D via PCA for visualization
-pca2 = PCA(n_components=2)
-X_2d = pca2.fit_transform(X_scaled)
-
-fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-
-palette_km   = {0: '#2196F3', 1: '#4CAF50', 2: '#F44336'}
-palette_true = {'setosa': '#4CAF50', 'versicolor': '#2196F3', 'virginica': '#F44336'}
-
-# K-Means result
-for label, color in palette_km.items():
-    mask = labels_km == label
-    axes[0].scatter(X_2d[mask, 0], X_2d[mask, 1],
-                    color=color, alpha=0.6, s=50, label=f'Cluster {label}')
-axes[0].set_title(f'K-Means (k=3)\nARI = {ari:.3f}')
-axes[0].set_xlabel('PC1')
-axes[0].set_ylabel('PC2')
-axes[0].legend()
-
-# True labels
-for species, color in palette_true.items():
-    mask = df['species'] == species
-    axes[1].scatter(X_2d[mask, 0], X_2d[mask, 1],
-                    color=color, alpha=0.6, s=50, label=species)
-axes[1].set_title('True Species Labels')
-axes[1].set_xlabel('PC1')
-axes[1].set_ylabel('PC2')
-axes[1].legend()
-
-plt.tight_layout()
-plt.show()
-```
-
-Tip: ARI (Adjusted Rand Index) measures how well the clusters match the true labels, correcting for chance. ARI = 1 means perfect agreement; ARI ≈ 0 means no better than random. In real unsupervised problems you won't have true labels — use silhouette score instead.
-
-## Hierarchical Clustering
-
-Hierarchical clustering builds a **tree of nested clusters** (a dendrogram) without requiring a pre-specified k.
-
-```python
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from scipy.spatial.distance import pdist
-
-# Compute linkage matrix
-Z = linkage(X_scaled, method='ward')  # Ward minimizes within-cluster variance
-
-# Plot dendrogram
-plt.figure(figsize=(12, 5))
-dendrogram(
-    Z,
-    labels=df['species'].values,
-    leaf_rotation=90,
-    leaf_font_size=7,
-    color_threshold=6,
-    above_threshold_color='gray'
-)
-plt.title('Hierarchical Clustering Dendrogram (Ward Linkage)')
-plt.xlabel('Observation')
-plt.ylabel('Distance')
-plt.tight_layout()
-plt.show()
-```
-
-**Cut the dendrogram to get cluster assignments:**
-
-```python
-# Cut at height to produce k=3 clusters
-labels_hc = fcluster(Z, t=3, criterion='maxclust')
-df['cluster_hc'] = labels_hc
-
-ari_hc = adjusted_rand_score(iris.target, labels_hc)
-sil_hc = silhouette_score(X_scaled, labels_hc)
-print(f"HC — ARI: {ari_hc:.3f},  Silhouette: {sil_hc:.3f}")
-```
-
-**Linkage methods compared:**
-
-| Linkage | Merges by | Best For | Weakness |
-| ----------- | -------------------------------- | -------------------------------------- | --------------------------------- |
-| **Ward** | Minimum variance increase | Compact, similarly-sized clusters | Assumes roughly equal-sized groups |
-| **Complete** | Maximum distance between clusters | Well-separated, compact clusters | Sensitive to outliers |
-| **Average** | Mean distance between clusters | Balanced; good default | Less consistent with visual intuition |
-| **Single** | Minimum distance between clusters | Elongated, chain-like clusters | "Chaining" problem |
-
-Tip: Ward linkage is the most commonly recommended starting point for most datasets. It tends to produce compact, clearly separated clusters and often agrees with visual inspection.
-
-## DBSCAN: Density-Based Clustering
-
-DBSCAN identifies **dense regions** of points as clusters, leaving low-density points as **noise (outliers)**. Unlike K-Means, it does not require specifying k and can find non-spherical clusters.
-
-```python
-from sklearn.cluster import DBSCAN
-
-dbscan = DBSCAN(eps=0.8, min_samples=5)
-labels_db = dbscan.fit_predict(X_scaled)
-
-n_clusters = len(set(labels_db)) - (1 if -1 in labels_db else 0)
-n_noise    = (labels_db == -1).sum()
-
-print(f"Clusters found: {n_clusters}")
-print(f"Noise points:   {n_noise} ({n_noise/len(labels_db)*100:.1f}%)")
-
-if n_clusters > 1:
-    mask = labels_db != -1
-    sil_db = silhouette_score(X_scaled[mask], labels_db[mask])
-    print(f"Silhouette Score (excluding noise): {sil_db:.3f}")
-```
-
-**Tuning DBSCAN's two key parameters:**
-
-| Parameter | Effect of Increasing | Effect of Decreasing |
-| -------------- | ------------------------------- | -------------------------------------- |
-| **ε (eps)** | Fewer, larger clusters | More clusters, more noise points |
-| **min_samples** | Fewer, larger clusters; more noise | Smaller clusters identified |
-
-```python
-# k-distance plot to find a good ε
-from sklearn.neighbors import NearestNeighbors
-
-nbrs = NearestNeighbors(n_neighbors=5).fit(X_scaled)
-distances, _ = nbrs.kneighbors(X_scaled)
-distances_sorted = np.sort(distances[:, -1])
-
-plt.figure(figsize=(8, 4))
-plt.plot(distances_sorted, color='steelblue', linewidth=2)
-plt.axhline(0.8, color='tomato', linestyle='--', label='Chosen ε = 0.8')
-plt.xlabel('Points (sorted by distance to 5th nearest neighbor)')
-plt.ylabel('5-NN Distance')
-plt.title('k-Distance Plot for ε Selection')
-plt.legend()
-plt.tight_layout()
-plt.show()
-```
-
-Tip: In the k-distance plot, look for the "knee" — the point where the curve starts bending sharply upward. The distance at the knee is a good candidate for ε.
-
-## Comparing the Three Methods
-
-```python
-from sklearn.metrics import adjusted_rand_score, silhouette_score
-
-results = pd.DataFrame({
-    'Method':    ['K-Means (k=3)', 'Hierarchical (Ward, k=3)', 'DBSCAN (ε=0.8)'],
-    'ARI':       [adjusted_rand_score(iris.target, labels_km),
-                  adjusted_rand_score(iris.target, labels_hc),
-                  adjusted_rand_score(iris.target, labels_db)],
-    'Silhouette':[silhouette_score(X_scaled, labels_km),
-                  silhouette_score(X_scaled, labels_hc),
-                  silhouette_score(X_scaled[labels_db != -1], labels_db[labels_db != -1])
-                  if (labels_db != -1).sum() > 0 else np.nan]
-}).round(3)
-
-print(results.to_string(index=False))
-```
-
-**When to use which method:**
-
-| Scenario | Best Method |
-| ----------------------------------------- | ------------------------ |
-| Know approximate k; clusters are compact | **K-Means** |
-| Unknown k; want to explore hierarchy | **Hierarchical (Ward)** |
-| Non-spherical clusters; outliers present | **DBSCAN** |
-| Very large dataset (>100k obs) | **K-Means** (fastest) |
-| Need nested cluster structure | **Hierarchical** |
-
-## Cluster Profiling
-
-Finding clusters is only half the job. You must also **describe what makes each cluster distinctive**.
-
-```python
-df['cluster_km'] = labels_km
-
-# Cluster means for each variable
-profile = df.groupby('cluster_km')[num_cols].mean().round(3)
-print("Cluster Profiles (means):")
-print(profile)
-
-# Heatmap of normalized cluster profiles
-profile_norm = (profile - profile.mean()) / profile.std()
-
-plt.figure(figsize=(8, 4))
-sns.heatmap(profile_norm, annot=True, fmt='.2f',
-            cmap='RdBu_r', center=0, linewidths=0.5)
-plt.title('Cluster Profile Heatmap (Standardized)')
-plt.ylabel('Cluster')
-plt.tight_layout()
-plt.show()
-```
-
-Tip: Always profile your clusters by computing mean (or median for skewed variables) of each feature per cluster. This is what transforms a label like "Cluster 2" into a meaningful description like "large flowers with long petals."
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ------------------------------------ | --------------------------------------------------------------------------------- |
-| **Standardize before clustering** | Distance-based methods are scale-sensitive — this step is not optional |
-| **Elbow + silhouette for k** | Use both to choose k; the "best" k must also make business/domain sense |
-| **Ward linkage is the safe default** | For hierarchical clustering, Ward usually gives the most interpretable results |
-| **DBSCAN finds noise** | Points labeled −1 are genuine outliers, not forced into a cluster |
-| **ARI needs true labels** | In real unsupervised problems, use silhouette score instead |
-| **Always profile clusters** | Cluster labels are meaningless without describing what characterizes each group |
-
-## Clusters Are Hypotheses About Structure
-
-A clustering result is not automatically evidence that natural groups truly exist in the world.
-
-Good follow-up checks:
-
-- stability under resampling
-- sensitivity to scaling / preprocessing
-- interpretability in domain language
-
-Tip: Clustering is exploratory until validated.
+> 用分群結果再去檢定「群間差異」是**循環論證 (double dipping)**：群本來就是依差異分出來的，p 值必然很小。

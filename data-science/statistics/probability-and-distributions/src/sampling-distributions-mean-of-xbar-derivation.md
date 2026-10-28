@@ -1,59 +1,23 @@
-# Mean of Sample Mean Derivation
+# 樣本平均數的期望值推導
 
-Let $X_1, X_2, \ldots, X_n$ be independent and identically distributed random variables from the same population.
+[← 回到中央極限定理](../sampling-distributions.md#中央極限定理-central-limit-theorem-clt)
 
-Assume each observation has population mean:
-
-$$
-E(X_i) = \mu
-$$
-
-The sample mean is:
-
-$$
-\bar{X} = \frac{X_1 + X_2 + \cdots + X_n}{n}
-$$
-
-Now take expectation on both sides:
+設 $X_1, \ldots, X_n$ 為獨立同分配 (i.i.d.)，$E(X_i) = \mu$，$\bar{X} = \frac{1}{n}\sum X_i$。
 
 $$
 E(\bar{X})
-= E\left(\frac{X_1 + X_2 + \cdots + X_n}{n}\right)
-$$
-
-Use the constant multiple rule:
-
-$$
-E(\bar{X})
-= \frac{1}{n} E(X_1 + X_2 + \cdots + X_n)
-$$
-
-Use linearity of expectation:
-
-$$
-E(\bar{X})
-= \frac{1}{n}\left[E(X_1) + E(X_2) + \cdots + E(X_n)\right]
-$$
-
-Since every $X_i$ comes from the same population:
-
-$$
-E(X_1) = E(X_2) = \cdots = E(X_n) = \mu
-$$
-
-Therefore:
-
-$$
-E(\bar{X})
-= \frac{1}{n}(\mu + \mu + \cdots + \mu)
-= \frac{1}{n}(n\mu)
+= \frac{1}{n} E\left(\sum_{i=1}^n X_i\right)
+= \frac{1}{n} \sum_{i=1}^n E(X_i)
+= \frac{1}{n} \cdot n\mu
 = \mu
 $$
 
-So the sample mean is an unbiased estimator of the population mean:
+用到的只有「常數倍」與「期望值的線性」，因此 $\bar{X}$ 是 μ 的**不偏估計量**。
+
+同理，若各 $X_i$ 獨立且 $\text{Var}(X_i) = \sigma^2$：
 
 $$
-E(\bar{X}) = \mu
+\text{Var}(\bar{X}) = \frac{1}{n^2} \sum_{i=1}^n \text{Var}(X_i) = \frac{\sigma^2}{n}
+\quad\Rightarrow\quad
+SE = \frac{\sigma}{\sqrt{n}}
 $$
-
-[Back to Sampling Distributions](../sampling-distributions.md#central-limit-theorem-clt)

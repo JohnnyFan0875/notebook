@@ -1,359 +1,166 @@
-# Bivariate Analysis
+[Statistics](../README.md) › [敘述統計](README.md) › 雙變數分析
 
-**Bivariate analysis** examines the relationship between **two variables**. The appropriate method depends on the data types of both variables.
+# 雙變數分析 (Bivariate Analysis)
 
-| Variable A         | Variable B         | Method                                   |
-| ------------------ | ------------------ | ---------------------------------------- |
-| Numerical          | Numerical          | Correlation (Pearson, Spearman, Kendall) |
-| Categorical        | Categorical        | Cross-tabulation                         |
-| Numerical          | Categorical        | Group comparison, boxplot by group       |
-| Multiple Numerical | Multiple Numerical | Correlation matrix, heatmap              |
+探討**兩個變數**之間的關係，方法取決於兩者的型態：
 
-**Key point:**
+| 變數 A | 變數 B | 描述方法 | 對應檢定 |
+| --- | --- | --- | --- |
+| 數值 | 數值 | 散布圖、Pearson / Spearman / Kendall 相關 | [相關檢定](../inferential-statistics/statistical-tests.md)、[等級相關](../nonparametric-methods/rank-correlation.md) |
+| 類別 | 類別 | 交叉表 (cross-tabulation)、分組長條圖 | [卡方檢定](../nonparametric-methods/chi-square.md) |
+| 數值 | 類別 | 分組摘要、分組 boxplot / violin | [t 檢定 / ANOVA](../inferential-statistics/statistical-tests.md)、[Mann-Whitney / Kruskal-Wallis](../nonparametric-methods/README.md) |
+| 多個數值 | 多個數值 | 相關矩陣、heatmap、pairplot | [多變量分析](../multivariate-analysis/README.md) |
 
-- **Correlation ≠ Causation**. A strong correlation tells you two variables move together — it does not tell you that one causes the other.
+> **相關 ≠ 因果 (correlation ≠ causation)**。強相關只代表兩者一起變動，不代表一個造成另一個。
 
-## Categorical × Categorical: Cross-Tabulation
+## 類別 × 類別：交叉表
 
-A cross-tabulation (contingency table) shows the joint frequency of **two categorical variables**.
+交叉表 (contingency table) 呈現兩個類別變數的聯合次數。重點是選對**標準化方向**：
 
-Use it to answer questions like:
-
-- How are outcomes distributed across groups?
-- Does one category appear more often within a specific subgroup?
-- Should you compare raw counts or within-group proportions?
+| `normalize=` | 意義 | 回答的問題 |
+| --- | --- | --- |
+| `False`（預設） | 原始次數 | 各格有幾筆？ |
+| `"index"` | 每列加總為 1 | 在某性別中，存活比例多少？ |
+| `"columns"` | 每欄加總為 1 | 在存活者中，男女各佔多少？ |
+| `"all"` | 全表加總為 1 | 各組合佔全體多少？ |
 
 ```python
 import pandas as pd
 
 data = pd.DataFrame({
-    'Gender':   ['Male', 'Female', 'Male', 'Female', 'Male', 'Female'],
-    'Survived': ['No',   'Yes',    'Yes',  'Yes',    'No',   'No']
+    "Gender":   ["Male", "Female", "Male", "Female", "Male", "Female"],
+    "Survived": ["No",   "Yes",    "Yes",  "Yes",    "No",   "No"],
 })
 
-# Raw counts with row/column totals
-ct = pd.crosstab(data['Gender'], data['Survived'], margins=True, margins_name='Total')
-print(ct)
-# Raw count output:
-# Survived  No  Yes  Total
-# Gender
-# Female     1    2      3
-# Male       2    1      3
-# Total      3    3      6
-
-# Row-normalized proportions (within each row)
-ct_row = pd.crosstab(data['Gender'], data['Survived'], normalize='index').round(3)
-print(ct_row)
-# Row-normalized output:
+pd.crosstab(data["Gender"], data["Survived"], margins=True)          # 次數 + 總計
+pd.crosstab(data["Gender"], data["Survived"], normalize="index")     # 列比例
 # Survived     No    Yes
-# Gender
 # Female    0.333  0.667
 # Male      0.667  0.333
-
-# Column-normalized proportions (within each column)
-ct_col = pd.crosstab(data['Gender'], data['Survived'], normalize='columns').round(3)
-print(ct_col)
-# Column-normalized output:
-# Survived     No    Yes
-# Gender
-# Female    0.333  0.667
-# Male      0.667  0.333
-
-# Overall-normalized proportions (share of grand total)
-ct_all = pd.crosstab(data['Gender'], data['Survived'], normalize='all').round(3)
-print(ct_all)
-# Overall-normalized output:
-# Survived     No    Yes
-# Gender
-# Female    0.167  0.333
-# Male      0.333  0.167
 ```
 
-## Numerical × Numerical: Correlation
+## 數值 × 數值：相關係數 (Correlation)
 
-### Pearson Correlation Coefficient ($r$)
-
-Measures the **strength and direction of the linear relationship** between two continuous variables.
+| 方法 | 衡量 | 資料 | 離群值 | 適用 |
+| --- | --- | --- | --- | --- |
+| **Pearson r** | **線性**關係 | 連續、近似常態 | 敏感 | 乾淨的數值資料 |
+| **Spearman ρ** | **單調 (monotonic)** 關係（用排名算 Pearson） | Ordinal、偏態 | 穩健 | 非常態、有離群值 |
+| **Kendall τ** | 單調關係（一致 / 不一致配對） | Ordinal、小樣本 | 穩健 | 小樣本、很多同分 (ties) |
 
 $$
-r =
-\frac{\sum_{i=1}^{n}(x_i-\bar{x})(y_i-\bar{y})}
-{\sqrt{\sum_{i=1}^{n}(x_i-\bar{x})^2
-\sum_{i=1}^{n}(y_i-\bar{y})^2}},
-\quad -1 \le r \le 1
+r = \frac{\sum (x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum (x_i-\bar{x})^2 \sum (y_i-\bar{y})^2}}, \quad -1 \le r \le 1
 $$
 
-|      $r$ Value | Direction | Strength   | Interpretation                 |
-| -------------: | --------- | ---------- | ------------------------------ |
-| -1.00 to -0.50 | Negative  | Strong     | Strong negative relationship   |
-| -0.49 to -0.30 | Negative  | Moderate   | Moderate negative relationship |
-|    -0.29 to <0 | Negative  | Weak       | Weak negative relationship     |
-|              0 | None      | Negligible | No linear relationship         |
-|     >0 to 0.29 | Positive  | Weak       | Weak positive relationship     |
-|   0.30 to 0.49 | Positive  | Moderate   | Moderate positive relationship |
-|   0.50 to 1.00 | Positive  | Strong     | Strong positive relationship   |
+**強度參考（只是經驗值，依領域而定）**
 
-**Note:**
-
-- These thresholds are guidelines, not rules — context matters. A correlation of 0.3 might be weak in physics but very meaningful in social science research.
+| \|r\| | 強度 |
+| --- | --- |
+| < 0.3 | 弱 |
+| 0.3 – 0.5 | 中 |
+| ≥ 0.5 | 強 |
 
 ```python
-import pandas as pd
 from scipy import stats
 from sklearn.datasets import load_iris
 
 df = load_iris(as_frame=True).frame
+a, b = df["sepal length (cm)"], df["petal length (cm)"]
 
-# Method 1: scipy (also gives p-value)
-r, p_value = stats.pearsonr(df['sepal length (cm)'], df['petal length (cm)'])
-print(f"Pearson r = {r:.3f},  p-value = {p_value:.4f}")
-
-# Method 2: pandas (quick, between two columns)
-r_pandas = df['sepal length (cm)'].corr(df['petal length (cm)'])
-print(f"Pearson r = {r_pandas:.3f}")
+r, p = stats.pearsonr(a, b)        # Pearson r 與 p 值
+rho, p = stats.spearmanr(a, b)     # Spearman ρ
+tau, p = stats.kendalltau(a, b)    # Kendall τ
+a.corr(b)                          # pandas 快速版（只有係數）
 ```
 
-**Assumptions for Pearson r:**
+**Pearson 的前提**：兩者皆為連續變數、關係為線性（看散布圖）、大致常態、無嚴重離群值。不符合時改用 Spearman。
 
-| Assumption                                     | How to Check                                                                                                                   |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Both variables are continuous (Interval/Ratio) | [Check data types](./data-types.md)                                                                                            |
-| Linear relationship                            | [Scatter plot](#visualization-scatter-plot)                                                                                    |
-| Both variables approximately normal            | [Histogram](./univariate-numerical.md#histogram-with-kde), [Q–Q plot](./univariate-numerical.md#qq-plot-quantilequantile-plot) |
-| No severe outliers                             | [Boxplot](./univariate-numerical.md#boxplot)                                                                                   |
+> **重點**
+>
+> - r 只抓**線性**關係；r ≈ 0 不代表沒關係（例如 U 形）。
+> - r² = 一個變數的變異能被另一個線性解釋的比例，與 [簡單線性迴歸](../regression-analysis/simple-linear-regression.md) 的 R² 相同。
+> - 同時算上千對相關（例如基因共表現 co-expression）時，記得做 [多重檢定校正](../inferential-statistics/multiple-testing.md)。
+> - 比例 / 組成資料 (compositional data，如微生物相對豐度) 加總固定為 1，會產生假相關。
 
-**Warning:**
+### 先畫圖：散布圖
 
-- If these assumptions are violated, use **Spearman ρ** instead.
-
-### Spearman's ρ (Rank Correlation)
-
-Based on **ranked data** — detects monotonic relationships (where one variable consistently increases/decreases as the other does, but not necessarily linearly).
-
-**Use when:**
-
-- Data is ordinal
-- Distribution is heavily skewed
-- The relationship is monotonic but not linear
-- Severe outliers are present
-
-```python
-rho, p = stats.spearmanr(df['sepal length (cm)'], df['petal length (cm)'])
-print(f"Spearman ρ = {rho:.3f},  p-value = {p:.4f}")
-```
-
-### Kendall's $τ$ (Tau)
-
-Also rank-based — uses concordant and discordant pairs instead of ranks directly. More robust for small samples or data with many tied values.
-
-```python
-tau, p = stats.kendalltau(df['sepal length (cm)'], df['petal length (cm)'])
-print(f"Kendall τ = {tau:.3f},  p-value = {p:.4f}")
-```
-
-### Choosing the Right Correlation Method
-
-| Method         | Data Type          | Relationship Type | Outliers  | Best For                                       |
-| -------------- | ------------------ | ----------------- | --------- | ---------------------------------------------- |
-| **Pearson r**  | Continuous, normal | Linear only       | Sensitive | Standard correlation for clean numerical data  |
-| **Spearman ρ** | Ordinal or skewed  | Monotonic         | Robust    | Non-normal data, ranked data, outliers present |
-| **Kendall τ**  | Ordinal, small n   | Monotonic         | Robust    | Small samples, many ties                       |
-
-**Tip:**
-
-- When in doubt, use **Spearman ρ** — it makes fewer assumptions and is almost as efficient as Pearson when the data is normal.
-
-### Visualization: Scatter Plot
-
-Always visualize before computing correlation. A scatter plot reveals:
-
-- Whether the relationship is actually linear
-- The presence of outliers
-- Clusters or subgroups in the data
+**Anscombe's Quartet**：四組資料相關係數幾乎相同，圖形卻完全不同。先畫圖，再算數字。
 
 ```python
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-plt.figure(figsize=(7, 5))
-sns.regplot(
-    x='sepal length (cm)',
-    y='petal length (cm)',
-    data=df,
-    scatter_kws={'alpha': 0.65, 's': 45},
-    line_kws={'color': '#c44e52', 'linewidth': 2}
-)
-plt.title(f"Sepal Length vs Petal Length (r = {r:.3f})")
-plt.tight_layout()
+sns.regplot(x=a, y=b, scatter_kws={"alpha": 0.6}, line_kws={"color": "#c44e52"})
+plt.title(f"Sepal vs Petal Length (r = {r:.3f})")
 plt.show()
 ```
 
-![Scatter Plot Result](./src/bivariate-scatter-regplot.png)
+| 散布圖 + 迴歸線 | Anscombe's Quartet |
+| --- | --- |
+| ![Scatter Plot](src/bivariate-scatter-regplot.png) | ![Anscombe's quartet](src/bivariate-anscombes-quartet.png) |
 
-**Warning:**
+<sub>Anscombe 圖片來源：[ResearchGate](https://www.researchgate.net/figure/Anscombes-quartet-highlights-the-importance-of-plotting-data-to-confirm-the-validity-of_fig2_280302159)</sub>
 
-- **Anscombe's Quartet**: Four datasets can have almost identical correlations but look completely different visually. Always plot first. Draw first, then calculate.
-
-![Image](./src/bivariate-anscombes-quartet.png)
-
-<p align="right">
-  <a href="https://www.researchgate.net/figure/Anscombes-quartet-highlights-the-importance-of-plotting-data-to-confirm-the-validity-of_fig2_280302159">
-    Image from Website
-  </a>
-</p>
-
-## Numerical × Categorical: Group Comparison
-
-When one variable is numerical and the other is categorical, compare the numerical variable's distribution **across groups**.
+## 數值 × 類別：分組比較
 
 ```python
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.datasets import load_iris
-
 iris = load_iris(as_frame=True)
 df = iris.frame
-df['species'] = iris.target_names[iris.target]
-sns.set_theme(style='whitegrid')
+df["species"] = iris.target_names[iris.target]
+col = "sepal length (cm)"
 
-# Summary statistics by group
-group_summary = df.groupby('species')['sepal length (cm)'].agg(
-    Count='count',
-    Mean='mean',
-    Median='median',
-    SD='std',
-    IQR=lambda x: x.quantile(0.75) - x.quantile(0.25)
+# 分組摘要
+df.groupby("species")[col].agg(
+    n="count", mean="mean", median="median", sd="std",
+    iqr=lambda s: s.quantile(0.75) - s.quantile(0.25),
 ).round(3)
-print(group_summary)
-# Output:
-#             Count   Mean  Median     SD    IQR
-# species
-# setosa         50  5.006     5.0  0.352  0.400
-# versicolor     50  5.936     5.9  0.516  0.700
-# virginica      50  6.588     6.5  0.636  0.675
+#             n   mean  median     sd    iqr
+# setosa     50  5.006     5.0  0.352  0.400
+# versicolor 50  5.936     5.9  0.516  0.700
+# virginica  50  6.588     6.5  0.636  0.675
 
-# Boxplot by group — shows median, IQR, outliers
-plt.figure(figsize=(7, 5))
-sns.boxplot(x='species', y='sepal length (cm)', data=df, hue='species', palette='Set2', legend=False)
-plt.title('Sepal Length by Species (Boxplot)')
-plt.xlabel('Species')
-plt.ylabel('Sepal Length (cm)')
-plt.tight_layout()
-plt.show()
-
-# Violin plot — shows distribution shape within each group
-plt.figure(figsize=(7, 5))
-sns.violinplot(x='species', y='sepal length (cm)', data=df, hue='species', palette='Set2', legend=False)
-plt.title('Sepal Length by Species (Violin Plot)')
-plt.xlabel('Species')
-plt.ylabel('Sepal Length (cm)')
-plt.tight_layout()
-plt.show()
-
-# Bar chart with error bars — shows mean with variability
-summary = df.groupby('species')['sepal length (cm)'].agg(['mean', 'std']).reset_index()
-ax = sns.barplot(x='species', y='mean', data=summary, hue='species', palette='Set2', legend=False)
-ax.errorbar(
-    x=range(len(summary)),
-    y=summary['mean'],
-    yerr=summary['std'],
-    fmt='none',
-    ecolor='black',
-    elinewidth=1.5,
-    capsize=6
-)
-plt.title('Mean Sepal Length by Species (SD Error Bars)')
-plt.xlabel('Species')
-plt.ylabel('Mean Sepal Length (cm)')
-plt.tight_layout()
-plt.show()
+# 三種圖
+sns.boxplot(x="species", y=col, data=df)                  # 中位數、IQR、離群值
+sns.violinplot(x="species", y=col, data=df)               # 分布形狀
+sns.barplot(x="species", y=col, data=df, errorbar="sd")   # 平均數 ± SD
 ```
 
-**Boxplot by group**
+| 圖 | 適合 |
+| --- | --- |
+| 分組 boxplot | 比較中位數與分散、找離群值 |
+| violin plot | 看各組分布形狀（例如雙峰） |
+| 長條圖 + error bar | 比較平均數；**務必註明 error bar 是 SD / SE / CI** |
 
-![Boxplot by Group](./src/bivariate-group-boxplot.png)
+| Boxplot | Violin | Bar + error bar |
+| --- | --- | --- |
+| ![Boxplot by Group](src/bivariate-group-boxplot.png) | ![Violin Plot](src/bivariate-group-violinplot.png) | ![Bar with error bars](src/bivariate-group-bar-error.png) |
 
-**Violin plot**
+> 樣本少時（例如每組 n = 3 的生物重複），長條圖會隱藏資料點，建議疊加原始點（`sns.stripplot`）。
 
-![Violin Plot](./src/bivariate-group-violinplot.png)
-
-**Bar chart with error bars**
-
-![Bar Chart with Error Bars](./src/bivariate-group-bar-error.png)
-
-| Chart                         | Best For                                                 |
-| ----------------------------- | -------------------------------------------------------- |
-| **Boxplot by group**          | Comparing median and spread; spotting outliers per group |
-| **Violin plot**               | Seeing distribution shape within each group              |
-| **Bar chart with error bars** | Comparing means with variability indication              |
-
-## Multiple Numerical Variables: Correlation Matrix
-
-When you have multiple numerical variables, a **correlation matrix** shows all pairwise correlations at once.
+## 多個數值變數：相關矩陣
 
 ```python
-import seaborn as sns
-import matplotlib.pyplot as plt
+num_cols = df.select_dtypes("number").columns
+corr = df[num_cols].corr(method="pearson")   # 或 "spearman"
 
-# Select numerical columns
-num_cols = ['sepal length (cm)', 'sepal width (cm)', 'petal length (cm)', 'petal width (cm)']
-corr_matrix = df[num_cols].corr(method='pearson')
+# Heatmap
+sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", vmin=-1, vmax=1, center=0, square=True)
+plt.show()
 
-print(corr_matrix.round(3))
-# Output:
-#                    sepal length (cm)  sepal width (cm)  petal length (cm)  petal width (cm)
-# sepal length (cm)              1.000            -0.118              0.872             0.818
-# sepal width (cm)              -0.118             1.000             -0.428            -0.366
-# petal length (cm)              0.872            -0.428              1.000             0.963
-# petal width (cm)               0.818            -0.366              0.963             1.000
-```
-
-**Heatmap — the standard way to visualize a correlation matrix:**
-
-```python
-plt.figure(figsize=(7, 5))
-sns.heatmap(
-    corr_matrix,
-    annot=True,       # show correlation values in cells
-    fmt='.2f',        # 2 decimal places
-    cmap='coolwarm',  # blue = negative, red = positive
-    vmin=-1, vmax=1,  # fix scale to [-1, 1]
-    center=0,
-    square=True
-)
-plt.title('Correlation Matrix — Iris Dataset')
-plt.tight_layout()
+# Pairplot：所有變數兩兩散布圖，對角線為分布
+sns.pairplot(df, hue="species", diag_kind="kde")
 plt.show()
 ```
 
-![Correlation Heatmap](./src/bivariate-correlation-heatmap.png)
+| Heatmap | Pairplot |
+| --- | --- |
+| ![Correlation Heatmap](src/bivariate-correlation-heatmap.png) | ![Correlation Pairplot](src/bivariate-correlation-pairplot.png) |
 
-**Pairplot — scatter plots for all pairs with distributions on the diagonal:**
+> 特徵之間高度相關 → 迴歸會有 [多重共線性](../multivariate-analysis/assumptions-diagnostics.md)；也可考慮 [PCA](../multivariate-analysis/pca.md) 降維。
 
-```python
-sns.pairplot(df, hue='species', diag_kind='kde', palette='Set2')
-plt.suptitle('Pairplot — Iris Dataset', y=1.02)
-plt.show()
-```
+## 解讀關係前的三個問題
 
-![Correlation Pairplot](./src/bivariate-correlation-pairplot.png)
+1. 真的是線性關係嗎？
+2. 這個關聯是不是被離群值或子群體 (subgroup) 驅動？→ 見 Simpson's paradox，[干擾與偏誤](../experimental-design/confounding-bias.md)
+3. 是否有第三個變數（干擾因子 confounder）能解釋？
 
-## Key Takeaways
-
-| Concept                            | Key Point                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| **Match method to data types**     | Always check what types of variables you have before choosing a method           |
-| **Visualize first**                | Scatter plots reveal patterns (or problems) that correlation coefficients miss   |
-| **Pearson vs Spearman**            | Pearson for normal continuous data; Spearman when assumptions are violated       |
-| **Correlation ≠ Causation**        | A high r does not mean X causes Y — always consider alternative explanations     |
-| **Heatmap for multiple variables** | Correlation matrix + heatmap is the most efficient overview of relationships     |
-| **Cross-tabulation**               | Use for relationships between two categorical variables                          |
-| **Group comparison**               | Use boxplot or violin plot when comparing a numerical variable across categories |
-
-## Three Questions Before Interpreting a Relationship
-
-1. Is the pattern really linear?
-2. Is the apparent association driven by outliers or subgroups?
-3. Could a third variable explain what you see?
-
-Tip: Bivariate analysis is a screening stage, not a causal conclusion stage.
+雙變數分析是**篩選階段**，不是下因果結論的階段。

@@ -1,120 +1,75 @@
-# Data Quality
+[Statistics](../README.md) › [敘述統計](README.md) › 資料品質
 
-Good statistics starts with clean data. Before modeling or hypothesis testing, check missing values, outliers, duplicated rows, impossible values, and inconsistent categories.
+# 資料品質 (Data Quality)
 
-This note is about **analysis-readiness**: what you should inspect before summary statistics, inference, or modeling. For organization-level data quality operating models, ownership, and monitoring, see [AI Strategy and Governance: Data Quality](../../ai-strategy-and-governance/data-quality.md).
+在算任何摘要統計、做檢定或建模之前，先確認資料是「可分析的」(analysis-ready)。缺失值、重複列、錯誤單位都可能嚴重扭曲平均數、p 值與迴歸係數。
 
-**Key point:**
+> 組織層級的資料品質治理（責任歸屬、監控）見 [AI Strategy and Governance: Data Quality](../../ai-strategy-and-governance/data-quality.md)。
 
-- Data quality problems are not minor flaws.
-- Missing values, outliers, duplicated records, or wrong units can seriously distort averages, p-values, and model coefficients.
+## 快速檢查表
 
-## Quick Checks
-
-| Issue                  | What to Check         | Common Fix                                |
-| ---------------------- | --------------------- | ----------------------------------------- |
-| Missing values         | `isna().sum()`        | Drop, impute, or mark as unknown          |
-| Duplicates             | `duplicated()`        | Remove true duplicates                    |
-| Outliers               | Boxplot, IQR, z-score | Verify, cap, transform, or keep with note |
-| Invalid values         | Range checks          | Correct source data or set missing        |
-| Category inconsistency | Unique values         | Standardize labels                        |
-| Unit mismatch          | Summary statistics    | Convert units before analysis             |
-
-## Missing Data
-
-Detailed definitions of **MCAR / MAR / MNAR**, and how those mechanisms affect deletion or imputation choices, are covered in [Missing Data Mechanisms](../../data-manipulation-and-eda/missing-data.md).
+| 問題 | 怎麼查 | 常見處理 |
+| --- | --- | --- |
+| 缺失值 (missing values) | `df.isna().sum()`、`df.isna().mean()` | 刪除、插補 (impute)、標記為 unknown |
+| 重複 (duplicates) | `df.duplicated()`、ID 是否唯一 | 移除真正的重複 |
+| 離群值 (outliers) | Boxplot、IQR、z-score | 先查證，再決定保留 / 截尾 / 轉換 |
+| 不可能的值 (invalid values) | 範圍檢查（年齡 < 0、比例 > 1） | 修正來源或設為缺失 |
+| 類別標籤不一致 | `df[col].unique()` | 統一標籤（`male` / `Male` / `M`） |
+| 單位混用 (unit mismatch) | 摘要統計看量級 | 分析前統一單位（cm vs inch） |
+| 偽裝的缺失值 | 找 `999`、`-1`、`"unknown"`、空字串 | 轉成 `NaN` |
+| 日期格式不一 | `2024/01/02` vs `02-01-2024` | 統一用 `pd.to_datetime` 解析 |
 
 ```python
-missing_summary = df.isna().sum().sort_values(ascending=False)
-missing_rate = df.isna().mean().sort_values(ascending=False)
-print(missing_summary)
-# species              0
-# petal width (cm)     0
-# ...
-print(missing_rate)
-# species              0.0
-# petal width (cm)     0.0
-# ...
+import numpy as np
+
+# 缺失值：數量與比例
+df.isna().sum().sort_values(ascending=False)
+df.isna().mean().sort_values(ascending=False)
+
+# 偽裝的缺失值 → NaN
+df = df.replace([999, -1, "unknown", ""], np.nan)
+
+# 重複列 / 重複 ID
+df.duplicated().sum()
+df["sample_id"].is_unique
 ```
 
-**Check before deciding what to do:**
+## 缺失值 (Missing Data)
 
-- Which columns have the most missing values?
-- What proportion is missing?
-- Is missingness concentrated in certain rows, subgroups, or time periods?
-- Are placeholder values like `999`, `unknown`, or blank strings hiding as non-missing values?
+不要直接 `dropna()`。先看：
 
-**Note:**
+- 哪些欄缺最多？缺多少比例？
+- 缺失是否集中在某些群組、時間、批次 (batch)？→ 若是，代表缺失可能不是隨機的
 
-- Don’t delete all missing rows directly.
-- First check how much is missing and whether the pattern is systematic.
+缺失機制 MCAR / MAR / MNAR 與對應處理見 [Missing Data Mechanisms](../../data-manipulation-and-eda/missing-data.md)；ML 前處理的插補見 [Imputation](../../machine-learning/preprocessing/imputation.md)。
 
-## Outliers
+## 離群值 (Outliers)
 
-Detailed explanation of **IQR-based outlier detection**, boxplots, and interpretation is covered in [Univariate Analysis (Numerical)](./univariate-numerical.md).
+偵測方法（IQR fence、boxplot）見 [單變數：數值型](univariate-numerical.md#四分位距與離群值-iqr--outliers)。
 
-| Outlier Type            | What to Do                   |
-| ----------------------- | ---------------------------- |
-| Data entry error        | Correct or remove            |
-| Real but extreme value  | Keep, but report sensitivity |
-| Measurement artifact    | Remove if justified          |
-| Influential model point | Check leverage and residuals |
+| 離群值類型 | 處理方式 |
+| --- | --- |
+| 輸入錯誤 (data entry error) | 修正或移除 |
+| 真實但極端的值 | 保留，並報告敏感度分析 (sensitivity analysis) |
+| 量測假影 (measurement artifact) | 有正當理由才移除 |
+| 對模型影響大的點 (influential point) | 查 leverage 與殘差，見 [迴歸診斷](../regression-analysis/multiple-linear-regression.md) |
 
-**Check before deciding what to do:**
+> 很多「離群值」其實是單位或輸入錯誤。先理解意義，再決定刪不刪。
 
-- Is the value impossible, or just rare?
-- Could it be a unit mismatch or data-entry error?
-- Does it appear in a boxplot or IQR screen?
-- Does it materially change the mean, SD, correlation, or model result?
+## 建議的檢查順序
 
-**Note:**
+1. 每一列 (row) 代表什麼？ID 與重複
+2. 缺失模式
+3. 不可能的值、單位不一致
+4. 理解脈絡後再看離群值
 
-- Outliers should trigger investigation before deletion.
-- Ask whether the point is impossible, unusual but real, or influential only under a particular model.
+如果還答不出「每列代表什麼、每欄的意義與單位、缺失集中在哪」，建模通常還太早。
 
-## Category and Unit Problems
+## 生物資料常見陷阱
 
-Many practical datasets fail not because of advanced statistical issues, but because labels and units are inconsistent.
-
-| Problem                  | Example                        | Why it matters                             |
-| ------------------------ | ------------------------------ | ------------------------------------------ |
-| Category spelling drift  | `male`, `Male`, `M`            | Splits one group into several fake groups  |
-| Mixed units              | cm and inch in one column      | Distorts averages and model coefficients   |
-| Encoded missing labels   | `999`, `unknown`, blank string | Hides missingness from standard checks     |
-| Date formatting mismatch | `2024/01/02` vs `02-01-2024`   | Creates wrong ordering and duration values |
-
-## Checklist
-
-| Before Analysis                   | Done |
-| --------------------------------- | ---- |
-| Data types match variable meaning | □    |
-| Missing values reviewed           | □    |
-| Duplicates checked                | □    |
-| Impossible values checked         | □    |
-| Outliers inspected visually       | □    |
-| Units and categories standardized | □    |
-
-## A Practical Triage Order
-
-When a dataset first arrives, this sequence usually works well:
-
-1. identifiers and duplicates
-2. missingness patterns
-3. impossible values and unit mismatches
-4. outliers after context is understood
-
-**Note:**
-
-- Many "outliers" are really data-entry or unit problems.
-- Investigate meaning before deleting anything.
-
-## Minimum Standard Before Any Model
-
-Before moving on to inference or modeling, you should be able to answer:
-
-1. what each row represents
-2. what each variable means and in what unit
-3. where the missingness is concentrated
-4. whether any values are impossible, duplicated, or inconsistently labeled
-
-If those answers are still unclear, the next statistical model is usually premature.
+| 陷阱 | 說明 |
+| --- | --- |
+| 基因名稱被 Excel 轉成日期 | `SEPT2` → `2-Sep`、`MARCH1` → `1-Mar` |
+| 批次效應 (batch effect) | 不同實驗批次 / 定序機台造成系統性差異，常被誤認為生物訊號，見 [干擾與偏誤](../experimental-design/confounding-bias.md) |
+| 低於偵測下限 (below detection limit) | 0 或缺失可能代表「沒測到」而不是「不存在」 |
+| 樣本標籤錯置 (sample swap) | 用性別基因、genotype 等交叉驗證樣本身分 |

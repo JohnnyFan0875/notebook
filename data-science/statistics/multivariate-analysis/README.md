@@ -1,177 +1,28 @@
-# Multivariate Analysis
+[Statistics](../README.md) › 多變量分析
 
-**Multivariate analysis** examines relationships among **three or more variables simultaneously**. Where bivariate analysis asks "are X and Y related?", multivariate analysis asks "how do many variables relate to each other — and to an outcome — all at once?"
+# 多變量分析 (Multivariate Analysis)
 
-Key point: Multivariate analysis is valuable because it captures joint structure across many variables rather than only pairwise relationships. Real datasets are rarely one-variable-at-a-time problems, so learning to work in higher dimensions is a core analysis skill.
+**同時**分析三個以上變數的關係。雙變數問「X 與 Y 有關嗎？」；多變量問「許多變數如何一起變動、如何共同解釋結果？」基因表現矩陣、多組學 (multi-omics)、影像特徵都是典型的高維多變量資料。
 
-## Why This Order?
-
-The sections follow a natural multivariate workflow:
+## 建議順序
 
 ```
-Understand correlation structure among all variables
-        ↓
-Build matrix / vector intuition for high-dimensional data
-        ↓
-Reduce dimensions — find the fewest axes that capture most variance (PCA)
-        ↓
-Find natural groupings in the data (Clustering)
-        ↓
-Model a continuous outcome from multiple predictors (Multiple Regression)
-        ↓
-Model a binary/categorical outcome (Logistic Regression & LDA)
-        ↓
-Validate, interpret, and diagnose every model
+線性代數直覺 → 多變量 EDA → 降維（PCA）→ 分群 → 監督式模型（迴歸、分類）→ 診斷
 ```
 
-This order matters because **dimension reduction often precedes both clustering and regression** in practice: working with raw high-dimensional data amplifies noise, inflates computation, and makes interpretation nearly impossible.
+降維通常在分群與迴歸之前：直接處理高維原始資料會放大雜訊、增加計算量、難以解讀。
 
-This module intentionally keeps multiple regression and logistic classification in view, but it complements rather than replaces the dedicated regression module. The emphasis here is on how those models behave inside a broader multivariate workflow.
+## 筆記
 
-## Start Here If...
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [線性代數基礎](linear-algebra-foundations.md) | 向量、矩陣、特徵值、共變異矩陣 | 怎麼用矩陣思考多變量資料？ |
+| [多變量 EDA](multivariate-eda.md) | 相關矩陣、pairplot、平行座標、Simpson's paradox | 建模前資料有什麼結構？ |
+| [主成分分析 (PCA)](pca.md) | 特徵分解、scree plot、loadings、biplot | 怎麼把相關變數壓成少數軸？ |
+| [分群](clustering.md) | K-Means、階層式、DBSCAN、輪廓係數 | 沒有標籤時資料有哪些群？ |
+| [多元迴歸：預測與正則化](multiple-regression.md) | 測試集評估、Ridge / Lasso、p > n | 很多預測變數時怎麼建模？ |
+| [邏輯斯迴歸與 LDA](logistic-lda.md) | 判別分析、決策邊界 | 怎麼分類？ |
+| [模型假設與診斷](assumptions-diagnostics.md) | 殘差、共線性、影響點、分群與 PCA 的檢查 | 模型假設成立嗎？ |
+| [結構方程模型 (SEM)](structural-equation-modeling-with-lavaan.md) | 潛在變數、CFA、lavaan | 怎麼檢定潛在變數模型？ |
 
-This module is usually the right place when:
-
-- you have many variables and pairwise thinking is no longer enough
-- you want to reduce dimensions before modeling
-- you want to cluster observations without labels
-- you need to diagnose structure such as collinearity, redundancy, or hidden grouping
-
-## Overview of Topics
-
-| Section | Level | Key Questions Answered |
-| ------------------------------------------------------------------------------ | ------------ | ----------------------------------------------------------------------------- |
-| [**Linear Algebra Foundations**](./linear-algebra-foundations.md) | Foundation | How should I think about vectors, matrices, eigenvectors, and linear transformations? |
-| [**Multivariate EDA**](./multivariate-eda.md) | Foundation | How do I explore many variables at once? What patterns exist before modeling? |
-| [**Principal Component Analysis (PCA)**](./pca.md) | Dimension Reduction | How do I reduce many correlated variables into fewer independent axes? |
-| [**Structural Equation Modeling (SEM)**](./structural-equation-modeling-with-lavaan.md) | Latent Structure | How do I test confirmatory latent-variable models and relations among them? |
-| [**Clustering**](./clustering.md) | Unsupervised | How do I find natural groups in the data without labels? |
-| [**Multiple Linear Regression**](./multiple-regression.md) | Supervised | How do I model a continuous outcome from multiple predictors? |
-| [**Logistic Regression & LDA**](./logistic-lda.md) | Supervised | How do I classify observations or model a binary outcome? |
-| [**Model Assumptions & Diagnostics**](./assumptions-diagnostics.md) | Validation | How do I check whether my model's assumptions hold? |
-
-## What's Inside Each Section
-
-### Multivariate EDA
-
-- Correlation matrix and heatmap (extending bivariate to all pairs)
-- Pairplot with group coloring
-- Parallel coordinates and radar charts for high-dimensional profiles
-- Detecting multicollinearity before regression
-
-### Linear Algebra Foundations
-
-- Vectors as observations, directions, and linear combinations
-- Matrices as data containers and linear transformations
-- Matrix-vector equations and why solvability matters
-- Eigenvalues and eigenvectors as the bridge to PCA
-
-### Principal Component Analysis (PCA)
-
-The core dimension reduction technique:
-
-| Output | What It Tells You |
-| ----------------- | ------------------------------------------------------- |
-| **Eigenvalues** | How much variance each principal component captures |
-| **Scree plot** | Visual guide for choosing number of components to keep |
-| **Loadings** | Which original variables drive each component |
-| **Biplot** | Observations and variable loadings in the same 2D space |
-
-### Structural Equation Modeling (SEM)
-
-- Manifest versus latent variables
-- Confirmatory factor analysis with `lavaan`
-- Fit indices such as CFI, TLI, RMSEA, and SRMR
-- Higher-order factors and Heywood cases
-
-### Clustering
-
-Two families of clustering methods:
-
-| Method | Type | Key Hyperparameter | Best For |
-| ------------------------ | ------------ | ------------------------ | ------------------------------------ |
-| **K-Means** | Partitional | k (number of clusters) | Compact, spherical clusters |
-| **Hierarchical** | Agglomerative | Linkage method, cut height | Nested structure, unknown k |
-| **DBSCAN** | Density-based | ε, min_samples | Irregular shapes, noise/outliers |
-
-### Multiple Linear Regression
-
-Extending simple regression to p predictors:
-
-| Topic | Key Concepts |
-| ------------------------ | ---------------------------------------------------------- |
-| **Coefficient interpretation** | Partial effect: "holding all else constant" |
-| **Multicollinearity** | VIF, condition number, correlated predictors |
-| **Variable selection** | Stepwise, LASSO, Ridge |
-| **Interaction terms** | When the effect of X₁ depends on X₂ |
-
-### Logistic Regression & LDA
-
-| Method | Output | Decision Boundary | Best For |
-| ------------------------ | --------------- | ------------------ | --------------------------------- |
-| **Logistic Regression** | Probability | Linear (in log-odds) | Binary outcome, interpretability |
-| **LDA** | Class membership | Linear | Multi-class, Gaussian predictors |
-
-### Model Assumptions & Diagnostics
-
-Organized by model type:
-
-| Model Type | Key Assumptions | Diagnostic Tools |
-| -------------------- | ------------------------------------------------------- | ------------------------------------ |
-| **Linear Regression** | Linearity, homoscedasticity, normality, independence | Residual plots, Q-Q, leverage |
-| **Logistic Regression** | Linearity in log-odds, no perfect separation | ROC curve, calibration plot |
-| **PCA** | Linear relationships, scale-sensitivity | Scree plot, cumulative variance |
-| **K-Means** | Spherical clusters, similar size | Elbow plot, silhouette score |
-
-## Visualization Quick Reference
-
-| Chart | Best For |
-| --------------------------- | ----------------------------------------------------------- |
-| Correlation heatmap | Overview of all pairwise relationships |
-| Pairplot | Bivariate distributions for all variable pairs |
-| Parallel coordinates | Comparing multivariate profiles across groups |
-| PCA biplot | Variables and observations in the same reduced space |
-| Scree plot | Choosing number of PCA components |
-| Dendrogram | Hierarchical cluster structure |
-| Silhouette plot | Assessing cluster quality |
-| Residual vs fitted | Checking regression model assumptions |
-| ROC curve | Evaluating classifier performance |
-
-## Tools Used in This Module
-
-| Library | Purpose |
-| ----------------- | ---------------------------------------------------------- |
-| `pandas` | Data manipulation, correlation matrices |
-| `numpy` | Linear algebra, matrix operations |
-| `matplotlib` / `seaborn` | Visualization |
-| `sklearn` | PCA, clustering, regression, classification, metrics |
-| `statsmodels` | OLS with full statistical summaries, VIF |
-| `scipy` | Hierarchical clustering, distance matrices |
-| `yellowbrick` | Visual diagnostics for ML models |
-
-## Key Takeaway
-
-Multivariate analysis answers: "What is the structure hidden in many variables simultaneously — and how do they collectively explain an outcome?" Always start with EDA and correlation structure before building models. Dimension reduction before clustering or regression is usually worth the effort. And always validate assumptions — multivariate models can fail silently.
-
-## Deep-Study Priorities
-
-The most useful study order here is:
-
-1. linear algebra foundations
-2. multivariate EDA
-3. dimensionality reduction
-4. clustering or classification structure
-5. diagnostics and interpretation
-
-Tip: In multivariate work, preprocessing and visualization are often more important than the final algorithm choice.
-
-## Choosing Between This Module and Regression
-
-Use the dedicated regression module when your main goal is to understand one supervised model well from start to finish.
-
-Use this module when the larger workflow matters more:
-
-- many predictors
-- structure discovery before supervision
-- preprocessing and reduction before modeling
-- comparing several multivariate tools in one pipeline
+> 迴歸的完整基礎在 [迴歸分析](../regression-analysis/README.md)；這裡著重多變量工作流程中的應用。ML 版本見 [ML: Dimensionality Reduction](../../machine-learning/unsupervised-learning/dimensionality-reduction/README.md)、[ML: Clustering](../../machine-learning/unsupervised-learning/clustering/README.md)。

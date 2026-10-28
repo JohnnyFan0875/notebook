@@ -1,415 +1,166 @@
-# Continuous Distributions
+[Statistics](../README.md) › [機率與分配](README.md) › 連續分配
 
-A **continuous distribution** models a random variable that can take any value within a range. Unlike discrete distributions, probabilities are described as **areas under a curve** (PDF), not as point probabilities.
+# 連續分配 (Continuous Distributions)
 
-**Why is continuous distribution so important?**
+連續隨機變數的機率是 **PDF 曲線下的面積**。常態分配是核心，t、χ²、F 都由它衍生，也是 t 檢定、卡方檢定、ANOVA 的基礎。
 
-- Normal distribution is the core of statistics. The t, Chi-square, and F distributions are all derived from it, and these distributions are the basis for hypothesis tests such as t-test, chi-square test, and ANOVA.
+## 選擇指南
 
-## Distribution Selection Guide
+| 分配 | 形狀 | 範圍 | 參數 | 主要用途 |
+| --- | --- | --- | --- | --- |
+| **Normal** 常態 | 對稱鐘形 | (−∞, ∞) | μ, σ | 量測誤差、多數檢定的基礎 |
+| **t** | 對稱、厚尾 | (−∞, ∞) | df | σ 未知時的平均數推論 |
+| **χ²** 卡方 | 右偏 | [0, ∞) | df | 變異數檢定、適合度、獨立性檢定 |
+| **F** | 右偏 | [0, ∞) | df₁, df₂ | 變異數比較、ANOVA、迴歸 F 檢定 |
+| **Exponential** 指數 | 右偏、遞減 | [0, ∞) | λ | 事件間等待時間、壽命 |
+| **Log-normal** 對數常態 | 右偏 | (0, ∞) | μ, σ（log 尺度） | 濃度、表現量、收入 |
+| **Beta** | 彈性 | [0, 1] | α, β | 比例 / 機率本身的分配、貝氏先驗 |
+| **Uniform** 均勻 | 平坦 | [a, b] | a, b | 亂數產生、無資訊先驗 |
 
-| Distribution        | When to Use                                                        | Key Parameter(s)        |
-| ------------------- | ------------------------------------------------------------------ | ----------------------- |
-| **Normal**          | Continuous data that's roughly symmetric; foundation of most tests | μ (mean), σ (SD)        |
-| **t**               | Small sample mean estimation; when population SD is unknown        | df (degrees of freedom) |
-| **Chi-square (χ²)** | Variance testing; goodness-of-fit; independence tests              | df                      |
-| **F**               | Comparing two variances; ANOVA                                     | df₁, df₂                |
-| **Exponential**     | Time between independent events                                    | λ (rate)                |
-| **Uniform**         | Equal probability over a range                                     | a (min), b (max)        |
+### 分配之間的關係
 
-## Normal Distribution
+```
+N(0,1) ──平方──▶ χ²(1) ──k 個相加──▶ χ²(k) ──兩個 χ² 相除──▶ F(df₁, df₂)
+N(0,1) ÷ √(χ²(k)/k) ──▶ t(k)          t(k)² = F(1, k)
+Poisson 的事件間隔 ──▶ Exponential     log(X) ~ Normal ⇔ X ~ Log-normal
+```
 
-**Key properties:**
-
-- **Symmetric**: Mean = Median = Mode
-- **Bell-shaped**: Single peak at μ
-- **Empirical Rule**: 68% within ±1σ, 95% within ±2σ, 99.7% within ±3σ
-- **Defined by 2 parameters**: Fully described by μ and σ
-- **Tails never touch zero**: Extends to ±∞
-
-### Parameters
+## 常態分配 (Normal)
 
 $$
-X \sim N(\mu, \sigma^2)
+X \sim N(\mu, \sigma^2), \qquad f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
 $$
 
-- Mean (μ): Center of the distribution
-- Standard Deviation (σ): Spread / width of the bell curve
-
-### PDF
-
-$$
-f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
-$$
-
-### Standard Normal Distribution
-
-The **Standard Normal** is a special case where μ = 0 and σ = 1, written Z ~ N(0, 1).
-
-Any Normal distribution can be converted to Standard Normal using the **Z-score**:
-
-$$
-Z = \frac{X - \mu}{\sigma}
-$$
-
-**Note:**
-
-- Z-score tells you how many standard deviations a value is from the mean.
-- Z = 2 means 2 standard deviations above the mean.
-- This allows data at different scales to be compared with each other.
+- 對稱：平均 = 中位數 = 眾數；完全由 μ、σ 決定
+- 經驗法則：±1σ ≈ 68%、±2σ ≈ 95%、±3σ ≈ 99.7%
+- **z-score** $Z = (X-\mu)/\sigma$ 把任何常態轉為標準常態 N(0, 1)，表示「離平均幾個標準差」
 
 ```python
 from scipy.stats import norm
-import numpy as np
-import matplotlib.pyplot as plt
 
-mu, sigma = 170, 6   # height example: mean 170cm, SD 6cm
-
-# Probability calculations
-print(f"P(X < 175)          = {norm.cdf(175, mu, sigma):.4f}")
-print(f"P(160 < X < 180)    = {norm.cdf(180, mu, sigma) - norm.cdf(160, mu, sigma):.4f}")
-print(f"P(X > 180)          = {1 - norm.cdf(180, mu, sigma):.4f}")
-
-# Z-score conversion
-x = 180
-z = (x - mu) / sigma
-print(f"\nZ-score for X=180: {z:.2f}")
-print(f"P(Z < {z:.2f})      = {norm.cdf(z):.4f}")  # Same result via standard normal
-
-# Inverse: what value has 95% below it?
-x_95 = norm.ppf(0.95, mu, sigma)
-print(f"\n95th percentile: {x_95:.2f} cm")
+mu, sigma = 170, 6                      # 身高：平均 170 cm、SD 6 cm
+norm.cdf(175, mu, sigma)                # P(X < 175)
+norm.cdf(180, mu, sigma) - norm.cdf(160, mu, sigma)   # P(160 < X < 180)
+norm.sf(180, mu, sigma)                 # P(X > 180)
+norm.ppf(0.95, mu, sigma)               # 第 95 百分位數
 ```
 
-### Visualization
+![Normal](src/continuous-distributions-normal.png)
+
+## t 分配 (t-Distribution)
+
+形狀像常態，但**尾巴較厚**，反映「用樣本 s 估計 σ」所多出的不確定性。
+
+- 用途：σ 未知時對平均數做推論（[t 檢定](../inferential-statistics/statistical-tests.md)、[信賴區間](../inferential-statistics/confidence-intervals.md)）
+- 自由度 (degrees of freedom) 單一樣本為 df = n − 1；df → ∞ 時趨近標準常態
 
 ```python
-x = np.linspace(mu - 4*sigma, mu + 4*sigma, 300)
-pdf = norm.pdf(x, mu, sigma)
+from scipy.stats import t
 
-fig, ax = plt.subplots(figsize=(9, 4))
-ax.plot(x, pdf, color='steelblue', linewidth=2)
-
-# Shade ±1σ, ±2σ regions
-for n_sd, alpha, label in [(1, 0.4, '±1σ  68%'), (2, 0.25, '±2σ  95%'), (3, 0.1, '±3σ  99.7%')]:
-    ax.fill_between(x, pdf,
-                    where=(x >= mu - n_sd*sigma) & (x <= mu + n_sd*sigma),
-                    alpha=alpha, color='steelblue', label=label)
-
-ax.set_title(f'Normal Distribution  N(μ={mu}, σ={sigma})')
-ax.set_xlabel('Height (cm)')
-ax.legend()
-plt.show()
-```
-
-![Normal Distribution Visualization](./src/continuous-distributions-normal.png)
-
-## t-Distribution
-
-The t-distribution looks like a Normal distribution but with **heavier tails**.
-
-### When to Use
-
-- Estimating a population mean from a **small sample** (n < 30 is a rough guideline)
-- Population standard deviation **σ is unknown** (must be estimated from sample)
-- Data is approximately normally distributed
-
-**Note:**
-
-- When estimating the parent population with a small sample, the uncertainty is higher, so the tail should be thicker to reflect this uncertainty.
-- As the number of samples increases (df increases), the t distribution will get closer and closer to the Normal distribution.
-
-### Parameter: Degrees of Freedom (df)
-
-$$
-df = n - 1
-$$
-
-As df increases, the t-distribution approaches the Standard Normal.
-
-```python
-from scipy.stats import t, norm
-import matplotlib.pyplot as plt
-import numpy as np
-
-x = np.linspace(-5, 5, 300)
-
-plt.figure(figsize=(9, 4))
-plt.plot(x, norm.pdf(x), label='Normal (df=∞)', color='black', linewidth=2)
-
-for df, color in [(1, 'red'), (5, 'orange'), (30, 'steelblue')]:
-    plt.plot(x, t.pdf(x, df), label=f't (df={df})', color=color, linestyle='--')
-
-plt.title('t-Distribution vs Normal — Heavier Tails with Fewer df')
-plt.xlabel('x')
-plt.ylabel('Density')
-plt.legend()
-plt.ylim(0, 0.45)
-plt.show()
-```
-
-![t-Distribution vs Normal](./src/continuous-distributions-t.png)
-
-### Critical Values
-
-```python
-from scipy.stats import norm, t
-
-# Critical value for 95% confidence interval (two-tailed, α=0.05)
 for df in [5, 10, 30, 100]:
-    cv = t.ppf(0.975, df)  # upper tail 2.5%
-    print(f"df={df:3d}:  t_critical = {cv:.4f}")
-
-# As df → ∞, t approaches z = 1.96
-print(f"Normal z = {norm.ppf(0.975):.4f}")
-
-# df=  5:  t_critical = 2.5706
-# df= 10:  t_critical = 2.2281
-# df= 30:  t_critical = 2.0423
-# df=100:  t_critical = 1.9840
-# Normal z = 1.9600
+    print(df, round(t.ppf(0.975, df), 3))   # 2.571, 2.228, 2.042, 1.984 → 趨近 1.96
 ```
 
-## Chi-square Distribution
+![t vs Normal](src/continuous-distributions-t.png)
 
-The Chi-square distribution is the distribution of the **sum of squared standard normal variables**.
+## 卡方分配 (Chi-square, χ²)
 
-$$
-\chi^2 = Z_1^2 + Z_2^2 + \cdots + Z_k^2 \quad \text{where each } Z_i \sim N(0,1)
-$$
+$k$ 個獨立標準常態的平方和：$\chi^2_k = Z_1^2 + \cdots + Z_k^2$。平均 = df，變異數 = 2·df，永遠 ≥ 0。
 
-### Key Properties
-
-| Property      | Detail                                          |
-| ------------- | ----------------------------------------------- |
-| **Shape**     | Right-skewed; approaches Normal as df increases |
-| **Range**     | Always ≥ 0 (it's a sum of squares)              |
-| **Parameter** | df (degrees of freedom)                         |
-| **Mean**      | df                                              |
-| **Variance**  | 2 × df                                          |
-
-### When to Use
-
-| Application              | Details                                                                      |
-| ------------------------ | ---------------------------------------------------------------------------- |
-| **Variance testing**     | Is a population variance equal to a specific value?                          |
-| **Goodness-of-fit test** | Does observed data fit an expected distribution?                             |
-| **Independence test**    | Are two categorical variables independent? (Chi-square test of independence) |
+| 應用 | 說明 |
+| --- | --- |
+| 變異數檢定 | 母體變異數是否等於某值？ |
+| 適合度檢定 (goodness-of-fit) | 觀察次數是否符合期望分配？ |
+| 獨立性檢定 | 兩個類別變數是否獨立？見 [卡方檢定](../nonparametric-methods/chi-square.md) |
+| 概似比檢定 (likelihood ratio test) | 巢狀模型比較，見 [最大概似估計](maximum-likelihood.md) |
 
 ```python
 from scipy.stats import chi2
-import matplotlib.pyplot as plt
-import numpy as np
-
-x = np.linspace(0, 40, 300)
-
-plt.figure(figsize=(9, 4))
-for df, color in [(2, 'red'), (5, 'orange'), (10, 'steelblue'), (20, 'green')]:
-    plt.plot(x, chi2.pdf(x, df), label=f'df={df}', color=color)
-
-plt.title('Chi-square Distribution — Shape by Degrees of Freedom')
-plt.xlabel('x')
-plt.ylabel('Density')
-plt.legend()
-plt.xlim(0, 40)
-plt.show()
-
-# Critical value example (α = 0.05, right-tail)
-df = 10
-cv = chi2.ppf(0.95, df)
-print(f"χ² critical value (df={df}, α=0.05) = {cv:.4f}")
+chi2.ppf(0.95, df=10)   # 右尾 α = 0.05 臨界值
 ```
 
-![Chi-square Distribution](./src/continuous-distributions-chi-square.png)
+![Chi-square](src/continuous-distributions-chi-square.png)
 
-## F-Distribution
+## F 分配 (F-Distribution)
 
-The F-distribution is the ratio of two independent Chi-square variables divided by their respective degrees of freedom.
+兩個獨立 χ² 各除以自由度後的比值：$F = \dfrac{\chi^2_{df_1}/df_1}{\chi^2_{df_2}/df_2}$。
 
-$$
-F = \frac{\chi^2_{df_1}/df_1}{\chi^2_{df_2}/df_2}
-$$
-
-### Key Properties
-
-| Property       | Detail                             |
-| -------------- | ---------------------------------- |
-| **Shape**      | Right-skewed; always ≥ 0           |
-| **Parameters** | df₁ (numerator), df₂ (denominator) |
-| **Mean**       | ≈ 1 when df₂ is large              |
-
-### When to Use
-
-| Application                 | Details                                                                                         |
-| --------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Comparing two variances** | Is σ₁² = σ₂²? (F-test for equality of variances)                                                |
-| **ANOVA**                   | Are the means of multiple groups equal?<br>F = variance between groups / variance within groups |
-| **Regression F-test**       | Is the overall regression model significant?                                                    |
+| 應用 | 說明 |
+| --- | --- |
+| 兩變異數比較 | σ₁² = σ₂²？ |
+| [ANOVA](../inferential-statistics/anova-overview.md) | F = 組間變異 / 組內變異 |
+| 迴歸整體 F 檢定 | 模型整體是否顯著？見 [多元線性迴歸](../regression-analysis/multiple-linear-regression.md) |
 
 ```python
 from scipy.stats import f
-import matplotlib.pyplot as plt
-import numpy as np
-
-x = np.linspace(0, 5, 300)
-
-plt.figure(figsize=(9, 4))
-for df1, df2, color in [(1, 10, 'red'), (5, 10, 'orange'), (10, 30, 'steelblue')]:
-    plt.plot(x, f.pdf(x, df1, df2), label=f'df=({df1},{df2})', color=color)
-
-plt.title('F-Distribution')
-plt.xlabel('x')
-plt.ylabel('Density')
-plt.legend()
-plt.xlim(0, 5)
-plt.show()
-
-# Critical value (α = 0.05)
-cv = f.ppf(0.95, dfn=5, dfd=20)
-print(f"F critical value (df=5,20, α=0.05) = {cv:.4f}")
+f.ppf(0.95, dfn=5, dfd=20)
 ```
 
-![F-Distribution](./src/continuous-distributions-f.png)
+![F](src/continuous-distributions-f.png)
 
-## Exponential Distribution
+## 指數分配 (Exponential)
 
-The Exponential distribution models the **time between independent events** — the continuous counterpart of the Poisson distribution.
-
-**Note:**
-
-- Poisson: count events per unit time
-- Exponential: wait time until the next event (wait time between two events)
-
-### Parameter: Rate (λ)
+**Poisson 事件之間的等待時間**。Poisson 數「單位時間幾次」；Exponential 量「下一次要等多久」。
 
 $$
-f(x) = \lambda e^{-\lambda x}, \quad x \geq 0
+f(x) = \lambda e^{-\lambda x},\ x \ge 0, \qquad E(X) = 1/\lambda, \quad \text{Var}(X) = 1/\lambda^2
 $$
 
-$$
-E(X) = \frac{1}{\lambda} \qquad \text{Var}(X) = \frac{1}{\lambda^2}
-$$
-
-**Examples:**
-
-- Time between customer arrivals (if arrivals follow Poisson)
-- Lifetime of electronic components
-- Time until next server request
+- **無記憶性**：$P(X > s+t \mid X > s) = P(X > t)$。用了 1,000 小時的燈泡，再撐 500 小時的機率和新燈泡一樣。
+- 等同於「風險率 (hazard) 固定」，是 [存活分析參數模型](../survival-analysis/parametric-models.md) 最簡單的情況。
 
 ```python
 from scipy.stats import expon
-import matplotlib.pyplot as plt
-import numpy as np
 
-# λ = 2 means 2 events per unit time → average wait = 1/2 = 0.5
 lam = 2
-scale = 1 / lam   # scipy uses scale = 1/λ
-
-x = np.linspace(0, 4, 300)
-pdf = expon.pdf(x, scale=scale)
-
-plt.plot(x, pdf, color='steelblue', linewidth=2)
-plt.fill_between(x, pdf, where=(x <= 1), alpha=0.3, color='steelblue',
-                 label=f'P(X ≤ 1) = {expon.cdf(1, scale=scale):.3f}')
-plt.title(f'Exponential Distribution (λ={lam}, mean={1/lam})')
-plt.xlabel('Time')
-plt.ylabel('Density')
-plt.legend()
-plt.show()
-
-print(f"Mean wait time:  {expon.mean(scale=scale):.2f}")
-print(f"P(wait ≤ 0.5)  = {expon.cdf(0.5, scale=scale):.4f}")
-print(f"P(wait > 1.0)  = {1 - expon.cdf(1.0, scale=scale):.4f}")
+expon.cdf(0.5, scale=1/lam)    # scipy 用 scale = 1/λ，注意！
 ```
 
-![Exponential Distribution](./src/continuous-distributions-exponential.png)
+![Exponential](src/continuous-distributions-exponential.png)
 
-### Memoryless Property
+## 對數常態分配 (Log-normal)
 
-Like the Geometric distribution, the Exponential distribution is **memoryless**:
+若 $\log X \sim N(\mu, \sigma^2)$，則 X 服從 log-normal。由**許多正值因子相乘**產生的量（細胞大小、濃度、表現量、收入）常呈此分配。
 
-$$
-P(X > s + t \mid X > s) = P(X > t)
-$$
+- 實務上：右偏的正值資料先取 log，常會變得近似常態 → 再用常態方法分析，見 [資料轉換](../descriptive-statistics/univariate-numerical.md#資料轉換-transformation)
+- log 尺度上的平均取 exp = 原尺度的**幾何平均數**
 
-**Example:**
+```python
+from scipy.stats import lognorm
+import numpy as np
 
-- If a lightbulb has been working for 1,000 hours, the probability of it lasting another 500 hours is the same as a brand-new bulb lasting 500 hours.
+mu, sigma = 1.0, 0.5
+dist = lognorm(s=sigma, scale=np.exp(mu))   # scipy 參數化：s = σ、scale = e^μ
+dist.mean(), dist.median()                  # 平均 > 中位數（右偏）
+```
 
-## Uniform Distribution
+![Log-normal](src/continuous-distributions-lognormal.png)
 
-Every value in the range [a, b] is **equally likely**.
+## Beta 分配
 
-$$
-f(x) = \frac{1}{b-a}, \quad a \leq x \leq b
-$$
+定義在 [0, 1]，適合描述「比例或機率本身」的不確定性。
 
-$$
-E(X) = \frac{a+b}{2} \qquad \text{Var}(X) = \frac{(b-a)^2}{12}
-$$
+- Beta(1, 1) = Uniform(0, 1)
+- 平均 = α / (α + β)；α、β 越大越集中
+- 是 Binomial 的**共軛先驗 (conjugate prior)**：先驗 Beta(α, β) + 觀察 k 成功 / n 次 → 後驗 Beta(α+k, β+n−k)，見 [概似與共軛](../bayesian-statistics/likelihood-conjugate.md)
+
+```python
+from scipy.stats import beta
+beta(2, 8).mean()           # 0.2
+beta(2, 8).interval(0.95)   # 95% 區間
+```
+
+![Beta](src/continuous-distributions-beta.png)
+
+## 均勻分配 (Uniform)
+
+[a, b] 內每個值等可能：$f(x) = 1/(b-a)$，$E(X) = (a+b)/2$，$\text{Var}(X) = (b-a)^2/12$。
+
+用途：亂數產生、[蒙地卡羅模擬](monte-carlo-simulation.md)、無資訊先驗。另外，**虛無假設為真時，p 值服從 Uniform(0, 1)**，這是 [多重檢定](../inferential-statistics/multiple-testing.md) 中檢查 p 值直方圖的依據。
 
 ```python
 from scipy.stats import uniform
-import matplotlib.pyplot as plt
-import numpy as np
-
-a, b = 0, 10
-scale = b - a
-
-print(f"Mean:          {uniform.mean(loc=a, scale=scale):.1f}")   # 5.0
-print(f"P(3 ≤ X ≤ 7) = {uniform.cdf(7, a, scale) - uniform.cdf(3, a, scale):.2f}")  # 0.4
-
-x = np.linspace(a - 2, b + 2, 300)
-pdf = uniform.pdf(x, loc=a, scale=scale)
-
-plt.plot(x, pdf, color='steelblue', linewidth=2)
-plt.fill_between(x, pdf, where=(x >= 3) & (x <= 7), alpha=0.3, color='steelblue',
-                 label=f'P(3 ≤ X ≤ 7) = {uniform.cdf(7, a, scale) - uniform.cdf(3, a, scale):.2f}')
-plt.title(f'Uniform Distribution (a={a}, b={b})')
-plt.xlabel('x')
-plt.ylabel('Density')
-plt.legend()
-plt.ylim(0, 0.14)
-plt.show()
+uniform.cdf(7, loc=0, scale=10) - uniform.cdf(3, loc=0, scale=10)   # P(3 ≤ X ≤ 7) = 0.4
 ```
 
-![Uniform Distribution](./src/continuous-distributions-uniform.png)
-
-**Use cases:**
-
-- Random number generation
-- Modeling complete uncertainty over a bounded range
-- Simulations and Monte Carlo methods
-- Prior distribution in Bayesian analysis (when you have no prior knowledge)
-
-## Comparing All Continuous Distributions
-
-| Distribution    | Shape                     | Range    | Key Use                                      | Parameters |
-| --------------- | ------------------------- | -------- | -------------------------------------------- | ---------- |
-| **Normal**      | Symmetric bell            | (−∞, +∞) | General continuous data; foundation of tests | μ, σ       |
-| **t**           | Symmetric, heavy tails    | (−∞, +∞) | Small sample mean inference                  | df         |
-| **Chi-square**  | Right-skewed              | [0, +∞)  | Variance tests, categorical tests            | df         |
-| **F**           | Right-skewed              | [0, +∞)  | Variance comparison, ANOVA                   | df₁, df₂   |
-| **Exponential** | Right-skewed (decreasing) | [0, +∞)  | Waiting times, lifetimes                     | λ          |
-| **Uniform**     | Flat                      | [a, b]   | Complete uncertainty over bounded range      | a, b       |
-
-### Family Relationships
-
-```
-Normal(0,1) ──[squared]──▶  Chi-square(1)  ──[sum k of them]──▶  Chi-square(k)  ──[ratio of two chi-squares]──▶  F(df₁, df₂)
-
-Normal(μ,σ²) ─[small n, unknown σ]─▶  t-distribution
-
-Poisson(λ) ─[time between events]─▶  Exponential(λ)
-```
-
-## Key Takeaways
-
-| Distribution    | Key Point                                                                          |
-| --------------- | ---------------------------------------------------------------------------------- |
-| **Normal**      | Foundation of statistics; defined by mean and SD; use Z-scores to standardize      |
-| **t**           | Like Normal but heavier tails; used for small samples; approaches Normal as df → ∞ |
-| **Chi-square**  | Always ≥ 0; used for variance and categorical tests; sum of squared normals        |
-| **F**           | Always ≥ 0; ratio of variances; used in ANOVA and regression                       |
-| **Exponential** | Waiting time between Poisson events; memoryless; mean = 1/λ                        |
-| **Uniform**     | Every value equally likely; simplest distribution                                  |
+![Uniform](src/continuous-distributions-uniform.png)

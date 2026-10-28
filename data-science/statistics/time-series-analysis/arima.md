@@ -1,251 +1,82 @@
-# ARIMA Models
+[Statistics](../README.md) › [時間序列](README.md) › ARIMA
 
-**ARIMA (Autoregressive Integrated Moving Average)** is the workhorse of classical time series forecasting. It combines three mechanisms — autoregression, differencing, and moving average — into a single unified model that can handle a wide range of stationary and non-stationary time series.
+# ARIMA 模型
 
-Key point: ARIMA is a combination of three ideas: AR (use past values ​​to predict the present) + I (use differences to remove trends) + MA (use past errors to correct forecasts). Understanding the intuition of each component is more important than memorizing parameter selection rules.
+**ARIMA** (AutoRegressive Integrated Moving Average) = AR（用過去的值）+ I（差分去趨勢）+ MA（用過去的誤差修正）。理解每個成分的直覺，比背選階規則重要。
 
-## The Three Components
+| 成分 | 公式 | 意義 | 階數由誰決定 |
+| --- | --- | --- | --- |
+| **AR(p)** 自迴歸 | $y_t = c + \phi_1 y_{t-1} + \cdots + \phi_p y_{t-p} + \varepsilon_t$ | 預測變數是**自己的落後值**的迴歸 | PACF 截斷處 |
+| **I(d)** 整合 | d 次差分 | d = 0 已定態；d = 1 一階差分；d = 2 罕見 | ADF / KPSS |
+| **MA(q)** 移動平均 | $y_t = \mu + \varepsilon_t + \theta_1 \varepsilon_{t-1} + \cdots + \theta_q \varepsilon_{t-q}$ | 對**過去的預測誤差（衝擊）**的迴歸 | ACF 截斷處 |
 
-### AR(p) — Autoregressive
+> ARIMA 的 MA ≠ 平滑用的「移動平均」。名字相同，概念不同：前者建模過去的**誤差**，後者平均過去的**值**。
+>
+> ARIMA 適合處理「前處理後剩下的結構」：先處理明顯的趨勢、變異改變與（非季節 ARIMA 時的）季節性，它不是處理原始資料的萬能黑盒子。
 
-The current value is a linear combination of the past p values:
+## 選階：ACF / PACF
 
-\[
-y_t = c + \phi_1 y_{t-1} + \phi_2 y_{t-2} + \cdots + \phi_p y_{t-p} + \varepsilon_t
-\]
+| ACF | PACF | 建議 |
+| --- | --- | --- |
+| lag 1 後截斷 | 衰減 | ARIMA(0, d, 1) |
+| lag 2 後截斷 | 衰減 | ARIMA(0, d, 2) |
+| 衰減 | lag 1 後截斷 | ARIMA(1, d, 0) |
+| 衰減 | lag 2 後截斷 | ARIMA(2, d, 0) |
+| 都衰減 | 都衰減 | ARIMA(p, d, q)，用 AIC / auto-ARIMA 選 |
 
-- φᵢ = autoregressive coefficients
-- p = order (how many past values to use)
-- Like a regression where the **predictors are lagged versions of the same series**
+詳細判讀見 [自相關](autocorrelation.md)。
 
-### MA(q) — Moving Average
-
-The current value depends on the current and past q forecast errors:
-
-\[
-y_t = \mu + \varepsilon_t + \theta_1 \varepsilon_{t-1} + \theta_2 \varepsilon_{t-2} + \cdots + \theta_q \varepsilon_{t-q}
-\]
-
-- θᵢ = moving average coefficients
-- q = order (how many past errors to use)
-- Not the same as a rolling average — it's a **regression on past forecast errors**
-
-Warning: The MA in ARIMA is different from the "moving average" used in smoothing. In ARIMA, MA terms model the dependence on past *errors* (shocks), not past *values*. Both have the same name but different concepts.
-
-### I(d) — Integrated
-
-The degree of differencing applied to make the series stationary:
-
-- d=0: series is already stationary
-- d=1: first difference Δyₜ = yₜ − yₜ₋₁
-- d=2: second difference Δ²yₜ = Δyₜ − Δyₜ₋₁ (rare)
-
-## ARIMA(p, d, q) Notation
-
-| Parameter | Meaning | Determined By |
-| --------- | ----------------------------- | ------------------------ |
-| **p** | AR order | PACF plot cut-off |
-| **d** | Differencing order | ADF/KPSS test result |
-| **q** | MA order | ACF plot cut-off |
-
-## Manual Order Selection Using ACF/PACF
+## 完整流程
 
 ```python
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-
-url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
-df = pd.read_csv(url, parse_dates=['Month'], index_col='Month').asfreq('MS')
-df.columns = ['Passengers']
-
-# Step 1: Transform to stabilize variance
-log_pass = np.log(df['Passengers'])
-
-# Step 2: First difference to achieve stationarity (d=1)
-diff_series = log_pass.diff(1).dropna()
-
-# Step 3: Read ACF and PACF to choose p and q
-fig, axes = plt.subplots(2, 1, figsize=(10, 7))
-plot_acf( diff_series, lags=24, ax=axes[0], alpha=0.05)
-plot_pacf(diff_series, lags=24, ax=axes[1], alpha=0.05, method='ywm')
-axes[0].set_title('ACF of Log First-Differenced Series → q order hint')
-axes[1].set_title('PACF of Log First-Differenced Series → p order hint')
-plt.tight_layout()
-plt.show()
-```
-
-**Decision guide from ACF/PACF:**
-
-| ACF | PACF | Model Suggestion |
-| ----------------------- | ----------------------- | ----------------------- |
-| Cuts off at lag 1 | Decays | MA(1): ARIMA(0,d,1) |
-| Cuts off at lag 2 | Decays | MA(2): ARIMA(0,d,2) |
-| Decays | Cuts off at lag 1 | AR(1): ARIMA(1,d,0) |
-| Decays | Cuts off at lag 2 | AR(2): ARIMA(2,d,0) |
-| Both decay | Both decay | ARMA: ARIMA(p,d,q) — use AIC to choose |
-
-## Fitting an ARIMA Model with statsmodels
-
-```python
+import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
-import warnings
-warnings.filterwarnings('ignore')
-
-# Fit ARIMA(1, 1, 1) on log-transformed series
-model = ARIMA(log_pass, order=(1, 1, 1))
-result = model.fit()
-
-print(result.summary())
-```
-
-**Key sections in the summary to check:**
-
-| Summary Section | What to Look For |
-| ---------------------- | -------------------------------------------------------- |
-| **Coefficients** | Are AR/MA coefficients significantly different from 0? |
-| **AIC / BIC** | Lower is better — use to compare competing models |
-| **Log Likelihood** | Higher is better — but always penalize complexity with AIC |
-| **Ljung-Box (Q)** | p-value > 0.05 → residuals are white noise ✅ |
-| **Jarque-Bera** | p-value > 0.05 → residuals are approximately normal ✅ |
-
-## Automatic Order Selection with Auto-ARIMA
-
-Manual ACF/PACF reading is valuable for understanding, but in practice, automated selection using information criteria is more reliable — especially for ARMA models where both ACF and PACF decay.
-
-```python
+from statsmodels.stats.diagnostic import acorr_ljungbox
 from pmdarima import auto_arima
 
-auto_model = auto_arima(
-    log_pass,
-    d=1,              # fix d=1 from our stationarity test
-    start_p=0, max_p=5,
-    start_q=0, max_q=5,
-    seasonal=False,   # no seasonal component here; see the SARIMA chapter for seasonal models
-    information_criterion='aic',
-    stepwise=True,    # faster; use stepwise search
-    trace=True        # print candidate models
-)
+url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
+y = pd.read_csv(url, parse_dates=["Month"], index_col="Month").asfreq("MS")["Passengers"]
+log_y = np.log(y)                                       # 1. 穩定變異
 
-print(auto_model.summary())
-print(f"\nSelected order: ARIMA{auto_model.order}")
+# 2. 自動選階（以 AIC 為準；d 由定態檢定決定）
+auto = auto_arima(log_y, d=1, max_p=5, max_q=5, seasonal=False,
+                  information_criterion="aic", stepwise=True)
+auto.order
+
+# 3. 配適
+res = ARIMA(log_y, order=auto.order).fit()
+res.summary()
+
+# 4. 殘差診斷：應為白噪音
+res.plot_diagnostics(figsize=(12, 8))
+acorr_ljungbox(res.resid, lags=[10, 20], return_df=True)   # p > 0.05 ✅
+
+# 5. 預測 24 期並轉回原尺度
+fc = res.get_forecast(steps=24)
+mean = np.exp(fc.predicted_mean)
+ci = np.exp(fc.conf_int(alpha=0.05))
+
+# 6. 手動比較候選模型（相同資料、相同轉換才能比 AIC）
+for order in [(0, 1, 1), (1, 1, 0), (1, 1, 1), (2, 1, 1)]:
+    m = ARIMA(log_y, order=order).fit()
+    print(order, round(m.aic, 1), round(m.bic, 1))
 ```
 
-## Forecasting
+| summary 欄位 | 看什麼 |
+| --- | --- |
+| 係數 | AR / MA 係數是否顯著不為 0 |
+| AIC / BIC | 越小越好；BIC 懲罰較重、偏好較簡單的模型 |
+| Ljung-Box (Q) | p > 0.05 → 殘差為白噪音 |
+| Jarque-Bera | p > 0.05 → 殘差近似常態 |
 
-```python
-import matplotlib.pyplot as plt
+| 殘差診斷圖 | 應該看到 |
+| --- | --- |
+| 標準化殘差 vs 時間 | 隨機、無型態 |
+| 直方圖 + KDE | 近似常態 |
+| Q–Q 圖 | 點在對角線上 |
+| 殘差 ACF (correlogram) | 全在信賴帶內 |
 
-# Fit on full series
-model   = ARIMA(log_pass, order=auto_model.order)
-result  = model.fit()
-
-# Forecast next 24 months
-forecast_steps = 24
-forecast = result.get_forecast(steps=forecast_steps)
-forecast_mean  = forecast.predicted_mean
-forecast_ci    = forecast.conf_int(alpha=0.05)   # 95% confidence interval
-
-# Convert back from log scale
-forecast_mean_exp = np.exp(forecast_mean)
-forecast_ci_exp   = np.exp(forecast_ci)
-
-# Combine history and forecast for plotting
-fig, ax = plt.subplots(figsize=(11, 5))
-
-df['Passengers'].plot(ax=ax, label='Observed', color='steelblue', linewidth=1.5)
-
-forecast_mean_exp.plot(ax=ax, label='Forecast', color='tomato', linewidth=2)
-
-ax.fill_between(
-    forecast_ci_exp.index,
-    forecast_ci_exp.iloc[:, 0],
-    forecast_ci_exp.iloc[:, 1],
-    color='tomato', alpha=0.2, label='95% CI'
-)
-
-ax.set_title('ARIMA Forecast — Airline Passengers')
-ax.set_ylabel('Passengers (thousands)')
-ax.legend()
-plt.tight_layout()
-plt.show()
-```
-
-Warning: Forecast uncertainty grows rapidly. The confidence interval for ARIMA forecasts expands with the horizon — long-horizon forecasts from ARIMA often have extremely wide intervals, which may not be useful in practice. ARIMA is more suitable for short-term forecasting.
-
-## Residual Diagnostics
-
-After fitting, **always inspect the residuals**. A good model should have residuals that are white noise.
-
-```python
-result.plot_diagnostics(figsize=(12, 8))
-plt.suptitle('ARIMA Residual Diagnostics', y=1.01, fontsize=13)
-plt.tight_layout()
-plt.show()
-```
-
-The four-panel diagnostic plot shows:
-
-| Panel | What It Shows | What to Look For |
-| -------------------------- | ------------------------------- | ----------------------------- |
-| **Standardized Residuals** | Residuals over time | Random, no patterns |
-| **Histogram + KDE** | Residual distribution | Approximately normal |
-| **Q–Q Plot** | Normality check | Points on the diagonal |
-| **Correlogram (ACF)** | Residual autocorrelation | All within confidence bands |
-
-```python
-from statsmodels.stats.diagnostic import acorr_ljungbox
-
-lb = acorr_ljungbox(result.resid, lags=[10, 20], return_df=True)
-print(lb)
-# p-value > 0.05 at all lags → white noise residuals ✅
-```
-
-## Model Comparison with AIC/BIC
-
-When choosing between competing models, always compare information criteria on the **same data** (same differencing, same transformation):
-
-```python
-candidates = [(0,1,1), (1,1,0), (1,1,1), (2,1,1), (1,1,2), (2,1,2)]
-results_table = []
-
-for order in candidates:
-    try:
-        m = ARIMA(log_pass, order=order).fit()
-        results_table.append({
-            'Order': f'ARIMA{order}',
-            'AIC': round(m.aic, 2),
-            'BIC': round(m.bic, 2),
-            'LogLik': round(m.llf, 2)
-        })
-    except:
-        pass
-
-comparison = pd.DataFrame(results_table).sort_values('AIC')
-print(comparison.to_string(index=False))
-```
-
-Tip: AIC vs BIC: AIC tends to select slightly more complex models; BIC penalizes complexity more heavily and often selects simpler models. When in doubt, prefer the model selected by BIC for production forecasting — simpler models tend to generalize better.
-
-## Key Takeaways
-
-| Concept | Key Point |
-| --------------------------------- | --------------------------------------------------------------------------------- |
-| **AR: regression on past values** | φ coefficients tell you how much weight each past value gets |
-| **MA: regression on past errors** | θ coefficients adjust for past forecast errors — not a smoothing average |
-| **I: differencing** | Removes stochastic trends; d determined by ADF/KPSS tests |
-| **PACF → p, ACF → q** | The core rule for manual order identification |
-| **Auto-ARIMA for ambiguous cases** | When both ACF and PACF decay, use AIC-based automated search |
-| **Always diagnose residuals** | White noise residuals = good model. Patterns in residuals = model misspecification |
-| **Forecast intervals widen fast** | ARIMA is most reliable for short horizons (≤ 12 periods ahead) |
-
-## ARIMA Is a Residual-Structure Model
-
-ARIMA usually works best after the obvious deterministic structure has already been addressed:
-
-- trend
-- changing variance
-- strong seasonality if using non-seasonal ARIMA
-
-Tip: Think of ARIMA as a model for what remains after preprocessing, not as a magic box for raw data.
+> - **預測區間擴張很快**：ARIMA 最適合短期預測（約 ≤ 12 期）。
+> - log 尺度的預測取 exp 得到的是**中位數**預測，不是平均數；需要平均數時要做偏誤校正。
+> - 有季節性時改用 [SARIMA](seasonality-sarima.md)；評估方式見 [預測評估](forecast-evaluation.md)。

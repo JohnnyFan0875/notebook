@@ -1,368 +1,172 @@
-# Hypothesis Testing Framework
+[Statistics](../README.md) › [推論統計](README.md) › 假設檢定
 
-**Hypothesis testing** is a formal procedure for using sample data to evaluate a claim about a population. It doesn't prove anything with certainty — it evaluates whether the evidence is strong enough to reject a specific assumption.
+# 假設檢定 (Hypothesis Testing)
 
-Key point: Core thinking: The logic of the hypothesis test is similar to the "presumption of innocence." Let's first assume "no effect" (null hypothesis), and then ask: If this hypothesis is true, how low is the chance of seeing sample data like this? If the probability is too low, we "reject the null hypothesis."
+用樣本資料評估一個關於母體的主張。它不「證明」任何事，只判斷證據是否強到足以拒絕某個假設。
 
-## The Logic: Proof by Contradiction
+> 邏輯類似**無罪推定**：先假設「沒有效果」(H₀)，再問「若 H₀ 為真，看到這種資料的機率有多低？」機率太低就拒絕 H₀。
 
-Hypothesis testing follows a logical structure borrowed from mathematics:
+## 流程
 
-1. **Assume the null hypothesis (H₀) is true** — there is no effect, no difference
-2. **Compute how likely the observed data is** under this assumption
-3. **If the data would be very unlikely under H₀**, we have evidence against it — reject H₀
-4. **If the data is reasonably likely under H₀**, we fail to reject it — not enough evidence
+| 步驟 | 例子 |
+| --- | --- |
+| 1. 寫下 H₀ 與 H₁ | H₀: μ = 5.0；H₁: μ ≠ 5.0 |
+| 2. **事先**設定 α | α = 0.05 |
+| 3. 檢查假設 | 常態、獨立、變異數，見 [假設檢查](assumption-checks.md) |
+| 4. 計算檢定統計量 | $t = (\bar{x} - \mu_0)/SE$ |
+| 5. 算 p 值並決策 | p = 0.023 < α → 拒絕 H₀ |
+| 6. 報告效果量與 CI | d = 0.72，95% CI [5.71, 5.97] |
+| 7. 多重檢定時校正 | 見 [多重檢定校正](multiple-testing.md) |
+| 8. 回到脈絡解讀 | 「不同物種的花萼長度有顯著差異」 |
 
-Warning: "Fail to reject H₀" is not the same as "prove H₀ is true." Absence of evidence ≠ evidence of absence.
+> **「未拒絕 H₀」≠「證明 H₀ 為真」**。沒有證據不等於有「沒有」的證據 (absence of evidence ≠ evidence of absence)。
 
-## Null and Alternative Hypotheses
+## 虛無假設與對立假設
 
-| Hypothesis | Symbol | Description | Example |
-| ------------------------------------- | ---------- | -------------------------------------------------- | ---------------------------- |
-| **Null Hypothesis** | H₀ | The default claim; assumes no effect or difference | μ = 5.0 (mean equals 5.0) |
-| **Alternative Hypothesis** | H₁ (or Hₐ) | What you want to detect; the "interesting" claim | μ ≠ 5.0, μ > 5.0, or μ < 5.0 |
+| 假設 | 符號 | 說明 |
+| --- | --- | --- |
+| 虛無假設 (null hypothesis) | H₀ | 預設主張：沒有效果、沒有差異 |
+| 對立假設 (alternative hypothesis) | H₁ / Hₐ | 想偵測的效果 |
 
-### One-Tailed vs. Two-Tailed Tests
+| 檢定 | H₁ | 何時用 |
+| --- | --- | --- |
+| 雙尾 (two-tailed) | μ ≠ μ₀ | **預設**，任一方向的差異都在意 |
+| 右尾 (one-tailed, right) | μ > μ₀ | 只在意增加，且有**事先**的科學理由 |
+| 左尾 (one-tailed, left) | μ < μ₀ | 只在意減少 |
 
-| Test Type | H₁ Form | Use When |
-| ---------------------- | ------- | ------------------------------------------------------------ |
-| **Two-tailed** | μ ≠ μ₀ | You care about differences in **either** direction (default) |
-| **One-tailed (right)** | μ > μ₀ | You only care about increases |
-| **One-tailed (left)** | μ < μ₀ | You only care about decreases |
+看到結果後才改用單尾以得到較小 p 值，是 p-hacking。
 
-Tip: When in doubt, use two-tailed tests. One-tailed tests require a strong, pre-registered scientific reason — using them simply to get a smaller p-value is p-hacking.
+## 檢定統計量、拒絕域、p 值
 
-## Test Statistic, Critical Region, and p-value
+| 概念 | 是什麼 | 角色 |
+| --- | --- | --- |
+| 檢定統計量 (test statistic) | 把樣本標準化後的摘要（t、z、χ²、F） | 讓不同資料可以比較 |
+| 拒絕域 (critical region) | 在 α 下極端到足以拒絕 H₀ 的範圍 | 看資料前就定好的決策規則 |
+| p 值 (p-value) | H₀ 為真時，得到「至少這麼極端」結果的機率 | 資料的極端程度 |
 
-These three ideas are closely related but easy to blur together:
+$$
+p = P(\text{資料至少這麼極端} \mid H_0 \text{ 為真})
+$$
 
-| Concept | What it is | Role |
-| ------- | ---------- | ---- |
-| **Test statistic** | A standardized summary computed from the sample | Converts raw data into a comparable scale |
-| **Critical region** | Values extreme enough to reject H₀ at level α | Decision rule before seeing data |
-| **p-value** | Tail probability beyond the observed statistic under H₀ | Data-driven measure of extremeness |
+### p 值的常見誤解
 
-For a two-sided t-test, the logic is:
+| ❌ 錯誤 | ✅ 正確 |
+| --- | --- |
+| p = 0.03 → H₀ 有 3% 機率為真 | 若 H₀ 為真，只有 3% 機率看到這麼極端的資料 |
+| p = 0.03 → H₁ 有 97% 機率為真 | p 值不提供 H₁ 的機率（那需要 [貝氏方法](../bayesian-statistics/README.md)） |
+| p > 0.05 → 沒有效果 | 只是證據不足以拒絕 H₀ |
+| p 越小 → 效果越大 | p 受 n 影響；n 很大時微小效果也會很顯著 |
 
-1. Compute a t-statistic.
-2. Ask where it falls relative to the t-distribution under H₀.
-3. Reject if it lands in the extreme tails, or equivalently if `p < alpha`.
+## 顯著水準 α
 
-Tip: In modern software workflows, people often skip directly to the p-value. That is fine operationally, but understanding the critical-region logic makes the meaning of the test much clearer.
+| α | 常見情境 |
+| --- | --- |
+| 0.10 | 探索性研究，偽陰性代價高 |
+| 0.05 | 多數領域的標準 |
+| 0.01 | 醫藥研究 |
+| 5 × 10⁻⁸ | GWAS 全基因體顯著水準（≈ 0.05 / 一百萬次獨立檢定） |
 
-## The p-value
+α 要在**蒐集資料前**決定，看完資料再調整是 p-hacking。
 
-The **p-value** is the probability of observing data as extreme as (or more extreme than) what was observed, _assuming H₀ is true_.
+## 型一與型二錯誤 (Type I & Type II Errors)
 
-\[
-p = P(\text{data this extreme} \mid H_0 \text{ is true})
-\]
+| | H₀ 實際為**真** | H₀ 實際為**假** |
+| --- | --- | --- |
+| **拒絕 H₀** | ❌ 型一錯誤 = 偽陽性 (false positive)，機率 α | ✅ 真陽性，機率 = **檢定力 (power) 1 − β** |
+| **未拒絕 H₀** | ✅ 真陰性 | ❌ 型二錯誤 = 偽陰性 (false negative)，機率 β |
 
-| p-value | Interpretation |
-| ----------------- | ----------------------------------------------------------------------------- |
-| Small (e.g. 0.01) | If H₀ were true, this result would be very rare → evidence against H₀ |
-| Large (e.g. 0.40) | If H₀ were true, this result would not be surprising → no evidence against H₀ |
+- 比喻：型一錯誤 = 冤枉好人；型二錯誤 = 放走壞人。
+- 慣例：α = 0.05、β = 0.20 → power = 0.80。
+- **降低 α 會提高 β**。同時降低兩者的方法是增加樣本數。
+- 這張表就是 ML 的 [混淆矩陣 (confusion matrix)](../../machine-learning/evaluation/confusion-metrics.md)：α ↔ FPR、power ↔ recall / sensitivity。
 
-### Common Misconceptions About p-values
+![α, β and power](src/hypothesis-testing-errors-power.png)
 
-| ❌ Incorrect Interpretation | ✅ Correct Interpretation |
-| ------------------------------------------------ | --------------------------------------------------------------------------- |
-| p = 0.03 means H₀ has a 3% chance of being true | If H₀ were true, we'd see data this extreme only 3% of the time |
-| p = 0.03 means H₁ has a 97% chance of being true | p-value says nothing about the probability of H₁ |
-| p > 0.05 means there is no effect | It means we lack sufficient evidence to reject H₀ |
-| A smaller p-value means a larger effect | p-value is affected by sample size; large n → small p even for tiny effects |
+臨界值右移（降低 α）→ 藍色區縮小、淺紅 β 區變大；兩分配距離拉開（效果量大或 n 大使 SE 變小）→ power 增加。
 
-Warning: The p-value tells you about the compatibility of the data with H₀ — not the size or importance of the effect. Always pair with effect size and CI.
+## 檢定力與效果量
 
-## A Better Decision Habit
+### 檢定力 (Statistical Power)
 
-Instead of asking only "Is p < 0.05?", ask four questions together:
+Power = P(拒絕 H₀ | H₀ 為假)，即真的有效果時能偵測到的機率。< 0.5 嚴重不足；0.8 為慣用最低標準；> 0.9 用於高風險研究。
 
-1. What is the estimated effect?
-2. How uncertain is it?
-3. Is the result statistically compatible with H₀?
-4. Would the effect matter in practice if it were real?
-
-This habit prevents the common mistake of treating statistical significance as the same thing as scientific or business importance.
-
-## Significance Level (α)
-
-**α (alpha)** is the threshold we set _before_ looking at the data. If p < α, we reject H₀.
-
-| Common α values | Context |
-| --------------- | ---------------------------------------------------------- |
-| 0.05 (5%) | Standard threshold in most fields |
-| 0.01 (1%) | More stringent; medical/pharmaceutical research |
-| 0.10 (10%) | Exploratory research; used when false negatives are costly |
-| 0.001 (0.1%) | Physics, genomics (large-scale testing) |
-
-Tip: α should be set before data collection, not chosen to make your results look significant. Changing α after seeing the data is a form of p-hacking.
-
-## Statistical Significance vs. Practical Significance
-
-These are not the same:
-
-| Situation | Interpretation |
-| --------- | -------------- |
-| Small p-value, tiny effect | Real but maybe not important |
-| Large p-value, moderate effect | Possibly important, but evidence too weak or sample too small |
-| Small p-value, large effect | Strong evidence and likely practical relevance |
-| Large p-value, tiny effect | No compelling evidence and probably low practical importance |
-
-Tip: The goal of inference is not to collect asterisks. It is to learn whether the effect is real enough, large enough, and precise enough to act on.
-
-## Type I and Type II Errors
-
-Every decision in hypothesis testing carries a risk of being wrong. There are four possible outcomes:
-
-| Outcome | True Condition | Test Result | Interpretation | Type |
-| ------------------ | ---------------------- | ------------------------------------------ | ---------------------------------- | ------------------------ |
-| **True Positive** | Hₐ (difference exists) | Reject H₀ (conclude difference exists) | Correctly detects a real effect | ✅ Correct |
-| **False Positive** | H₀ (no difference) | Reject H₀ (conclude difference exists) | Incorrectly concludes a difference | ❌ **Type I error (α)** |
-| **True Negative** | H₀ (no difference) | Fail to reject H₀ (conclude no difference) | Correctly concludes no difference | ✅ Correct |
-| **False Negative** | Hₐ (difference exists) | Fail to reject H₀ (conclude no difference) | Fails to detect a real effect | ❌ **Type II error (β)** |
-
-Summarized as a decision matrix:
-
-|  | H₀ is actually **True** | H₀ is actually **False** |
-| --------------------- | -------------------------------- | --------------------------------- |
-| **Reject H₀** | ❌ Type I Error (False Positive) | ✅ Correct (True Positive) |
-| **Fail to Reject H₀** | ✅ Correct (True Negative) | ❌ Type II Error (False Negative) |
-
-| Error Type | Symbol | Probability | Plain Language | Example |
-| --------------- | ------ | -------------------- | --------------------------------------------- | ----------------------------- |
-| **Type I (α)** | α | = significance level | Concluding there's an effect when there isn't | Convicting an innocent person |
-| **Type II (β)** | β | Depends on power | Missing a real effect | Acquitting a guilty person |
-| **Power (1−β)** | 1−β | We want this high | Correctly detecting a real effect | Convicting the guilty |
-
-**Concrete example** (common convention):
-
-- α = 0.05 → 5% chance of false positive
-- β = 0.20 → 20% chance of false negative
-- Power = 1 − β = **0.80** → 80% chance of detecting a true effect
-
-Tip: Trade-off: Lowering α (to reduce Type I errors) increases β (more Type II errors). There's no free lunch. The solution is to increase sample size, which reduces both simultaneously.
-
-### Practical Implications by Field
-
-| Field | Lower α preferred | Lower β (higher power) preferred |
-| ------------------------ | ---------------------------------------- | ----------------------------------- |
-| **Clinical trials** | To avoid claiming ineffective drugs work | To avoid missing beneficial effects |
-| **Exploratory research** | Moderate α (0.05–0.10) acceptable | Focus on power for discovery |
-| **Quality control** | Strict α (0.01 or less) | Depends on cost of missed defects |
-
-## When "Not Significant" Does Not Mean "No Difference"
-
-One of the most common bad conclusions is:
-
-> "The p-value was greater than 0.05, so the two groups are the same."
-
-That statement is usually too strong. A non-significant test may simply reflect:
-
-- too little data
-- too much noise
-- an effect smaller than expected
-- a poorly matched test or violated assumptions
-
-If the research question is really about showing similarity or non-inferiority, the correct framework is often **equivalence testing** or **non-inferiority testing**, not a standard null-hypothesis significance test.
-
-Tip: Standard NHST is built to detect evidence against "no effect". It is not built to prove that two things are close enough to be treated as practically equivalent.
-
-## Statistical Power and Effect Size
-
-### Statistical Power
-
-**Power** = P(reject H₀ | H₀ is false) = probability of correctly detecting a real effect.
-
-\[
-\text{Power} = 1 - \beta
-\]
-
-| Power Level | Interpretation |
-| ----------- | -------------------------------------------------- |
-| < 0.50 | Underpowered — likely to miss real effects |
-| 0.80 | Conventional minimum — detects 80% of real effects |
-| > 0.90 | Well-powered — used in high-stakes research |
-
-Warning: Overpowered studies: With extremely large n, even trivially small effects become statistically significant. High power is good — but always pair with effect size to judge practical relevance.
-
-Tip: Increasing sample size improves power, but does not change the true effect size. A larger n makes the test more sensitive, not the effect more meaningful.
-
-**Factors that increase power:**
-
-| Factor | Direction | Effect on Power |
-| ---------------------- | ---------- | ------------------------------------------ |
-| Sample size (n) | ↑ Increase | ↑ Power increases |
-| Effect size | ↑ Larger | ↑ Power increases |
-| Significance level (α) | ↑ Relax | ↑ Power increases (but more Type I errors) |
-| Variability (σ) | ↓ Decrease | ↑ Power increases |
-
-### Power Analysis
-
-Power analysis is performed **before data collection** to determine the minimum sample size needed to achieve a target power given an expected effect size and α.
-
-**Always report in any study:**
-
-- Effect size assumed (with justification)
-- α level and test type (one- vs. two-tailed)
-- Sample size per group
-- Target or achieved power
+| 提高 power 的方法 | 代價 |
+| --- | --- |
+| 增加樣本數 n | 成本 |
+| 效果量較大 | 無法控制（是真實世界決定的） |
+| 放寬 α | 更多偽陽性 |
+| 降低變異（更精準的量測、配對設計、[區集化](../experimental-design/principles.md)） | 設計成本 |
 
 ```python
 from statsmodels.stats.power import TTestIndPower
 
 analysis = TTestIndPower()
-
-# Given effect size and n → what power do we have?
-power = analysis.solve_power(effect_size=0.5, nobs1=30, alpha=0.05)
-print(f"Power with n=30: {power:.3f}")
-
-# Given effect size and target power → how many samples do we need?
-n_required = analysis.solve_power(effect_size=0.5, alpha=0.05, power=0.8)
-print(f"Required n per group: {n_required:.1f}")
+analysis.solve_power(effect_size=0.5, nobs1=30, alpha=0.05)   # n=30 時的 power ≈ 0.48
+analysis.solve_power(effect_size=0.5, alpha=0.05, power=0.8)  # 每組需要 n ≈ 64
 ```
+
+完整的樣本數規劃見 [樣本數與檢定力](../experimental-design/sample-size-power.md)。
+
+### 效果量 (Effect Size)
+
+效果的**大小**，與樣本數無關。顯著性回答「有沒有」，效果量回答「多大」。
+
+| 指標 | 公式 | 用於 | 小 / 中 / 大 |
+| --- | --- | --- | --- |
+| Cohen's d | $(\bar{x}_1 - \bar{x}_2)/s_{pooled}$ | 兩組平均數 | 0.2 / 0.5 / 0.8 |
+| r | Pearson 相關 | 線性關係 | 0.1 / 0.3 / 0.5 |
+| η² | SS_between / SS_total | ANOVA | 0.01 / 0.06 / 0.14 |
+| Odds ratio | (a/b) / (c/d) | 類別、[邏輯斯迴歸](../regression-analysis/logistic-regression.md) | 依情境 |
+| log₂ fold change | log₂(處理組 / 對照組) | 基因表現差異 | 常用 \|LFC\| > 1（2 倍） |
 
 ```python
 import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.stats.power import TTestIndPower
-
-analysis = TTestIndPower()
-effect_sizes = np.linspace(0.1, 1.0, 50)
-powers = [analysis.solve_power(effect_size=d, nobs1=30, alpha=0.05) for d in effect_sizes]
-
-plt.plot(effect_sizes, powers, color='steelblue')
-plt.axhline(0.8, color='coral', linestyle='--', label='Power = 0.80 (target)')
-plt.xlabel("Effect Size (Cohen's d)")
-plt.ylabel("Power (1 − β)")
-plt.title("Power vs. Effect Size (n=30, α=0.05)")
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.show()
-```
-
-### Effect Size
-
-Effect size measures the **magnitude** of the effect — how big is the difference, independent of sample size. Statistical significance tells us _whether_ an effect exists; effect size tells us _how big_ it is.
-
-| Measure | Formula | Used For | Small / Medium / Large |
-| -------------- | --------------------- | -------------------------------- | ---------------------- |
-| **Cohen's d** | (μ₁ − μ₂) / σ_pooled | Comparing two means | 0.2 / 0.5 / 0.8 |
-| **r** | Pearson correlation | Linear relationship | 0.1 / 0.3 / 0.5 |
-| **η² (eta²)** | SS_between / SS_total | ANOVA | 0.01 / 0.06 / 0.14 |
-| **odds ratio** | (a/b) / (c/d) | Categorical, logistic regression | Context-dependent |
-
-**Two common mismatches to watch for:**
-
-✅ Significant + small effect size: A real difference exists, but the magnitude may be practically irrelevant — often caused by a very large sample size inflating sensitivity.
-
-Warning: Not significant + large effect size: The difference is meaningful, but the test failed to detect it — often due to small sample size, high variability, or insufficient power.
-
-Tip: A larger effect size makes detection easier → smaller samples needed to achieve the same power. Always report both p-value and effect size.
-
-## p-Hacking and Optional Stopping
-
-Many false discoveries come not from bad formulas, but from bad research behavior.
-
-Common forms of p-hacking:
-
-- trying several outcomes and only reporting the significant one
-- stopping data collection the moment `p < 0.05`
-- switching from two-sided to one-sided after seeing the result
-- trying many covariate combinations until one "works"
-
-Warning: These behaviors silently inflate the Type I error rate far above the nominal α. The reported p-value no longer means what it claims to mean.
-
-Better habits:
-
-- pre-specify the primary outcome
-- pre-specify alpha and tail direction
-- run a power analysis before collecting data
-- report all major analyses, not just the favorable one
-
-```python
 from scipy import stats
-import numpy as np
 
-# Cohen's d: effect size for two group means
-def cohens_d(group1, group2):
-    n1, n2 = len(group1), len(group2)
-    s1, s2 = group1.std(ddof=1), group2.std(ddof=1)
-    s_pooled = np.sqrt(((n1 - 1) * s1**2 + (n2 - 1) * s2**2) / (n1 + n2 - 2))
-    return (group1.mean() - group2.mean()) / s_pooled
+def cohens_d(a, b):
+    na, nb = len(a), len(b)
+    s_pooled = np.sqrt(((na - 1) * a.var(ddof=1) + (nb - 1) * b.var(ddof=1)) / (na + nb - 2))
+    return (a.mean() - b.mean()) / s_pooled
 
-from sklearn.datasets import load_iris
-import pandas as pd
-
-iris = load_iris(as_frame=True)
-df = iris.frame
-df['species'] = iris.target_names[iris.target]
-
-setosa     = df[df['species'] == 'setosa']['sepal length (cm)']
-versicolor = df[df['species'] == 'versicolor']['sepal length (cm)']
-
-t_stat, p_val = stats.ttest_ind(setosa, versicolor)
+t_stat, p = stats.ttest_ind(setosa, versicolor)
 d = cohens_d(setosa, versicolor)
-
-print(f"t-statistic = {t_stat:.4f}")
-print(f"p-value     = {p_val:.4e}")
-print(f"Cohen's d   = {d:.4f}  ({'large' if abs(d) >= 0.8 else 'medium' if abs(d) >= 0.5 else 'small'})")
 ```
 
-## The Steps of Hypothesis Testing
+更多效果量（η²、ω²、partial η²）見 [事後檢定與效果量](post-hoc-effect-size.md)。
 
-### Multiple Comparisons
+### 統計顯著 vs 實務顯著
 
-When you run many tests, the chance of at least one false positive increases. Adjust p-values when testing many hypotheses at once.
+| p 值 | 效果量 | 解讀 |
+| --- | --- | --- |
+| 小 | 小 | 真的存在但可能不重要（常見於 n 很大） |
+| 小 | 大 | 證據強且可能有實務意義 |
+| 大 | 中 / 大 | 可能重要，但證據不足（常見於 n 太小） |
+| 大 | 小 | 沒有證據，也可能不重要 |
 
-Key point: When you run many tests at once, the probability of getting at least one false positive rises above your nominal α level. Multiple-comparison correction is used to control the overall error rate.
+> **火山圖 (volcano plot)** 就是把兩者畫在一起：x 軸 log₂FC（效果量）、y 軸 −log₁₀(p)（顯著性），只挑兩者都夠大的基因。
 
-| Situation | Common Correction | Notes |
-| --------- | ----------------- | ----- |
-| Few planned comparisons | Bonferroni | Simple but conservative |
-| Many pairwise tests | Holm | Good default; less conservative |
-| Exploratory many-feature testing | FDR / Benjamini-Hochberg | Controls expected false discoveries |
-| After ANOVA | Tukey or Games-Howell | Use ANOVA-specific post-hoc tests |
+## 「不顯著」不代表「沒有差異」
 
-A complete hypothesis test always follows these steps — skipping any step risks misleading conclusions.
+不顯著可能只是：樣本太少、雜訊太大、效果比預期小、檢定選錯或假設不成立。
 
-| Action | Example |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| **State H₀ and H₁** | H₀: μ = 5.0 vs. H₁: μ ≠ 5.0 |
-| **Set significance level α** | α = 0.05 |
-| **Check assumptions** | Normality, sample size, independence → see [Assumption Checks](./assumption-checks.md) |
-| **Choose and compute the test statistic** | t = (x̄ − μ₀) / SE → see the t-score vs. z-score comparison in the confidence interval notes |
-| **Compute the p-value** | p = 0.023 |
-| **Make a decision: reject or fail to reject H₀** | p < α → Reject H₀ |
-| **Report effect size and CI** | d = 0.72, 95% CI: [5.71, 5.97] |
-| **Adjust for multiple tests if needed** | Holm, Tukey, or FDR |
-| **Interpret in context** | "Sepal lengths differ significantly by species" |
+若研究問題本身是要證明「兩者夠接近」（例如學名藥與原廠藥），應使用**等價性檢定 (equivalence test, TOST)** 或**不劣性檢定 (non-inferiority test)**。
 
-## A Compact Reporting Pattern
+## p-hacking 與提早停止
 
-Good reporting usually fits this template:
+| 不良行為 | 後果 |
+| --- | --- |
+| 試很多個結果變數，只報顯著的 | 實際型一錯誤率遠高於 α |
+| p < 0.05 時就停止收資料 (optional stopping) | 同上 |
+| 看到結果才改成單尾 | 同上 |
+| 嘗試各種共變數組合直到「有效」 | 同上 |
+
+**好習慣**：事先指定主要結果 (primary outcome)、α、單雙尾；事先做檢定力分析；報告所有主要分析。必要時做 [事前註冊 (pre-registration)](../experimental-design/principles.md)。
+
+## 報告範本
 
 ```text
-The treatment group had a higher mean score than control
-(mean difference = 4.8, 95% CI [1.9, 7.6]),
-t(58) = 3.31, p = .002, Cohen's d = 0.85.
+處理組平均分數高於對照組（平均差 = 4.8，95% CI [1.9, 7.6]），
+t(58) = 3.31，p = .002，Cohen's d = 0.85。
 ```
 
-This gives the reader:
-
-- direction of the effect
-- size of the effect
-- uncertainty of the effect
-- statistical evidence against H₀
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ------------------------------- | ------------------------------------------------------------------------------------- |
-| **H₀ is assumed true** | We test whether data is inconsistent with it — we never prove H₁ directly |
-| **p-value ≠ probability of H₀** | p-value is about the data, not directly about the hypothesis |
-| **α is set in advance** | Never adjust α after seeing the data |
-| **Two types of error** | Type I (false positive) controlled by α; Type II (false negative) controlled by β |
-| **Power matters** | Underpowered studies miss real effects — calculate sample size before collecting data |
-| **Effect size is required** | Statistical significance ≠ practical significance; always report both |
-| **Multiple testing matters** | Many tests increase false positives; adjust p-values when needed |
+包含：方向、大小、不確定性、統計證據。

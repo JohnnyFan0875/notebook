@@ -1,297 +1,105 @@
-# Forecast Evaluation
+[Statistics](../README.md) › [時間序列](README.md) › 預測評估
 
-Fitting a model is only half the job. **Evaluation** tells you whether the model actually works on new, unseen data — and how much you can trust its predictions. A model that fits the training data perfectly but fails on the test period is useless for forecasting.
+# 預測評估 (Forecast Evaluation)
 
-Key point: Core principle of model evaluation: training data should never be used to evaluate prediction performance. Time series must be segmented in chronological order and use the past to predict the future rather than random sampling. This is different from general machine learning cross-validation.
+在訓練資料上配適得好，不代表能預測未來。**永遠不要用訓練資料評估預測表現**，而且時間序列必須**依時間順序切分**：用過去預測未來，不能隨機抽樣。
 
-## Train-Test Split for Time Series
+> 這與一般 ML 的隨機 K-fold 不同；隨機切分會造成「用未來預測過去」的 [資料洩漏](../../machine-learning/foundations/data-leakage.md)。
 
-Unlike cross-sectional data, **time series must be split chronologically** — you cannot randomly shuffle observations into train/test sets. The training set must always precede the test set.
+## 依時間切分
+
+測試集至少保留一到兩個完整季節週期（月資料約 12–24 個月）。
 
 ```python
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv"
-df = pd.read_csv(url, parse_dates=['Month'], index_col='Month').asfreq('MS')
-df.columns = ['Passengers']
+y = pd.read_csv(url, parse_dates=["Month"], index_col="Month").asfreq("MS")["Passengers"]
+train, test = y.iloc[:-24], y.iloc[-24:]
 
-# Hold out the last 24 months as test set
-train = df.iloc[:-24]
-test  = df.iloc[-24:]
-
-print(f"Train: {train.index[0].date()} to {train.index[-1].date()} ({len(train)} obs)")
-print(f"Test:  {test.index[0].date()}  to {test.index[-1].date()}  ({len(test)} obs)")
-
-fig, ax = plt.subplots(figsize=(11, 4))
-train['Passengers'].plot(ax=ax, label='Train', color='steelblue', linewidth=1.5)
-test['Passengers'].plot( ax=ax, label='Test',  color='tomato',    linewidth=1.5)
-ax.set_title('Train / Test Split (last 24 months held out)')
-ax.legend()
-plt.tight_layout()
-plt.show()
+res = SARIMAX(np.log(train), order=(1, 1, 1), seasonal_order=(1, 1, 1, 12)).fit(disp=False)
+y_pred = np.exp(res.forecast(len(test))).to_numpy()
+y_true = test.to_numpy()
 ```
 
-Tip: How much data to hold out? A common rule: hold out at least one or two full seasonal cycles. For monthly data, 12–24 months is typical. The goal is to test whether the model generalizes to a realistic forecast horizon.
+## 誤差指標
 
-## Error Metrics
+| 指標 | 公式 | 特性 | 適用 |
+| --- | --- | --- | --- |
+| **MAE** | $\frac{1}{h}\sum \lvert y_t - \hat{y}_t \rvert$ | 原始單位、直觀 | 一般報告 |
+| **RMSE** | $\sqrt{\frac{1}{h}\sum (y_t - \hat{y}_t)^2}$ | 重罰大誤差 | 大失誤代價高 |
+| **MAPE** | $\frac{100\%}{h}\sum \left\lvert \frac{y_t - \hat{y}_t}{y_t} \right\rvert$ | 百分比、好溝通 | 對非技術人員；**y = 0 時無定義**、值小時偏誤大 |
+| **MASE** | MAE ÷ 訓練期季節 naive 的 MAE | 無尺度；< 1 表示贏過 naive | **跨序列比較**、確認模型有加值 |
+| AIC / BIC | — | 樣本內、懲罰複雜度 | 選階（不是評估預測） |
 
-Once we have forecasts on the test set, we measure accuracy with these metrics:
-
-### MAE — Mean Absolute Error
-
-\[
-\text{MAE} = \frac{1}{h} \sum_{t=1}^{h} |y_t - \hat{y}_t|
-\]
-
-- Easy to interpret: average absolute deviation in the original units
-- Treats all errors equally — not sensitive to large individual errors
-- **Best for**: general reporting, when large errors aren't especially costly
-
-### RMSE — Root Mean Squared Error
-
-\[
-\text{RMSE} = \sqrt{\frac{1}{h} \sum_{t=1}^{h} (y_t - \hat{y}_t)^2}
-\]
-
-- Penalizes large errors more heavily than MAE (due to squaring)
-- Same units as the original series
-- **Best for**: when large forecast errors are especially costly
-
-### MAPE — Mean Absolute Percentage Error
-
-\[
-\text{MAPE} = \frac{100\%}{h} \sum_{t=1}^{h} \left| \frac{y_t - \hat{y}_t}{y_t} \right|
-\]
-
-- Scale-free: expressed as a percentage, easy to communicate to non-statisticians
-- **Limitation**: undefined when yₜ = 0; biased when values are small
-- **Best for**: comparing accuracy across different series or scales
-
-### MASE — Mean Absolute Scaled Error
-
-\[
-\text{MASE} = \frac{\text{MAE}}{\frac{1}{n-m} \sum_{t=m+1}^{n} |y_t - y_{t-m}|}
-\]
-
-The denominator is the in-sample MAE of a seasonal naive forecast (predicting yₜ = yₜ₋ₘ).
-
-- **MASE < 1**: model beats the seasonal naive baseline
-- **MASE > 1**: seasonal naive would have done better — model needs improvement
-- **Best for**: proper scale-free comparison across multiple series
+> 不要用 R² 評估時間序列預測：它描述樣本內配適，在非定態序列上可能嚴重誤導。MAE / RMSE 的一般說明見 [ML: MSE / RMSE](../../machine-learning/evaluation/mse-rmse.md)。
 
 ```python
-import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-import warnings
-warnings.filterwarnings('ignore')
-
-# Fit model on train, forecast on test
-log_train = np.log(train['Passengers'])
-log_test  = np.log(test['Passengers'])
-
-model = SARIMAX(log_train, order=(1,1,1), seasonal_order=(1,1,1,12),
-                enforce_stationarity=False, enforce_invertibility=False)
-result = model.fit(disp=False)
-
-forecast = result.forecast(steps=len(test))
-fc_exp   = np.exp(forecast)
-
-y_true = test['Passengers'].values
-y_pred = fc_exp.values
-
-# Metrics
-mae  = mean_absolute_error(y_true, y_pred)
-rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+mae  = np.mean(np.abs(y_true - y_pred))
+rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
 mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
-# MASE — seasonal naive baseline (m=12)
 m = 12
-naive_errors = np.abs(np.diff(train['Passengers'].values, n=m))
-naive_mae    = naive_errors[m:].mean()  # in-sample seasonal naive MAE
-mase = mae / naive_mae
-
-print(f"MAE:  {mae:.2f} thousand passengers")
-print(f"RMSE: {rmse:.2f} thousand passengers")
-print(f"MAPE: {mape:.2f}%")
-print(f"MASE: {mase:.3f}  {'✅ beats naive' if mase < 1 else '❌ worse than naive'}")
+x = train.to_numpy()
+naive_mae = np.mean(np.abs(x[m:] - x[:-m]))      # 訓練期季節 naive（ŷₜ = yₜ₋ₘ）的 MAE
+mase = mae / naive_mae                           # < 1 → 贏過季節 naive
 ```
 
-## Visualizing Forecast vs Actual
+## 一定要比較基準模型 (Baselines)
+
+| 基準 | 定義 | 何時難以打敗 |
+| --- | --- | --- |
+| Naive（隨機漫步） | ŷₜ₊₁ = yₜ | 許多金融序列 |
+| 季節 naive | ŷₜ = yₜ₋ₘ（去年同期） | 季節性強的序列 |
+| 平均 | ŷ = 訓練期平均 | 無趨勢、無季節 |
+| Drift | 沿訓練期平均斜率外推 | 穩定的強趨勢 |
 
 ```python
-fig, ax = plt.subplots(figsize=(12, 5))
-
-train['Passengers'].plot(ax=ax, label='Training Data', color='steelblue', linewidth=1.5)
-test['Passengers'].plot(ax=ax,  label='Actual (Test)', color='seagreen',  linewidth=2)
-fc_exp.plot(ax=ax,              label='Forecast',      color='tomato',    linewidth=2, linestyle='--')
-
-# Confidence interval
-forecast_full = result.get_forecast(steps=len(test))
-ci = np.exp(forecast_full.conf_int(alpha=0.05))
-ax.fill_between(ci.index, ci.iloc[:,0], ci.iloc[:,1],
-                color='tomato', alpha=0.2, label='95% CI')
-
-ax.set_title(f'SARIMA Forecast vs Actual  (MAPE = {mape:.1f}%)')
-ax.set_ylabel('Passengers (thousands)')
-ax.legend()
-plt.tight_layout()
-plt.show()
+seasonal_naive = np.tile(train.to_numpy()[-12:], 2)   # 最後 12 個月重複，覆蓋 24 期測試集
+np.mean(np.abs((y_true - seasonal_naive) / y_true)) * 100   # 基準 MAPE
 ```
 
-## Walk-Forward Validation (Time Series Cross-Validation)
+打不過 naive（MASE > 1）代表模型沒有加值。見 [ML: Baselines](../../machine-learning/evaluation/baselines-and-error-analysis.md)。
 
-A single train/test split can be sensitive to which particular period you hold out. **Walk-forward validation** (also called expanding window or rolling origin) provides a more robust evaluation.
+## 時間序列交叉驗證 (Walk-Forward Validation)
+
+單一切分對「剛好保留哪段」很敏感。**滾動起點 (rolling origin)** 在多個時間點重複「訓練 → 預測」：
+
+| 視窗 | 做法 | 何時用 |
+| --- | --- | --- |
+| 擴張視窗 (expanding) | 訓練集逐步變大 | 預設，使用所有歷史 |
+| 滾動視窗 (rolling) | 訓練集大小固定 | 懷疑過程隨時間改變 |
+
+![Expanding vs rolling window](src/forecast-evaluation-walk-forward.png)
 
 ```python
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-import numpy as np, warnings
-warnings.filterwarnings('ignore')
+log_y, horizon, mapes = np.log(y), 12, []
+for origin in range(84, len(y) - horizon + 1, 6):           # 從第 7 年開始，每 6 個月一個起點
+    r = SARIMAX(log_y.iloc[:origin], order=(1, 1, 1), seasonal_order=(1, 1, 1, 12)).fit(disp=False)
+    f = np.exp(r.forecast(horizon)).to_numpy()
+    a = y.iloc[origin:origin + horizon].to_numpy()
+    mapes.append(np.mean(np.abs((a - f) / a)) * 100)
+np.mean(mapes), np.std(mapes)
 
-log_pass   = np.log(df['Passengers'])
-n          = len(log_pass)
-min_train  = 84    # start after 7 years of training data
-horizon    = 12    # evaluate 12-step-ahead forecasts
-
-actuals    = []
-forecasts  = []
-origins    = []
-
-for origin in range(min_train, n - horizon + 1, 6):   # step by 6 months
-    train_wf = log_pass.iloc[:origin]
-    test_wf  = log_pass.iloc[origin:origin + horizon]
-
-    m = SARIMAX(train_wf, order=(1,1,1), seasonal_order=(1,1,1,12),
-                enforce_stationarity=False, enforce_invertibility=False)
-    r = m.fit(disp=False)
-    fc = r.forecast(horizon)
-
-    actuals.append(np.exp(test_wf.values))
-    forecasts.append(np.exp(fc.values))
-    origins.append(log_pass.index[origin])
-
-# Average MAPE across all origins
-all_mape = [np.mean(np.abs((a - f) / a)) * 100
-            for a, f in zip(actuals, forecasts)]
-
-print(f"Walk-forward MAPE: {np.mean(all_mape):.2f}% ± {np.std(all_mape):.2f}%")
-print(f"Evaluation origins: {len(all_mape)}")
+# sklearn 版切分器：from sklearn.model_selection import TimeSeriesSplit
 ```
 
-Tip: Expanding vs rolling window: Expanding window (grows the training set) is more common — it uses all available historical data. Rolling window (fixed training size) is used when you suspect the underlying process changes over time.
+## 殘差診斷
 
-## Residual Diagnostics
-
-Good forecasts require well-behaved residuals. These diagnostics should always be run after model fitting.
+| 檢查 | 方法 | 合格 |
+| --- | --- | --- |
+| 無趨勢 / 型態 | 殘差 vs 時間 | 隨機分布在 0 附近 |
+| 變異固定 | 殘差 vs 時間 | 無擴散或聚集 |
+| 近似常態 | 直方圖、Q–Q 圖 | 鐘形、貼近對角線（影響預測區間） |
+| 無自相關 | 殘差 ACF | 全在信賴帶內 |
+| Ljung-Box | `acorr_ljungbox(resid, lags=[12, 24])` | p > 0.05 |
 
 ```python
-import scipy.stats as stats
-
-# Fit on full training data for residual diagnostics
-model_full  = SARIMAX(log_train, order=(1,1,1), seasonal_order=(1,1,1,12),
-                      enforce_stationarity=False, enforce_invertibility=False)
-result_full = model_full.fit(disp=False)
-resid       = result_full.resid.dropna()
-
-fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-
-# 1. Residuals over time
-axes[0,0].plot(resid, color='gray', linewidth=1, alpha=0.8)
-axes[0,0].axhline(0, color='black', linestyle='--', alpha=0.5)
-axes[0,0].set_title('Residuals Over Time')
-
-# 2. Histogram
-axes[0,1].hist(resid, bins=20, color='steelblue', edgecolor='white', density=True)
-x_range = np.linspace(resid.min(), resid.max(), 200)
-axes[0,1].plot(x_range, stats.norm.pdf(x_range, resid.mean(), resid.std()),
-               'r-', linewidth=2, label='Normal fit')
-axes[0,1].set_title('Residual Distribution')
-axes[0,1].legend()
-
-# 3. Q–Q plot
-stats.probplot(resid, dist='norm', plot=axes[1,0])
-axes[1,0].set_title('Q–Q Plot')
-
-# 4. ACF of residuals
-from statsmodels.graphics.tsaplots import plot_acf
-plot_acf(resid, lags=24, ax=axes[1,1], alpha=0.05)
-axes[1,1].set_title('ACF of Residuals (should be white noise)')
-
-plt.suptitle('Residual Diagnostics', fontsize=13, y=1.01)
-plt.tight_layout()
-plt.show()
+res.plot_diagnostics(figsize=(12, 8))    # 一次畫出上述四張圖
 ```
 
-**Residual checklist:**
+殘差有型態 = 有結構沒被利用 = 模型還能改進。
 
-| Check | Method | Acceptable Result |
-| ------------------------------- | --------------------- | -------------------------------------- |
-| **No trend / pattern** | Time plot | Residuals scatter randomly around zero |
-| **Constant variance** | Time plot | No fanning or clustering |
-| **Approximately normal** | Histogram + Q–Q plot | Roughly bell-shaped; near diagonal |
-| **No autocorrelation** | ACF plot | All lags within confidence bands |
-| **Ljung-Box test** | Statistical test | p-value > 0.05 at all lags |
-
-```python
-from statsmodels.stats.diagnostic import acorr_ljungbox
-
-lb = acorr_ljungbox(resid, lags=[12, 24], return_df=True)
-print(lb)
-```
-
-## Benchmark Comparisons
-
-Always compare your model against simple baselines. If your model can't beat a naive forecast, something is wrong.
-
-| Baseline | Definition | When It's Competitive |
-| -------------------------------- | --------------------------------------------- | ----------------------------- |
-| **Naive (random walk)** | ŷₜ₊₁ = yₜ | Many financial series |
-| **Seasonal Naive** | ŷₜ = yₜ₋ₘ (same period last cycle) | Highly seasonal series |
-| **Mean forecast** | ŷₜ = ȳ (training mean) | Series with no trend or seasonality |
-| **Drift** | Extrapolate the average trend from training | Strong, steady trends |
-
-```python
-# Seasonal Naive baseline
-seasonal_naive = train['Passengers'].values[-12:]  # last 12 months repeated
-
-sn_mape = np.mean(np.abs((y_true - seasonal_naive) / y_true)) * 100
-print(f"Seasonal Naive MAPE: {sn_mape:.2f}%")
-print(f"SARIMA MAPE:         {mape:.2f}%")
-print(f"Improvement:         {sn_mape - mape:.2f} percentage points")
-```
-
-## Metric Selection Guide
-
-| Situation | Recommended Metric | Reason |
-| -------------------------------------------- | ---------------------- | --------------------------------------- |
-| Reporting to non-technical stakeholders | **MAPE** | Easy to communicate as a percentage |
-| Comparing models on the same scale | **MAE** or **RMSE** | Direct, unit-matched comparison |
-| Large errors are especially costly | **RMSE** | Penalizes outliers more heavily |
-| Comparing across multiple series / scales | **MASE** | Scale-free; relative to naive baseline |
-| Selecting model order (in-sample) | **AIC / BIC** | Penalizes complexity; avoids overfitting |
-
-Warning: Do not use R² to evaluate time-series forecasts. R² describes in-sample fit and can be highly misleading for out-of-sample forecast quality, especially when non-stationary series appear spuriously correlated.
-
-## Key Takeaways
-
-| Concept | Key Point |
-| --------------------------------- | ---------------------------------------------------------------------------------- |
-| **Split chronologically** | Never randomly split time series — training must precede test in time |
-| **MAE for general use** | Intuitive, robust; reports error in original units |
-| **RMSE for outlier sensitivity** | Penalizes large errors more — use when big misses are costly |
-| **MAPE for communication** | Easy percentage interpretation; but undefined when y = 0 |
-| **MASE for cross-series comparison** | Relative to seasonal naive — always run this to confirm model adds value |
-| **Walk-forward for robust eval** | Multiple evaluation origins give a more stable estimate of true forecast accuracy |
-| **Always beat a naive baseline** | If MASE > 1, the model is worse than predicting "same as last year" |
-| **Residuals must be white noise** | Patterns in residuals = unused structure = room to improve the model |
-
-## Forecast Evaluation Has Two Jobs
-
-| Job | Question |
-| --- | -------- |
-| **Accuracy** | How close were forecasts to realized values? |
-| **Decision usefulness** | Were they good enough for the action the forecast supports? |
-
-Tip: A model can have decent RMSE and still be unacceptable if misses happen at the worst possible times for the decision process.
+> 預測評估有兩件事：**準確度**（多接近實際值）與**決策有用性**（夠不夠支持要做的決定）。RMSE 不錯的模型，若總在最關鍵的時間點失準，仍然不可接受。

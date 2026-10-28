@@ -1,94 +1,39 @@
-# Survival Analysis
+[Statistics](../README.md) › 存活分析
 
-**Survival analysis** is a collection of statistical methods for analyzing **time-to-event data** — data where the outcome of interest is *when* something happens, not just *whether* it happens. It handles the unique challenge of **censoring**: observations where the event has not yet occurred by the time data collection ends.
+# 存活分析 (Survival Analysis)
 
-Key point: Survival analysis does not just ask whether the event happened. It asks when the event happened, how risk changes over time, and what factors speed it up or slow it down. That time dimension is why ordinary regression or classification tools are not enough.
+分析**事件發生時間 (time-to-event)** 的資料：不只問「有沒有發生」，還問「**何時**發生、風險如何隨時間變化、哪些因素加速或延緩它」。核心挑戰是**設限 (censoring)**：研究結束時事件還沒發生的觀測。
 
-## Why Survival Analysis?
+一般迴歸做不到的原因：(1) 設限，直接刪除或當成未發生都會造成偏誤；(2) 風險隨時間改變，邏輯斯迴歸把結果當二元，完全忽略時間。
 
-Standard regression cannot handle time-to-event data correctly for two reasons:
+| 領域 | 事件 | 時間 |
+| --- | --- | --- |
+| 醫學 | 死亡、復發、發病 | 診斷 / 手術到事件的天數 |
+| 工程 | 零件故障 | 運轉時數 |
+| 商業 / SaaS | 顧客流失、取消訂閱 | 註冊後天數 |
+| 人資 | 員工離職 | 到職後月數 |
+| 金融 | 貸款違約 | 核貸後月數 |
 
-**1. Censoring**: If a study ends before a participant experiences the event, you don't know *when* they would have experienced it — only that they hadn't yet. Ignoring censored observations systematically biases results.
-
-**2. Time-varying hazard**: The risk of an event is not constant over time. Standard logistic regression treats the outcome as binary and ignores timing entirely.
-
-## Where Survival Analysis Appears
-
-| Domain | Event of Interest | Time Variable |
-| ------------------- | ----------------------------------------- | ---------------------------------- |
-| Medicine | Death, relapse, disease onset | Days from diagnosis to event |
-| Engineering | Component failure | Operating hours until failure |
-| Business / SaaS | Customer churn, subscription cancellation | Days since signup |
-| HR / Workforce | Employee attrition | Months from hire to resignation |
-| Finance | Loan default | Months from origination to default |
-| E-commerce | First purchase, conversion | Days from first visit |
-
-## Section Overview
-
-| Section | Level | Key Questions Answered |
-| -------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
-| [**Core Concepts & Censoring**](./core-concepts.md) | Foundation | What is survival data? What is censoring? How do I structure the data? |
-| [**Survival & Hazard Functions**](./survival-hazard-functions.md) | Foundation | How do I describe the survival process mathematically? |
-| [**Kaplan-Meier Estimator**](./kaplan-meier.md) | Core | How do I estimate and visualize survival curves from data? |
-| [**Log-Rank Test**](./log-rank-test.md) | Core | How do I compare survival curves between two or more groups? |
-| [**Cox Proportional Hazards Model**](./cox-ph-model.md) | Core | How do covariates affect the hazard? What are hazard ratios? |
-| [**Model Diagnostics & Violations**](./diagnostics.md) | Applied | Is the proportional hazards assumption met? How do I check and fix it? |
-| [**Parametric Models**](./parametric-models.md) | Applied | When and how to use Weibull, Exponential, Log-normal models? |
-| [**Interpretation**](./interpretation.md) | Applied | How do I translate statistical outputs into meaningful conclusions? |
-| [**Visualization**](./visualization.md) | Applied | What plots should I produce and how should I read them? |
-
-## Analytical Workflow
+## 建議順序
 
 ```
-Data Preparation  →  Descriptive Analysis  →  Model Fitting
-(Core concepts)      (Functions + KM + log-rank)      (Cox + parametric models)
-                      KM curves, censoring      Cox / Parametric
-                           ↓                         ↓
-                  Diagnostics & Validation  →  Visualization & Interpretation
-                     (Diagnostics)                 (Interpretation + visualization)
+資料結構與設限 → S(t) / h(t) → Kaplan-Meier + log-rank → Cox 模型 → 診斷 → 參數模型 → 解讀與視覺化
 ```
 
-## Start Here If...
+時間軸與設限邏輯還不直覺之前，不要急著跳到 Cox 模型。
 
-This module is the right home when:
+## 筆記
 
-- the outcome is time until event, not just yes/no
-- some subjects have not had the event by study end
-- you need to compare groups while respecting censoring
-- you want both time-based summaries and hazard-based modeling
+| 筆記 | 回答的問題 |
+| --- | --- |
+| [核心概念與設限](core-concepts.md) | 存活資料長什麼樣？什麼是設限？ |
+| [存活函數與風險函數](survival-hazard-functions.md) | 怎麼用數學描述存活過程？ |
+| [Kaplan-Meier](kaplan-meier.md) | 怎麼估計與畫存活曲線？ |
+| [Log-rank 檢定](log-rank-test.md) | 兩組以上的存活曲線不同嗎？ |
+| [Cox 比例風險模型](cox-ph-model.md) | 共變數如何影響風險？什麼是 hazard ratio？ |
+| [模型診斷](diagnostics.md) | 比例風險假設成立嗎？怎麼修？ |
+| [參數模型](parametric-models.md) | 何時用 Weibull、Exponential、Log-normal、AFT？ |
+| [結果解讀](interpretation.md) | 怎麼把輸出翻成有意義的結論？ |
+| [視覺化](visualization.md) | 該畫哪些圖、怎麼讀？ |
 
-## Visualization Quick Reference
-
-| Chart | Best For | Section |
-| ------------------------ | ---------------------------------------------------------- | ------- |
-| Kaplan-Meier curve | Visualizing overall or group-specific survival over time | 3, 9 |
-| Log-log plot | Checking the proportional hazards assumption visually | 6, 9 |
-| Forest plot | Displaying hazard ratios and confidence intervals | 5, 9 |
-| Schoenfeld residual plot | Diagnosing time-varying coefficients in Cox model | 6, 9 |
-| Cumulative hazard plot | Alternative to KM; linear for exponential distributions | 2, 9 |
-| Calibration plot | Comparing predicted vs. observed survival | 6, 9 |
-
-## Key Takeaway
-
-Survival analysis answers: "When does the event happen, and what factors speed it up or slow it down?" The defining challenge is censoring — observations where the event has not yet occurred carry real information and must not be discarded.
-
-## Deep-Study Priorities
-
-The most effective study order is:
-
-1. censoring and the `(T, delta)` structure
-2. survival and hazard functions
-3. KM and log-rank
-4. Cox plus diagnostics
-
-Tip: If the time axis and censoring logic are not intuitive yet, do not rush to the Cox model.
-
-## Recommended Route
-
-The cleanest route through this module is:
-
-1. understand censoring and the data structure
-2. learn survival and hazard functions
-3. read Kaplan-Meier and log-rank together
-4. move to Cox only after the descriptive picture is clear
-5. treat diagnostics and interpretation as part of the model, not as optional extras
+主要套件：Python `lifelines`、`scikit-survival`；R `survival`、`survminer`。

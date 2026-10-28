@@ -1,333 +1,136 @@
-# Kaplan-Meier Estimator
+[Statistics](../README.md) › [存活分析](README.md) › Kaplan-Meier
 
-The **Kaplan-Meier (KM) estimator** is the standard non-parametric method for estimating the survival function from observed data. It handles censored observations correctly without assuming any particular parametric distribution.
+# Kaplan-Meier 估計量 (Kaplan-Meier Estimator)
 
-Key point: KM is the starting point of survival analysis: almost every survival analysis report starts with the KM curve. It is a standard visualization tool for describing survival data, just like a histogram for continuous data. Before running any model, draw the KM curve.
+從觀察資料估計存活函數 S(t) = P(T > t) 的標準**無母數**方法，正確處理設限、不假設任何分配。幾乎每份存活分析報告都從 KM 曲線開始，就像連續資料先畫直方圖：**建模前先畫 KM**。
 
-## What KM Actually Estimates
+KM 估計的是「到 t 為止事件**尚未**發生的機率」，不是平均存活時間，也不是 hazard。
 
-KM estimates the survival function:
+## 公式
 
-\[ S(t) = P(T > t) ]
+$$
+\hat S(t) = \prod_{t_i \le t} \left(1 - \frac{d_i}{n_i}\right)
+$$
 
-This means:
+| 符號 | 意義 |
+| --- | --- |
+| tᵢ | **有事件發生**的相異時間點 |
+| dᵢ | tᵢ 的事件數 |
+| nᵢ | tᵢ 前一刻仍在追蹤中的人數（**風險集 risk set**） |
+| 1 − dᵢ/nᵢ | **條件存活**：已活到 tᵢ 的人撐過 tᵢ 的機率 |
+| Ŝ(t) | **累積存活**：把各區間的條件存活率連乘 |
 
-* the probability the event has **not** happened by time `t`
-* not the average survival time
-* not the hazard
+**為什麼是階梯函數？**
 
-Tip: Many learners first read a KM curve like a declining probability line, which is good. The next step is remembering that every downward step is triggered by an observed event, while censoring changes the risk set without causing a step down.
+- 事件發生 → 曲線往下跳一階
+- 設限發生 → **不往下跳**，但之後的風險集變小（設限標記 + 顯示此人的資訊到此為止）
 
-## The KM Formula
+這正是 KM 處理設限的方式：設限者在設限前貢獻資訊，之後從風險集移除。
 
-At each time point where an event occurs, KM updates the survival estimate:
+## 手算範例
 
-\[ \hat{S}(t) = \prod\_{t\_i \leq t} \left(1 - \frac{d\_i}{n\_i}\right) ]
+| 時間 | 事件 δ |
+| --- | --- |
+| 3, 5, 5, 8, 10, 12, 12, 15 | 1, 0, 1, 1, 0, 1, 1, 0 |
 
-Where:
+| tᵢ | nᵢ | dᵢ | 1 − d/n | Ŝ(t) |
+| --- | --- | --- | --- | --- |
+| 3 | 8 | 1 | 0.875 | 0.875 |
+| 5 | 7 | 1 | 0.857 | 0.750 |
+| 8 | 5 | 1 | 0.800 | 0.600 |
+| 12 | 3 | 2 | 0.333 | 0.200 |
 
-* $t\_i$ = the distinct event times (only times when events actually occur)
-* $d\_i$ = number of events at time $t\_i$
-* $n\_i$ = number of subjects at risk just before time $t\_i$ (the **risk set**)
-
-Tip: Conditional survival describes the chance of surviving a specific interval given that the subject made it to the start of that interval, $p\_i = 1 - d\_i/n\_i$. Cumulative survival, $\hat{S}(t)$, multiplies those interval-specific probabilities together to describe survival from time 0 all the way to time $t$.
-
-Tip: The risk set $n\_i$ includes only subjects still under observation just before time $t\_i$. Subjects censored before $t\_i$ are removed from the risk set, which is exactly how KM handles censoring correctly.
-
-## Why KM Is a Step Function
-
-The KM curve changes only when an event is observed:
-
-* **event occurs** → the curve steps downward
-* **censoring occurs** → no vertical drop, but the risk set shrinks afterward
-
-This is why censor marks matter visually. They show where information about future follow-up ends for specific subjects.
-
-## Step-by-Step Manual Calculation
+t = 5 有一個事件與一個設限同時發生：慣例上設限視為發生在事件**之後**，所以 n = 7。t = 8 的風險集為 5，因為 t = 5 的設限者已移除。
 
 ```python
 import pandas as pd
-import numpy as np
 
-# Small example dataset (8 subjects)
-data = pd.DataFrame({
-    'time':  [3, 5, 5, 8, 10, 12, 12, 15],
-    'event': [1, 0, 1, 1,  0,  1,  1,  0 ]
-})
-
-# Build KM table manually
-event_times = sorted(data[data['event'] == 1]['time'].unique())
-n_total = len(data)
-
-rows = []
-n_at_risk = n_total
-S = 1.0
-
-for t in event_times:
-    d = ((data['time'] == t) & (data['event'] == 1)).sum()  # events at t
-    # subtract those censored before this time point
-    censored_before = ((data['time'] < t) & (data['event'] == 0)).sum()
-
-    # Recalculate n_at_risk properly
-    n_at_risk = (data['time'] >= t).sum()
-
-    prob_survive = 1 - d / n_at_risk
-    S = S * prob_survive
-
-    rows.append({
-        'time':        t,
-        'n_at_risk':   n_at_risk,
-        'events (d)':  d,
-        '1 - d/n':     round(prob_survive, 4),
-        'S(t)':        round(S, 4)
-    })
-
-km_table = pd.DataFrame(rows)
-print(km_table)
+d = pd.DataFrame({"time": [3, 5, 5, 8, 10, 12, 12, 15], "event": [1, 0, 1, 1, 0, 1, 1, 0]})
+S, rows = 1.0, []
+for t in sorted(d.loc[d.event == 1, "time"].unique()):
+    n = (d.time >= t).sum()                          # 風險集
+    k = ((d.time == t) & (d.event == 1)).sum()       # 事件數
+    S *= 1 - k / n
+    rows.append((t, n, k, round(S, 3)))
+pd.DataFrame(rows, columns=["t", "n_at_risk", "d", "S"])
 ```
 
-**Output:**
-
-| n\_at\_risk | events (d) | 1 - d/n | S(t)   |
-| ----------- | ---------- | ------- | ------ |
-| 8           | 1          | 0.8750  | 0.8750 |
-| 6           | 1          | 0.8333  | 0.7292 |
-| 4           | 1          | 0.7500  | 0.5469 |
-| 2           | 2          | 0.0000  | 0.0000 |
-
-At t=5: one subject was censored at t=5 (not an event), so n\_at\_risk drops by both the event at t=3 and the censored subject, giving n=6.
-
-## KM Estimator with lifelines
-
-### Example
-
-```r
-library(survival)
-library(survminer)
-
-data(lung)
-fit <- survfit(Surv(time, status) ~ sex, data = lung)
-
-ggsurvplot(fit,
-           data = lung,
-           pval = TRUE,
-           conf.int = TRUE,
-           risk.table = TRUE,
-           surv.median.line = "hv",
-           xlab = "Time (days)",
-           ylab = "Survival probability")
-```
-
-### Python Example
+## lifelines 範例
 
 ```python
+import matplotlib.pyplot as plt
 from lifelines import KaplanMeierFitter
 from lifelines.datasets import load_rossi
-import matplotlib.pyplot as plt
-
-# Load Rossi recidivism dataset
-# Outcome: rearrest (1) or study end (0); time: weeks until event
-rossi = load_rossi()
-T = rossi['week']
-E = rossi['arrest']
-
-kmf = KaplanMeierFitter()
-kmf.fit(T, E, label='All subjects')
-
-# Key summary statistics
-print(f"Median survival time: {kmf.median_survival_time_:.1f} weeks")
-print(f"\nSurvival table (first 10 event times):")
-print(kmf.survival_function_.head(10))
-```
-
-### Plotting the KM Curve
-
-<details>
-
-<summary>Show plotting script</summary>
-
-```python
-from lifelines import KaplanMeierFitter
-from lifelines.datasets import load_rossi
-import matplotlib.pyplot as plt
-
-rossi = load_rossi()
-T = rossi['week']
-E = rossi['arrest']
-
-kmf = KaplanMeierFitter()
-kmf.fit(T, E, label='All subjects')
-
-fig, ax = plt.subplots(figsize=(8, 5))
-
-kmf.plot_survival_function(
-    ax=ax,
-    ci_show=True,          # show 95% confidence interval
-    ci_alpha=0.15,
-    color='#3B82F6'
-)
-
-# Mark median survival time
-median = kmf.median_survival_time_
-ax.axhline(0.5, color='gray', linestyle='--', linewidth=1)
-ax.axvline(median, color='gray', linestyle='--', linewidth=1)
-ax.annotate(f'Median = {median:.0f} wks',
-            xy=(median, 0.5), xytext=(median + 5, 0.55),
-            arrowprops=dict(arrowstyle='->', color='gray'),
-            fontsize=10)
-
-ax.set_xlabel('Weeks')
-ax.set_ylabel('Probability of No Rearrest S(t)')
-ax.set_title('Kaplan-Meier Survival Curve — Rossi Recidivism Data')
-ax.grid(alpha=0.3)
-plt.tight_layout()
-plt.show()
-```
-
-</details>
-
-![Kaplan-Meier survival curve](kaplan-meier-curve.png)
-
-### Adding a Risk Table
-
-A **risk table** shows how many subjects remain at risk at each time point — essential context for interpreting the width of confidence intervals.
-
-```python
 from lifelines.plotting import add_at_risk_counts
-
-fig, ax = plt.subplots(figsize=(9, 5))
-kmf.plot_survival_function(ax=ax, ci_show=True)
-
-add_at_risk_counts(kmf, ax=ax, fontsize=9)
-
-ax.set_title('KM Curve with At-Risk Table')
-ax.set_xlabel('Weeks')
-ax.set_ylabel('S(t)')
-plt.tight_layout()
-plt.show()
-```
-
-Tip: Confidence intervals widen late in follow-up because fewer subjects remain at risk, so each event has a larger influence on the estimate. Always inspect the risk table before interpreting the tail of a KM curve.
-
-## Reading a KM Curve Well
-
-When you look at a KM curve, ask:
-
-1. How steep is the early drop?
-2. Where is the median survival, if it exists?
-3. How many subjects remain at risk in the tail?
-4. Are apparent group differences stable over time or only early / late?
-
-Tip: The far-right tail of a KM plot is often visually dramatic but statistically fragile because the risk set may be very small.
-
-## Comparing KM Curves by Group
-
-The most common use of KM curves is comparing survival between two or more groups.
-
-```python
-from lifelines import KaplanMeierFitter
-import matplotlib.pyplot as plt
-
-# Split by financial aid status (fin: 1 = received aid, 0 = no aid)
-groups = rossi['fin'].unique()
-colors = ['#3B82F6', '#EF4444']
-
-fig, ax = plt.subplots(figsize=(9, 5))
-kmf_list = []
-
-for group, color in zip([1, 0], colors):
-    mask = rossi['fin'] == group
-    label = 'Received Aid' if group == 1 else 'No Aid'
-
-    kmf_group = KaplanMeierFitter()
-    kmf_group.fit(T[mask], E[mask], label=label)
-    kmf_group.plot_survival_function(ax=ax, ci_show=True, color=color)
-    kmf_list.append(kmf_group)
-
-    print(f"{label}: Median = {kmf_group.median_survival_time_:.1f} weeks")
-
-ax.set_xlabel('Weeks')
-ax.set_ylabel('Probability of No Rearrest S(t)')
-ax.set_title('KM Curves by Financial Aid Status')
-ax.grid(alpha=0.3)
-plt.tight_layout()
-plt.show()
-```
-
-Warning: Visual comparison is not a formal test. Two curves can look different without being statistically significant, and the reverse can also happen. Use the log-rank test to compare groups formally.
-
-## When the Median Is Undefined
-
-Sometimes the survival curve never drops below 0.5 during observed follow-up. In that case:
-
-* median survival is undefined
-* this does **not** mean survival is infinite
-* it means fewer than half the subjects experienced the event in the observed window
-
-That is a common reason to report **RMST** or a fixed-time survival estimate instead.
-
-## Confidence Intervals for KM
-
-The `lifelines` default confidence interval uses **Greenwood's formula** with log transformation — this ensures the CI stays within \[0, 1] and performs better in the tails.
-
-\[ \text{Var}\[\hat{S}(t)] = \hat{S}(t)^2 \sum\_{t\_i \leq t} \frac{d\_i}{n\_i(n\_i - d\_i)} ]
-
-```python
-# Print KM estimate with confidence intervals at specific time points
-timeline = [10, 20, 30, 40, 52]
-kmf.fit(T, E, timeline=timeline)
-
-summary = pd.DataFrame({
-    'S(t)':     kmf.survival_function_['KM_estimate'],
-    'CI Lower': kmf.confidence_interval_['KM_estimate_lower_0.95'],
-    'CI Upper': kmf.confidence_interval_['KM_estimate_upper_0.95']
-}).round(4)
-
-print("KM estimates at selected time points:")
-print(summary)
-```
-
-## Restricted Mean Survival Time (RMST)
-
-The **RMST** is the area under the KM curve up to a specified time horizon τ — the average event-free time up to τ. It is an alternative summary to the median that:
-
-* Is always defined (unlike median, which requires S(t) to cross 0.5)
-* Has a clear interpretation: expected time event-free up to τ
-* Is directly comparable between groups
-
-\[ \text{RMST}(\tau) = \int\_0^\tau \hat{S}(t), dt ]
-
-```python
 from lifelines.utils import restricted_mean_survival_time
 
-tau = 52  # restrict to 52 weeks
+rossi = load_rossi()                       # 出獄後再被捕的時間（週）
+T, E = rossi["week"], rossi["arrest"]
 
-rmst_aid    = restricted_mean_survival_time(kmf_list[0], t=tau)
-rmst_no_aid = restricted_mean_survival_time(kmf_list[1], t=tau)
+kmf = KaplanMeierFitter().fit(T, E, label="All")
+kmf.median_survival_time_                  # 中位存活時間
+kmf.survival_function_at_times([10, 26, 52])
+kmf.confidence_interval_                   # Greenwood 公式 + log 轉換的 95% CI
 
-print(f"RMST (Received Aid, up to {tau} wks): {rmst_aid:.2f} weeks")
-print(f"RMST (No Aid,       up to {tau} wks): {rmst_no_aid:.2f} weeks")
-print(f"Difference: {rmst_aid - rmst_no_aid:.2f} weeks event-free")
+# 單組曲線 + 風險表
+ax = kmf.plot_survival_function(ci_show=True)
+add_at_risk_counts(kmf, ax=ax)
+plt.show()
+
+# 分組比較
+fig, ax = plt.subplots()
+fits = {}
+for g, label in [(1, "Received Aid"), (0, "No Aid")]:
+    m = rossi["fin"] == g
+    fits[label] = KaplanMeierFitter().fit(T[m], E[m], label=label)
+    fits[label].plot_survival_function(ax=ax)
+add_at_risk_counts(*fits.values(), ax=ax)
+plt.show()
+
+# RMST（到 52 週）
+{k: restricted_mean_survival_time(v, t=52) for k, v in fits.items()}
 ```
 
-Tip: Use RMST when the median is undefined (S(t) never crosses 0.5) or when comparing groups with crossing survival curves where the hazard ratio is not constant. When survival curves cross, the hazard ratio is meaningless and RMST is a better comparison metric.
+![Kaplan-Meier survival curve](src/kaplan-meier-curve.png)
 
-## Common Interpretation Mistakes
+R 版本：
 
-| Mistake                              | Why it is wrong                                              |
-| ------------------------------------ | ------------------------------------------------------------ |
-| Reading censoring as an event        | censoring means follow-up ended, not that the event happened |
-| Overinterpreting the tail            | late estimates may be unstable because few subjects remain   |
-| Treating visible separation as proof | formal comparison still needs a statistical test             |
-| Reporting median only                | misses uncertainty and alternative summaries like RMST       |
+```r
+library(survival); library(survminer)
+fit <- survfit(Surv(time, status) ~ sex, data = lung)
+ggsurvplot(fit, data = lung, pval = TRUE, conf.int = TRUE, risk.table = TRUE, surv.median.line = "hv")
+```
 
-## Key Takeaways
+## 讀 KM 曲線
 
-| Concept                             | Key Point                                                          |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| **KM is non-parametric**            | Makes no assumption about the distribution of T; lets data speak   |
-| **Risk set shrinks over time**      | Both events and censorings remove subjects from the risk set       |
-| **Median survival time**            | Where the KM curve crosses 0.5; undefined if curve stays above 0.5 |
-| **CI widens at tails**              | Fewer at-risk subjects → unreliable estimates → check risk table   |
-| **Group comparison ≠ significance** | Use the log-rank test for formal statistical comparison            |
-| **RMST as alternative summary**     | More robust than median when curves cross or median is undefined   |
+1. 早期下降多陡？
+2. 中位存活時間在哪（若存在）？
+3. 尾端還剩多少人在風險集？
+4. 組間差異是一直存在，還是只在早期 / 晚期？
+
+> **尾端很脆弱**：追蹤後期風險集很小，每個事件影響很大、CI 很寬，曲線右側看起來戲劇化但統計上不穩定。**一定要附風險表 (at-risk table)**。
+
+**信賴區間**：lifelines 預設用 Greenwood 公式（並在 log 尺度計算，確保 CI 在 [0, 1] 內）：
+
+$$
+\widehat{\text{Var}}[\hat S(t)] = \hat S(t)^2 \sum_{t_i \le t} \frac{d_i}{n_i(n_i - d_i)}
+$$
+
+## 中位數無法估計時：RMST
+
+曲線在觀察期間從未降到 0.5 以下時，中位存活時間**未定義**。這**不代表**存活無限長，只代表觀察期內不到一半的人發生事件。此時報告：
+
+- **RMST(τ)** = KM 曲線下到 τ 的面積 = 到 τ 為止的平均無事件時間；永遠有定義、可直接比較組間差異（「平均多 x 週無事件」）
+- 或固定時點存活率（1 年、5 年）
+
+曲線**交叉**時 hazard ratio 不固定、意義不清，RMST 差異是更好的比較指標，見 [Log-rank 檢定](log-rank-test.md)。
+
+## 常見解讀錯誤
+
+| 錯誤 | 為什麼錯 |
+| --- | --- |
+| 把設限讀成事件 | 設限是追蹤結束，不是事件發生 |
+| 過度解讀尾端 | 風險集太小，估計不穩 |
+| 看到曲線分開就當作有差異 | 需要正式檢定（[log-rank](log-rank-test.md)） |
+| 只報中位數 | 漏掉不確定性與 RMST 等其他摘要 |
+| 用 1 − KM 當作有競爭風險時的累積發生率 | 會高估，見 [競爭風險](core-concepts.md#競爭風險-competing-risks) |

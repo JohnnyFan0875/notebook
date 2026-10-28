@@ -1,121 +1,33 @@
-# Bayesian Statistics
+[Statistics](../README.md) › 貝氏統計
 
-**Bayesian statistics** is a framework for reasoning under uncertainty. It treats probability as a **degree of belief** that gets updated as new evidence arrives — rather than as a long-run frequency of events.
+# 貝氏統計 (Bayesian Statistics)
 
-Key point: Bayesian statistics treats learning as belief-updating. Instead of only describing how unusual the data is under a null model, it lets you express uncertainty directly about the parameters themselves.
+把機率視為**信念程度 (degree of belief)**，看到新證據就更新。不只問「H₀ 下這筆資料有多不尋常」，而是直接描述**參數本身的不確定性**。
 
-## Why This Order?
-
-The sections follow a natural Bayesian reasoning workflow:
+## 建議順序
 
 ```
-What do I believe before seeing data? (Prior)
-        ↓
-What does the data tell me? (Likelihood)
-        ↓
-What should I believe now? (Posterior)
-        ↓
-How do I use and communicate this? (Inference & Decisions)
+先驗 (Prior) → 概似 (Likelihood) → 後驗 (Posterior) → 推論與決策 → 計算（MCMC）
+     ↑___________________________________________|
+               後驗可成為下一輪的先驗
 ```
 
-This order matters because Bayesian reasoning is fundamentally **sequential** — each posterior can become the next prior as more data arrives.
+## 筆記
 
-## Overview of Topics
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [貝氏定理與核心概念](bayes-theorem.md) | 更新循環、擲硬幣範例 | 貝氏思維怎麼運作？ |
+| [先驗分配](prior-distributions.md) | 資訊性 / 弱資訊性 / 無資訊、先驗預測檢查 | 怎麼把先前知識寫成分配？ |
+| [概似與共軛先驗](likelihood-conjugate.md) | Beta-Binomial、Gamma-Poisson、Normal-Normal | 什麼時候後驗有公式解？ |
+| [後驗推論](posterior-inference.md) | 可信區間、HDI、後驗預測、決策 | 怎麼摘要與溝通後驗？ |
+| [MCMC](mcmc.md) | Metropolis-Hastings、NUTS、收斂診斷 | 算不出公式時怎麼抽樣？ |
+| [貝氏 vs 頻率學派](bayesian-vs-frequentist.md) | CI vs 可信區間、p 值 vs 後驗機率 | 何時用哪個框架？ |
 
-| Section | Level | Key Questions Answered |
-| -------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------- |
-| [**Core Concepts & Bayes' Theorem**](./bayes-theorem.md) | Foundation | What is Bayesian thinking? How does Bayes' theorem work? |
-| [**Prior Distributions**](./prior-distributions.md) | Foundation | How do I encode prior beliefs? What types of priors exist? |
-| [**Likelihood & Conjugate Priors**](./likelihood-conjugate.md) | Core | What is the likelihood function? What are conjugate pairs? |
-| [**Posterior Inference**](./posterior-inference.md) | Core | How do I summarize and interpret the posterior? |
-| [**Markov Chain Monte Carlo (MCMC)**](./mcmc.md) | Computation | How do I sample from distributions I can't solve analytically? |
-| [**Bayesian vs Frequentist**](./bayesian-vs-frequentist.md) | Perspective | When should I use which framework? What are the key differences? |
+## 常用工具
 
-## What's Inside Each Section
-
-### Core Concepts & Bayes' Theorem
-
-- What probability means in the Bayesian framework
-- Bayes' theorem derivation and intuition
-- The update cycle: Prior → Likelihood → Posterior
-- Worked example: coin flipping from scratch
-
-### Prior Distributions
-
-Three categories of priors with practical guidance:
-
-| Prior Type | When to Use |
-| ---------------- | -------------------------------------------------- |
-| **Informative** | Strong domain knowledge or historical data exists |
-| **Weakly informative** | Some constraints known, letting data drive result |
-| **Non-informative (flat)** | Maximum objectivity; let data speak |
-
-### Likelihood & Conjugate Priors
-
-- What the likelihood function represents
-- Conjugate prior pairs: Beta-Binomial, Gamma-Poisson, Normal-Normal
-- Why conjugacy makes computation tractable
-
-### Posterior Inference
-
-Key outputs from the posterior distribution:
-
-| Output | Description |
-| ------------------------------ | -------------------------------------------------------- |
-| **Posterior Mean / Median** | Point estimate of the parameter |
-| **Credible Interval (HDI/ETI)** | Bayesian analog of a confidence interval |
-| **MAP (Maximum A Posteriori)** | Mode of the posterior — most likely parameter value |
-| **Posterior Predictive** | Distribution over future observations |
-
-### MCMC
-
-- Why exact posteriors are often intractable
-- Metropolis-Hastings: the foundational algorithm
-- Hamiltonian Monte Carlo (HMC) and NUTS: modern samplers
-- Diagnosing convergence: trace plots, R̂, ESS
-
-### Bayesian vs Frequentist
-
-Organized by key conceptual differences:
-
-| Dimension | Bayesian | Frequentist |
-| -------------------- | -------------------------------- | ------------------------------------ |
-| Probability means | Degree of belief | Long-run frequency |
-| Parameters are | Random variables with distributions | Fixed but unknown constants |
-| Prior knowledge | Formally incorporated | Not used |
-| Key output | Posterior distribution | p-value, confidence interval |
-
-## Visualization Quick Reference
-
-| Chart | Best For |
-| ------------------------------ | ----------------------------------------------------- |
-| Prior/Posterior overlay | Showing how data updates belief |
-| Trace plot | Diagnosing MCMC convergence |
-| Posterior density plot | Summarizing parameter uncertainty |
-| Credible interval plot | Communicating uncertainty around an estimate |
-| Posterior predictive check | Assessing model fit |
-
-## Tools Used in This Module
-
-| Library | Purpose |
-| ------------ | -------------------------------------------- |
-| `scipy.stats` | Prior/posterior distributions, Beta, Gamma |
-| `numpy` | Numerical computation, sampling |
-| `matplotlib` / `seaborn` | Visualization |
-| `pymc` | Probabilistic programming, MCMC |
-| `arviz` | MCMC diagnostics and posterior visualization |
-
-## Key Takeaway
-
-Bayesian statistics answers: "Given what I knew before and what I've just observed, what should I believe now — and how confident am I?" Always pair parameter estimates with their full posterior distribution. A single number without uncertainty is an incomplete Bayesian answer.
-
-## Deep-Study Priorities
-
-The most effective order is:
-
-1. prior / likelihood / posterior roles
-2. conjugate intuition
-3. posterior summaries and predictive checks
-4. MCMC after the modeling logic is clear
-
-Tip: Bayesian computation is much easier once Bayesian interpretation already feels natural.
+| 套件 | 用途 |
+| --- | --- |
+| `scipy.stats` | 共軛情況下的先驗 / 後驗（Beta、Gamma） |
+| `pymc` | 機率程式語言、MCMC |
+| `arviz` | 後驗摘要、收斂診斷、視覺化 |
+| `bambi` | 用公式語法寫貝氏迴歸（類似 `statsmodels` / `lme4`） |

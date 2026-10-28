@@ -1,289 +1,113 @@
-# Cox Proportional Hazards Model
+[Statistics](../README.md) › [存活分析](README.md) › Cox 模型
 
-The **Cox proportional hazards model** is the workhorse of survival analysis. It extends the KM/log-rank framework by allowing **multiple covariates** to be incorporated simultaneously, while making minimal distributional assumptions.
+# Cox 比例風險模型 (Cox Proportional Hazards Model)
 
-Key point: Why the Cox model is so important: It is a "semi-parametric" model - no assumptions are made about the form of the baseline risk (the non-parametric part), but a multiplicative structure (the parametric part) is assumed for the covariate effects. This flexibility makes it a default model for biomedicine, social sciences, and business survival analysis.
+存活分析的主力模型：在 KM / log-rank 之上，可**同時納入多個共變數**，分配假設又很少。它是**半參數 (semi-parametric)** 模型：基線風險的形狀不做假設（無母數部分），共變數效果假設為乘法結構（參數部分）。生醫、社會科學、商業存活分析的預設模型。
 
-## The Model
+$$
+h(t \mid \mathbf{x}) = \underbrace{h_0(t)}_{\text{共同的時間型態}} \cdot \underbrace{\exp(\beta_1 x_1 + \cdots + \beta_p x_p)}_{\text{個人相對基線的縮放}}
+$$
 
-The Cox model specifies how covariates multiplicatively scale the **baseline hazard** h₀(t):
+| 元素 | 意義 |
+| --- | --- |
+| h₀(t) 基線風險 (baseline hazard) | 所有共變數 = 0 時的風險；**不需估計、不指定形狀** |
+| exp(βₖ) **風險比 (hazard ratio, HR)** | xₖ 增加 1 單位、其他共變數固定時，風險的倍數 |
+| 比例風險假設 (proportional hazards, PH) | 任兩人的風險比**不隨時間改變**：$h(t \mid x_1)/h(t \mid x_2) = \exp(\beta^\top(x_1 - x_2))$ |
 
-\[
-h(t \mid \mathbf{x}) = h_0(t) \cdot \exp(\beta_1 x_1 + \beta_2 x_2 + \cdots + \beta_p x_p)
-\]
+係數以**部分概似 (partial likelihood)** 估計，只用到事件發生時風險集內誰發生事件的排序資訊。
 
-Where:
-- $h_0(t)$ = baseline hazard function — the hazard when all covariates are zero (never estimated; left unspecified)
-- $\exp(\beta_k)$ = **hazard ratio (HR)** for a one-unit increase in $x_k$, holding other covariates constant
-- The model is **semi-parametric**: no assumption about the shape of $h_0(t)$, but linearity + log scale for covariates
+## 解讀 Hazard Ratio
 
-**The proportional hazards assumption**: The ratio of hazards between any two subjects is **constant over time** — it doesn't depend on t.
+| HR | 意義 |
+| --- | --- |
+| 1.0 | 無關聯 |
+| 2.0 | 任一時點的瞬間風險為 2 倍 |
+| 0.5 | 瞬間風險減半（保護因子） |
+| 1.5 | 風險高 50% |
 
-\[
-\frac{h(t \mid \mathbf{x}_1)}{h(t \mid \mathbf{x}_2)} = \exp\left(\boldsymbol{\beta}^T (\mathbf{x}_1 - \mathbf{x}_2)\right) = \text{constant}
-\]
+> **HR 不是相對風險 (RR)，也不是 odds ratio**。它是**瞬間事件速率**的比值，不是累積機率的比值。HR = 2 不代表「整體發生事件的機率是 2 倍」，而是「在某一時刻仍處於風險中的人，事件發生速率是 2 倍」。絕對效果請搭配存活曲線、中位數或 RMST 報告，見 [結果解讀](interpretation.md)。
 
-## Interpreting the Hazard Ratio (HR)
-
-The **hazard ratio** is the core output of a Cox model:
-
-| HR Value | Interpretation |
-| ---------- | ---------------------------------------------------------------------- |
-| HR = 1.0 | No association — covariate does not affect the hazard |
-| HR = 2.0 | Twice the instantaneous risk of the event at any given time point |
-| HR = 0.5 | Half the instantaneous risk (protective factor) |
-| HR = 1.5 | 50% higher risk compared to the reference |
-
-Tip: HR is not a risk ratio or an odds ratio. It is a ratio of *instantaneous event rates*, not cumulative probabilities. A HR of 2.0 does not mean the event is twice as likely overall; it means that among people still at risk at a given moment, the event rate is twice as high.
-
-## Fitting the Cox Model in Python
-
-### Example
-
-```r
-library(survival)
-library(survminer)
-
-data(lung)
-cox_model <- coxph(Surv(time, status) ~ age + sex + ph.ecog, data = lung)
-summary(cox_model)
-# coef        → log hazard ratio (β)
-# exp(coef)   → hazard ratio (HR)
-# p-value     → significance of each covariate
-# Concordance → C-index (model discriminative ability)
-
-# Check proportional hazards assumption
-cox.zph(cox_model)
-
-# Visualize adjusted survival curves
-ggadjustedcurves(cox_model, data = lung, variable = "sex")
-
-# Forest plot of hazard ratios
-ggforest(cox_model, data = lung)
-```
-
-### Python Example
+## Python 範例
 
 ```python
+import pandas as pd
+import matplotlib.pyplot as plt
 from lifelines import CoxPHFitter
 from lifelines.datasets import load_rossi
-import pandas as pd
 
 rossi = load_rossi()
-
-# Select covariates and fit the Cox model
-cph = CoxPHFitter()
-cph.fit(
-    rossi,
-    duration_col='week',     # survival time column
-    event_col='arrest',      # event indicator column (1=event, 0=censored)
-    formula='fin + age + race + wexp + mar + paro + prio'
-)
-
+cph = CoxPHFitter().fit(rossi, duration_col="week", event_col="arrest",
+                        formula="fin + age + race + wexp + mar + paro + prio")
 cph.print_summary(decimals=3)
+cph.summary[["exp(coef)", "exp(coef) lower 95%", "exp(coef) upper 95%", "p"]]
+cph.concordance_index_                       # C-index（模型的區辨力）
+
+cph.plot(hazard_ratios=True)                 # 森林圖 (forest plot)
+plt.axvline(1, ls="--", color="gray"); plt.show()
+
+# 特定個人檔案的預測存活曲線
+profiles = pd.DataFrame({"fin": [1, 0], "age": 25, "race": 1, "wexp": 0, "mar": 0, "paro": 1, "prio": 3},
+                        index=["Aid", "No Aid"])
+cph.predict_survival_function(profiles).plot(); plt.show()
+cph.plot_partial_effects_on_outcome("prio", values=[0, 3, 8])   # 改變單一共變數的效果
 ```
 
-**Output (abridged):**
+| 共變數 | HR | p | 解讀（控制其他變數） |
+| --- | --- | --- | --- |
+| fin（經濟補助） | 0.685 | 0.044 | 有補助者再被捕風險低 31.5% |
+| age | 0.944 | 0.009 | 年齡每多 1 歲，風險低 5.6% |
+| prio（前科數） | 1.095 | 0.002 | 每多 1 次前科，風險高 9.5% |
 
-```
-<lifelines.CoxPHFitter: fitted with 432 total observations, 114 events>
+R 版本：
 
-         coef  exp(coef)  se(coef)  coef lower 95%  coef upper 95%  p
-fin    -0.379      0.685     0.191          -0.753          -0.005  0.044 *
-age    -0.057      0.944     0.022          -0.100          -0.014  0.009 **
-race    0.314      1.369     0.308          -0.290           0.918  0.309
-wexp   -0.150      0.861     0.212          -0.566           0.266  0.479
-mar    -0.434      0.648     0.382          -1.182           0.315  0.257
-paro   -0.085      0.918     0.196          -0.469           0.299  0.665
-prio    0.091      1.095     0.029           0.035           0.147  0.002 **
-```
-
-### Reading the Output
-
-```python
-# Extract and display hazard ratios with confidence intervals
-hr_table = cph.summary[['exp(coef)', 'exp(coef) lower 95%', 'exp(coef) upper 95%', 'p']].round(3)
-hr_table.columns = ['HR', 'CI Lower', 'CI Upper', 'p-value']
-print(hr_table)
+```r
+library(survival); library(survminer)
+m <- coxph(Surv(time, status) ~ age + sex + ph.ecog, data = lung)
+summary(m)        # coef = log HR、exp(coef) = HR、Concordance = C-index
+cox.zph(m)        # 比例風險檢定
+ggforest(m, data = lung)
 ```
 
-**Interpretation of key results:**
+## 共變數
 
-| Covariate | HR | Interpretation |
-| --------- | ----- | --------------------------------------------------------------- |
-| `fin` (financial aid) | 0.685 | Receiving aid is associated with 31.5% lower risk of rearrest |
-| `age` | 0.944 | Each additional year of age is associated with 5.6% lower risk |
-| `prio` | 1.095 | Each additional prior conviction increases risk by 9.5% |
-
-## Visualizing the Cox Model
-
-### Forest Plot (Hazard Ratios)
-
-```python
-cph.plot(hazard_ratios=True)
-plt.axvline(1.0, color='gray', linestyle='--', linewidth=1)
-plt.title('Hazard Ratios with 95% CI — Cox Model')
-plt.tight_layout()
-plt.show()
-```
-
-### Predicted Survival Curves for Specific Profiles
-
-```python
-# Create two hypothetical subject profiles
-profiles = pd.DataFrame({
-    'fin':  [1, 0],     # with vs. without financial aid
-    'age':  [25, 25],
-    'race': [1, 1],
-    'wexp': [0, 0],
-    'mar':  [0, 0],
-    'paro': [1, 1],
-    'prio': [3, 3]
-}, index=['Aid', 'No Aid'])
-
-fig, ax = plt.subplots(figsize=(8, 5))
-cph.predict_survival_function(profiles).plot(ax=ax)
-
-ax.set_xlabel('Weeks')
-ax.set_ylabel('S(t)')
-ax.set_title('Predicted Survival: Aid vs. No Aid\n(age=25, prio=3, all else equal)')
-ax.grid(alpha=0.3)
-plt.tight_layout()
-plt.show()
-```
-
-## Categorical and Continuous Covariates
-
-### Categorical Variables
-
-Use dummy coding (one-hot encoding) with a reference category. `lifelines` handles this automatically with the `formula` argument using Patsy syntax.
-
-```python
-# Explicitly setting reference category with Patsy
-cph_cat = CoxPHFitter()
-cph_cat.fit(
-    rossi,
-    duration_col='week',
-    event_col='arrest',
-    formula='fin + age + C(race, Treatment(reference=0)) + prio'
-)
-cph_cat.print_summary(decimals=3)
-```
-
-### Continuous Variables: Checking Linearity
-
-The Cox model assumes a **log-linear** relationship between continuous covariates and the log-hazard. Use **martingale residuals** to check this.
-
-```python
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Martingale residuals vs. continuous covariate
-residuals = cph.compute_residuals(rossi, kind='martingale')
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-
-for ax, col in zip(axes, ['age', 'prio']):
-    ax.scatter(rossi[col], residuals['martingale'], alpha=0.4, s=20)
-    # Add lowess smoother
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    smoothed = lowess(residuals['martingale'], rossi[col], frac=0.4)
-    ax.plot(smoothed[:, 0], smoothed[:, 1], color='red', linewidth=2)
-    ax.axhline(0, color='gray', linestyle='--', linewidth=1)
-    ax.set_xlabel(col)
-    ax.set_ylabel('Martingale Residual')
-    ax.set_title(f'Linearity Check: {col}')
-    ax.grid(alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-```
-
-Tip: If the LOWESS smoother is roughly flat around zero, the log-linear assumption holds. A curved smoother suggests the variable needs transformation (e.g., log, squared term) or spline modeling.
-
-## Time-Dependent Covariates
-
-Standard Cox models assume covariates are fixed at baseline. When a covariate changes over time (e.g., a patient's lab values, employment status), it must be modeled as **time-dependent**.
-
-```python
-from lifelines.utils import to_long_format, add_covariate_to_timeline
-
-# Time-dependent covariates require "long format" with (start, stop, event) per row
-# Each subject may have multiple rows representing intervals of covariate values
-
-# Example: measuring cholesterol at different time points
-base = pd.DataFrame({
-    'id':       [1, 2, 3],
-    'start':    [0, 0, 0],
-    'stop':     [10, 8, 15],
-    'event':    [1, 0, 1],
-    'age':      [50, 45, 60],
-})
-
-# In long format, start/stop defines each interval
-cph_td = CoxPHFitter()
-cph_td.fit(
-    base,
-    duration_col='stop',
-    event_col='event',
-    entry_col='start',    # left-truncation / start of risk interval
-    formula='age'
-)
-```
-
-Warning: Immortal time bias: If a time-dependent covariate is coded incorrectly (e.g., a treatment received at week 10 is incorrectly attributed to the period before week 10), the model gives biased estimates. Always use (start, stop) intervals and ensure covariate values ​​only apply to the correct time intervals. Immortal time bias is one of the most common errors in time-dependent covariates and can make protective factors appear to be overestimated.
-
-## Stratified Cox Model
-
-When a covariate violates the proportional hazards assumption, one solution is to **stratify** on it. This allows each stratum to have its own baseline hazard while sharing the same covariate coefficients.
-
-```python
-# Stratify on race (allows different baseline hazards by race)
-cph_strat = CoxPHFitter()
-cph_strat.fit(
-    rossi,
-    duration_col='week',
-    event_col='arrest',
-    formula='fin + age + wexp + mar + paro + prio',
-    strata=['race']      # race gets its own baseline hazard
-)
-
-cph_strat.print_summary(decimals=3)
-print(f"\nNote: 'race' is now a stratification variable — no HR is estimated for it.")
-```
-
-Tip: Stratification removes the stratifying variable from the model as a covariate — you cannot estimate its HR anymore. Use stratification when you need to control for a covariate's confounding effect but don't need to estimate its association. The stratified variable no longer has an HR output. Use a stratified strategy only if you do not need to estimate the effect of the variable but only need to control for its confounding.
-
-## Model Extensions
-
-Beyond the standard Cox model, several extensions handle more complex settings:
-
-| Extension | Purpose |
+| 類型 | 做法 |
 | --- | --- |
-| **Penalized Cox (LASSO / Ridge)** | Handle high-dimensional covariates (e.g., genomics); LASSO performs variable selection by shrinking coefficients to zero, Ridge shrinks without elimination |
-| **Multistate Cox models** | Model transitions between multiple states (e.g., healthy → disease → death) |
-| **Competing risks (Fine-Gray)** | Model cause-specific events when multiple event types are possible |
-| **Frailty models** | Account for unobserved heterogeneity or clustered data (random effects for Cox) |
+| 類別 | 虛擬編碼，指定參考組：`formula="C(race, Treatment(reference=0)) + ..."` |
+| 連續 | 假設與 log-hazard **線性**；用 **martingale 殘差** vs 共變數 + LOWESS 檢查，曲線 → log、平方項或樣條 |
+| 時間相依 (time-dependent) | 共變數會隨時間改變（檢驗值、是否已開始治療）→ 長格式 (start, stop, event)，用 `CoxTimeVaryingFitter` |
 
-## Key Takeaways
+```python
+from lifelines import CoxTimeVaryingFitter
 
-| Concept | Key Point |
-| ---------------------------- | ----------------------------------------------------------------------------- |
-| **Semi-parametric** | Baseline hazard is unspecified; only covariate effects are estimated |
-| **Hazard ratio (HR)** | exp(β); HR > 1 increases risk, HR < 1 is protective |
-| **HR is not a risk ratio** | It is a ratio of instantaneous rates; interpretation requires care |
-| **Proportional hazards** | The key assumption: HR is constant over time and must be checked with diagnostics |
-| **Martingale residuals** | Diagnose non-linearity in continuous covariates |
-| **Time-dependent covariates** | Use (start, stop) long format; beware immortal time bias |
-| **Stratified Cox** | Controls for PH violations without estimating the stratifying variable's HR |
+# 長格式：同一人可有多列，每列是一段共變數固定的區間
+long = pd.DataFrame({"id": [1, 1, 2], "start": [0, 10, 0], "stop": [10, 25, 8],
+                     "treated": [0, 1, 0], "event": [0, 1, 0]})
+CoxTimeVaryingFitter().fit(long, id_col="id", start_col="start", stop_col="stop", event_col="event")
+```
 
-## Baseline Hazard vs. Covariate Effects
+> **不朽時間偏誤 (immortal time bias)**：第 10 週才開始的治療，不能被算到第 0–10 週的區間。共變數只能套用到正確的時間區間，否則保護效果會被高估。見 [核心概念](core-concepts.md#常見錯誤)。
 
-The Cox model separates:
+## 分層 Cox 模型 (Stratified Cox)
 
-| Part | What it captures |
-| ---- | ---------------- |
-| `h0(t)` | The shared time pattern of risk |
-| `exp(beta x)` | How each subject's risk is scaled relative to that baseline |
+某個共變數違反 PH 時，可以**依它分層**：每層有自己的基線風險，但共享其他共變數的係數。
 
-Tip: This separation is why Cox can stay flexible about time shape while still giving interpretable hazard ratios.
+```python
+cph_strat = CoxPHFitter().fit(rossi, duration_col="week", event_col="arrest",
+                              formula="fin + age + wexp + mar + paro + prio", strata=["race"])
+```
+
+分層變數**不再有 HR**。只有在需要控制它的干擾、但不需要估計它的效果時才用。
+
+## 延伸模型
+
+| 延伸 | 用途 |
+| --- | --- |
+| **懲罰 Cox (Lasso / Ridge / Elastic Net)** | 高維共變數（基因表現、多基因風險分數）；`CoxPHFitter(penalizer=0.1, l1_ratio=1.0)`、R `glmnet(family = "cox")` |
+| 多狀態模型 (multistate) | 狀態轉移（健康 → 疾病 → 死亡） |
+| 競爭風險 (Fine-Gray) | 多種互斥事件，見 [競爭風險](core-concepts.md#競爭風險-competing-risks) |
+| 脆弱模型 (frailty) | 群集資料或未觀察的異質性（Cox 的隨機效應版本，類似 [混合效應模型](../regression-analysis/mixed-effects-models.md)） |
+| 機器學習存活模型 | Random survival forest、gradient boosting survival（`scikit-survival`） |
+
+> 生資應用：從基因表現建立預後模型時，常見流程是單變數 Cox 篩選 → Lasso-Cox 選基因 → 計算風險分數 → 以中位數分高 / 低風險組畫 KM + log-rank。注意：在**同一份資料**上選基因又評估會嚴重高估表現，必須用獨立驗證世代或交叉驗證，見 [模型診斷](diagnostics.md#校準與驗證)。
+
+下一步：檢查 PH 假設與其他診斷，見 [模型診斷](diagnostics.md)。

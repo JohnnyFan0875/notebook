@@ -1,407 +1,151 @@
-# Simple Linear Regression
+[Statistics](../README.md) › [迴歸分析](README.md) › 簡單線性迴歸
 
-Simple linear regression models the relationship between **one predictor variable (X)** and **one continuous outcome variable (Y)** using a straight line. It is the foundation of all regression methods.
+# 簡單線性迴歸 (Simple Linear Regression)
 
-Key point: Precondition: Before establishing a regression model, please use a scatter plot to confirm that there is indeed a linear trend between X and Y. Blindly applying linear regression to nonlinear relationships will yield biased results.
+用一條直線描述**一個預測變數 X** 與**一個連續結果 Y** 的關係，是所有迴歸方法的基礎。建模前先用散布圖確認確實有線性趨勢。
 
-## The Regression Equation
+$$
+Y = \beta_0 + \beta_1 X + \varepsilon, \qquad \hat{Y} = \hat\beta_0 + \hat\beta_1 X
+$$
 
-\[
-Y = \beta_0 + \beta_1 X + \varepsilon
-\]
+| 符號 | 意義 |
+| --- | --- |
+| Y | 結果 / 反應變數 (response) |
+| X | 預測 / 解釋變數 (predictor) |
+| β₀ 截距 (intercept) | X = 0 時 Y 的預測值（常無實際意義） |
+| β₁ 斜率 (slope) | X 增加 1 單位，Y **平均**改變多少 |
+| ε 誤差 (error) | X 無法解釋的部分；樣本中的估計值稱為殘差 (residual) |
 
-| Symbol | Meaning |
-| ----------- | ---------------------------------------------------------------- |
-| $Y$ | Outcome / response variable (what you're predicting) |
-| $X$ | Predictor / explanatory variable |
-| $\beta_0$ | Intercept — predicted value of Y when X = 0 |
-| $\beta_1$ | Slope — how much Y changes for a one-unit increase in X |
-| $\varepsilon$ | Residual / error — the part of Y not explained by X |
+> **「線性」是指對參數線性**，不是 X 與 Y 一定是直線。$Y = \beta_0 + \beta_1 X + \beta_2 X^2$ 仍是線性模型；$Y = \beta_0 + e^{\beta_1 X}$ 則不是。所以多項式、log 轉換後的特徵都能用線性模型的工具。
 
-The fitted (predicted) values drop the error term:
+## 最小平方法 (Ordinary Least Squares, OLS)
 
-\[
-\hat{Y} = \hat{\beta}_0 + \hat{\beta}_1 X
-\]
+找出讓**殘差平方和**最小的直線：
 
-## Interview Fast Answer
+$$
+\min \sum (Y_i - \hat{Y}_i)^2
+\quad\Rightarrow\quad
+\hat\beta_1 = \frac{\sum (X_i-\bar{X})(Y_i-\bar{Y})}{\sum (X_i-\bar{X})^2} = r \cdot \frac{s_Y}{s_X}, \qquad
+\hat\beta_0 = \bar{Y} - \hat\beta_1 \bar{X}
+$$
 
-如果面試官問 linear regression 是什麼，通常不需要一開始就展開 OLS 推導。
+- 斜率與 [Pearson r](../descriptive-statistics/bivariate.md) 直接相關：r = 0 → 斜率 = 0。
+- 誤差為常態時，OLS = [最大概似估計](../probability-and-distributions/maximum-likelihood.md)，也就是 ML 的 **MSE loss**。
 
-先講到這個程度通常就夠高訊號：
-
-- linear regression 用一條線描述 `X` 和連續型 `Y` 的關係
-- `β₁` 表示 `X` 每增加一單位，`Y` 平均改變多少
-- 它回答的是 association / prediction，不自動代表 causation
-
-常見追問則是：
-
-- assumptions 有哪些
-- `R²` 在說什麼
-- 係數的正負與大小怎麼解讀
-
-## What "Linear" Actually Means
-
-In regression, **linear** means **linear in the parameters** (`\beta_0`, `\beta_1`, ...), not necessarily that the raw input-output relationship always looks like a perfect straight line before any feature engineering.
-
-These are still linear models:
-
-\[
-Y = \beta_0 + \beta_1 X + \varepsilon
-\]
-
-\[
-Y = \beta_0 + \beta_1 X + \beta_2 X^2 + \varepsilon
-\]
-
-because the coefficients enter additively and are not multiplied by each other.
-
-This is **not** linear in the parameters:
-
-\[
-Y = \beta_0 + e^{\beta_1 X}
-\]
-
-because the coefficient is inside a nonlinear transformation.
-
-Key point: A polynomial regression can still belong to the linear-model family if it is linear in the coefficients. This matters because many linear-model tools and interpretations extend to transformed features.
-
-## Ordinary Least Squares (OLS)
-
-OLS finds the line that **minimizes the sum of squared residuals (SSR)**:
-
-\[
-\text{SSR} = \sum_{i=1}^{n} (Y_i - \hat{Y}_i)^2
-\]
-
-Intuitively: for every data point, compute the vertical distance between the actual value and the line. Square each distance (to penalize large errors and remove sign), then minimize the total.
-
-The closed-form solutions are:
-
-\[
-\hat{\beta}_1 = \frac{\sum(X_i - \bar{X})(Y_i - \bar{Y})}{\sum(X_i - \bar{X})^2} = r \cdot \frac{S_Y}{S_X}
-\]
-
-\[
-\hat{\beta}_0 = \bar{Y} - \hat{\beta}_1 \bar{X}
-\]
-
-Tip: The slope is directly related to the Pearson correlation coefficient r. If r = 0, the slope is also 0 — meaning X provides no linear predictive value.
-
-## Python Implementation
+## Python 範例
 
 ```python
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import statsmodels.formula.api as smf
 from sklearn.datasets import load_iris
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_squared_error
-import statsmodels.formula.api as smf
 
-# Load data
-iris = load_iris(as_frame=True)
-df = iris.frame
-df.columns = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'target']
+df = load_iris(as_frame=True).frame
+df.columns = ["sepal_length", "sepal_width", "petal_length", "petal_width", "target"]
 
-# ── Method 1: statsmodels (gives full statistical output) ──
-model = smf.ols('petal_length ~ sepal_length', data=df).fit()
-print(model.summary())
+# statsmodels：完整統計推論（SE、t、p、CI）
+model = smf.ols("petal_length ~ sepal_length", data=df).fit()
+model.summary()
+model.params, model.conf_int(), model.rsquared
 
-# ── Method 2: scikit-learn (machine learning workflow) ──
-X = df[['sepal_length']]
-y = df['petal_length']
-
-lr = LinearRegression()
-lr.fit(X, y)
-
-print(f"Intercept (β₀): {lr.intercept_:.4f}")
-print(f"Slope (β₁):     {lr.coef_[0]:.4f}")
-print(f"R²:             {lr.score(X, y):.4f}")
+# scikit-learn：ML 工作流程（只有係數，沒有 p 值）
+lr = LinearRegression().fit(df[["sepal_length"]], df["petal_length"])
+lr.intercept_, lr.coef_, lr.score(df[["sepal_length"]], df["petal_length"])
 ```
 
-**Key output from `model.summary()`:**
+| 項目 | 值 | 解讀 |
+| --- | --- | --- |
+| Intercept | −7.101 | 花萼長 0 cm 時的預測值（不合理，不解讀） |
+| sepal_length | 1.858 | 花萼每長 1 cm，花瓣平均長 1.858 cm |
+| R² | 0.760 | 花瓣長度 76% 的變異可由花萼長度解釋 |
+| p-value | < 0.001 | 斜率顯著不為 0 |
 
-| Term | Value | Interpretation |
-| ----------- | ------ | ----------------------------------------------- |
-| Intercept | −7.101 | Predicted petal length when sepal length = 0 cm (not meaningful here) |
-| sepal_length | 1.858 | For every 1 cm increase in sepal length, petal length increases by 1.858 cm |
-| R² | 0.760 | 76% of variation in petal length is explained by sepal length |
-| p-value | < 0.001 | The slope is statistically significant |
+> 「與…有關 (associated with)」≠「造成 (causes)」。
 
-## Interpreting the Coefficients
+## 模型配適
 
-### Intercept (β₀)
+$$
+R^2 = 1 - \frac{SS_{res}}{SS_{tot}} = 1 - \frac{\sum (Y_i-\hat{Y}_i)^2}{\sum (Y_i-\bar{Y})^2}
+$$
 
-The predicted value of Y when X = 0. This is often **not meaningful in practice** (e.g., a sepal length of 0 cm is impossible). Focus on the slope instead.
+| 指標 | 意義 |
+| --- | --- |
+| R² | Y 的變異中被模型解釋的比例；簡單迴歸中 R² = r² |
+| 殘差標準誤 (residual standard error, σ̂) | 典型的預測誤差大小，**單位與 Y 相同**（≈ RMSE） |
 
-### Slope (β₁)
+R² 的參考：物理科學常 > 0.7，社會 / 生物科學 0.3–0.6 很常見。R² = 1 在真實資料中通常是 bug 或資料洩漏。
 
-- **Positive slope** (β₁ > 0): Y increases as X increases
-- **Negative slope** (β₁ < 0): Y decreases as X increases
-- **Magnitude**: a one-unit increase in X is associated with a β₁-unit change in Y, **all else equal**
+> R² 只描述解釋比例，不告訴你假設是否成立。兩個模型 R² 相近，實際誤差大小（σ̂）可能差很多。
 
-Warning: "Associated with" ≠ "causes". Regression quantifies association, not causation.
+## 假設：LINE（針對殘差）
 
-## Model Fit: R²
-
-\[
-R^2 = 1 - \frac{\text{SSR}}{\text{SST}} = 1 - \frac{\sum(Y_i - \hat{Y}_i)^2}{\sum(Y_i - \bar{Y})^2}
-\]
-
-| Component | Meaning |
-| --------- | ----------------------------------------- |
-| SST | Total variation in Y around its mean |
-| SSR | Variation in Y **not** explained by X |
-| SSM | Variation in Y explained by X = SST − SSR |
-
-| R² Range | Interpretation |
-| --------- | ---------------------------------------- |
-| 1.0 | Perfect fit (should be suspicious in real data) |
-| 0.7–0.9 | Strong fit (common in physical sciences) |
-| 0.4–0.6 | Moderate fit (common in social sciences) |
-| < 0.3 | Weak fit — X explains little of Y |
-| 0.0 | X provides no linear predictive value |
-
-Tip: R² tells you proportion of variance explained — it does not tell you if the model assumptions are met or if the model is appropriate. A perfect R² with assumption violations is worthless.
-
-### Interview Prompt: How Do You Explain R-squared?
-
-一個很穩的短答可以是：
-
-- `R²` 是模型解釋了多少 `Y` 的變異
-- 它是 fit 指標，不是因果強度指標
-- `R²` 高不代表模型就合理，還要看 residual diagnostics 和外部驗證
-
-## Assumptions of Linear Regression
-
-These assumptions apply to the **residuals** (ε), not the raw data.
-
-| Assumption | How to Check |
-| ----------------------- | --------------------------------- |
-| **Linearity** | Scatter plot of X vs Y; Residuals vs Fitted plot |
-| **Independence** | Study design; Durbin-Watson test |
-| **Homoscedasticity** | Residuals vs Fitted — should show no funnel shape |
-| **Normality of residuals** | Q–Q plot; Shapiro-Wilk test |
-| **No influential outliers** | Cook's Distance; leverage plots |
-
-Key point: Mnemonic: LINE (Linearity, Independence, Normality, Equal variance)
-
-## Common Interview Traps
-
-- 把 regression coefficient 解讀成 causation
-- 只報 `R²`，不檢查 residual pattern
-- 說 assumptions 是對 `X` 或 `Y` 原始值本身，而不是對 residuals
-- 以為 p-value 小就代表模型一定好用
-
-## Diagnostic Plots
+| 假設 | 檢查 | 違反的後果 |
+| --- | --- | --- |
+| **L**inearity 線性 | 殘差 vs 配適值圖無曲線 | 係數有偏 |
+| **I**ndependence 獨立 | 研究設計、Durbin-Watson | SE 失準、p 值太小 |
+| **N**ormality 殘差常態 | 殘差 Q–Q 圖 | 小樣本時 CI / p 值失準（大樣本影響小） |
+| **E**qual variance 等變異 | 殘差 vs 配適值圖無漏斗形 | SE 失準 → 用 robust SE（`cov_type="HC3"`） |
 
 ```python
 import matplotlib.pyplot as plt
+import scipy.stats as stats
 import numpy as np
-from scipy import stats
-import statsmodels.formula.api as smf
 
-model = smf.ols('petal_length ~ sepal_length', data=df).fit()
-
-fitted  = model.fittedvalues
-residuals = model.resid
-std_resid = (residuals - residuals.mean()) / residuals.std()
-
-fig, axes = plt.subplots(2, 2, figsize=(12, 9))
-
-# 1. Residuals vs Fitted
-axes[0, 0].scatter(fitted, residuals, alpha=0.5)
-axes[0, 0].axhline(0, color='red', linestyle='--')
-axes[0, 0].set_xlabel('Fitted Values')
-axes[0, 0].set_ylabel('Residuals')
-axes[0, 0].set_title('Residuals vs Fitted')
-
-# 2. Q–Q plot
-stats.probplot(residuals, dist='norm', plot=axes[0, 1])
-axes[0, 1].set_title('Q–Q Plot of Residuals')
-
-# 3. Scale-Location (homoscedasticity check)
-axes[1, 0].scatter(fitted, np.sqrt(np.abs(std_resid)), alpha=0.5)
-axes[1, 0].set_xlabel('Fitted Values')
-axes[1, 0].set_ylabel('√|Standardized Residuals|')
-axes[1, 0].set_title('Scale-Location')
-
-# 4. Histogram of residuals
-axes[1, 1].hist(residuals, bins=20, edgecolor='black', color='steelblue')
-axes[1, 1].set_xlabel('Residuals')
-axes[1, 1].set_title('Distribution of Residuals')
-
-plt.tight_layout()
-plt.show()
+fitted, resid = model.fittedvalues, model.resid
+fig, ax = plt.subplots(1, 3, figsize=(15, 4))
+ax[0].scatter(fitted, resid, alpha=0.5); ax[0].axhline(0, color="red", ls="--")
+ax[0].set_title("Residuals vs Fitted")                       # 曲線 → 非線性；漏斗 → 變異不等
+stats.probplot(resid, dist="norm", plot=ax[1])                # 偏離對角線 → 非常態
+ax[2].scatter(fitted, np.sqrt(np.abs(model.get_influence().resid_studentized_internal)), alpha=0.5)
+ax[2].set_title("Scale-Location")                             # 上升趨勢 → 變異隨配適值增加
+plt.tight_layout(); plt.show()
 ```
 
-### Reading the Diagnostic Plots
+## 信賴區間 vs 預測區間
 
-| Plot | Good Sign | Warning Sign |
-| ---------------------- | --------------------------------- | ------------------------------------- |
-| **Residuals vs Fitted** | Random scatter around 0 | Curved pattern (non-linearity); funnel shape (heteroscedasticity) |
-| **Q–Q Plot** | Points fall on the diagonal line | Heavy tails or S-curve (non-normality) |
-| **Scale-Location** | Flat horizontal band | Upward/downward trend (unequal variance) |
-| **Residuals Histogram** | Approximately bell-shaped | Skewed; multiple peaks |
+| 區間 | 回答 | 寬度 |
+| --- | --- | --- |
+| 平均數的信賴區間 (CI for the mean) | 在這個 X，**迴歸線（平均 Y）**在哪？ | 窄 |
+| 預測區間 (prediction interval) | 在這個 X，**一個新個體**的 Y 會落在哪？ | 寬（多了個體雜訊） |
 
-## Visualization: Regression Line
+![CI vs PI](src/simple-linear-regression-ci-vs-pi.png)
+
+兩條帶子都在 X 平均處最窄、往兩端變寬；即使 n → ∞，CI 會縮到迴歸線上，PI 仍至少有 ±1.96σ 寬。
 
 ```python
-import seaborn as sns
-
-sns.regplot(
-    x='sepal_length',
-    y='petal_length',
-    data=df,
-    scatter_kws={'alpha': 0.5},
-    line_kws={'color': 'red'}
-)
-plt.title(f'Simple Linear Regression  (R² = {model.rsquared:.3f})')
-plt.xlabel('Sepal Length (cm)')
-plt.ylabel('Petal Length (cm)')
-plt.show()
+new = pd.DataFrame({"sepal_length": [5.0, 6.0, 7.0]})
+model.get_prediction(new).summary_frame(alpha=0.05)
+# mean, mean_ci_lower/upper（CI）, obs_ci_lower/upper（PI）
 ```
 
-Tip: The shaded band around the regression line is the 95% confidence interval for the mean prediction. A wider band indicates more uncertainty — usually at the extremes of X.
+> 預測個體結果時，預測區間才是誠實的不確定性。**不要外插 (extrapolation)**：X 超出訓練資料範圍時預測不可信。
 
-## Confidence Interval vs. Prediction Interval
+## 影響點 (Influence)
 
-These are related but not interchangeable:
+| 概念 | 意義 |
+| --- | --- |
+| 槓桿 (leverage) | X 值不尋常 |
+| 影響力 (influence) | 移除這點後迴歸線明顯改變（Cook's distance） |
 
-| Interval | Answers |
-| -------- | ------- |
-| **Confidence interval for the mean** | Where is the true regression line likely to be at this X? |
-| **Prediction interval** | Where is a new individual observation likely to fall at this X? |
+高槓桿本身不一定是問題；高槓桿 + 大殘差才會把線拉走。
 
-Prediction intervals are always wider because they include both:
-
-1. uncertainty about the fitted line
-2. irreducible observation-level noise
+![Leverage vs influence](src/simple-linear-regression-leverage-influence.png)
 
 ```python
-new_data = pd.DataFrame({'sepal_length': [5.0, 6.0, 7.0]})
-pred_frame = model.get_prediction(new_data).summary_frame(alpha=0.05)
-
-print(pred_frame[[
-    'mean',
-    'mean_ci_lower', 'mean_ci_upper',
-    'obs_ci_lower',  'obs_ci_upper'
-]].round(3))
+infl = model.get_influence().summary_frame()
+infl[["hat_diag", "cooks_d"]].sort_values("cooks_d", ascending=False).head()
 ```
 
-Tip: If the model will be used for forecasting individual outcomes, the prediction interval is usually the more honest quantity to communicate.
+## 趨中迴歸 (Regression to the Mean)
 
-## Making Predictions
+極端的觀測值常含較大的隨機成分，再量一次時會自然往平均靠攏，**即使沒有任何介入**。例如挑出血壓最高的病人，下次量測平均會下降。不要把這種改善誤認為處理效果，需要 [對照組](../experimental-design/principles.md)。
 
-```python
-# Predict petal length for new sepal lengths
-new_data = pd.DataFrame({'sepal_length': [5.0, 6.0, 7.0]})
-predictions = model.predict(new_data)
+## R 對照
 
-for sl, pl in zip(new_data['sepal_length'], predictions):
-    print(f"Sepal length = {sl} cm → Predicted petal length = {pl:.2f} cm")
-```
+| 功能 | R |
+| --- | --- |
+| 配適 | `lm(y ~ x, data = df)` |
+| 新資料預測 / 訓練資料配適值 / 殘差 | `predict(m, newdata)` / `fitted(m)` / `residuals(m)` |
+| 整潔輸出 | `broom::tidy(m)`（係數）、`glance(m)`（R²、σ、AIC）、`augment(m)`（每列 .fitted、.resid、.cooksd） |
 
-Warning: Extrapolation warning: Do not use the model to predict Y for X values ​​far outside the range of your training data.
-
-## R Workflow: `lm()`, `predict()`, `fitted()`, `residuals()`
-
-If you are working in R, the basic simple-regression workflow is compact and very teachable:
-
-```r
-mdl_mass_vs_length <- lm(mass_g ~ length_cm, data = bream)
-
-predict(mdl_mass_vs_length, newdata = explanatory_data)
-fitted(mdl_mass_vs_length)
-residuals(mdl_mass_vs_length)
-```
-
-Useful mental model:
-
-- `predict()`: predictions for new rows
-- `fitted()`: predictions for the original training rows
-- `residuals()`: observed minus fitted on the training rows
-
-This identity is worth remembering:
-
-```text
-response = fitted value + residual
-```
-
-In other words, the model splits each observed value into:
-
-- the part explained by the line
-- the leftover part the line did not explain
-
-## R Workflow: `broom`
-
-`summary(lm_object)` is useful, but `broom` becomes more practical once you want tidy outputs that can be piped or joined.
-
-```r
-library(broom)
-
-tidy(mdl_mass_vs_length)
-glance(mdl_mass_vs_length)
-augment(mdl_mass_vs_length)
-```
-
-Typical roles:
-
-- `tidy()`: coefficient table
-- `glance()`: one-row model summary such as `r.squared`, `adj.r.squared`, `sigma`, `AIC`, `BIC`
-- `augment()`: row-level diagnostics like `.fitted`, `.resid`, `.cooksd`, `.std.resid`
-
-This is often the cleanest R-native bridge between "fit a model" and "analyze the model output as data".
-
-## Residual Standard Error in Practice
-
-R reports the residual scale in `summary(lm_object)` as the residual standard error, and `broom::glance()` exposes the same idea through `sigma`.
-
-Key point: `R²` tells you explained variance, while residual standard error tells you the typical size of the leftover error in the outcome's original units.
-
-That distinction matters because two models can have similar `R²`, but very different practical error magnitudes depending on the scale of Y.
-
-## Regression to the Mean
-
-The course material is also a good reminder that the phrase "regression" historically points to **regression to the mean**, not only to fitting lines.
-
-Core idea:
-
-- extreme observations often contain a large random component
-- when measured again, they tend to move closer to the average
-- that movement can happen even without any intervention
-
-Warning: Do not confuse an apparent improvement after an extreme baseline with a real treatment effect. Sometimes you are only seeing regression to the mean.
-
-## Influence and Leverage
-
-Not all observations affect the regression line equally.
-
-| Concept | Meaning |
-| ------- | ------- |
-| **Leverage** | An observation has an unusual X value |
-| **Influence** | Removing the observation would noticeably change the fitted model |
-
-High leverage is not automatically bad. It becomes a problem when a high-leverage point also has a large residual and ends up pulling the regression line disproportionately.
-
-```python
-influence = model.get_influence()
-influence_frame = influence.summary_frame()
-
-print(influence_frame[['hat_diag', 'cooks_d']].head())
-```
-
-Tip: A good diagnostic workflow is: first look at residual plots, then inspect leverage and Cook's distance for points that may be driving the fit.
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| **OLS goal** | Minimize sum of squared residuals — finds the best-fit line |
-| **Slope interpretation** | One-unit increase in X → β₁-unit change in Y (holding everything else constant) |
-| **R²** | Proportion of variance in Y explained by X — higher is better, but context matters |
-| **Assumptions** | Check residual plots AFTER fitting — assumptions apply to residuals, not raw data |
-| **Extrapolation** | Never predict beyond the range of your observed data |
-| **Causation** | Regression ≠ causation — association only |
+> 觀測值 = 配適值 + 殘差 (response = fitted + residual)。

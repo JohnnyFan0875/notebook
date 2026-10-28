@@ -1,216 +1,77 @@
-# Decomposition
+[Statistics](../README.md) › [時間序列](README.md) › 分解
 
-**Decomposition** separates a time series into its structural components — trend, seasonality, and residual — so that each can be analyzed, modeled, or visualized independently. It is one of the most powerful tools for understanding _why_ a series behaves the way it does.
+# 時間序列分解 (Decomposition)
 
-Key point: Why decompose first: Directly modeling sequences containing trends and seasonality is equivalent to allowing the model to learn multiple patterns of different properties at the same time. Decomposing it first allows you to identify which components the model needs to handle and makes it easier to spot anomalies or structural changes in the data.
+把序列拆成**趨勢、季節、殘差**，看出模型還需要處理哪些結構，也更容易發現異常或結構改變。分解是描述性的，不保證能產生好的預測。
 
-## Additive vs Multiplicative Decomposition
+## 加法 vs 乘法
 
-The choice between these two models depends on how the seasonal variation behaves as the overall level changes.
+| 模型 | 公式 | 何時用 |
+| --- | --- | --- |
+| 加法 (additive) | Yₜ = Tₜ + Sₜ + Rₜ | 季節振幅**固定** |
+| 乘法 (multiplicative) | Yₜ = Tₜ × Sₜ × Rₜ | 季節振幅隨水準**等比例變大**（喇叭形） |
 
-| Model              | Formula           | When to Use                                            |
-| ------------------ | ----------------- | ------------------------------------------------------ |
-| **Additive**       | Yₜ = Tₜ + Sₜ + Rₜ | Seasonal amplitude is **constant** regardless of level |
-| **Multiplicative** | Yₜ = Tₜ × Sₜ × Rₜ | Seasonal amplitude **grows proportionally** with level |
+取 log 可把乘法轉成加法：log Y = log T + log S + log R，所以常先 log 再做加法分解。
 
-Tip: Quick visual check: Plot the raw series. If the peaks and troughs get larger as the overall level rises (like a megaphone shape), use multiplicative. If they stay roughly the same height throughout, use additive.
+## Classical vs STL
 
-Tip: Log trick: A multiplicative model can always be converted to an additive model by taking the log: log(Y) = log(T) + log(S) + log(R). This is why log-transforming before additive decomposition is so common.
-
-## Classical Decomposition
-
-The classical method uses **centered moving averages** to estimate the trend, then separates out the seasonal component.
-
-<details>
-
-<summary>Show STL decomposition script</summary>
+| | Classical（移動平均） | **STL**（Seasonal-Trend decomposition using LOESS） |
+| --- | --- | --- |
+| 端點的趨勢 | 缺失（前後 m/2 期為 NaN） | 有 |
+| 季節型態 | 固定不變 | 可隨時間演變 |
+| 對離群值 | 敏感 | `robust=True` 可降低影響 |
+| 多重季節性 | 不行 | 不行（用 **MSTL**） |
+| 乘法 | 直接支援 | 先取 log |
+| 建議 | 快速探索、教學 | **實務預設** |
 
 ```python
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import statsmodels.api as sm
-from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.seasonal import seasonal_decompose, STL
 
-# Load a built-in dataset from statsmodels
-co2 = sm.datasets.co2.load_pandas().data['co2']
-series = co2.resample('MS').mean().interpolate()
+series = sm.datasets.co2.load_pandas().data["co2"].resample("MS").mean().interpolate()
 
-# Additive decomposition
-result_add = seasonal_decompose(series, model='additive', period=12)
+classical = seasonal_decompose(series, model="additive", period=12)
+classical.plot()
 
-# Multiplicative decomposition
-result_mul = seasonal_decompose(series, model='multiplicative', period=12)
+res = STL(series, period=12, robust=True).fit()
+res.plot()                                  # observed / trend / seasonal / resid
 
-# Plot additive
-fig, axes = plt.subplots(4, 1, figsize=(11, 9), sharex=True)
-result_add.observed.plot( ax=axes[0], title='Observed',   color='steelblue')
-result_add.trend.plot(    ax=axes[1], title='Trend',      color='tomato')
-result_add.seasonal.plot( ax=axes[2], title='Seasonal',   color='seagreen')
-result_add.resid.plot(    ax=axes[3], title='Residual',   color='gray', alpha=0.8)
-plt.suptitle('Classical Additive Decomposition', fontsize=13, y=1.01)
-plt.tight_layout()
-plt.show()
+# 去季節化序列（官方「季節調整後失業率」就是這個）
+seasonally_adjusted = series - res.seasonal
 ```
 
-</details>
+![STL decomposition](src/decomposition-stl.png)
 
-**Limitations of classical decomposition:**
+| STL 參數 | 說明 |
+| --- | --- |
+| `period` | 季節週期（月資料 12、日資料 7），必填 |
+| `robust` | 有離群值時設 `True` |
+| `seasonal` | 季節成分平滑度（奇數，越大越平滑） |
+| `trend` | 趨勢平滑度（奇數，需 > period） |
 
-| Limitation                          | Impact                                         |
-| ----------------------------------- | ---------------------------------------------- |
-| Trend estimate missing at endpoints | First and last \~m/2 periods have NaN trend    |
-| Seasonal pattern assumed fixed      | Cannot change over time                        |
-| Sensitive to outliers               | One extreme value distorts nearby trend values |
-| Only handles one seasonal period    | Can't handle daily + weekly + yearly at once   |
+## 成分強度 (Wang, Smith & Hyndman, 2006)
 
-## STL Decomposition
+$$
+F_T = \max\left(0,\ 1 - \frac{\text{Var}(R)}{\text{Var}(T + R)}\right), \qquad
+F_S = \max\left(0,\ 1 - \frac{\text{Var}(R)}{\text{Var}(S + R)}\right)
+$$
 
-**STL (Seasonal-Trend decomposition using Loess)** is the modern alternative. It uses locally-weighted regression (LOESS) to fit each component, making it far more flexible and robust.
-
-<details>
-
-<summary>Show STL plotting script</summary>
+範圍 0–1；> 0.6 表示該成分顯著，需要在模型中處理。
 
 ```python
-from statsmodels.tsa.seasonal import STL
-
-# STL decomposition
-stl = STL(series, period=12, robust=True)
-result_stl = stl.fit()
-
-fig, axes = plt.subplots(4, 1, figsize=(11, 9), sharex=True)
-result_stl.observed.plot( ax=axes[0], title='Observed',  color='steelblue')
-result_stl.trend.plot(    ax=axes[1], title='Trend',     color='tomato')
-result_stl.seasonal.plot( ax=axes[2], title='Seasonal',  color='seagreen')
-result_stl.resid.plot(    ax=axes[3], title='Residual',  color='gray', alpha=0.8)
-plt.suptitle('STL Decomposition', fontsize=13, y=1.01)
-plt.tight_layout()
-plt.show()
+var_r = np.var(res.resid)
+strength_trend = max(0, 1 - var_r / np.var(res.trend + res.resid))
+strength_seasonal = max(0, 1 - var_r / np.var(res.seasonal + res.resid))
 ```
 
-</details>
+## 分解之後
 
-![STL decomposition](decomposition-stl.png)
+| 觀察 | 下一步 |
+| --- | --- |
+| 強趨勢、弱季節 | 差分或趨勢模型 |
+| 強季節 | 季節差分、[SARIMA](seasonality-sarima.md)、STL + ARIMA |
+| 殘差有大尖峰 | 調查異常或介入事件 |
+| 殘差仍有自相關 | 進入 [ARIMA](arima.md) 建模 |
 
-**Key STL parameters:**
-
-| Parameter  | Description                                           | Recommended Setting           |
-| ---------- | ----------------------------------------------------- | ----------------------------- |
-| `period`   | The seasonal period (m=12 for monthly, 7 for daily)   | Required — must specify       |
-| `robust`   | Use robust LOESS to downweight outliers               | `True` when outliers expected |
-| `seasonal` | Smoothness of seasonal component (must be odd)        | Larger = smoother season      |
-| `trend`    | Smoothness of trend component (must be odd, > period) | Larger = smoother trend       |
-
-## Comparing Classical vs STL
-
-| Feature                        | Classical Decomposition | STL                       |
-| ------------------------------ | ----------------------- | ------------------------- |
-| **Trend at endpoints**         | ❌ Missing (NaN)         | ✅ Available               |
-| **Seasonal pattern over time** | ❌ Fixed                 | ✅ Can evolve              |
-| **Outlier robustness**         | ❌ Sensitive             | ✅ Robust option available |
-| **Multiple seasonalities**     | ❌ One period only       | ❌ One period (use MSTL)   |
-| **Multiplicative support**     | ✅ Direct                | Via log transform         |
-| **Ease of use**                | ✅ Simple                | Slightly more parameters  |
-
-Tip: Default choice: Use STL with `robust=True` for most practical applications. Use classical decomposition only for quick exploratory checks or when teaching the concept. STL is the first choice for practice, especially when the data may contain outliers.
-
-## Using Decomposition for Feature Engineering
-
-Decomposition components can be extracted and used directly as features or for downstream analysis.
-
-```python
-# Extract components
-trend_component    = result_stl.trend
-seasonal_component = result_stl.seasonal
-residual_component = result_stl.resid
-
-# Strength of trend and seasonality (Wang, Smith & Hyndman, 2006)
-var_resid    = np.var(residual_component.dropna())
-var_trend_r  = np.var((trend_component + residual_component).dropna())
-var_season_r = np.var((seasonal_component + residual_component).dropna())
-
-strength_trend    = max(0, 1 - var_resid / var_trend_r)
-strength_seasonal = max(0, 1 - var_resid / var_season_r)
-
-print(f"Strength of Trend:      {strength_trend:.3f}  (0 = none, 1 = perfect)")
-print(f"Strength of Seasonality:{strength_seasonal:.3f}  (0 = none, 1 = perfect)")
-```
-
-Tip: These strength measures (0 to 1) give you an objective quantification of how dominant each component is. A trend strength > 0.6 means the trend is substantial; seasonality strength > 0.6 means seasonal modeling is likely necessary.
-
-```python
-# Seasonally adjusted series: remove seasonal component
-seasonally_adjusted = series - seasonal_component
-
-plt.figure(figsize=(10, 4))
-plt.plot(series,               label='Original',            color='steelblue', alpha=0.5)
-plt.plot(seasonally_adjusted, label='Seasonally Adjusted', color='tomato',    linewidth=2)
-plt.title('Original vs Seasonally Adjusted Series')
-plt.legend()
-plt.tight_layout()
-plt.show()
-```
-
-Tip: Seasonally adjusted series are what you see in official economic statistics (e.g., seasonally adjusted unemployment rate). Removing seasonality lets you see the true underlying trend without monthly noise.
-
-## What to Do After Decomposition
-
-Decomposition is often the start of the workflow, not the end.
-
-| What you observe               | Likely next step                              |
-| ------------------------------ | --------------------------------------------- |
-| Strong trend, weak seasonality | differencing or trend model                   |
-| Strong seasonality             | seasonal differencing, SARIMA, or STL + ARIMA |
-| Large residual spikes          | investigate anomalies or intervention effects |
-| Residual autocorrelation       | move to ARIMA-family modeling                 |
-
-Tip: Decomposition helps you decide which structure the forecasting model still needs to learn.
-
-## Residual Diagnostics After Decomposition
-
-After decomposition, the residuals should be **white noise** — no structure, no autocorrelation, approximately normal. If residuals still contain patterns, the decomposition hasn't captured everything.
-
-```python
-import matplotlib.pyplot as plt
-import scipy.stats as stats
-
-resid = result_stl.resid.dropna()
-
-fig, axes = plt.subplots(1, 3, figsize=(13, 4))
-
-# Residual time plot — should be random around zero
-axes[0].plot(resid, color='gray', alpha=0.7)
-axes[0].axhline(0, color='black', linestyle='--')
-axes[0].set_title('Residuals over Time')
-
-# Histogram — should be approximately normal
-axes[1].hist(resid, bins=20, color='steelblue', edgecolor='white', density=True)
-x = np.linspace(resid.min(), resid.max(), 200)
-axes[1].plot(x, stats.norm.pdf(x, resid.mean(), resid.std()), 'r-', linewidth=2)
-axes[1].set_title('Residual Distribution')
-
-# Q-Q plot — should follow the diagonal
-stats.probplot(resid, dist="norm", plot=axes[2])
-axes[2].set_title('Q–Q Plot of Residuals')
-
-plt.tight_layout()
-plt.show()
-
-print(f"Residual mean: {resid.mean():.4f}  (should be ≈ 0)")
-print(f"Residual std:  {resid.std():.4f}")
-```
-
-## Key Takeaways
-
-| Concept                                  | Key Point                                                                          |
-| ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| **Additive vs multiplicative**           | Check if seasonal amplitude grows with level — if yes, use multiplicative (or log) |
-| **STL > classical in practice**          | More robust, trend at endpoints, evolving seasonality                              |
-| **Seasonally adjusted = deseasonalized** | Removing seasonal component reveals underlying trend                               |
-| **Measure component strength**           | Quantify how dominant trend and seasonality are before choosing a model            |
-| **Residuals should be white noise**      | Patterns in residuals mean the decomposition missed structure                      |
-
-## What Decomposition Can and Cannot Do
-
-Decomposition is descriptive before it is predictive. It helps you see trend and seasonality clearly, but it does not by itself guarantee a forecasting model that generalizes well.
+殘差應接近**白噪音 (white noise)**：平均 ≈ 0、無自相關、大致常態。檢查方式見 [自相關](autocorrelation.md) 與 [預測評估](forecast-evaluation.md#殘差診斷)。

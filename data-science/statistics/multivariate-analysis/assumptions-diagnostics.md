@@ -1,329 +1,145 @@
-# Model Assumptions & Diagnostics
+[Statistics](../README.md) › [多變量分析](README.md) › 模型假設與診斷
 
-Every statistical model rests on assumptions. **Violating assumptions does not always make a model wrong — but it can make its estimates unreliable, its standard errors incorrect, and its predictions biased.** Diagnostics let you detect violations and decide whether to transform the data, use a different model, or simply report the limitation.
+# 模型假設與診斷 (Model Assumptions & Diagnostics)
 
-Key point: Why hypothesis diagnosis is often skipped: Modeling is exciting, but validating hypotheses is tedious and time-consuming. However, a model that violates core assumptions can produce completely wrong conclusions and appear to be fine on the surface (high R², significant p-value). Hypothetical diagnosis is the last line of defense in statistical rigor.
+違反假設不一定讓模型「錯」，但可能讓估計不可靠、SE 錯誤、預測有偏。違反核心假設的模型表面上可能看起來很好（高 R²、顯著 p 值）。診斷是統計嚴謹度的最後一道防線。
 
-## Linear Regression Assumptions (LINE)
+## 線性迴歸：LINE + 兩項
 
-The classical OLS assumptions are often remembered as **LINE**:
+| 假設 | 意義 | 檢查 | 違反時 |
+| --- | --- | --- | --- |
+| **L**inearity | X 與 y 線性 | 殘差 vs 配適值 | 多項式項、轉換、樣條 (spline) |
+| **I**ndependence | 觀測獨立 | 研究設計、Durbin-Watson | [混合模型](../regression-analysis/mixed-effects-models.md)、時間序列模型 |
+| **N**ormality | 殘差近似常態 | 殘差 Q–Q 圖 | 大樣本影響小；小樣本考慮轉換或 bootstrap |
+| **E**qual variance | 殘差變異固定 | Scale-Location、Breusch-Pagan | 轉換 y、WLS、**robust SE (HC3)** |
+| 無嚴重共線性 | 預測變數不高度相關 | VIF < 10 | 見 [多元線性迴歸](../regression-analysis/multiple-linear-regression.md#多重共線性-multicollinearity) |
+| 無過度影響點 | 單一觀測不主導估計 | Cook's distance | 檢查資料、敏感度分析 |
 
-| Assumption | What It Means | How to Check |
-| ----------------------- | ------------------------------------------------------- | ------------------------------------- |
-| **L**inearity | The relationship between X and y is linear | Residuals vs Fitted plot |
-| **I**ndependence | Observations are independent of each other | Context/design; Durbin-Watson test |
-| **N**ormality | Residuals are approximately normally distributed | Q–Q plot, histogram of residuals |
-| **E**qual variance | Variance of residuals is constant (homoscedasticity) | Residuals vs Fitted, Scale-Location |
+> 最關鍵的是**線性與等變異**（影響估計與 SE）以及**獨立**；常態性在大樣本下因 CLT 較不重要，主要影響小樣本的 p 值與 CI。
 
-Additionally:
-- **No multicollinearity**: Predictors are not too highly correlated (check VIF in the multiple regression notes)
-- **No influential outliers**: No single observation dominates the estimates
-
-Tip: The most critical assumptions are linearity and equal variance. Normality is less critical for large samples due to the Central Limit Theorem, and is mainly needed for valid inference (p-values, confidence intervals) in small samples.
-
-## The Four Diagnostic Plots
-
-These four plots are the standard regression diagnostic suite. Together they check all LINE assumptions.
+## 四張診斷圖
 
 ```python
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-from sklearn.datasets import fetch_california_housing
-from sklearn.model_selection import train_test_split
 import statsmodels.api as sm
+from sklearn.datasets import fetch_california_housing
 
-housing = fetch_california_housing(as_frame=True)
-df = housing.frame.sample(2000, random_state=42)  # sample for speed
+df = fetch_california_housing(as_frame=True).frame.sample(2000, random_state=42)
+X = sm.add_constant(df[["MedInc", "HouseAge", "AveRooms", "AveOccup"]])
+res = sm.OLS(df["MedHouseVal"], X).fit()
 
-feature_cols = ['MedInc', 'HouseAge', 'AveRooms', 'AveOccup']
-X = sm.add_constant(df[feature_cols])
-y = df['MedHouseVal']
+infl = res.get_influence()
+fitted, resid = res.fittedvalues, res.resid
+std_resid = infl.resid_studentized_internal
+cooks = infl.cooks_distance[0]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-result = sm.OLS(y_train, X_train).fit()
+fig, ax = plt.subplots(2, 2, figsize=(12, 9))
+ax[0, 0].scatter(fitted, resid, s=10, alpha=0.3); ax[0, 0].axhline(0, color="red", ls="--")
+ax[0, 0].set_title("1. Residuals vs Fitted")
+stats.probplot(resid, dist="norm", plot=ax[0, 1]); ax[0, 1].set_title("2. Q–Q")
+ax[1, 0].scatter(fitted, np.sqrt(np.abs(std_resid)), s=10, alpha=0.3); ax[1, 0].set_title("3. Scale-Location")
+ax[1, 1].stem(cooks, markerfmt=","); ax[1, 1].axhline(4 / len(cooks), color="red", ls="--")
+ax[1, 1].set_title("4. Cook's Distance")
+plt.tight_layout(); plt.show()
 
-# Compute diagnostic quantities
-fitted   = result.fittedvalues
-residuals = result.resid
-std_resid = residuals / residuals.std()
-
-# Leverage (hat matrix diagonal)
-influence = result.get_influence()
-leverage  = influence.hat_matrix_diag
-cooks_d   = influence.cooks_distance[0]
-
-fig, axes = plt.subplots(2, 2, figsize=(13, 10))
-
-# Plot 1: Residuals vs Fitted
-axes[0,0].scatter(fitted, residuals, alpha=0.3, s=20, color='steelblue')
-axes[0,0].axhline(0, color='tomato', linestyle='--', linewidth=1.5)
-axes[0,0].set_xlabel('Fitted Values')
-axes[0,0].set_ylabel('Residuals')
-axes[0,0].set_title('1. Residuals vs Fitted\n(checks linearity + homoscedasticity)')
-
-# Plot 2: Q–Q Plot
-stats.probplot(residuals, dist='norm', plot=axes[0,1])
-axes[0,1].set_title('2. Q–Q Plot of Residuals\n(checks normality)')
-
-# Plot 3: Scale-Location (sqrt of abs std residuals vs fitted)
-axes[1,0].scatter(fitted, np.sqrt(np.abs(std_resid)), alpha=0.3, s=20, color='seagreen')
-axes[1,0].set_xlabel('Fitted Values')
-axes[1,0].set_ylabel('√|Standardized Residuals|')
-axes[1,0].set_title('3. Scale-Location\n(checks homoscedasticity)')
-
-# Plot 4: Cook's Distance
-axes[1,1].stem(range(len(cooks_d)), cooks_d,
-               linefmt='gray', markerfmt='o', basefmt=' ')
-axes[1,1].axhline(4 / len(cooks_d), color='tomato', linestyle='--',
-                  label=f"Threshold = 4/n = {4/len(cooks_d):.4f}")
-axes[1,1].set_xlabel('Observation Index')
-axes[1,1].set_ylabel("Cook's Distance")
-axes[1,1].set_title("4. Cook's Distance\n(checks influential observations)")
-axes[1,1].legend()
-
-plt.suptitle('OLS Regression Diagnostics', fontsize=14, y=1.01)
-plt.tight_layout()
-plt.show()
+# 或一行：statsmodels 內建
+sm.graphics.plot_regress_exog(res, "MedInc")      # 針對單一預測變數：殘差、部分迴歸、CCPR 圖
 ```
 
-## Reading Each Diagnostic Plot
+| 圖 | 型態 | 診斷 | 對策 |
+| --- | --- | --- | --- |
+| 1. 殘差 vs 配適值 | 隨機分布在 0 附近 | ✅ | — |
+| | 曲線（U 形、拱形） | 非線性 | 多項式、轉換 X |
+| | 漏斗形（越來越寬） | 異質變異 | log / sqrt 轉換 y、WLS、HC3 |
+| | 帶狀或分組 | 未建模的結構 | 加入遺漏變數或交互作用 |
+| 2. Q–Q | 沿對角線 | ✅ | — |
+| | S 形向外 / 向內 | 厚尾 / 薄尾 | 穩健迴歸、bootstrap |
+| | 單向彎曲 | 偏態 | 轉換 y |
+| 3. Scale-Location | 水平帶 | ✅ 等變異 | — |
+| | 上升 / 下降 | 異質變異 | 同上 |
+| 4. Cook's D | < 4/n | ✅ | — |
+| | 4/n ~ 1 | ⚠️ 值得檢查 | — |
+| | > 1 | ❌ 高影響力 | 查證資料、報告有無此點的結果 |
 
-### Plot 1: Residuals vs Fitted
+![Residual patterns](src/assumptions-diagnostics-residual-patterns.png)
 
-| Pattern | Diagnosis | Fix |
-| ----------------------------------- | ---------------------- | ------------------------------------------ |
-| Random scatter around zero | ✅ Linearity OK | None needed |
-| Curved pattern (U or arch) | ❌ Non-linearity | Add polynomial term or transform predictor |
-| Funnel shape (widening) | ❌ Heteroscedasticity | Log/sqrt transform y; use WLS |
-| Systematic bands or groups | ❌ Unmodeled structure | Add missing variable or interaction |
+Cook's distance 結合槓桿與殘差大小：$D_i = \dfrac{\sum_j (\hat y_j - \hat y_{j(-i)})^2}{(p+1)\hat\sigma^2}$，即「移除第 i 點後，所有配適值改變多少」。
 
-### Plot 2: Q–Q Plot
-
-| Pattern | Diagnosis |
-| ------------------------------------ | ---------------------- |
-| Points on diagonal | ✅ Normality OK |
-| Heavy tails (S-curve outward) | Heavy-tailed residuals |
-| Light tails (S-curve inward) | Light-tailed residuals |
-| Curve in one direction | Skewed residuals |
-
-Tip: For large n (>200), minor Q–Q deviations are acceptable — the CLT makes inference robust to mild non-normality. Worry mainly about severe departures.
-
-### Plot 3: Scale-Location
-
-If heteroscedasticity is present, the spread of residuals changes with fitted values. The smooth line should be flat.
-
-### Plot 4: Cook's Distance
-
-**Cook's Distance** measures how much all fitted values change if observation i is removed. It combines leverage and residual size.
-
-\[
-D_i = \frac{\sum_j (\hat{y}_j - \hat{y}_{j(-i)})^2}{(p+1)\hat{\sigma}^2}
-\]
-
-| Cook's D | Interpretation |
-| ------------------------ | ------------------------ |
-| < 4/n | ✅ Not influential |
-| Between 4/n and 1 | ⚠️ Worth investigating |
-| > 1 | ❌ Highly influential |
-
-## Testing Heteroscedasticity
+## 異質變異 (Heteroscedasticity)
 
 ```python
 from statsmodels.stats.diagnostic import het_breuschpagan, het_white
 
-# Breusch-Pagan test: H₀ = homoscedastic
-bp_stat, bp_pval, _, _ = het_breuschpagan(result.resid, result.model.exog)
-print(f"Breusch-Pagan test:  stat = {bp_stat:.3f},  p = {bp_pval:.4f}")
-print("  H₀: Homoscedastic (constant variance)")
-print(f"  {'❌ Reject H₀ — heteroscedasticity detected' if bp_pval < 0.05 else '✅ Fail to reject H₀ — no evidence of heteroscedasticity'}")
+het_breuschpagan(res.resid, res.model.exog)[1]    # p 值；H₀ = 等變異
+het_white(res.resid, res.model.exog)[1]           # 也能偵測非線性的異質變異
 
-# White test: more general (also detects non-linear heteroscedasticity)
-w_stat, w_pval, _, _ = het_white(result.resid, result.model.exog)
-print(f"\nWhite test:  stat = {w_stat:.3f},  p = {w_pval:.4f}")
+res_robust = sm.OLS(df["MedHouseVal"], X).fit(cov_type="HC3")   # 係數不變，只修正 SE
 ```
 
-**Remedies for heteroscedasticity:**
+| 對策 | 時機 |
+| --- | --- |
+| log 轉換 y | 變異隨配適值等比例增加 |
+| sqrt 轉換 | 計數資料、中度異質變異（或改用 [Poisson / NB GLM](../regression-analysis/glm-count-models.md)） |
+| 加權最小平方 (WLS) | 已知變異結構 |
+| **Robust SE (HC3)** | 不想轉換，只要推論正確；異質變異輕微時的首選 |
 
-| Remedy | When to Use |
-| ----------------------------------- | -------------------------------------------------- |
-| **Log-transform y** | Variance grows proportionally with fitted values |
-| **Square root transform** | Count data with moderate heteroscedasticity |
-| **Weighted Least Squares (WLS)** | Known variance structure |
-| **Robust standard errors (HC3)** | Heteroscedasticity present but don't want to transform |
+## 邏輯斯迴歸
 
-```python
-# Robust standard errors (HC3) — fix inference without transforming
-result_robust = sm.OLS(y_train, X_train).fit(cov_type='HC3')
-print(result_robust.summary().tables[1])
-```
-
-## Logistic Regression Diagnostics
-
-Logistic regression has different assumptions from OLS. The key checks are:
-
-| Assumption | How to Check |
-| --------------------------------------- | ------------------------------------------ |
-| **Linearity of log-odds** | Box-Tidwell test; component+residual plots |
-| **No perfect separation** | Model convergence warning; all-zero cells |
-| **No severe multicollinearity** | VIF (same as OLS) |
-| **Independence of observations** | Context/design |
-
-### Calibration Plot
-
-A **calibration plot** checks whether the model's predicted probabilities match the actual observed proportions. A well-calibrated model's calibration curve should hug the diagonal.
+| 檢查 | 工具 | 目標 |
+| --- | --- | --- |
+| log-odds 線性 | Box-Tidwell、分箱後畫經驗 logit | 線性 |
+| 完全分離 | 收斂警告、係數 / SE 爆大 | 無；有則用 Firth 或正則化 |
+| 共線性 | VIF | < 10 |
+| 區辨力 (discrimination) | [ROC / AUC](../../machine-learning/evaluation/roc-auc.md) | > 0.7（依情境） |
+| **校準 (calibration)** | 校準曲線 | 貼近對角線 |
 
 ```python
 from sklearn.calibration import calibration_curve
-from sklearn.linear_model import LogisticRegression
-from sklearn.datasets import load_breast_cancer
-
-cancer = load_breast_cancer(as_frame=True)
-X_c, y_c = cancer.data[:, :6], cancer.target
-X_tr, X_te, y_tr, y_te = train_test_split(X_c, y_c, test_size=0.3,
-                                            random_state=42, stratify=y_c)
-scaler = __import__('sklearn.preprocessing', fromlist=['StandardScaler']).StandardScaler()
-X_tr_s = scaler.fit_transform(X_tr)
-X_te_s = scaler.transform(X_te)
-
-clf = LogisticRegression(random_state=42, max_iter=1000)
-clf.fit(X_tr_s, y_tr)
-y_prob = clf.predict_proba(X_te_s)[:, 1]
-
-prob_true, prob_pred = calibration_curve(y_te, y_prob, n_bins=8)
-
-plt.figure(figsize=(6, 5))
-plt.plot(prob_pred, prob_true, 's-', color='steelblue', linewidth=2, label='Logistic Regression')
-plt.plot([0, 1], [0, 1], 'k--', label='Perfect calibration')
-plt.xlabel('Mean Predicted Probability')
-plt.ylabel('Fraction of Positives')
-plt.title('Calibration Plot')
-plt.legend()
-plt.tight_layout()
-plt.show()
+prob_true, prob_pred = calibration_curve(y_test, y_prob, n_bins=8)
+plt.plot(prob_pred, prob_true, "s-"); plt.plot([0, 1], [0, 1], "k--"); plt.show()
 ```
 
-Tip: If the calibration curve bows above the diagonal, the model is underconfident (predicted probabilities are too low). If it bows below, the model is overconfident. Calibration matters when you use the predicted probability to make risk-based decisions.
+曲線在對角線**上方** → 模型低估機率（太保守）；**下方** → 高估（過度自信）。AUC 衡量排序能力，校準衡量機率準不準，兩者不同；用預測機率做風險決策時校準很重要。見 [Thresholds & Calibration](../../machine-learning/evaluation/classification-thresholds-and-calibration.md)。
 
-## PCA and Clustering Diagnostics
-
-### PCA: Cumulative Variance and Component Quality
+## PCA 與分群
 
 ```python
-# Already covered in the PCA notes — key checks:
-# 1. How much variance do the chosen k components retain?
-# 2. Are loadings interpretable (not spread equally across all variables)?
-# 3. Does the score plot show meaningful separation?
-
-# Check reconstruction quality
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import load_iris
 
-iris = load_iris()
-X    = StandardScaler().fit_transform(iris.data)
+Xs = StandardScaler().fit_transform(load_iris().data)
 
-pca_k = PCA(n_components=2)
-X_reconstructed = pca_k.inverse_transform(pca_k.fit_transform(X))
+# PCA：重建誤差
+pca = PCA(n_components=2).fit(Xs)
+np.mean((Xs - pca.inverse_transform(pca.transform(Xs))) ** 2)
 
-reconstruction_error = np.mean((X - X_reconstructed) ** 2)
-print(f"Mean Squared Reconstruction Error (2 components): {reconstruction_error:.4f}")
-print(f"Variance retained: {pca_k.explained_variance_ratio_.sum()*100:.1f}%")
+# 分群：每個點的輪廓係數 s_i = (b_i − a_i) / max(a_i, b_i)
+labels = KMeans(n_clusters=3, n_init=10, random_state=42).fit_predict(Xs)
+s = silhouette_samples(Xs, labels)
+silhouette_score(Xs, labels), (s < 0).sum()       # 平均輪廓係數、可能分錯群的點數
 ```
 
-### Clustering: Silhouette Analysis
+aᵢ = 與同群其他點的平均距離；bᵢ = 與最近其他群的平均距離。sᵢ 接近 1 → 分得好；< 0 → 可能屬於別群。
 
-The silhouette score for each observation measures how similar it is to its own cluster vs the nearest other cluster.
+## 診斷清單
 
-\[
-s_i = \frac{b_i - a_i}{\max(a_i, b_i)}
-\]
+| 模型 | 檢查 | 工具 | 目標 |
+| --- | --- | --- | --- |
+| OLS | 線性 | 殘差 vs 配適值 | 隨機分布 |
+| | 等變異 | Scale-Location、Breusch-Pagan | 水平；p > 0.05 |
+| | 常態 | Q–Q 圖 | 沿對角線 |
+| | 影響點 | Cook's D | 無點 > 4/n（或已查證） |
+| | 共線性 | VIF | < 10 |
+| 邏輯斯 | 校準 | 校準曲線 | 貼近對角線 |
+| | 區辨力 | ROC / AUC | 依情境 |
+| PCA | 保留變異 | Scree、累積變異 | 依用途 |
+| | 可解釋性 | 負荷量、biplot | 每個成分有清楚的主導變數 |
+| K-Means | 群品質 | 輪廓係數 | > 0.5 好、> 0.7 強 |
+| | 群數 | 手肘 + 輪廓 | 兩者一致 |
 
-- aᵢ = mean distance to other points in the same cluster
-- bᵢ = mean distance to points in the nearest other cluster
-- s ranges from −1 (misclassified) to +1 (well-separated)
-
-```python
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_samples, silhouette_score
-import matplotlib.cm as cm
-
-X_cl = StandardScaler().fit_transform(load_iris().data)
-
-fig, axes = plt.subplots(1, 3, figsize=(14, 5))
-
-for idx, k in enumerate([2, 3, 4]):
-    km = KMeans(n_clusters=k, random_state=42, n_init=10)
-    labels = km.fit_predict(X_cl)
-    sil_vals = silhouette_samples(X_cl, labels)
-    avg_sil  = silhouette_score(X_cl, labels)
-
-    ax = axes[idx]
-    y_lower = 10
-    cmap    = cm.get_cmap('Set2', k)
-
-    for i in range(k):
-        ith_sil = np.sort(sil_vals[labels == i])
-        size    = ith_sil.shape[0]
-        y_upper = y_lower + size
-        ax.fill_betweenx(np.arange(y_lower, y_upper), 0, ith_sil,
-                         facecolor=cmap(i), alpha=0.7)
-        ax.text(-0.05, y_lower + 0.5 * size, str(i))
-        y_lower = y_upper + 10
-
-    ax.axvline(avg_sil, color='tomato', linestyle='--',
-               label=f'Avg = {avg_sil:.3f}')
-    ax.set_xlabel('Silhouette Coefficient')
-    ax.set_title(f'k = {k}')
-    ax.legend(fontsize=8)
-
-plt.suptitle('Silhouette Analysis — K-Means on Iris', fontsize=13, y=1.02)
-plt.tight_layout()
-plt.show()
-```
-
-**Reading the silhouette plot:**
-- Wide, uniform bars → observations are well-assigned to their clusters
-- Narrow or negative bars → those observations may belong better to another cluster
-- All clusters roughly equal width → balanced, well-separated clusters
-
-## Complete Diagnostic Checklist
-
-| Model | Check | Tool | Target |
-| ------------------- | ------------------------- | ------------------------------------- | ----------------------------------- |
-| **OLS Regression** | Linearity | Residuals vs Fitted | Random scatter around zero |
-|  | Homoscedasticity | Scale-Location; Breusch-Pagan test | Flat smooth line; p > 0.05 |
-|  | Normality | Q–Q plot | Points on diagonal |
-|  | Influential obs | Cook's Distance | No points above 4/n threshold |
-|  | Multicollinearity | VIF | All VIF < 10 |
-| **Logistic Regression** | Calibration | Calibration plot | Curve near diagonal |
-|  | Discrimination | ROC / AUC | AUC > 0.7 (context-dependent) |
-|  | Multicollinearity | VIF | All VIF < 10 |
-| **PCA** | Variance retained | Scree + cumulative variance | ≥ 90–95% with chosen k |
-|  | Loading interpretability | Loading bar chart / biplot | Clear dominant variables per PC |
-| **K-Means** | Cluster quality | Silhouette score | > 0.5 good; > 0.7 strong |
-|  | Optimal k | Elbow + silhouette | Elbow and silhouette agree |
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ------------------------------------ | ----------------------------------------------------------------------------------- |
-| **Diagnose before concluding** | A model that fits well but violates assumptions can produce invalid inferences |
-| **Residuals vs Fitted is the first** | This plot catches both non-linearity and heteroscedasticity in one view |
-| **Cook's D identifies influence** | A single outlier can pull all coefficients — always check for influential points |
-| **Robust SE over transformation** | If heteroscedasticity is mild, HC3 robust errors fix inference without transforming |
-| **Calibration vs discrimination** | AUC measures ranking ability; calibration checks probability accuracy |
-| **Silhouette confirms cluster quality** | Always validate cluster solutions — don't trust visual inspection alone |
-
-## Diagnostic Priority Order
-
-When a multivariate model behaves strangely, check in this order:
-
-1. preprocessing / leakage issues
-2. scale and encoding problems
-3. influential observations
-4. assumption violations
-5. threshold or calibration mismatch
-
-Tip: Many advanced diagnostic failures start as basic data workflow problems.
+> **模型行為怪異時的檢查順序**：(1) 前處理 / 資料洩漏 → (2) 量尺與編碼 → (3) 影響點 → (4) 假設違反 → (5) 門檻或校準。很多看似進階的診斷問題，起點都是基本的資料流程錯誤。

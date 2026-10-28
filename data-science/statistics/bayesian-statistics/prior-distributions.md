@@ -1,213 +1,64 @@
-# Prior Distributions
+[Statistics](../README.md) › [貝氏統計](README.md) › 先驗分配
 
-The prior distribution $P(\theta)$ encodes **everything you believe about the parameter before seeing any data**. Choosing a prior is one of the most distinctive — and most debated — aspects of Bayesian statistics.
+# 先驗分配 (Prior Distributions)
 
-Key point: Priors are not arbitrary: good priors reflect real domain knowledge or reasonable constraints. Choosing a prior is essentially making a model assumption, just like frequency statistics assuming normality or equivariation. A priori choices should be transparent and defensible.
+先驗 P(θ) 編碼「看資料之前」對參數的所有信念。選先驗本質上是**模型假設**，就像頻率學派假設常態或等變異一樣，應該透明且有理由。
 
-## What a Prior Distribution Does
+先驗的作用：編碼領域知識（比例必在 0–1）、資料稀少時**正則化**估計、樣本增加後影響變小、讓假設**明確可見**。
 
-The prior constrains the parameter space to reflect what is realistically possible or likely before any data is collected. It:
+## 三種類型
 
-- Encodes domain knowledge (e.g., "a conversion rate must be between 0 and 1")
-- Regularizes estimates when data is sparse
-- Becomes less influential as sample size grows
-- Makes all modeling assumptions **explicit and transparent**
+| 類型 | 形狀 | 對後驗的影響 | 何時用 | 例子 |
+| --- | --- | --- | --- | --- |
+| 資訊性 (informative) | 集中 | n 小時很大 | 有可靠的歷史資料或文獻 | Beta(15, 35)：平均 0.3，等於「已看過 15 成功 35 失敗」 |
+| **弱資訊性** (weakly informative) | 寬但有界 | 小，主要排除不合理值 | **多數應用的預設**（Stan / PyMC 社群推薦） | 標準化迴歸係數 ~ N(0, 1) |
+| 無資訊 / 平坦 (non-informative / flat) | 常數 | 最小 | 理論工作、需要「客觀」的情境 | Uniform(0, 1) |
+| Jeffreys | 依參數化而定 | 對重新參數化不變 | 需要客觀性時 | 比例：Beta(0.5, 0.5) |
 
-## Types of Priors
+> **平坦 ≠ 客觀**：θ 上的平坦先驗，換成 log(θ) 後就不再平坦。
 
-### Informative Priors
+## 依參數範圍選分配族
 
-A prior with a clear, concentrated shape — asserting strong belief about parameter values.
+| 參數 | 範圍 (support) | 常用先驗 |
+| --- | --- | --- |
+| 機率 / 比例 | [0, 1] | Beta(α, β) |
+| 計數率 | [0, ∞) | Gamma(α, β)、Half-Normal |
+| 無界實數（迴歸係數、平均） | (−∞, ∞) | Normal(μ, σ)、Student-t |
+| 標準差 / 尺度 | (0, ∞) | Half-Normal、Exponential、Half-Cauchy |
+| 相關矩陣 | [−1, 1] | LKJ(η) |
 
-**When to use:** You have reliable prior data (historical experiments, expert consensus, published literature).
+不要把機率質量放在不可能的區域（例如負的 σ）。
 
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import beta, norm
+> **先驗 ↔ 正則化**：迴歸係數放 Normal(0, τ) 先驗的 MAP 估計 = **Ridge**；放 Laplace 先驗 = **Lasso**。τ 越小正則化越強。見 [最大概似估計](../probability-and-distributions/maximum-likelihood.md#mle-與-ml-損失函數的對應)、[ML: Regularization](../../machine-learning/foundations/regularization.md)。
+>
+> **階層先驗 (hierarchical prior)**：各群組參數共享一個先驗，先驗的參數也從資料估計 → 群組間「借用資訊」。DESeq2 對 dispersion 與 log fold change 的收縮 (shrinkage) 就是這個概念（empirical Bayes）。
 
-theta = np.linspace(0, 1, 300)
+## 先驗預測檢查 (Prior Predictive Check)
 
-# Informative: strong belief that θ is near 0.3
-# Based on historical data showing ~30% success rate
-informative = beta.pdf(theta, a=15, b=35)  # mean = 15/50 = 0.3, concentrated
-
-plt.plot(theta, informative, label='Informative: Beta(15, 35)', color='tomato', linewidth=2)
-plt.xlabel('θ')
-plt.ylabel('Density')
-plt.title('Informative Prior')
-plt.legend()
-plt.show()
-```
-
-Tip: An informative prior with Beta(15, 35) is equivalent to having already observed 15 successes and 35 failures. Strong priors require strong justification.
-
-### Weakly Informative Priors
-
-A prior that rules out extreme values but remains broad enough to let the data determine the result.
-
-**When to use:** You know the rough scale or plausible range, but don't have precise historical estimates. This is the **recommended default** for most applied Bayesian work.
-
-```python
-theta_norm = np.linspace(-5, 5, 300)
-
-# Weakly informative Normal prior on a regression coefficient
-# "I don't expect it to be larger than ±3 in standardized units"
-weakly_informative = norm.pdf(theta_norm, loc=0, scale=1)
-
-plt.plot(theta_norm, weakly_informative, label='Weakly Informative: N(0, 1)', color='steelblue', linewidth=2)
-plt.xlabel('θ')
-plt.ylabel('Density')
-plt.title('Weakly Informative Prior')
-plt.legend()
-plt.show()
-```
-
-Tip: The Stan development team and PyMC community both recommend weakly informative priors as the practical default. They prevent sampling pathologies while remaining honest about uncertainty.
-
-### Non-Informative (Flat) Priors
-
-A prior that is uniform or nearly so — imposing minimal assumptions.
-
-**When to use:** Maximum objectivity; often in theoretical or regulatory contexts where using prior information would be controversial.
-
-Warning: Flat ≠ Objective. A flat prior on θ becomes informative once you transform the variable. For example, a flat prior on θ implies a non-flat prior on log(θ). True non-informativeness is mathematically subtle.
-
-```python
-# Flat prior: uniform over [0, 1]
-flat = np.ones_like(theta)
-
-# Jeffreys prior for a binomial proportion: Beta(0.5, 0.5)
-# Invariant to reparameterization — the "most objective" choice
-jeffreys = beta.pdf(theta, a=0.5, b=0.5)
-
-plt.figure(figsize=(8, 4))
-plt.plot(theta, flat,     label="Flat: Uniform(0, 1)",     linestyle='--', color='gray')
-plt.plot(theta, jeffreys, label="Jeffreys: Beta(0.5, 0.5)", color='steelblue', linewidth=2)
-plt.xlabel('θ')
-plt.ylabel('Density')
-plt.title('Non-Informative Priors')
-plt.legend()
-plt.show()
-```
-
-## Comparison of Prior Types
-
-| Type | Shape | Influence on Posterior | When to Use |
-| ------------------------ | ------------- | -------------------------- | --------------------------------------- |
-| **Informative** | Concentrated | High with small n | Strong historical data or expert knowledge |
-| **Weakly Informative** | Broad but bounded | Low; keeps sampler stable | Default for most applied problems |
-| **Flat (Uniform)** | Constant | Minimal — data dominates | Theoretical work; sensitive contexts |
-| **Jeffreys** | U-shaped (Beta) or varies | Reparameterization-invariant | When objectivity is required |
-
-## Common Prior Distributions by Parameter Type
-
-Choosing a prior also requires matching the distribution family to the parameter's **support** (the range of values it can take).
-
-| Parameter Type | Typical Constraint | Recommended Prior | Why |
-| -------------------------- | ---------------------- | --------------------------- | -------------------------------------- |
-| Probability / proportion | [0, 1] | **Beta(α, β)** | Natural support on [0, 1] |
-| Count / rate | [0, ∞) | **Gamma(α, β)** or Half-Normal | Non-negative support |
-| Unbounded real number | (−∞, ∞) | **Normal(μ, σ)** | Symmetric, flexible |
-| Standard deviation / scale | (0, ∞) | **Half-Normal** or **Exponential** | Enforces positivity |
-| Correlation | [−1, 1] | **LKJ(η)** | Proper prior for correlation matrices |
-
-```python
-from scipy.stats import gamma, expon, halfnorm
-
-x = np.linspace(0, 5, 300)
-
-fig, axes = plt.subplots(1, 3, figsize=(13, 4))
-
-# Gamma prior for a rate parameter
-axes[0].plot(x, gamma.pdf(x, a=2, scale=1), color='steelblue', linewidth=2)
-axes[0].set_title('Gamma(2, 1) — for rates')
-axes[0].set_xlabel('θ')
-
-# Half-Normal for standard deviations
-axes[1].plot(x, halfnorm.pdf(x, scale=1), color='tomato', linewidth=2)
-axes[1].set_title('Half-Normal(0, 1) — for σ')
-axes[1].set_xlabel('θ')
-
-# Beta for proportions
-axes[2].plot(theta, beta.pdf(theta, 2, 5), color='seagreen', linewidth=2)
-axes[2].set_title('Beta(2, 5) — for proportions')
-axes[2].set_xlabel('θ')
-
-plt.tight_layout()
-plt.show()
-```
-
-## Visualizing Prior Sensitivity (Prior Predictive Check)
-
-Before fitting a model, always simulate data from your prior to check whether it generates plausible outcomes. This is called a **prior predictive check**.
+配適前，先**從先驗模擬資料**，確認產生的結果合理。若模擬出荒謬值（負身高、每次都 100% 成功），就要修改先驗。
 
 ```python
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import beta, binom
+import matplotlib.pyplot as plt
 
-np.random.seed(42)
-n_samples = 1000
-n_flips   = 20
+rng = np.random.default_rng(42)
+theta = beta.rvs(2, 2, size=1000, random_state=rng)       # 從先驗抽 θ
+y_sim = binom.rvs(n=20, p=theta, random_state=rng)         # 每個 θ 模擬一次 20 次擲硬幣
 
-# Draw θ from the prior
-theta_samples = beta.rvs(a=2, b=2, size=n_samples)
-
-# For each θ, simulate data
-y_pred = binom.rvs(n=n_flips, p=theta_samples)
-
-plt.figure(figsize=(8, 4))
-plt.hist(y_pred, bins=np.arange(0, n_flips + 2) - 0.5,
-         density=True, color='steelblue', edgecolor='white', alpha=0.8)
-plt.xlabel('Number of Heads (out of 20 flips)')
-plt.ylabel('Proportion')
-plt.title('Prior Predictive Distribution\nBeta(2, 2) prior on θ')
-plt.tight_layout()
-plt.show()
+plt.hist(y_sim, bins=np.arange(22) - 0.5, density=True, edgecolor="white")
+plt.xlabel("Heads out of 20"); plt.show()
 ```
 
-Tip: Ask yourself: Does this distribution of simulated outcomes make sense for my problem? If the prior predictive generates absurd data (e.g., negative heights, 100% success rates every time), your prior needs revision. Prior predictive check: Use prior simulated data to confirm that it produces "reasonable" results. If the simulation yields absurd values, the prior settings need to be reconsidered.
+## 先驗敏感度分析 (Prior Sensitivity)
 
-## Prior Sensitivity Analysis
-
-Even a defensible prior should be stress-tested. A simple and honest practice is to fit the same model under several reasonable priors and compare how much the posterior changes.
+在幾個合理的先驗下配適同一模型，比較後驗變化多少。
 
 ```python
-import numpy as np
-from scipy.stats import beta
-
-theta = np.linspace(0, 1, 400)
 heads, tails = 8, 4
-
-priors = {
-    "weak": (1, 1),
-    "mildly informative": (2, 2),
-    "skeptical": (10, 10),
-}
-
-for label, (a, b) in priors.items():
+for name, (a, b) in {"flat": (1, 1), "weak": (2, 2), "skeptical": (10, 10)}.items():
     post = beta(a + heads, b + tails)
-    print(
-        f"{label:18s} "
-        f"mean={post.mean():.3f}  "
-        f"95% ETI=({post.ppf(0.025):.3f}, {post.ppf(0.975):.3f})"
-    )
+    print(f"{name:10s} mean={post.mean():.3f}  95% CI=({post.ppf(.025):.3f}, {post.ppf(.975):.3f})")
 ```
 
-If the posterior changes dramatically across priors, that usually means one of two things:
-
-1. The dataset is still too small for the likelihood to dominate.
-2. The model is highly sensitive to prior assumptions and should be reported carefully.
-
-Tip: Prior sensitivity is not a failure. It is a signal. It tells you how much of the conclusion is coming from the data versus the prior assumptions.
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ----------------------------- | -------------------------------------------------------------------------------- |
-| **Prior = modeling assumption** | All Bayesian priors are assumptions — make them explicit and justifiable |
-| **Default to weakly informative** | Prevents sampling issues; lets data speak while avoiding extreme values |
-| **Match prior to parameter support** | Never place probability mass in impossible regions (e.g., negative σ) |
-| **Flat ≠ Objective** | Uniform priors can be highly informative under reparameterization |
-| **Always run a prior predictive check** | Simulate data from your prior to verify it generates plausible outcomes |
+後驗隨先驗大幅變動代表：資料還不夠多讓概似主導，或模型對先驗高度敏感，報告時要特別說明。這不是失敗，而是告訴你結論有多少來自資料、多少來自假設。

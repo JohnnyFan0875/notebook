@@ -1,196 +1,106 @@
-# Univariate Analysis (Categorical)
+[Statistics](../README.md) › [敘述統計](README.md) › 單變數：類別型
 
-This section covers how to describe a **single categorical variable** (Nominal or Ordinal scale). Since you cannot compute a meaningful mean or standard deviation for categories, the focus is on **counts, proportions, and visual distributions**.
+# 單變數分析：類別型 (Univariate – Categorical)
 
-## Frequency Table
+描述單一類別變數（Nominal / Ordinal）。類別沒有有意義的平均數或標準差，所以重點是**次數、比例與分布圖**。
 
-A frequency table is the foundation of categorical description. It shows how often each category appears.
+## 次數表 (Frequency Table)
 
-| Metric                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| **Frequency (n)**      | Raw count of each category                       |
-| **Relative Frequency** | Proportion = count ÷ total                       |
-| **Percentage (%)**     | Relative frequency × 100                         |
-| **Cumulative %**       | Running total — most useful for **ordinal** data |
+| 指標 | 說明 |
+| --- | --- |
+| 次數 (frequency, n) | 每類出現幾次 |
+| 相對次數 (relative frequency) | 次數 ÷ 總數 |
+| 百分比 (%) | 相對次數 × 100 |
+| 累積百分比 (cumulative %) | 逐類累加，**主要用於 Ordinal** |
 
 ```python
 import pandas as pd
 import seaborn as sns
 
-df = sns.load_dataset("iris").copy()
-
-# Build frequency table
-freq = df['species'].value_counts()
-rel_freq = df['species'].value_counts(normalize=True)
+df = sns.load_dataset("iris")
 
 summary = pd.DataFrame({
-    'Count': freq,
-    'Proportion': rel_freq.round(3),
-    'Percentage (%)': (rel_freq * 100).round(1)
+    "Count": df["species"].value_counts(),
+    "Proportion": df["species"].value_counts(normalize=True).round(3),
 })
+#             Count  Proportion
+# setosa         50       0.333
+# versicolor     50       0.333
+# virginica      50       0.333
 
-print(summary)
-#             Count  Proportion  Percentage (%)
-# species
-# setosa         50       0.333            33.3
-# versicolor     50       0.333            33.3
-# virginica      50       0.333            33.3
+# 問卷資料建議加 dropna=False：「沒填」本身可能有意義
+df["species"].value_counts(dropna=False)
 ```
 
-Including `dropna=False` is often useful for questionnaires because skipped items can be analytically meaningful.
+> **何時用比例而不是次數？** 比較大小不同的群組時。100 人中 30 人抱怨，與 1,000 人中 30 人抱怨完全不同。
+
+## 順序型資料：保留順序
+
+不指定順序時，pandas 會依**字母**排序（Bad → Excellent → Good），破壞邏輯順序。
 
 ```python
-summary = pd.DataFrame({
-    "Count": df["response"].value_counts(dropna=False),
-    "Proportion": df["response"].value_counts(dropna=False, normalize=True),
-})
-```
+levels = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"]
+likert = pd.Series(pd.Categorical(df_survey["satisfaction"], categories=levels, ordered=True))
 
-**When to use relative frequency instead of raw count?**
-
-When comparing two groups of different sizes, raw counts are misleading.
-
-For example, 30 complaints out of 100 customers is very different from 30 out of 1,000.
-
-In survey work, **relative frequency** is often the first summary to inspect because subgroup sizes are rarely perfectly balanced.
-
-## Ordinal Data: Preserving Order Matters
-
-For ordinal variables (e.g., satisfaction ratings), the category order is meaningful and must be preserved in both tables and charts.
-
-```python
-# Define ordered categories explicitly
-ratings = pd.Categorical(
-    ['Good', 'Bad', 'Excellent', 'Good', 'Bad', 'Excellent', 'Good'],
-    categories=['Bad', 'Good', 'Excellent'],  # logical order
-    ordered=True
-)
-
-freq_ordered = pd.Series(ratings).value_counts().sort_index()
-print(freq_ordered)
-# Bad          2
-# Good         3
-# Excellent    2
-```
-
-**Warning:**
-
-- Without setting `ordered=True` and specifying categories, pandas will sort <u>alphabetically</u> (Bad → Excellent → Good), which breaks the logical order.
-
-For Likert-style items, frequency tables are often more informative when they include both ordered counts and cumulative percentages.
-
-```python
-likert = pd.Series(pd.Categorical(
-    df["satisfaction"],
-    categories=["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"],
-    ordered=True,
-))
-
-freq = likert.value_counts().sort_index()
 prop = likert.value_counts(normalize=True).sort_index()
-
 likert_summary = pd.DataFrame({
-    "Count": freq,
-    "Proportion": prop,
+    "Count": likert.value_counts().sort_index(),
+    "Proportion": prop.round(3),
     "Cumulative %": (prop.cumsum() * 100).round(1),
 })
 ```
 
-**Key point:**
+> Ordinal 問卷用**累積百分比**（例如「Agree 以上佔 65%」）通常比平均分數更好解讀，因為它不假設各級之間等距。
 
-- For <u>ordinal survey responses</u>, **cumulative percentages** are often easier to interpret than a mean score because they preserve rank without pretending the spacing between categories is equal.
+## 視覺化
 
-## Visualization
-
-### Vertical Bar Chart
-
-- Use when the main goal is to compare category counts.
-- Avoid it only when labels are too long or too numerous to fit comfortably.
+| 圖 | 適用 | 避免 |
+| --- | --- | --- |
+| 直立長條圖 (vertical bar) | 預設選擇，比較各類次數 | 標籤太長或類別太多 |
+| 水平長條圖 (horizontal bar) | 標籤長、類別多 | — |
+| 有序長條圖 (ordered bar) | Ordinal，順序有意義 | 未先指定順序 |
+| 圓餅圖 (pie) | 強調「部分佔整體」且類別 ≤ 5 | 需要精確比較時 |
 
 ```python
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-iris = sns.load_dataset("iris").copy()
+counts = df["species"].value_counts()
 
-sns.countplot(x="species", data=iris, hue="species", palette="Set2", legend=False)
-plt.title('Species Distribution')
-plt.xlabel('Species')
-plt.ylabel('Count')
+# 直立長條圖
+sns.countplot(x="species", data=df, hue="species", palette="Set2", legend=False)
 plt.show()
-```
 
-![Vertical bar chart](src/univariate-categorical-bar-vertical.png)
-
-### Horizontal Bar Chart
-
-- Use when category labels are long or when you have many categories.
-- Prefer this over a vertical bar chart when readability becomes the main concern.
-
-```python
-species_counts = iris["species"].value_counts().sort_values()
-
-species_counts.plot(kind="barh", color="steelblue")
-plt.title("Species Distribution")
-plt.xlabel("Count")
-plt.ylabel("Species")
+# 水平長條圖（排序後更好讀）
+counts.sort_values().plot(kind="barh", color="steelblue")
 plt.show()
-```
 
-![Horizontal bar chart](src/univariate-categorical-bar-horizontal.png)
-
-### Pie Chart
-
-- Use when the message is part-of-whole and the number of categories is small.
-- Avoid it when you need precise comparison across many categories.
-
-```python
-species_counts = iris["species"].value_counts()
-
-species_counts.plot(
-    kind="pie", autopct="%1.1f%%", startangle=90
-)
-plt.title("Species Proportion")
+# 圓餅圖
+counts.plot(kind="pie", autopct="%1.1f%%", startangle=90)
 plt.ylabel("")
 plt.show()
-```
 
-![Pie chart](src/univariate-categorical-pie.png)
-
-### Ordered Bar Chart
-
-- Use for ordinal data, where category order carries meaning.
-- Define the order explicitly before plotting, otherwise the chart may be misleading.
-
-```python
-tips = sns.load_dataset("tips").copy()
-day_order = ["Thur", "Fri", "Sat", "Sun"]
-tips["day"] = pd.Categorical(tips["day"], categories=day_order, ordered=True)
-
-sns.countplot(x="day", data=tips, order=day_order, color="coral")
-plt.title("Tips Dataset Day Distribution")
-plt.xlabel("Day")
-plt.ylabel("Count")
+# 有序長條圖：先指定 order
+tips = sns.load_dataset("tips")
+sns.countplot(x="day", data=tips, order=["Thur", "Fri", "Sat", "Sun"], color="coral")
 plt.show()
 ```
 
-![Ordered bar chart](src/univariate-categorical-bar-ordered.png)
+| 直立長條圖 | 水平長條圖 |
+| --- | --- |
+| ![Vertical bar chart](src/univariate-categorical-bar-vertical.png) | ![Horizontal bar chart](src/univariate-categorical-bar-horizontal.png) |
+| **圓餅圖** | **有序長條圖** |
+| ![Pie chart](src/univariate-categorical-pie.png) | ![Ordered bar chart](src/univariate-categorical-bar-ordered.png) |
 
-**Tip:**
+更多圖表語法見 [Seaborn: Categorical](../../data-manipulation-and-eda/visualization/seaborn/categorical.md)。
 
-- Default to bar charts.
-- Use a **pie chart** only when the part-of-whole message is the main point and the number of categories is small.
+## 稀有類別 (Rare Categories)
 
-## Key Takeaways
+真實資料常有很多低頻類別。繪圖或建模前，考慮把它們合併為 `Other`：
 
-| Concept                | Key Point                                                               |
-| ---------------------- | ----------------------------------------------------------------------- |
-| **Frequency table**    | Always the starting point for categorical description                   |
-| **Relative frequency** | Prefer over raw counts when comparing groups of different sizes         |
-| **Ordinal data**       | Explicitly define category order — don't let pandas sort alphabetically |
-| **Bar chart**          | Default visualization for categorical data                              |
-| **Pie chart**          | Only when ≤ 5 categories and part-of-whole is the message               |
+```python
+counts = df["category"].value_counts(normalize=True)
+rare = counts[counts < 0.01].index
+df["category_grouped"] = df["category"].where(~df["category"].isin(rare), "Other")
+```
 
-## Rare Categories and Grouping
-
-Real-world categorical variables often contain many low-frequency levels. Before plotting or modeling, consider whether to keep them separate or group them into `Other`.
+稀有類別在 ML 中會造成 one-hot 維度暴增與過擬合，見 [Categorical Encoding](../../machine-learning/preprocessing/categorical-encoding.md)。

@@ -1,412 +1,144 @@
-# Multiple Linear Regression
+[Statistics](../README.md) › [迴歸分析](README.md) › 多元線性迴歸
 
-Multiple linear regression extends the simple case to **two or more predictor variables**. The goal remains the same — predict Y — but now you can control for multiple factors simultaneously and assess each variable's unique contribution.
+# 多元線性迴歸 (Multiple Linear Regression)
 
-Key point: In multiple regression, each coefficient represents the association between one predictor and Y while holding the other predictors constant. This "all else equal" interpretation is what makes multiple regression so useful in real analysis.
+把簡單迴歸擴展到**兩個以上的預測變數**，可以同時控制多個因子，評估每個變數的**獨特貢獻**。
 
-## Why Multiple Regression Changes the Interpretation
-
-In simple regression, a coefficient mixes together:
-
-- the direct relationship between X and Y
-- any confounding due to other omitted predictors correlated with X
-
-Multiple regression is valuable because it separates those effects more cleanly. That is why coefficients can change substantially when new predictors are added.
-
-Tip: If a coefficient flips sign after adding controls, do not panic. That often means the simple regression was confounded, not that the software failed.
-
-## The Regression Equation
-
-\[
+$$
 Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_k X_k + \varepsilon
-\]
+$$
 
-| Symbol | Meaning |
-| --------------- | ------------------------------------------------------------------------- |
-| $\beta_0$ | Intercept — predicted Y when all X variables equal 0 |
-| $\beta_j$ | Partial slope for $X_j$ — effect of $X_j$ on Y, **holding all other X constant** |
-| $k$ | Number of predictor variables |
-| $\varepsilon$ | Residual / error term |
+> **偏迴歸係數 (partial coefficient)** βⱼ：在**其他變數固定不變**下 (holding others constant / ceteris paribus)，Xⱼ 增加 1 單位時 Y 的平均變化。
+>
+> 加入新變數後係數變很多、甚至變號，通常代表原本的簡單迴歸被**干擾 (confounded)**，而不是軟體出錯。
 
-The key phrase is **"holding all other variables constant"** (ceteris paribus). This is what allows multiple regression to isolate each predictor's effect.
-
-## Python Implementation
+## Python 範例
 
 ```python
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd
 import statsmodels.formula.api as smf
 from sklearn.datasets import load_iris
 
-iris = load_iris(as_frame=True)
-df = iris.frame
-df.columns = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'target']
+df = load_iris(as_frame=True).frame
+df.columns = ["sepal_length", "sepal_width", "petal_length", "petal_width", "target"]
 
-# Fit model with multiple predictors
-model = smf.ols(
-    'petal_length ~ sepal_length + sepal_width + petal_width',
-    data=df
-).fit()
-
-print(model.summary())
+model = smf.ols("petal_length ~ sepal_length + sepal_width + petal_width", data=df).fit()
+model.summary()
+model.rsquared, model.rsquared_adj, model.aic, model.bic
 ```
 
-**Reading the coefficient table:**
+| 變數 | 係數 | SE | p | 解讀（控制其他變數下） |
+| --- | --- | --- | --- | --- |
+| sepal_length | 0.729 | 0.064 | < .001 | 花萼長 +1 cm → 花瓣長 +0.729 cm |
+| sepal_width | −0.648 | 0.067 | < .001 | 花萼寬 +1 cm → 花瓣長 −0.648 cm |
+| petal_width | 1.447 | 0.065 | < .001 | 花瓣寬 +1 cm → 花瓣長 +1.447 cm |
 
-| Variable | Coef | Std Err | t | p-value | Interpretation |
-| ------------ | ------ | ------- | ----- | ------- | ------------------------------------ |
-| Intercept | −0.263 | 0.368 | −0.71 | 0.477 | Baseline (not meaningful here) |
-| sepal_length | 0.729 | 0.064 | 11.38 | <0.001 | +0.729 cm petal length per 1 cm sepal length, *controlling for others* |
-| sepal_width | −0.648 | 0.067 | −9.62 | <0.001 | −0.648 cm petal length per 1 cm sepal width, *controlling for others* |
-| petal_width | 1.447 | 0.065 | 22.27 | <0.001 | +1.447 cm petal length per 1 cm petal width, *controlling for others* |
+**輸出要一起讀**：係數（方向與大小）、95% CI（精確度）、p 值、R² / 調整 R²、殘差圖。
 
-## R² vs Adjusted R²
+## R² vs 調整後 R² (Adjusted R²)
 
-Adding more predictors **always increases R²**, even if the new variable is meaningless. Adjusted R² penalizes unnecessary predictors.
+加任何變數（即使無意義）R² 都**只會上升**。調整後 R² 會懲罰沒貢獻的變數：
 
-## Interview Prompt: Why Adjusted R² Instead of Plain R²?
+$$
+R^2_{adj} = 1 - \frac{(1-R^2)(n-1)}{n-k-1}
+$$
 
-這是 regression 面試裡很常見的追問。
+| 模型 | 變數數 | R² | 調整 R² |
+| --- | --- | --- | --- |
+| 1 | 1 | 0.80 | **0.79** ← 較好 |
+| 2 | 10 | 0.85 | 0.75 |
 
-一個夠簡潔的回答通常是：
+比較變數數不同的模型時用調整 R²、AIC / BIC，或更好的是**測試集 / 交叉驗證誤差**。
 
-- plain `R²` 幾乎只會往上，不適合比較 predictor 數量不同的模型
-- adjusted `R²` 會對沒貢獻的變數加上複雜度懲罰
-- 所以在多變數情境下，它通常比單看 `R²` 更誠實
+## 類別預測變數：虛擬編碼 (Dummy Coding)
 
-\[
-R^2_{\text{adj}} = 1 - \frac{(1 - R^2)(n - 1)}{n - k - 1}
-\]
-
-| Metric | When to Use | Behavior When Adding a Useless Variable |
-| ---------------- | ------------------------------------------------------- | --------------------------------------- |
-| **R²** | One or a few predictors; quick measure of overall fit | Always increases (even slightly) |
-| **Adjusted R²** | Comparing models with **different** numbers of predictors | Decreases if the new variable doesn't help |
-
-Tip: Range note: R² is always between 0 and 1. Adjusted R² can be negative — this happens when the model fits worse than simply predicting the mean for every observation, which is a strong signal the model is inappropriate.
-
-### Concrete Example
-
-| Model | Predictors | R² | Adjusted R² | Verdict |
-| ------- | ---------- | ---- | ----------- | -------------------------------------------- |
-| Model 1 | 1 | 0.80 | 0.79 | Efficient baseline |
-| Model 2 | 10 | 0.85 | 0.75 | Higher R² is misleading — complexity hurts |
-
-R² favors Model 2 (0.85 > 0.80), but Adjusted R² correctly identifies Model 1 (0.79 > 0.75) as the better, more generalizable model.
-
-Key point: Do not judge a regression model by p-values alone. Read coefficient size, confidence intervals, R² or adjusted R², and residual diagnostics together.
-
-| Output | What It Answers |
-| ------ | --------------- |
-| Coefficient | Direction and size of association |
-| 95% CI | Precision of the coefficient estimate |
-| p-value | Evidence against no association |
-| R² / Adjusted R² | Overall explanatory power |
-| Residual plots | Whether model assumptions look reasonable |
+k 個類別 → 建立 **k − 1** 個虛擬變數，省略的類別為**參考組 (reference group)**。全放 k 個會造成完全共線性（dummy variable trap）。
 
 ```python
-print(f"R²:          {model.rsquared:.4f}")
-print(f"Adjusted R²: {model.rsquared_adj:.4f}")
+smf.ols("petal_length ~ sepal_length + C(target)", data=df).fit()
+# C(target)[T.1] = versicolor 與 setosa（參考組）的差
+smf.ols("y ~ C(group, Treatment(reference='control'))", data=d)   # 指定參考組
 ```
 
-## Multicollinearity
+R 中 `lm(y ~ species + 0)` 移除截距後，每個係數就是各組的平均，而不是與參考組的差。
 
-**Multicollinearity** occurs when predictor variables are highly correlated with each other. This does not affect prediction accuracy but makes individual coefficient estimates **unstable and unreliable**.
-
-### Detecting Multicollinearity: Variance Inflation Factor (VIF)
-
-\[
-\text{VIF}_j = \frac{1}{1 - R^2_j}
-\]
-
-where $R^2_j$ is the R² from regressing $X_j$ on all other predictors.
-
-| VIF Value | Interpretation |
-| ----------- | ---------------------------------------------- |
-| 1 | No multicollinearity |
-| 1–5 | Low — acceptable |
-| 5–10 | Moderate — investigate |
-| > 10 | High multicollinearity — take action |
-
-### Interview Prompt: Why Is Multicollinearity a Problem?
-
-面試裡最值得先講的一句話是：
-
-- multicollinearity 不一定會讓預測失效，但會讓 individual coefficients 變得不穩定、難解釋
-
-接著可以補：
-
-- standard error 可能變大
-- 係數符號可能變得反直覺
-- 顯著性判讀會變得不可靠
+## 交互作用 (Interaction)
 
 ```python
+smf.ols("y ~ dose * genotype", data=d)   # = dose + genotype + dose:genotype
+```
+
+交互作用顯著時，dose 的效果**取決於** genotype，不能只報單一的 dose 係數。概念同 [二因子 ANOVA](../inferential-statistics/two-way-anova.md)。
+
+## 多重共線性 (Multicollinearity)
+
+預測變數彼此高度相關。**不太影響預測準確度**，但讓個別係數不穩定：SE 變大、符號反直覺、顯著性不可靠。
+
+$$
+\text{VIF}_j = \frac{1}{1-R_j^2}, \quad R_j^2 = X_j \text{ 對其他 X 迴歸的 } R^2
+$$
+
+| VIF | 解讀 |
+| --- | --- |
+| 1 | 無共線性 |
+| 1–5 | 可接受 |
+| 5–10 | 需注意 |
+| > 10 | 嚴重 |
+
+```python
+import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
-X = df[['sepal_length', 'sepal_width', 'petal_width']]
-X_const = pd.DataFrame({'const': 1, **X})
-
-vif_data = pd.DataFrame({
-    'Variable': X.columns,
-    'VIF': [variance_inflation_factor(X_const.values, i+1)
-            for i in range(X.shape[1])]
-})
-print(vif_data.round(2))
+X = sm.add_constant(df[["sepal_length", "sepal_width", "petal_width"]])
+pd.Series([variance_inflation_factor(X.values, i) for i in range(1, X.shape[1])], index=X.columns[1:])
 ```
 
-### Dealing with Multicollinearity
+| 對策 | 時機 |
+| --- | --- |
+| 移除其一 | 兩者測量幾乎相同的東西 |
+| 合併成綜合指標 / [PCA](../multivariate-analysis/pca.md) | 兩者都有資訊 |
+| [Ridge / Lasso](../../machine-learning/foundations/regularization.md) | 變數多，重視預測 |
 
-| Strategy | When to Use |
-| --------------------- | -------------------------------------------- |
-| Remove one of the correlated variables | They measure nearly the same thing |
-| Combine into a composite (e.g., PCA) | Both carry useful information |
-| Ridge / Lasso regression | Regularization handles it automatically |
-| Collect more data | Sometimes stabilizes estimates |
+## 遺漏變數偏誤 (Omitted Variable Bias)
 
-## Categorical Predictors: Dummy Coding
+比共線性更危險的是**漏掉重要變數**：若某變數同時影響 Y 與某個已放入的 X，那個 X 的係數就會有偏。迴歸只能控制「有測量且有放入」的變數；「其他條件不變」的強度不會超過資料與設計允許的程度。見 [干擾與偏誤](../experimental-design/confounding-bias.md)。
 
-Linear regression requires numerical inputs. Categorical variables must be converted to **dummy variables** (also called indicator variables or one-hot encoding).
+## 變數選擇
 
-For a variable with $k$ categories, you create $k-1$ dummy variables. The omitted category becomes the **reference group**.
+| 方法 | 評價 |
+| --- | --- |
+| 領域知識 + 事先指定 | **首選**，尤其是以解釋為目的 |
+| AIC / BIC 比較候選模型 | 好（AIC 偏預測、BIC 偏精簡），見 [最大概似估計](../probability-and-distributions/maximum-likelihood.md#用-likelihood-比較模型) |
+| Lasso / 交叉驗證 | 變數多、以預測為目的 |
+| 逐步選擇 (stepwise) | **不建議**：模型不穩定、p 值與 CI 失真、易過擬合 |
 
-```python
-# pandas automatically handles this with C() notation in statsmodels
-# Or use pd.get_dummies()
+## 標準化係數與轉換變數
 
-# Example: add species as a categorical predictor
-model_cat = smf.ols(
-    'petal_length ~ sepal_length + C(target)',
-    data=df
-).fit()
-print(model_cat.summary())
-```
+- **標準化係數**：先把 X 做 z-score，係數變成「X 增加 1 SD 時 Y 的變化」，可粗略比較相對重要性，但不取代原始單位的解讀。
+- **轉換後的預測變數**（`I(x**3)`、`np.log(x)`）仍是線性模型，但係數意義改變：
 
-**Interpreting dummy variable coefficients:**
+| 模型 | β₁ 的解讀 |
+| --- | --- |
+| `y ~ x` | x +1 → y + β₁ |
+| `np.log(y) ~ x` | x +1 → y 約變為 $e^{\beta_1}$ 倍（≈ +100·β₁ %） |
+| `y ~ np.log(x)` | x 增加 1% → y + β₁/100 |
+| `np.log(y) ~ np.log(x)` | x 增加 1% → y 約增加 β₁ %（彈性 elasticity） |
 
-If `target` has categories 0 (setosa), 1 (versicolor), 2 (virginica), and setosa is the reference:
-- `C(target)[T.1]` = difference in predicted petal_length between versicolor and setosa
-- `C(target)[T.2]` = difference in predicted petal_length between virginica and setosa
+## 假設與診斷
 
-Warning: Dummy variable trap: Including all $k$ dummies for a $k$-category variable causes perfect multicollinearity (the dummies sum to 1 = the intercept). Always use $k-1$ dummies. pandas and statsmodels handle this automatically.
+同 [簡單線性迴歸的 LINE](simple-linear-regression.md#假設line針對殘差)，再加上**無嚴重共線性**。完整的診斷流程（部分迴歸圖、異質變異檢定、影響點）見 [多變量：假設與診斷](../multivariate-analysis/assumptions-diagnostics.md)。
 
-## R Formula Workflow for Categorical Predictors
-
-In R, categorical predictors are often easier to work with than people expect because the formula interface handles dummy coding automatically.
-
-```r
-lm(mass_g ~ species, data = fish)
-```
-
-By default, this uses one category as the reference group and estimates the others relative to it.
-
-If you intentionally remove the intercept:
-
-```r
-lm(mass_g ~ species + 0, data = fish)
-```
-
-then each coefficient becomes the mean for that category rather than a difference from a reference category.
-
-This is a very useful trick when your goal is:
-
-- direct group means
-- easier comparison with summary tables
-- avoiding mental translation from "baseline + difference"
-
-Key point: `+ 0` does not "fix" dummy coding. It changes the interpretation of the coefficients.
-
-## Model Selection
-
-### Information Criteria
-
-| Criterion | Formula (simplified) | Prefer | Penalizes |
-| --------- | ----------------------------------------- | -------- | --------- |
-| **AIC** | $-2\ln(L) + 2k$ | Lower | Model complexity lightly |
-| **BIC** | $-2\ln(L) + k\ln(n)$ | Lower | Model complexity more heavily |
-
-```python
-print(f"AIC: {model.aic:.2f}")
-print(f"BIC: {model.bic:.2f}")
-```
-
-### Stepwise Selection (Forward / Backward)
-
-```python
-# Manual backward elimination — remove highest p-value predictor iteratively
-# (statsmodels does not have built-in stepwise; implement manually or use sklearn)
-
-import statsmodels.formula.api as smf
-
-def backward_elimination(df, target, predictors, threshold=0.05):
-    while True:
-        formula = f"{target} ~ {' + '.join(predictors)}"
-        model = smf.ols(formula, data=df).fit()
-        p_values = model.pvalues.drop('Intercept')
-        max_p = p_values.max()
-        if max_p > threshold:
-            remove = p_values.idxmax()
-            predictors.remove(remove)
-            print(f"Removed: {remove} (p={max_p:.4f})")
-        else:
-            break
-    return model
-
-final_model = backward_elimination(
-    df, 'petal_length',
-    ['sepal_length', 'sepal_width', 'petal_width']
-)
-print(final_model.summary())
-```
-
-Tip: Automatic stepwise selection has limitations: it can produce unstable models and overfit. Prefer using domain knowledge + AIC/BIC comparison, or regularization methods (Ridge, Lasso) for high-dimensional data.
-
-## R Workflow: `broom` for Model Output
-
-If you want regression output that is easy to filter, plot, or compare across many models, `broom` is often the most ergonomic R workflow.
-
-```r
-library(broom)
-
-tidy(model)
-glance(model)
-augment(model)
-```
-
-A practical split:
-
-- `tidy()`: coefficient-level results
-- `glance()`: model-level fit statistics
-- `augment()`: observation-level fitted values and diagnostics
-
-This is especially handy once you start fitting many related models inside a loop or a nested-data workflow.
-
-## Transformed Predictors Can Still Be Linear Models
-
-The course examples also highlight a subtle but important point: you can transform predictors inside the formula and still stay within the linear-model family.
-
-```r
-lm(mass_g ~ I(length_cm ^ 3), data = perch)
-```
-
-This is still a linear model in the coefficient, even though the predictor has been transformed.
-
-Why this matters:
-
-- some biological or physical relationships are nonlinear on the raw scale
-- feature engineering can improve fit without leaving the `lm()` workflow
-- you keep standard linear-model diagnostics and interpretation structure
-
-Warning: A transformed predictor changes the meaning of the coefficient. Do not read it as if it were still the effect of a one-unit change in the original raw variable.
-
-## Standardized Coefficients
-
-Raw coefficients depend on the units of each predictor. If one variable is measured in centimeters and another in dollars, the magnitudes are not directly comparable.
-
-A common workaround is to standardize predictors first, so coefficients are interpreted in SD units.
-
-```python
-from sklearn.preprocessing import StandardScaler
-import statsmodels.api as sm
-
-X = df[['sepal_length', 'sepal_width', 'petal_width']]
-y = df['petal_length']
-
-scaler = StandardScaler()
-X_std = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
-X_std = sm.add_constant(X_std)
-
-model_std = sm.OLS(y, X_std).fit()
-print(model_std.params.round(3))
-```
-
-Tip: Standardized coefficients are useful for rough comparison of relative importance, but they do not replace domain interpretation in original units.
-
-## Assumptions
-
-Multiple linear regression shares all assumptions with simple linear regression, plus one additional assumption:
-
-| Assumption | Additional Notes for Multiple Regression |
-| ----------------------- | ----------------------------------------------- |
-| Linearity | Each $X_j$ should have a linear relationship with Y (partial regression plots help) |
-| Independence | Residuals should not be correlated with each other |
-| Homoscedasticity | Variance of residuals constant across all levels of every predictor |
-| Normality of residuals | Q–Q plot; matters less with large n (CLT) |
-| **No multicollinearity** | **New for multiple regression** — check VIF < 10 |
-
-## Omitted Variable Bias
-
-One of the biggest interpretation risks in multiple regression is not multicollinearity, but **leaving out an important variable** that is correlated with both Y and one of the included predictors.
-
-If an omitted variable affects both:
-
-1. the outcome
-2. an included predictor
-
-then the coefficient of the included predictor can become biased.
-
-## Common Interview Traps
-
-- 用 `R²` 比較 predictor 數量差很多的模型
-- 把 multicollinearity 說成「模型不能跑」而不是「解釋變差」
-- 忽略 omitted variable bias，只盯著 p-value
-- 忘記 multiple regression 的係數解讀一定帶有「holding other variables constant」
-
-Tip: Regression can control only for variables that are actually measured and included. "Holding all else equal" is never stronger than the data and design allow.
-
-```python
-# Diagnostic plots (same logic as the simple regression diagnostics)
-fitted    = model.fittedvalues
-residuals = model.resid
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-
-axes[0].scatter(fitted, residuals, alpha=0.5)
-axes[0].axhline(0, color='red', linestyle='--')
-axes[0].set_xlabel('Fitted Values')
-axes[0].set_ylabel('Residuals')
-axes[0].set_title('Residuals vs Fitted')
-
-from scipy import stats
-stats.probplot(residuals, dist='norm', plot=axes[1])
-axes[1].set_title('Q–Q Plot of Residuals')
-
-plt.tight_layout()
-plt.show()
-```
-
-## Coefficient Plot (Visualizing Effect Sizes)
+## 係數圖 (Coefficient Plot)
 
 ```python
 import matplotlib.pyplot as plt
 
-coefs = model.params.drop('Intercept')
-ci    = model.conf_int().drop('Intercept')
-
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.errorbar(
-    x=coefs.values,
-    y=coefs.index,
-    xerr=[coefs - ci[0], ci[1] - coefs],
-    fmt='o', color='steelblue', ecolor='gray', capsize=5
-)
-ax.axvline(0, color='red', linestyle='--', linewidth=1)
-ax.set_xlabel('Coefficient Value')
-ax.set_title('Regression Coefficients with 95% CI')
-plt.tight_layout()
-plt.show()
+coefs = model.params.drop("Intercept")
+ci = model.conf_int().drop("Intercept")
+plt.errorbar(coefs, coefs.index, xerr=[coefs - ci[0], ci[1] - coefs], fmt="o", capsize=5)
+plt.axvline(0, color="red", ls="--")
+plt.xlabel("Coefficient (95% CI)"); plt.show()
 ```
 
-Tip: If a confidence interval crosses zero, the predictor is not statistically significant at the 5% level — its true effect could be positive, negative, or zero.
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| **Partial coefficient** | Represents the effect of $X_j$ holding all other predictors constant |
-| **Adjusted R²** | Use this (not R²) when comparing models with different numbers of predictors |
-| **Multicollinearity** | Inflates standard errors; check VIF — if VIF > 10, take action |
-| **Dummy coding** | Use $k-1$ dummies for a $k$-category variable; choose reference group carefully |
-| **Model selection** | Prefer AIC/BIC and domain knowledge over automatic stepwise methods |
-| **Assumptions** | Linearity, independence, homoscedasticity, normality of residuals, no multicollinearity |
+CI 跨過 0 → 在 5% 水準下不顯著。

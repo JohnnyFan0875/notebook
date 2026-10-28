@@ -1,181 +1,78 @@
-# Bayesian vs Frequentist
+[Statistics](../README.md) › [貝氏統計](README.md) › 貝氏 vs 頻率學派
 
-These two frameworks are both valid approaches to statistical inference. Understanding their differences — not just philosophically, but practically — helps you choose the right tool for each problem.
+# 貝氏 vs 頻率學派 (Bayesian vs Frequentist)
 
-Key point: The two are not opposed: in large samples, the Bayesian method and the frequency method usually give similar conclusions. Their fundamental differences lie in their definition of "probability", their view of "parameters", and how to deal with uncertainty. Which framework to choose often depends on the nature of the problem and communication needs, rather than which one is "more correct".
+兩者都是有效的推論框架。大樣本下結論通常相近；根本差異在於對「機率」與「參數」的定義。選哪個通常取決於問題與溝通需求，而非哪個「更正確」。
 
-## Philosophical Differences
+## 觀念差異
 
-| Dimension | Frequentist | Bayesian |
-| ------------------------- | ---------------------------------------------- | ---------------------------------------------- |
-| **Probability means** | Long-run frequency of events | Degree of belief / uncertainty |
-| **Parameters are** | Fixed, unknown constants | Random variables with probability distributions |
-| **Prior information** | Not used | Formally incorporated as prior distribution |
-| **Data is** | A random realization from repeated experiments | Fixed and observed; parameters are uncertain |
-| **Goal of inference** | Properties of estimators over repeated samples | Update beliefs given the observed data |
+| 面向 | 頻率學派 | 貝氏 |
+| --- | --- | --- |
+| 機率是 | 長期相對次數 | 信念程度 |
+| 參數是 | 固定的未知常數 | 有分配的隨機變數 |
+| 先驗資訊 | 不使用 | 正式納入 |
+| 資料是 | 重複實驗的一次隨機實現 | 已觀察、固定的 |
+| 推論目標 | 估計量在重複抽樣下的性質 | 在已觀察資料下更新信念 |
 
-## Practical Differences in Output
+## 輸出差異
 
-### Confidence Interval vs Credible Interval
+| | 頻率學派 | 貝氏 |
+| --- | --- | --- |
+| 區間 | [信賴區間](../inferential-statistics/confidence-intervals.md)：重複建構時 95% 的區間包含 θ | [可信區間](posterior-inference.md)：給定資料，P(θ ∈ 區間) = 95% |
+| 隨機的是 | 區間 | 參數 θ |
+| 檢定 | p 值 = P(資料這麼極端 \| H₀) | P(H₀ \| 資料)、P(θ > 0 \| 資料) |
+| 決策 | 門檻 α = 0.05 | 完整後驗 + 損失函數 |
+| 效果量 | 需另外計算 | 內建在後驗中 |
+| 需要先驗 | 否 | 是 |
 
-This is the most common source of confusion in applied statistics.
+> 多數人對信賴區間的直覺理解（「真值有 95% 機率在這裡」），其實是可信區間的定義。
 
-| Feature | Frequentist Confidence Interval | Bayesian Credible Interval |
-| -------------------------- | --------------------------------------- | ----------------------------------------- |
-| **Correct interpretation** | "If repeated, 95% of such intervals contain true θ" | "Given the data, P(θ ∈ interval) = 95%" |
-| **What is random?** | The interval (constructed from random data) | The parameter θ |
-| **Intuitive meaning?** | ❌ Counterintuitive — θ is not random | ✅ Direct probability statement about θ |
-| **Requires prior?** | No | Yes |
+## 範例：A/B 測試
 
-Tip: Most practitioners misinterpret confidence intervals as credible intervals. The frequentist interpretation is technically correct but requires careful mental gymnastics. The Bayesian credible interval says what most people *think* a confidence interval says. In practice, most people’s intuitive understanding of confidence intervals is actually the definition of confidence intervals.
-
-### p-value vs Posterior Probability
-
-| Feature | Frequentist p-value | Bayesian Posterior |
-| ------------------------- | ---------------------------------------------- | ------------------------------------------- |
-| **What it answers** | P(data this extreme \ | H₀ is true) | P(H₀ \ | data) or P(θ > 0 \ | data) |
-| **What researchers want** | ❌ Often misused as P(H₀ \ | data) | ✅ Directly the probability of interest |
-| **Decision threshold** | Arbitrary (α = 0.05) | Based on the full posterior + loss function |
-| **Effect size info** | Not directly — must compute separately | Built into the posterior distribution |
+對照組 20/100 轉換、實驗組 28/100 轉換。
 
 ```python
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy import stats
 from scipy.stats import beta
+from statsmodels.stats.proportion import proportions_ztest
 
-np.random.seed(42)
+# 頻率學派：兩比例 z 檢定
+proportions_ztest([28, 20], [100, 100])           # p ≈ 0.18，不顯著
 
-# Scenario: A/B test — did variant B improve conversion rate?
-# Control: 100 users, 20 conversions (rate = 0.20)
-# Variant: 100 users, 28 conversions (rate = 0.28)
+# 貝氏：Beta(1,1) 平坦先驗 → Beta-Binomial 後驗
+rng = np.random.default_rng(42)
+ctrl = beta(1 + 20, 1 + 80).rvs(100_000, random_state=rng)
+var  = beta(1 + 28, 1 + 72).rvs(100_000, random_state=rng)
 
-n_ctrl, k_ctrl = 100, 20
-n_var,  k_var  = 100, 28
-
-# --- Frequentist: proportion z-test ---
-p_ctrl = k_ctrl / n_ctrl
-p_var  = k_var  / n_var
-p_pool = (k_ctrl + k_var) / (n_ctrl + n_var)
-se     = np.sqrt(p_pool * (1 - p_pool) * (1/n_ctrl + 1/n_var))
-z      = (p_var - p_ctrl) / se
-p_val  = 2 * (1 - stats.norm.cdf(abs(z)))   # two-sided
-
-print(f"--- Frequentist ---")
-print(f"p-value: {p_val:.4f}  {'(significant at α=0.05)' if p_val < 0.05 else '(not significant)'}")
-
-# --- Bayesian: Beta-Binomial ---
-prior_a, prior_b = 1, 1  # flat prior
-
-post_ctrl = beta(prior_a + k_ctrl, prior_b + n_ctrl - k_ctrl)
-post_var  = beta(prior_a + k_var,  prior_b + n_var  - k_var)
-
-# P(variant > control) via Monte Carlo
-n_sim     = 100_000
-theta_ctrl = post_ctrl.rvs(n_sim)
-theta_var  = post_var.rvs(n_sim)
-prob_better = (theta_var > theta_ctrl).mean()
-
-print(f"\n--- Bayesian ---")
-print(f"P(variant > control | data) = {prob_better:.4f}")
-print(f"Control posterior:  mean = {post_ctrl.mean():.3f}, 95% HDI ≈ [{post_ctrl.ppf(0.025):.3f}, {post_ctrl.ppf(0.975):.3f}]")
-print(f"Variant  posterior: mean = {post_var.mean():.3f},  95% HDI ≈ [{post_var.ppf(0.025):.3f}, {post_var.ppf(0.975):.3f}]")
+(var > ctrl).mean()                               # P(實驗組 > 對照組 | 資料) ≈ 0.91
+np.percentile(var - ctrl, [2.5, 97.5])            # 差值的 95% 可信區間
 ```
 
-**Output interpretation:**
+頻率學派給出二元判斷：p < 0.05 嗎？貝氏給出連續、可直接用於決策的機率：「實驗組較好的機率約 91%」。
 
-The frequentist result gives: "Is p-value < 0.05?" — a binary yes/no decision.
-The Bayesian result gives: "There is an 82% probability that the variant outperforms control" — a **continuous, actionable probability**.
+## 何時用哪個
 
-## When to Use Which Framework
+| 情境 | 建議 | 原因 |
+| --- | --- | --- |
+| 大樣本、標準檢定 | 皆可 | 結果收斂；頻率學派計算較簡單 |
+| 小樣本、稀疏資料 | **貝氏** | 先驗有正則化效果 |
+| 需要納入先前知識 | **貝氏** | 先驗是模型的一部分 |
+| 需要「θ 的機率」 | **貝氏** | 頻率學派無法直接給 P(θ \| 資料) |
+| 逐步累積的資料 | **貝氏** | 更新循環天然適合 |
+| 法規情境（FDA 等） | 常用**頻率學派** | 既有標準 |
+| 階層 / 多層次模型 | **貝氏** | 自然支援部分合併 (partial pooling)，見 [混合效應模型](../regression-analysis/mixed-effects-models.md) |
 
-This is a practical guide, not a prescription. Use what fits the question and context.
+## 大樣本等價
 
-| Scenario | Preferred Framework | Reason |
-| ------------------------------------- | ------------------- | ---------------------------------------------------- |
-| Large sample, standard hypothesis test | Either | Results converge; frequentist is computationally simpler |
-| Small sample, sparse data | **Bayesian** | Prior regularizes estimates; avoids overfitting |
-| Need to incorporate prior knowledge | **Bayesian** | Prior is a first-class model component |
-| Need a probability statement about θ | **Bayesian** | Frequentist can't give P(θ \ | data) directly |
-| Sequential data / online updating | **Bayesian** | Natural update cycle fits streaming data |
-| Regulatory/legal context (FDA, courts) | Often **Frequentist** | Established standards; non-informative priors required |
-| Communicating to non-statisticians | **Bayesian** | Credible interval interpretation is intuitive |
-| Complex hierarchical models | **Bayesian** | Natural framework for partial pooling |
-| Exploratory analysis | Either | Both work; choose based on familiarity |
+n → ∞ 時（Bernstein–von Mises 定理）：後驗平均 → MLE、可信區間 → 信賴區間、先驗的影響消失。n 小時先驗會明顯把後驗拉離 MLE。
 
-## The Large-Sample Equivalence
+## 常見誤解
 
-As n → ∞, Bayesian and frequentist point estimates converge:
+| 誤解 | 事實 |
+| --- | --- |
+| 「貝氏主觀、頻率客觀」 | 兩者都要假設：貝氏有先驗，頻率學派有模型與檢定的選擇 |
+| 「p < 0.05 → H₀ 為假的機率 95%」 | P(資料 \| H₀) ≠ P(H₀ \| 資料)，後者是貝氏量 |
+| 「貝氏在小樣本一定比較好」 | 只有先驗設定合理時；錯誤的先驗會傷害估計 |
+| 「寬的先驗一定較差」 | 資料夠多時先驗選擇影響很小 |
 
-- The **posterior mean** approaches the **MLE**
-- The **credible interval** approaches the **confidence interval**
-- The **posterior** becomes dominated by the likelihood, regardless of prior
-
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import beta, norm
-
-theta = np.linspace(0, 1, 400)
-true_theta = 0.35  # true parameter
-
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-sample_sizes = [5, 30, 200]
-
-for ax, n in zip(axes, sample_sizes):
-    k = int(true_theta * n)  # heads observed
-
-    # Bayesian posterior (weakly informative prior)
-    prior_a, prior_b = 2, 2
-    posterior = beta(prior_a + k, prior_b + n - k)
-    post_pdf  = posterior.pdf(theta)
-
-    # Frequentist: Normal approximation to sampling distribution of MLE
-    mle    = k / n
-    se     = np.sqrt(mle * (1 - mle) / n)
-    freq_pdf = norm.pdf(theta, loc=mle, scale=se)
-
-    ax.plot(theta, post_pdf / post_pdf.max(),  color='tomato',    linewidth=2,  label='Posterior')
-    ax.plot(theta, freq_pdf / freq_pdf.max(),  color='steelblue', linewidth=2,  linestyle='--', label='Freq. Sampling Dist.')
-    ax.axvline(true_theta, color='black', linestyle=':', alpha=0.5, label='True θ')
-    ax.set_title(f'n = {n}')
-    ax.set_xlabel('θ')
-    ax.legend(fontsize=8)
-    ax.set_yticks([])
-
-plt.suptitle('Convergence of Bayesian and Frequentist Inference as n Grows', y=1.02, fontsize=12)
-plt.tight_layout()
-plt.show()
-```
-
-Tip: With small n, the prior visibly pulls the posterior away from the MLE. With large n, the two methods agree — the data overwhelms the prior. This convergence is a formal result known as Bernstein–von Mises theorem.
-
-## Common Misconceptions
-
-| Misconception | Reality |
-| --------------------------------------------- | -------------------------------------------------------------------- |
-| "Bayesian is subjective, frequentist is objective" | Both require assumptions — priors in Bayesian, model/test choice in frequentist |
-| "p < 0.05 means there is a 95% chance H₀ is false" | ❌ Incorrect. P(data\ | H₀) ≠ P(H₀\ | data). This is the Bayesian quantity. |
-| "A wider prior always leads to worse estimates" | Not necessarily — with enough data, prior choice rarely matters |
-| "Bayesian is always better for small samples" | Only if the prior is well-specified; a bad prior can hurt estimates |
-| "Confidence intervals contain the parameter 95% of the time" | The parameter is fixed — the interval either contains it or doesn't. The 95% applies to the procedure. |
-
-## Key Takeaways
-
-| Concept | Key Point |
-| ------------------------------------ | -------------------------------------------------------------------------------- |
-| **Probability interpretation differs** | Bayesian = belief; Frequentist = long-run frequency |
-| **Credible ≠ Confidence interval** | Same number, completely different meaning |
-| **Bayesian gives P(θ\ | data)** | Frequentist cannot directly answer "what is the probability this effect is real?" |
-| **Both converge at large n** | Philosophical differences shrink as data accumulates |
-| **Use priors carefully** | Good priors help; bad priors hurt — always report your choice |
-| **Framework choice = problem choice** | Match the framework to the question, not the other way around |
-
-## The Most Practical Difference
-
-In applied work, the cleanest contrast is often:
-
-- frequentist: "How incompatible is this data with the null model?"
-- Bayesian: "How plausible are different parameter values after observing the data?"
-
-Tip: The two frameworks are often less like rivals and more like different reporting grammars for uncertainty.
+> 一句話：頻率學派問「資料與虛無模型有多不相容？」；貝氏問「看完資料後，各種參數值有多可信？」
