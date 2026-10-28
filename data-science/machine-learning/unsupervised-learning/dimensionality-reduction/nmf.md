@@ -1,131 +1,77 @@
-# NMF
+[Machine Learning](../../README.md) › [非監督式學習](../README.md) › [降維](README.md) › NMF
 
-## Overview
+# 非負矩陣分解 (Non-negative Matrix Factorization, NMF)
 
-- **NMF (Non-negative Matrix Factorization)** decomposes a non-negative matrix into two lower-dimensional non-negative matrices (**W** and **H**).
-- Applications: dimensionality reduction, feature extraction, and pattern recognition.
-- Especially useful where interpretability is important: **image processing, topic modeling, collaborative filtering, biology (gene expression patterns)**.
-- Compared to [PCA](pca.md), NMF ensures components and weights are non-negative, making them easier to interpret as “parts-based” representations.
+把非負矩陣 V（樣本 × 特徵）分解成兩個較小的非負矩陣：$V \approx W H$。因為不允許負值，成分只能「相加」不能「抵消」，得到的是**部分組成整體 (parts-based)** 的表示，通常比 [PCA](pca.md) 好解釋。
 
-## Example: Simple Matrix Factorization
+| 矩陣 | 形狀 | 意義（文字例） | 意義（基因表現例） |
+| --- | --- | --- | --- |
+| V | 樣本 × 特徵 | 文件 × 詞頻 | 樣本 × 基因 |
+| W | 樣本 × k | 每篇文件含各主題的量 | 每個樣本中各「基因程式」的活性 |
+| H | k × 特徵 | 每個主題由哪些詞組成 | 每個程式由哪些基因組成 |
+
+| | PCA | NMF |
+| --- | --- | --- |
+| 值域 | 可正可負 | 非負 |
+| 成分 | 正交、依變異排序 | 不正交、無排序 |
+| 解讀 | 對比（正負抵消） | 加總（部分相加） |
+| 唯一解 | 是 | 否（依初始化而異） |
+| 資料 | 任意 | 必須非負（計數、表現量、像素） |
+
+## 用法
 
 ```python
 import numpy as np
 from sklearn.decomposition import NMF
+from sklearn.feature_extraction.text import CountVectorizer
 
+# 1. 小矩陣：4 篇文件 × 5 個詞
 V = np.array([[5, 0, 3, 0, 2],
               [0, 3, 0, 2, 4],
               [1, 0, 4, 3, 0],
               [0, 1, 0, 5, 3]])
+model = NMF(n_components=2, init="nndsvda", max_iter=1000, random_state=42)
+W = model.fit_transform(V)       # 4 × 2：文件 1 幾乎只有主題 1，文件 2、4 以主題 2 為主
+H = model.components_            # 2 × 5：主題 1 由詞 1、3 主導
+model.reconstruction_err_        # 4.44（Frobenius norm，越小越好）
 
-# row: documents 1-4, column: words 1-5
+# 2. 文字主題
+docs = ["I love programming in Python.", "Python and machine learning are awesome.",
+        "I love data science and machine learning.", "Data science is my favorite field.",
+        "I am learning about machine learning algorithms."]
+vec = CountVectorizer(stop_words="english")
+X = vec.fit_transform(docs)
+nmf = NMF(n_components=2, max_iter=1000, random_state=1)
+W = nmf.fit_transform(X)
+terms = vec.get_feature_names_out()
+[[terms[j] for j in topic.argsort()[::-1][:3]] for topic in nmf.components_]
+# [['learning', 'machine', 'algorithms'], ['science', 'data', 'field']]
 
-model = NMF(n_components=2, random_state=42) # 2 topics
-
-W = model.fit_transform(V) # 4x2: Document-topic matrix
-H = model.components_      # 2x5: Topic-word matrix
-
-V_reconstructed = np.dot(W, H) # 4x5 reconstruction
-```
-
-- **W (basis matrix)**: rows = documents, columns = topics, values = weight of topics per document.
-- **H (coefficient matrix)**: rows = topics, columns = words, values = weight of words per topic.
-
-## Visualization of Decomposition
-
-```python
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-
-# Plot original matrix V
-ax[0].imshow(V, aspect='auto', cmap='Blues')
-ax[0].set_title('Original Matrix V')
-ax[0].set_xlabel('Features')
-ax[0].set_ylabel('Samples')
-
-# Plot basis matrix W
-ax[1].imshow(W, aspect='auto', cmap='Blues')
-ax[1].set_title('Basis Matrix W')
-ax[1].set_xlabel('Components')
-ax[1].set_ylabel('Samples')
-
-# Plot coefficient matrix H
-ax[2].imshow(H, aspect='auto', cmap='Blues')
-ax[2].set_title('Coefficient Matrix H')
-ax[2].set_xlabel('Features')
-ax[2].set_ylabel('Components')
-
-plt.tight_layout()
-plt.show()
-```
-
-## Cosine Similarity with NMF
-
-### Overview
-
-- **Cosine similarity** measures the cosine of the angle between two vectors (values range from -1 to 1).
-- In the context of NMF:
-  - Compare **documents** (rows of W) based on topic distribution.
-  - Compare **topics** (rows of H) based on their word distributions.
-- **High cosine similarity (close to 1)** → vectors are very similar in orientation (similar topics or documents).
-- **Low similarity (close to 0)** → vectors are unrelated.
-
-### Example: Document and Topic Similarity
-
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.decomposition import NMF
+# 3. 用主題組成比較文件
 from sklearn.metrics.pairwise import cosine_similarity
-
-documents = [
-    "I love programming in Python.",
-    "Python and machine learning are awesome.",
-    "I love data science and machine learning.",
-    "Data science is my favorite field.",
-    "I am learning about machine learning algorithms."
-]
-
-# Convert text to bag-of-words representation
-vectorizer = CountVectorizer(stop_words='english')
-X = vectorizer.fit_transform(documents)
-
-# Fit NMF
-nmf = NMF(n_components=2, random_state=1)
-W = nmf.fit_transform(X)  # Document-topic matrix
-H = nmf.components_       # Topic-term matrix
-
-# Cosine similarity for documents
-cos_sim_matrix_docs = cosine_similarity(W)
-sns.heatmap(cos_sim_matrix_docs, annot=True, cmap='Blues',
-            xticklabels=documents, yticklabels=documents)
-plt.title("Cosine Similarity Matrix for Documents")
-plt.show()
-
-# Cosine similarity for topics
-cos_sim_matrix_topics = cosine_similarity(H)
-sns.heatmap(cos_sim_matrix_topics, annot=True, cmap='Blues',
-            xticklabels=[f"Topic {i+1}" for i in range(H.shape[0])],
-            yticklabels=[f"Topic {i+1}" for i in range(H.shape[0])])
-plt.title("Cosine Similarity Matrix for Topics")
-plt.show()
+cosine_similarity(W)             # 文件間的主題相似度（非負時 0 到 1）
 ```
 
-### Recommended Notes
+## 參數
 
-- Use **cosine similarity** when analyzing similarity between documents or topics in NMF results.
-- Alternative measures: **Pearson correlation** (linear relationships) or **Jaccard similarity** (binary features).
-- NMF + cosine similarity is widely used in **topic modeling** and **text [clustering](../clustering/README.md)**.
-- Always validate interpretability with **domain knowledge** (e.g., topics should align with meaningful themes).
+| 參數 | 說明 |
+| --- | --- |
+| `n_components` (k) | 成分數；比較不同 k 的重建誤差與成分的可解釋性、穩定性 |
+| `init` | `"nndsvda"`（預設之一，穩定）、`"random"`（需多次重跑） |
+| `beta_loss` | `"frobenius"`（預設）；計數資料可用 `"kullback-leibler"`（需 `solver="mu"`） |
+| `alpha_W`、`alpha_H`、`l1_ratio` | 正則化，可讓成分更稀疏 |
 
-## Related Concepts
+## 選 k 與穩定性
 
-- [Dimensionality Reduction](README.md)
-- [PCA](pca.md)
-- [t-SNE](tsne.md)
-- [Feature Engineering Principles](../../foundations/feature-engineering-principles.md)
+NMF 沒有唯一解，不同初始化可能得到不同成分。常見做法：對每個 k 多次重跑，選**重建誤差下降趨緩**且**成分在重跑間穩定**的 k（cNMF 的 consensus 方法即基於此）。
 
-[Back to Dimensionality Reduction](README.md)
+## 生資應用
+
+| 應用 | 說明 |
+| --- | --- |
+| 突變特徵 (mutational signatures) | 腫瘤 × 96 種突變型態的計數矩陣 → 分解出 COSMIC signatures（SigProfiler） |
+| 基因表現程式 | 單細胞資料中找共同活化的基因群（cNMF） |
+| 腫瘤亞型 | 表現量矩陣分解後依 W 分群 |
+| 空間轉錄體 / 細胞組成去卷積 | 部分方法基於 NMF |
+
+> NMF 也用在 [推薦系統](../../recommender-systems/README.md)（使用者 × 項目的評分矩陣分解）。輸入有負值（例如標準化後的資料）時不能直接用，需先確認資料的尺度。

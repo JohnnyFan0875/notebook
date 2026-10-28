@@ -37,7 +37,7 @@ AdaBoostRegressor(estimator=DecisionTreeRegressor(max_depth=3), n_estimators=100
                   learning_rate=0.1, loss="linear")      # "linear"、"square"、"exponential"
 ```
 
-> 新版 sklearn 的 `AdaBoostClassifier` 只剩 SAMME 演算法：`algorithm` 參數在 1.6 deprecated、之後移除（舊程式碼的 `algorithm="SAMME.R"` 會報錯）。
+> 新版 sklearn 的 `AdaBoostClassifier` 只剩 SAMME 演算法：`"SAMME.R"` 在 1.4 deprecated、1.6 移除；`algorithm` 參數本身在 1.6 deprecated、1.8 移除。舊程式碼的 `algorithm="SAMME.R"` 在新版會報錯，直接刪掉這個參數即可。
 
 | 參數 | 說明 |
 | --- | --- |

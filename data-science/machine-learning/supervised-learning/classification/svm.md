@@ -62,7 +62,7 @@ svm_proba.fit(X_train, y_train).predict_proba(X_test)
 
 | 優點 | 缺點 |
 | --- | --- |
-| 中小型、高維資料上表現強 | 訓練時間約 O(n²)–O(n³)，**超過數萬筆就很慢** → `LinearSVC`、`SGDClassifier(loss="hinge")` |
+| 中小型、高維資料上表現強 | 訓練時間隨樣本數**超過平方成長**（官方文件），**超過數萬筆就很慢** → `LinearSVC`、`SGDClassifier(loss="hinge")` |
 | 只依賴支持向量，對遠處的點穩健 | **必須縮放** |
 | Kernel 提供彈性的非線性邊界 | `C`、`gamma` 敏感，必須調參 |
 | 線性 SVM 適合 p ≫ n | 不直接輸出機率；RBF 模型難解釋 |

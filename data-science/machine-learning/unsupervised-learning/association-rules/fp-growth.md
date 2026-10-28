@@ -1,43 +1,42 @@
+[Machine Learning](../../README.md) › [非監督式學習](../README.md) › [關聯規則](README.md) › FP-Growth
+
 # FP-Growth
 
-FP-Growth is an alternative to [Apriori](apriori.md) for mining frequent itemsets more efficiently.
+找頻繁項目集的另一種演算法，結果與 [Apriori](apriori.md) **完全相同**，但通常快很多。它不逐層產生大量候選組合，而是先把交易壓縮成一棵 **FP-tree**（共享前綴的樹），再從樹上遞迴挖掘頻繁模式。
 
-## Why It Is Often Preferred
+```
+1. 掃描一次：計算每個項目的 support，刪掉不頻繁的項目
+2. 再掃描一次：每筆交易依項目頻率排序後插入 FP-tree（共同前綴共用節點）
+3. 從樹上對每個項目建立條件樹 (conditional FP-tree)，遞迴找頻繁模式
+```
 
-- Avoids generating large numbers of explicit candidate itemsets
-- Can be much faster on large transactional datasets
-- Uses a compressed tree structure called an FP-tree
+## 用法（mlxtend）
 
-## Core Idea
+```python
+from mlxtend.frequent_patterns import fpgrowth, association_rules
 
-- Build an FP-tree from transactions
-- Mine frequent patterns recursively from the tree
+# df：TransactionEncoder 產生的布林矩陣（見 Apriori 筆記）
+itemsets = fpgrowth(df, min_support=0.6, use_colnames=True)     # 和 apriori 的結果相同
+rules = association_rules(itemsets, num_itemsets=len(df), metric="lift", min_threshold=1.0)
+```
 
-## 為什麼它通常更快
+## Apriori vs FP-Growth
 
-FP-Growth 不需要像 Apriori 一樣逐層產生大量候選組合，而是先把交易資料壓縮成 FP-tree，再從樹結構中遞迴挖掘頻繁模式。當資料集很大、交易很密集時，這個差異會非常明顯。
+| | Apriori | FP-Growth |
+| --- | --- | --- |
+| 候選項目集 | 逐層產生大量候選 | 不產生 |
+| 掃描資料次數 | 多次（每層一次） | 兩次 |
+| 速度 | 項目多、資料密集時很慢 | 通常快很多 |
+| 記憶體 | 候選集合可能很大 | FP-tree 在資料稀疏、前綴少共用時也可能很大 |
+| 理解難度 | 低 | 較高 |
+| 結果 | 相同 | 相同 |
 
-## Comparison with Apriori
+## 什麼時候用
 
-- [Apriori](apriori.md): simpler to understand, often slower at scale
-- FP-Growth: more efficient, especially when the dataset is large or dense
+| 情境 | 選擇 |
+| --- | --- |
+| 項目多、交易多、資料密集 | FP-Growth |
+| 教學、小資料 | 任一皆可 |
+| 資料大到單機放不下 | Spark MLlib 的 `FPGrowth` |
 
-## Practical Notes
-
-- Use when [Apriori](apriori.md) becomes computationally heavy.
-- Still choose support, confidence, and lift [threshold](../../evaluation/classification-thresholds-and-calibration.md)s carefully.
-
-## 什麼時候特別值得考慮
-
-- 商品種類多、交易筆數多
-- 資料相對 dense，Apriori 候選組合爆炸
-- 你已經知道要做 market basket 類問題，但希望方法更具伸縮性
-
-## Related Concepts
-
-- [Association Rules](README.md)
-- [Apriori](apriori.md)
-- [Clustering](../clustering/README.md)
-- [Feature Engineering Principles](../../foundations/feature-engineering-principles.md)
-
-[Back to Association Rules](README.md)
+無論哪個演算法，`min_support`、confidence、lift 的門檻都要謹慎設定，見 [關聯規則](README.md)。

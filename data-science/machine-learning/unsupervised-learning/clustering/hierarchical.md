@@ -1,103 +1,70 @@
-# Hierarchical Clustering
+[Machine Learning](../../README.md) › [非監督式學習](../README.md) › [分群](README.md) › 階層式分群
 
-## Overview
+# 階層式分群 (Hierarchical Clustering)
 
-Hierarchical clustering is an **unsupervised learning method** that groups data points based on similarity or distance, without requiring labeled outputs.
+不直接切成 k 群，而是建立一棵合併樹（樹狀圖 dendrogram），再決定在哪個高度切。生資最常見的用法是基因 × 樣本表現量熱圖兩側的樹。
 
-Key characteristics:
+| 方向 | 做法 | 常用度 |
+| --- | --- | --- |
+| 聚合式 (agglomerative，由下而上) | 每點各自一群 → 反覆合併最近的兩群 | **最常用** |
+| 分裂式 (divisive，由上而下) | 全部一群 → 反覆分裂 | 較少 |
 
-- Builds a **tree-like structure** called a **dendrogram** to represent cluster relationships
-- Can reveal nested structures within data
-- Sensitive to noise and outliers
+## 連結方法 (Linkage)
 
-## Types of Hierarchical Clustering
+群與群之間的距離怎麼算：
 
-- **Agglomerative (Bottom-Up) Approach**
-  - Start with each data point as its own cluster
-  - Iteratively merge the two closest clusters
-- **Divisive (Top-Down) Approach**
-  - Start with all data points in one single cluster
-  - Iteratively split clusters into smaller groups
+| Linkage | 定義 | 傾向 |
+| --- | --- | --- |
+| Single | 兩群最近兩點的距離 | 能沿著細長結構連起來；易產生**鏈結效應 (chaining)** |
+| Complete | 最遠兩點的距離 | 緊密、直徑相近的群 |
+| Average (UPGMA) | 所有點對的平均距離 | 折衷；系統發生樹常用 |
+| Ward | 合併後群內變異增加最少 | 緊密、大小相近的群；**歐氏距離下的好預設** |
 
-## Linkage Methods
+![Dendrogram and linkage](src/hierarchical-dendrogram-linkage.png)
 
-The **linkage method** determines how distances between clusters are calculated:
+左：在高度 10 切樹得到 3 群；切線上方有一段很長的垂直空白，代表這 3 群分得很開。右：同一份兩彎月資料，single linkage 沿著彎月連起來 (ARI 1.00)，Ward 則切成兩個緊密的團塊 (0.55)。資料有雜訊時情況可能相反（single 會把群串在一起），所以 linkage 要依資料試。
 
-- **Single linkage**: Minimum distance between points across clusters
-- **Complete linkage**: Maximum distance between points across clusters
-- **Average linkage**: Average distance between all pairs of points across clusters
-- **Ward’s method**: Minimizes the variance within clusters
-
-### When Each Linkage Tends To Help
-
-- **Single linkage** can connect elongated structures, but it is prone to chaining effects.
-- **Complete linkage** prefers tighter, more compact clusters.
-- **Average linkage** is often a middle ground when single and complete give very different answers.
-- **Ward's method** is a strong default when Euclidean distance is appropriate and compact clusters are expected.
-
-![Image](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*7d7DTLiwe0MJEQfPl0PLXw.png)
-
-## Python Example
+## 用法
 
 ```python
-import matplotlib.pyplot as plt
-from sklearn.datasets import make_blobs
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.preprocessing import StandardScaler
 
-# Generate synthetic data
-X, _ = make_blobs(n_samples=100, centers=4, random_state=42)
+X_scaled = StandardScaler().fit_transform(X)
 
-# Perform hierarchical clustering with complete linkage
-linked = linkage(X, method='complete')
+# 1. SciPy：完整的樹，可畫 dendrogram、用兩種方式切
+Z = linkage(X_scaled, method="ward")                 # 也可傳入距離矩陣（pdist 結果）
+dendrogram(Z, no_labels=True)
+labels_h = fcluster(Z, t=10, criterion="distance")   # 依高度切
+labels_k = fcluster(Z, t=3, criterion="maxclust")    # 依群數切
 
-# Assign cluster labels (same label = same cluster), height=6
-cluster_labels = fcluster(linked, 6, criterion='distance')
+# 2. sklearn：只要標籤時
+AgglomerativeClustering(n_clusters=3, linkage="ward").fit_predict(X_scaled)
+AgglomerativeClustering(n_clusters=None, distance_threshold=10).fit_predict(X_scaled)
 
-# Visualization
-plt.figure(figsize=(10, 7))
-dendrogram(linked, leaf_rotation=90, leaf_font_size=6)
-plt.title('Dendrogram of Hierarchical Clustering')
-plt.xlabel('Sample index')
-plt.ylabel('Distance')
-plt.show()
+# 3. 相關係數距離（基因表現常用：看「形狀」相似而不是絕對量）
+Z_corr = linkage(X_scaled, method="average", metric="correlation")
 ```
 
-## Advantages
+標準化 iris 用 Ward 切成 3 群，和真實品種的 ARI 為 0.615（single 0.558、complete 0.573、average 0.562）。
 
-- No need to pre-specify the number of clusters
-- Produces a hierarchy that can be cut at different levels for flexible grouping
-- Works well for small to medium datasets
+## 讀樹狀圖
 
-## Limitations
+| 看什麼 | 意義 |
+| --- | --- |
+| 合併高度 | 兩群合併時的距離；越高越不相似 |
+| 長的垂直空白 | 在這段高度切，群會很穩定 |
+| 葉子的左右順序 | **沒有意義**，每個分支都可以翻轉 |
+| 依高度切 vs 依群數切 | 兩種切法可能得到不同分組，要明確寫出用哪一種 |
 
-- Computationally expensive for large datasets (`O(n^3)` complexity)
-- Sensitive to noise and outliers
-- Choice of linkage method can significantly affect results
+## 優缺點
 
-## Practical Tips
+| 優點 | 缺點 |
+| --- | --- |
+| 不需事先指定 k | 記憶體 O(n²)（要存距離矩陣），樣本上萬就很吃力 |
+| 給出完整的階層結構 | 合併是貪婪的，早期合併錯了無法修正 |
+| 可用任意距離（相關、Gower、Jaccard） | 對雜訊與離群值敏感 |
+| 結果固定（無隨機初始化） | Linkage 選擇大幅影響結果 |
 
-- Use **Ward’s linkage** when clusters are expected to be spherical
-- Scale features before clustering
-- For large datasets, consider **agglomerative clustering with truncated linkage** or alternatives like **[K-Means](kmeans.md) / [DBSCAN](dbscan.md)**
-
-### Reading a Dendrogram
-
-- A dendrogram shows how clusters merge as the allowed distance increases.
-- You can cut it at a chosen height if you want a distance-based rule.
-- You can also convert the tree into a fixed number of clusters with tools such as `fcluster(..., criterion="maxclust")`.
-- Large vertical jumps before a merge often suggest more clearly separated groups.
-
-### Two Common Ways To Cut the Tree
-
-- Cut by **height** when you want clusters to obey a distance threshold.
-- Cut by **number of clusters** when you already know how many groups you want to compare.
-- These two choices can produce different partitions, so be explicit about which rule you are using.
-
-## Related Concepts
-
-- [Clustering](README.md)
-- [Feature Scaling](../../preprocessing/feature-scaling.md)
-- [K-Means Clustering](kmeans.md)
-- [DBSCAN](dbscan.md)
-
-[Back to Clustering](README.md)
+> Ward 只適用歐氏距離；用相關係數或其他距離時改用 average 或 complete。熱圖分群（`seaborn.clustermap`、R `pheatmap`）預設常是歐氏距離 + complete，記得確認並說明。

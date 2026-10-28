@@ -1,25 +1,33 @@
-# Anomaly Detection
+[Machine Learning](../../README.md) › [非監督式學習](../README.md) › 異常偵測
 
-Anomaly detection looks for observations that deviate meaningfully from the prevailing pattern of the data. Unlike ordinary outlier cleaning, the goal is often to **surface rare but important cases** rather than automatically remove them.
+# 異常偵測 (Anomaly Detection)
 
-## Topics
+找出明顯偏離主要模式的觀測值。和前處理的 [離群值處理](../../preprocessing/outlier-handling.md) 不同，這裡的目標通常是**把罕見但重要的案例找出來**（詐欺、故障、異常樣本），而不是刪掉它們。
 
-- [Core Concepts](core-concepts.md)
-- [Isolation Forest](isolation-forest.md)
-- [Distance- and Density-Based Methods](distance-density.md)
-- [Time-Series Anomalies](time-series-anomalies.md)
+## 建議順序
 
-## Notes
+```
+核心概念（型態、分數 vs 閾值）→ Isolation Forest → 距離 / 密度方法（LOF）→ 時間序列異常
+```
 
-- Anomalies can be point anomalies, contextual anomalies, or collective anomalies.
-- Many anomaly detectors output a **score** first and a binary flag only after a threshold is chosen.
-- The same rare point may be informative in fraud detection but harmful noise in data preprocessing. Context decides the right response.
+## 筆記
 
-## Interpretation Reminders
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [核心概念](core-concepts.md) | 離群 / 異常 / 新奇、異常型態、contamination、評估 | 什麼算異常？怎麼評估？ |
+| [Isolation Forest](isolation-forest.md) | 隨機切分的隔離路徑長度 | 大型表格資料的預設方法？ |
+| [距離與密度方法](distance-density.md) | KNN 距離、LOF、Gower 距離 | 局部異常、混合型資料怎麼處理？ |
+| [時間序列異常](time-series-anomalies.md) | 趨勢 / 季節分解、殘差、滾動基準 | 「這個時間點」不尋常嗎？ |
 
-- A model can be good at ranking suspicious cases even when the final threshold is still uncertain.
-- `contamination` is a decision setting, not a discovered truth about the world.
-- Distance-based methods are sensitive to scaling; standardization is often mandatory.
-- For time series, anomalies should usually be judged against trend, seasonality, and calendar structure rather than raw values alone.
+## 方法速覽
 
-[Back to Unsupervised Learning](../README.md)
+| 方法 | sklearn | 擅長 | 弱點 |
+| --- | --- | --- | --- |
+| Isolation Forest | `IsolationForest` | 全域異常、高維、大資料 | 局部異常 |
+| Local Outlier Factor | `LocalOutlierFactor` | 局部異常、密度不均 | 慢、對 `n_neighbors` 敏感 |
+| KNN 距離 | `NearestNeighbors` | 簡單直覺 | 密度不均時誤判 |
+| One-Class SVM | `OneClassSVM` | 乾淨訓練資料的新奇偵測 | 對參數敏感、大資料慢 |
+| 穩健共變異 | `EllipticEnvelope` | 近似多變量常態 | 非常態資料 |
+| 規則 / 統計門檻 | — | 可解釋、單變量 | 抓不到多變量異常 |
+
+> 同一個罕見點，在詐欺偵測中是訊號，在資料清理中是雜訊；處理方式由情境決定。有標籤後，問題就變成 [不平衡分類](../../evaluation/class-imbalance.md)。

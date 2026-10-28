@@ -1,110 +1,89 @@
-# Distance- and Density-Based Methods
+[Machine Learning](../../README.md) › [非監督式學習](../README.md) › [異常偵測](README.md) › 距離與密度方法
 
-Distance- and density-based anomaly detectors treat unusual observations as points that are far from their neighbors, live in sparse regions, or both.
+# 距離與密度方法 (Distance- and Density-Based Methods)
 
-These methods are often intuitive, but they are also highly sensitive to feature scaling and distance choice.
+把「離鄰居很遠」或「位在稀疏區域」的點視為異常。直覺好懂，但**對縮放與距離定義非常敏感**。
 
-## KNN-Based Outlier Detection
+## 全域 vs 局部異常
 
-KNN-style anomaly detection uses neighbor distances to assign anomaly scores. A point that is far from its nearest neighbors looks more suspicious.
+| 型態 | 意義 | 適合的方法 |
+| --- | --- | --- |
+| 全域異常 (global) | 離整體資料都很遠 | KNN 距離、Isolation Forest |
+| 局部異常 (local) | 相對於附近的點很奇怪，但整體來看不極端 | **LOF** |
 
-Typical idea:
+![Anomaly method comparison](src/distance-density-method-comparison.png)
 
-1. choose a distance metric
-2. find the `k` nearest neighbors of each point
-3. use neighbor distance as an anomaly score
+一個緊密的群（左下）與一個稀疏的群（右上），加上一個緊鄰緊密群的局部異常（圈起來）。KNN 距離把它排在第 77 名：它到鄰居的距離，比稀疏群裡的正常點還短。LOF 比較的是「自己的密度 vs 鄰居的密度」，把它排在第 4 名。
+
+## KNN 距離
+
+到第 k 個最近鄰（或前 k 個的平均）的距離當作異常分數。
+
+| `k` | 效果 |
+| --- | --- |
+| 小 | 非常局部，分數不穩定 |
+| 大 | 鄰域較大、分數平滑，局部異常可能被洗掉 |
+
+## Local Outlier Factor (LOF)
+
+比較每個點的局部密度與其鄰居的局部密度：
+
+| LOF 值 | 意義 |
+| --- | --- |
+| ≈ 1 | 密度和鄰居相近 → 正常 |
+| > 1 | 比鄰居稀疏 → 可疑 |
+| 遠大於 1 | 局部異常 |
 
 ```python
-from pyod.models.knn import KNN
+import numpy as np
+from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
+from sklearn.preprocessing import StandardScaler
 
-knn = KNN(n_neighbors=20, contamination=0.01, n_jobs=-1)
-knn.fit(X)
+X_scaled = StandardScaler().fit_transform(X)          # 一定先縮放
 
-probs = knn.predict_proba(X)
-is_outlier = probs[:, 1] > 0.55
+# 1. KNN 距離分數
+dist, _ = NearestNeighbors(n_neighbors=21).fit(X_scaled).kneighbors(X_scaled)
+knn_score = dist[:, -1]                               # 第 20 個鄰居（第 0 個是自己）
+
+# 2. LOF：離群偵測（對訓練資料本身評分）
+lof = LocalOutlierFactor(n_neighbors=20, contamination=0.01)
+labels = lof.fit_predict(X_scaled)                    # -1 = 異常
+lof_score = -lof.negative_outlier_factor_             # 即 LOF 值，越大越異常
+
+# 3. LOF：新奇偵測（在乾淨資料上 fit，對新資料 predict）
+lof_nov = LocalOutlierFactor(n_neighbors=20, novelty=True).fit(X_clean)
+lof_nov.predict(X_new)                                # novelty=True 時才能對新資料 predict
 ```
 
-Key point: KNN methods are simple because the anomaly score comes directly from neighborhood structure rather than a more elaborate model.
+> pyod 套件有 `KNN`、`LOF` 等數十種偵測器的統一介面，適合一次比較多種方法。
 
-## Choosing `k`
+## 距離的選擇
 
-`k` controls how local the detector is:
+| 距離 | 適合 |
+| --- | --- |
+| 歐氏 (Euclidean) | 連續、已標準化的特徵（預設） |
+| 曼哈頓 (Manhattan) | 稀疏或軸向結構；對單一大差異較不敏感 |
+| Cosine | 文字、表現量 profile（看方向不看大小） |
+| **Gower** | 混合型資料（連續 + 序位 + 二元 + 名目） |
+| Mahalanobis | 考慮特徵相關；近似多變量常態時 |
 
-| `k` choice | Tends to emphasize |
-| ---------- | ------------------ |
-| Smaller `k` | Very local structure, sharper sensitivity |
-| Larger `k` | Broader neighborhoods, smoother scoring |
-
-If `k` is too small, the detector becomes unstable. If `k` is too large, local anomalies may get washed out.
-
-## Distance Metrics Matter
-
-Common choices:
-
-- Euclidean distance: default for many continuous settings
-- Manhattan distance: often more robust when dimensions are sparse or axis-aligned
-- Minkowski distance: general family containing both Euclidean and Manhattan
-
-Warning: Distances are meaningless when one feature dominates the scale. Standardize or otherwise normalize before trusting neighbor-based anomaly scores.
-
-## Local Density Methods
-
-KNN is not the only neighborhood approach. Methods such as **Local Outlier Factor (LOF)** compare a point's density to the densities of its neighbors.
-
-This can help when:
-
-- the dataset has clusters of different densities
-- global isolation is not the main issue
-- a point is normal globally but strange locally
-
-Tip: LOF is often a better fit than raw KNN distance when the data has heterogeneous neighborhoods.
-
-### How To Read LOF
-
-LOF is a ratio-style score:
-
-- `LOF ≈ 1`: local density is similar to neighbors
-- `LOF > 1`: point is sparser than its neighborhood
-- larger LOF values: increasingly suspicious local anomalies
-
-Key point: LOF is mainly useful when you care about **local** anomalies rather than only globally isolated points.
-
-### Global vs. Local Anomalies
-
-This distinction helps explain why methods disagree:
-
-| Type | Meaning | Often detected well by |
-| ---- | ------- | ---------------------- |
-| **Global anomaly** | Far from the dataset as a whole | KNN distance, Isolation Forest |
-| **Local anomaly** | Looks odd relative to nearby points, even if not globally extreme | LOF |
-
-Tip: If KNN distance misses something that clearly looks suspicious inside a dense subgroup, try a local-density method before assuming the data has no anomaly signal.
-
-### Mixed Data and Gower Distance
-
-Euclidean-style distances assume numeric features on a common scale. That breaks down when a dataset mixes:
-
-- continuous variables
-- ordinal values
-- binary flags
-- nominal categories
-
-In these settings, **Gower distance** is often a better choice because it can combine numeric and categorical features into one dissimilarity measure.
+混合型資料硬轉成數值再算歐氏距離，異常分數常只是反映編碼方式。Gower 距離在 R 較方便：
 
 ```r
-library(cluster)
+library(cluster)   # daisy: Gower 距離
+library(dbscan)    # lof: 接受 dist 物件
 
-sat_dist <- daisy(sat[, -1], metric = "gower")
-sat_lof  <- lof(sat_dist, k = 10)
+d <- daisy(df, metric = "gower")
+lof_score <- lof(d, minPts = 10)     # 舊參數 k 已 deprecated；k 不含點本身，k = 10 等於 minPts = 11
 ```
 
-Warning: If you force mixed-type data into a purely numeric Euclidean distance without thinking carefully, the anomaly score may mostly reflect encoding artifacts instead of real abnormality.
+## 優缺點
 
-## Strengths and Weaknesses
+| 優點 | 缺點 |
+| --- | --- |
+| 直覺、可解釋（「它離鄰居很遠」） | **對縮放敏感** |
+| LOF 擅長局部異常與密度不均 | 計算量隨資料量快速成長（需要鄰居搜尋） |
+| 距離定義彈性大 | `k` 的選擇影響結果 |
+| 能揭露多變量異常 | 高維時距離失去意義 → 先降維，見 [高維小樣本](../../foundations/high-dimensional-data.md) |
 
-| Strength | Weakness |
-| -------- | -------- |
-| Intuitive scoring logic | Sensitive to scaling |
-| Good for local anomalies | Runtime can grow quickly with dataset size |
-| Flexible metric choices | Choice of `k` can be unstable |
-| Can expose multivariate oddities | High-dimensional distance can degrade badly |
+> KNN 距離抓不到某個在密集群旁邊看起來明顯可疑的點時，先試 LOF，再下「沒有異常訊號」的結論。
