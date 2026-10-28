@@ -18,7 +18,7 @@
 | [統計](statistics/README.md) | 推論、迴歸、多重檢定、貝氏、時間序列、多變量、實驗設計、存活分析 | 這個差異或趨勢可靠嗎？不確定性多大？ |
 | [機器學習](machine-learning/README.md) | 前處理、監督 / 非監督學習、評估、解釋、套件（scikit-learn、tidymodels）、部署 | 如何建立可泛化、可監控的預測模型？ |
 | [深度學習](deep-learning/README.md) | 張量與反向傳播、訓練流程、CNN / U-Net、序列與 Transformer、VAE / GNN、生資序列與單細胞模型 | 如何用神經網路處理影像、序列等複雜資料？ |
-| [LLM 應用](llm/README.md) | LLM 基礎、prompt、API 整合、fine-tuning、[RAG](llm/rag/README.md)、[agents](llm/agents/README.md)、LLMOps | 模型要接上知識庫、工具與流程時，系統怎麼設計？ |
+| [LLM 應用](llm/README.md) | LLM 基礎、prompt、API 整合、fine-tuning、[RAG](llm/rag/README.md)、[agents](llm/agents/README.md)、評估與幻覺、LLMOps、生醫文獻探勘 | 模型要接上知識庫、工具與流程時，系統怎麼設計？ |
 
 ### 方法與領域支線
 

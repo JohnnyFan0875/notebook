@@ -1,141 +1,94 @@
-# LangChain Application Orchestration
+[LLM](../README.md) › [整合](README.md) › LangChain
 
-LangChain is most useful when an LLM workflow has several parts that should be composed, reused, or swapped without rewriting the whole application.
+# LangChain 應用編排 (LangChain Application Orchestration)
 
-Key point: The main value of LangChain is not that it "uses LLMs." It is that it gives a shared orchestration layer for prompts, models, retrievers, tools, and output parsers.
+LangChain 提供統一介面，把 prompt 模板、模型、retriever、工具、output parser 串成流程。價值在於**組合與替換**：換模型供應商、重用 prompt、把檢索接進同一條 pipeline，而不必重寫膠水程式碼。單一 prompt、單一回應的任務直接呼叫 [API](llm-api-patterns.md) 更單純。
 
-## What the Ecosystem Adds
+## 核心元件
 
-A framework layer becomes useful once an application has more than one moving part.
+| 元件 | 用途 | 例子 |
+| --- | --- | --- |
+| Chat model | 各供應商的統一介面 | `ChatOpenAI`、`ChatAnthropic`、`ChatOllama`（本機） |
+| Prompt 模板 | 帶變數的 prompt 物件 | `ChatPromptTemplate`、`FewShotPromptTemplate` |
+| Output parser | 把模型輸出轉成字串、JSON 或物件 | `StrOutputParser`、`with_structured_output()` |
+| Retriever | 給問題回傳相關文件 | 向量庫的 `.as_retriever()` |
+| Tool | 可被模型呼叫的函式 | `@tool` 裝飾器 |
+| Document loader / splitter | 讀取與切分文件 | PDF、HTML、Markdown loader；`RecursiveCharacterTextSplitter` |
 
-| Need | Why a Framework Helps |
-| --- | --- |
-| Provider switching | keep a similar workflow shape while changing the backing model |
-| Prompt reuse | turn repeated prompt patterns into reusable components |
-| Multi-step flows | connect output from one step into the next step |
-| Retrieval integration | treat retrievers as part of the same runnable pipeline |
-| Tool use and agents | connect model reasoning with external functions or APIs |
+所有元件都實作 **Runnable** 介面（`invoke`、`batch`、`stream`），所以能用 `|` 串接，這就是 LCEL (LangChain Expression Language)。
 
-Tip: A framework helps most when it reduces repeated glue code. If it only adds vocabulary, it may not be worth the abstraction cost.
+## LCEL：用 `|` 串流程
 
-## Standardized Model Interfaces
+```python
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_openai import ChatOpenAI          # 換供應商只要換這一行（langchain_anthropic、langchain_ollama…）
 
-One practical advantage of LangChain is a more uniform interface across providers and runtimes.
+llm = ChatOpenAI(model=MODEL, temperature=0)
 
-| Interface Pattern | Practical Meaning |
-| --- | --- |
-| chat model wrapper | call hosted chat models through a common workflow shape |
-| local or open model wrapper | plug in local or Hugging Face style inference with similar composition patterns |
-| shared runnable interface | prompts, models, retrievers, and parsers can often be chained the same way |
+# 1. prompt → model → parser
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "你是{field}領域的審稿人，回答簡潔。"),
+    ("user", "列出這段方法描述中可能影響可重現性的問題：\n\n{methods}"),
+])
+chain = prompt | llm | StrOutputParser()
+chain.invoke({"field": "單細胞定序", "methods": methods_text})
+chain.batch([{"field": ..., "methods": m} for m in many_methods])   # 平行處理多筆
 
-Key point: Standardization matters because orchestration code becomes easier to preserve when model choice changes.
+# 2. 結構化輸出：直接回傳 pydantic 物件
+from pydantic import BaseModel
+class Review(BaseModel):
+    issues: list[str]
+    severity: str
+structured = prompt | llm.with_structured_output(Review)
 
-## Prompt Templates Are Workflow Components
-
-LangChain treats prompts as objects instead of loose strings.
-
-| Prompt Type | Better Fit |
-| --- | --- |
-| `PromptTemplate` | single text prompt with named variables |
-| `ChatPromptTemplate` | role-based message construction for chat models |
-| `FewShotPromptTemplate` | repeated example-driven formatting inside a reusable template |
-
-This matters because prompt logic becomes inspectable, parameterized, and easier to test than ad hoc string concatenation.
-
-## LCEL Makes Pipelines Explicit
-
-LangChain Expression Language, often written through the pipe operator `|`, turns a workflow into a visible sequence of steps.
-
-```text
-prompt
--> model
--> parser
+# 3. 串接兩步：第一步的輸出成為第二步的輸入
+summarize = ChatPromptTemplate.from_template("用三句話摘要：{text}") | llm | StrOutputParser()
+translate = ChatPromptTemplate.from_template("翻成英文：{summary}") | llm | StrOutputParser()
+pipeline = {"summary": summarize} | translate
+pipeline.invoke({"text": long_text})
 ```
 
-Typical stages include:
-
-1. build the prompt from inputs
-2. run the model
-3. parse or normalize the output
-4. pass the result to the next step if needed
-
-Key point: Making the pipeline explicit helps debugging because you can inspect where failure actually happened: prompt construction, model behavior, retrieval, or output parsing.
-
-## Sequential Chains Pass Output into the Next Step
-
-A useful LangChain pattern is output-to-input composition.
-
-| Step | Example Role |
+| 好處 | 說明 |
 | --- | --- |
-| first chain | generate candidate ideas, labels, or sub-results |
-| second chain | refine, rank, summarize, or reformat those results |
-| final parser | return the output in a stable form for application use |
+| 每一步可單獨測試 | 失敗時知道是 prompt、模型、檢索還是解析出錯 |
+| 內建 `batch`、`stream`、非同步 | 不必自己寫併發 |
+| 可接 tracing（LangSmith 等） | 看到每一步的輸入輸出 |
 
-This is helpful when a task is too broad for one prompt but still does not justify a full agent.
+## 檢索也是一個步驟
 
-Tip: Use sequential chains when the workflow structure is known ahead of time. If the system must choose tools dynamically, agent-style orchestration may fit better.
+```python
+from langchain_core.runnables import RunnablePassthrough
 
-## Output Parsers Are Part of Reliability
+def format_docs(docs):
+    return "\n\n".join(f"[{d.metadata['source']}]\n{d.page_content}" for d in docs)
 
-A model response is often not yet application-ready.
+rag_prompt = ChatPromptTemplate.from_template(
+    "只根據以下資料回答，並標註來源；資料中沒有就說找不到。\n\n{context}\n\n問題：{question}")
+rag_chain = ({"context": retriever | format_docs, "question": RunnablePassthrough()}
+             | rag_prompt | llm | StrOutputParser())
+```
 
-| Parser Role | Why It Matters |
+完整的 RAG 流程（切分、embedding、向量庫、評估）見 [RAG Pipeline](../rag/rag-pipeline.md)。框架簡化了接線，但**不會替你選對 chunk 大小、檢索策略或資料來源**。
+
+## Chain、Agent、Graph 的分工
+
+| 型態 | 流程 | 用什麼 |
+| --- | --- | --- |
+| Chain | 固定步驟，事先已知 | LCEL |
+| RAG chain | 固定步驟 + 檢索 | LCEL + retriever |
+| Tool-using agent | 由模型動態決定下一步呼叫哪個工具 | [LangGraph](../agents/langgraph-agent-workflows.md) |
+| 有分支、迴圈、人工核准的流程 | 明確的狀態與轉移 | [LangGraph](../agents/langgraph-agent-workflows.md) |
+
+流程能事先寫死就用 chain；下一步取決於中間結果時才用 agent。
+
+## 值不值得用框架
+
+| 值得 | 不值得 |
 | --- | --- |
-| convert chat output to plain text | remove framework-specific response wrappers |
-| normalize shape | make downstream code less brittle |
-| prepare structured outputs | support later validation or business logic |
+| 要支援多個模型供應商 | 單一 prompt、單一回應 |
+| prompt、retriever、parser 在多個任務重用 | 抽象層讓除錯更困難 |
+| 多步驟流程、需要 tracing | 團隊不需要可攜性或元件重用 |
+| 檢索與工具是流程的一部分 | 只用一家 API 的基本功能 |
 
-Key point: Parsing is not cosmetic. It is part of turning a model call into something another system component can safely consume.
-
-## Retrieval Fits the Same Runnable Pattern
-
-LangChain is also useful because retrieval can be composed like any other step.
-
-| Retrieval Stage | Practical Role |
-| --- | --- |
-| document loader | read PDFs, CSVs, HTML, or other external sources |
-| text splitter | turn source documents into retrievable chunks |
-| retriever | return relevant context for a question |
-| prompt assembly | inject the retrieved context into a grounded prompt |
-
-This unifies RAG with the same chaining style used for simpler prompt-model-parser flows.
-
-Warning: A framework can simplify RAG wiring, but it does not choose the right chunking, retrieval strategy, or source quality for you.
-
-## Tools and Agents Build on the Same Foundation
-
-LangChain agent workflows are easier to understand when viewed as an extension of ordinary chaining.
-
-| Layer | Responsibility |
-| --- | --- |
-| chain | fixed sequence of known steps |
-| retriever chain | fixed sequence with external context lookup |
-| tool-using agent | dynamic choice about which tool to call next |
-| graph-based orchestration | more explicit state transitions, branches, and loops |
-
-Key point: Chains and agents are not separate worlds. Agents are what you reach for when a fixed pipeline is no longer enough.
-
-## When This Abstraction Is Worth It
-
-LangChain usually earns its keep when:
-
-1. one workflow must support several model providers
-2. prompts, retrievers, and parsers should be reused across tasks
-3. the system has multiple sequential stages
-4. retrieval or tools need to become first-class parts of the application
-
-It is often unnecessary when:
-
-1. the task is one straightforward prompt and one response
-2. the extra abstraction makes debugging harder than direct code
-3. the team does not need provider portability or component reuse
-
-## Minimum Checklist
-
-Before adopting LangChain for a workflow, make sure you can explain:
-
-1. which parts of the application are fixed chains versus dynamic agent decisions
-2. whether prompt templates are improving reuse or only adding abstraction
-3. where output parsing or validation happens
-4. how retrieval components fit into the overall pipeline
-5. why the framework is simpler than handwritten orchestration for this task
+> LangChain 版本演進快、套件拆分多（`langchain-core`、`langchain-openai`、`langchain-community`…），網路上的舊範例常無法執行。以官方文件當前版本為準，並在專案中鎖定版本。

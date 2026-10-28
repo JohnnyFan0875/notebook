@@ -1,462 +1,136 @@
+[Data Science](../README.md) › [LLM](README.md) › Prompt Engineering
+
 # Prompt Engineering
 
-Prompt 是指定任務、context、限制與輸出格式的那一層。本篇先講通用的 prompt 結構與技巧（shot strategies、chain-of-thought、chaining），再講 chatbot 的 system prompt 與多輪設計，最後是可重用的設定（custom instructions、XML tags、custom GPTs）。
+Prompt 是任務規格書：說清楚要做什麼、依據什麼、輸出成什麼樣子。目標不是找出神奇措辭，而是讓任務明確到模型不必猜，且輸出容易檢查。在程式中呼叫時的 message 結構見 [API 模式](integration/llm-api-patterns.md)。
 
-Key point: Prompt engineering 不是巧妙措辭，而是讓任務對模型清楚可讀，使回應相關、有結構、容易評估。
+## Prompt 的組成
 
-## Prompt Fundamentals
-
-Prompt engineering is the practice of shaping instructions so the model can produce a useful answer with less ambiguity and less rework.
-
-Key point: A strong prompt does not guarantee a strong system, but a weak prompt can break an otherwise capable model very quickly.
-
-### What a Prompt Really Does
-
-A prompt is not just a question. It is a task specification.
-
-| Prompt Role | Why It Matters |
-| --- | --- |
-| define the task | tells the model what kind of job to perform |
-| supply context | reduces ambiguity and missing assumptions |
-| set constraints | narrows the allowed response space |
-| shape the output | makes answers easier to use downstream |
-
-### Traits of an Effective Prompt
-
-Three basic traits show up repeatedly in good prompts.
-
-| Trait | Practical Meaning |
-| --- | --- |
-| Clarity | include the relevant context so the model knows what you mean |
-| Specificity | state the task and deliverable precisely |
-| Open-endedness | leave enough room for reasoning when exploration is useful |
-
-Tip: Specific prompts usually outperform vague ones, but over-constraining a creative task can also make the answer brittle or unnatural.
-
-### Common Prompt Elements
-
-A useful prompt often combines several pieces.
-
-| Element | Purpose |
-| --- | --- |
-| Instructions | define the job to perform |
-| Persona or role | steer tone, lens, or expertise |
-| Context | provide background facts, source material, or intent |
-| Output format | make the answer easier to parse or compare |
-| Examples | show the model what a good answer looks like |
-
-Example structure:
+| 元素 | 作用 | 例子 |
+| --- | --- | --- |
+| 指令 (instruction) | 要做的事，一個 prompt 最好只有一個主任務 | 「從摘要中擷取所有基因與疾病的關聯」 |
+| 角色 (role / persona) | 改變判斷標準與語氣，不是裝飾 | 「你是審查 systematic review 納入條件的研究助理」 |
+| 脈絡 (context) | 背景、原始資料、讀者是誰 | 摘要全文、納入 / 排除條件 |
+| 限制 (constraints) | 縮小回答空間 | 「只根據提供的文字；沒有就回答 `null`」 |
+| 輸出格式 (output format) | 讓結果可解析、可比較 | JSON schema、表格欄位、字數上限 |
+| 範例 (examples) | 示範什麼叫好答案 | 1–3 組輸入 → 輸出 |
 
 ```text
-Role: You are a careful teaching assistant.
-Task: Summarize the following notes for a beginner.
-Context: Focus on practical implications for product teams.
-Output: Return 3 bullet points and 1 warning.
+<role>你是協助文獻篩選的研究助理。</role>
+
+<task>判斷下面的摘要是否符合納入條件，並說明理由。</task>
+
+<criteria>
+- 納入：人類研究、RNA-seq 或 scRNA-seq、有對照組
+- 排除：只有細胞株、綜述文章、會議摘要
+</criteria>
+
+<abstract>
+{abstract_text}
+</abstract>
+
+<output_format>
+JSON：{"include": true/false, "reason": "<一句話，引用摘要中的關鍵字>", "uncertain": true/false}
+資訊不足以判斷時，uncertain 設為 true，不要猜。
+</output_format>
 ```
 
-### Common Failure Modes
+> 用分隔符號（XML tag、`"""`、Markdown 標題）把**指令**和**資料**分開：可避免模型把摘要裡的句子當成指令，也讓模板容易填值與維護。
 
-Poor prompts often fail for predictable reasons.
+## 常見失敗與修正
 
-| Failure Mode | What It Looks Like |
+| 症狀 | 原因 | 修正 |
+| --- | --- | --- |
+| 回答空泛 | 任務不夠具體 | 說明讀者、用途、要多深 |
+| 自行補上不存在的事實 | 缺 context，又沒說可以回答「不知道」 | 提供來源，並明確定義「資訊不足」時的輸出 |
+| 格式時好時壞 | 只用文字描述格式 | 給 schema + 範例；在 API 層用 [structured output](integration/llm-api-patterns.md#structured-output) |
+| 一個 prompt 做很多事，每件都做不好 | 任務過載 | 拆成多步驟（見下方 prompt chaining） |
+| 答案跟著使用者的暗示走 | prompt 透露偏好（「這個基因應該有關吧？」） | 用中性問法；要求列出正反證據 |
+| 只在示範例子上有效 | 對一個例子過度調整 | 用 [評估集](evaluation-and-hallucination.md) 測多樣輸入 |
+
+## 範例數量：zero / one / few-shot
+
+| 做法 | 適合 | 注意 |
+| --- | --- | --- |
+| Zero-shot | 常見任務，指令就能說清楚 | 先從這裡開始 |
+| One-shot | 用一個例子定義格式或語氣 | 模型容易照抄例子內容 |
+| Few-shot（2–5 個） | 分類邊界模糊、格式複雜 | 例子要涵蓋不同類別與困難案例；順序與比例會影響結果；佔 token |
+
+## 讓模型分步思考
+
+| 技巧 | 做法 | 適用 |
+| --- | --- | --- |
+| 分步驟指令 | 「先列出摘要中的所有基因，再逐一判斷是否與疾病有關」 | 擷取、多條件判斷 |
+| Chain-of-thought | 要求先寫推理再給答案；或給有推理過程的範例 | 計算、邏輯、規劃 |
+| 先擷取證據再回答 | 「先引用相關原文句子，再根據引用回答」 | 文件問答；降低幻覺、方便查核 |
+| 自我檢查 | 產生答案後，再要求依清單檢查並修正 | 程式碼、長文件 |
+
+推理模型 (reasoning models) 本身就會先推理，對它們只要把目標和限制講清楚，不必再寫「一步一步想」。
+
+## Prompt Chaining
+
+一個大 prompt 拆成多個小步驟，每步輸出成為下一步輸入。
+
+```
+擷取（摘要 → 實體 JSON）→ 標準化（實體 → HGNC / MONDO ID）→ 驗證（檢查 ID 存在）→ 彙整（產生表格）
+     LLM                      LLM + 資料庫查詢              程式                   程式 / LLM
+```
+
+| 好處 | 說明 |
 | --- | --- |
-| Ambiguity | the answer stays generic because the task is underspecified |
-| Missing context | the model guesses facts or intent |
-| Weak formatting | output is hard to reuse or compare |
-| Overloaded prompt | too many goals are mixed into one instruction |
+| 容易除錯 | 知道是哪一步出錯 |
+| 可插入確定性步驟 | 能用程式做的（查資料庫、計算、驗證格式）就不要交給 LLM |
+| 每步可換模型 | 簡單步驟用小模型省成本 |
 
-Warning: If the prompt asks for unsupported facts without grounding, the model may produce confident but inaccurate output.
+流程固定時用 chaining；下一步要依中間結果動態決定時，才考慮 [agent](agents/README.md)。
 
-### Persona and Personalization
+## System Prompt 與多輪對話
 
-Role-setting can be useful when it changes the response style or decision lens.
+聊天型應用中，system prompt 是最穩定的一層，定義角色、範圍、語氣與例外處理。
 
-| Use of Persona | Why It Helps |
+| System prompt 該寫 | 例子 |
 | --- | --- |
-| teacher | simplify explanations and define assumptions |
-| analyst | emphasize structured comparison |
-| editor | focus on clarity and revision |
-| domain expert | bias the response toward a specific frame |
+| 角色與服務範圍 | 「你協助實驗室成員查詢內部 SOP 與儀器使用規範」 |
+| 範圍外的處理 | 「與實驗室作業無關的問題，簡短說明無法協助」 |
+| 資訊不足的處理 | 「SOP 中找不到答案時直接說找不到，並建議詢問實驗室管理員；不要推測」 |
+| 安全規則 | 「涉及危險化學品處置時，一律引用 SDS 並提醒依安全規範操作」 |
+| 語氣與長度 | 「回答簡潔，先給結論，再列步驟」 |
 
-Key point: Persona is most useful when it changes priorities or evaluation criteria. It is less useful as decoration.
-
-### Formatting and Delimiters
-
-Prompt formatting helps separate instructions from content.
-
-| Formatting Choice | Benefit |
+| 多輪對話的設計問題 | 做法 |
 | --- | --- |
-| Delimiters | mark where source text begins and ends |
-| Headed sections | separate role, task, context, and output rules |
-| Explicit schemas | make results easier to parse |
-| Numbered steps | guide multi-step responses |
+| 「記憶」從哪來 | 每次請求都重送相關歷史；模型本身不記得前一次呼叫 |
+| 歷史越來越長 | 保留最近幾輪 + 舊對話摘要；換主題時重置 |
+| 前面的錯誤答案污染後續 | 發現錯誤時重開對話，或從歷史中移除 |
+| 規則被使用者「說服」而失效 | 規則放 system prompt；高風險規則在程式端強制執行，不只靠 prompt |
 
-Tip: Delimiters are a small change with large practical value because they reduce confusion between instructions and input text.
+> 「我不知道」是功能，不是失敗。沒有明確定義何時該拒答、何時該轉人工，模型會傾向給一個看似合理的答案。
 
-### Zero-Shot, One-Shot, and Few-Shot Prompting
+## 可重用的 Prompt 設定
 
-These patterns differ mainly in how many examples the model receives.
+當同一種設定反覆使用，就把它從單次 prompt 移到更持久的位置。
 
-| Pattern | Best Use |
+| 層級 | 放什麼 | 例子 |
+| --- | --- | --- |
+| 單次 prompt | 這次任務的指令與資料 | 「把這段方法改寫成 150 字的摘要」 |
+| Prompt 模板（程式中） | 固定結構 + 變數欄位 | 文獻篩選模板，迴圈填入每篇摘要 |
+| 自訂指令 (custom instructions) | 個人的長期偏好 | 「回答用繁體中文；比較時用表格；程式碼用 Python」 |
+| 自訂助手 (custom GPT、Claude Projects 等) | 指令 + 參考文件 + 工具，給團隊重複使用 | 載入實驗室 SOP 的問答助手 |
+
+| 進階技巧 | 用途 |
 | --- | --- |
-| Zero-shot | the task is simple or already familiar to the model |
-| One-shot | one example is enough to define tone or structure |
-| Few-shot | consistency matters and the pattern is not obvious |
+| 模擬 / 角色扮演 | 練習口試、論文答辯：「扮演審查委員提問，我回答後給回饋」；要定義何時切換角色與何時結束 |
+| 多角色 prompt | 一個角色執行、另一個角色評分；要寫清楚各角色何時發言 |
+| Prompt 版本管理 | 模板放進 git，搭配評估集比較版本（見 [LLMOps](llmops.md#prompt-與設定的版本管理)） |
 
-The trade-off is simple: examples usually improve consistency, but they also consume prompt space and can anchor the model too narrowly.
+> 可重用的設定會同時放大優點與缺點。共用給團隊之前，先在多樣輸入上測試範圍、預設值與衝突的指令。
 
-### Chain-of-Thought and Stepwise Guidance
+## 檢查清單
 
-For some tasks, performance improves when the prompt encourages staged reasoning.
-
-| Pattern | Practical Use |
+| 問題 | 沒做到的後果 |
 | --- | --- |
-| Step-by-step instruction | useful for analysis, planning, or calculations |
-| Zero-shot chain prompting | ask the model to work through the task in stages |
-| Example-driven reasoning | provide one or more worked examples |
-
-Key point: Stepwise prompting is often valuable because it decomposes the task, not because it is a magic phrase.
-
-### Chaining Prompts Across Steps
-
-Some workflows are easier when one large prompt is split into several smaller ones.
-
-| Stage | Example |
-| --- | --- |
-| extract | pull facts or themes from a document |
-| transform | summarize, classify, or rewrite them |
-| evaluate | check completeness, tone, or policy fit |
-
-This makes it easier to inspect failures and swap one stage without rewriting the whole workflow.
-
-### Iteration Matters
-
-Prompt engineering is usually iterative.
-
-1. draft an initial prompt
-2. inspect where the output fails
-3. add missing context or tighter output constraints
-4. test again on varied inputs
-5. keep the simpler version if it performs just as well
-
-Tip: Good prompt iteration focuses on failure patterns, not on one lucky example that happened to work.
-
-### Prompt Quality Checklist
-
-Before calling a prompt "done," check:
-
-1. is the task clear and singular
-2. does the model have enough context to avoid guessing
-3. is the expected output shape explicit
-4. would one or two examples improve consistency
-5. should this be one prompt or a chained workflow instead
-
-## Chatbot Prompt Design
-
-Chatbot prompt design is the practice of shaping multi-message interactions so a conversational system responds consistently across many user questions.
-
-Key point: A chatbot is harder to prompt than a one-off task because the system must stay useful across unpredictable turns, not just answer one carefully prepared request.
-
-### Why Chatbots Need More Prompt Discipline
-
-Open-ended interaction creates more variation than single-shot generation.
-
-| Challenge | Why It Matters |
-| --- | --- |
-| unpredictable user questions | the system must handle many input styles and intents |
-| shifting context | later turns depend on earlier turns |
-| inconsistent tone risk | the assistant may drift without clear guidance |
-| policy ambiguity | unsafe or out-of-domain questions still appear |
-
-Tip: Chatbot quality depends less on one perfect answer and more on whether the system stays coherent across many different turns.
-
-### Message Roles as a Design Tool
-
-Conversational systems usually separate messages by role.
-
-| Role | Practical Purpose |
-| --- | --- |
-| system | define behavior, boundaries, tone, or domain expectations |
-| user | provide the current request or new context |
-| assistant | represent prior responses that shape ongoing interaction |
-
-Key point: Role separation matters because chatbot behavior is influenced not only by the current question, but also by how the conversation state is framed.
-
-### What a System Prompt Should Do
-
-The system prompt is the most stable instruction layer in a chat workflow.
-
-| System Prompt Job | Example |
-| --- | --- |
-| define role | "You are a customer-support assistant." |
-| constrain scope | answer only within a business or product domain |
-| guide tone | be concise, gentle, formal, or teaching-oriented |
-| specify behavior on uncertainty | say when evidence is missing instead of guessing |
-
-A good system prompt reduces drift without trying to encode every possible answer.
-
-### Domain Scoping Matters
-
-Chatbots often work better when their scope is explicit.
-
-| Scoped Bot | Benefit |
-| --- | --- |
-| finance assistant | can focus on finance-related questions and style |
-| customer service bot | can stay aligned with support workflows |
-| study helper | can simplify explanations and reinforce learning goals |
-
-Warning: If the system prompt defines a role but not a boundary, the chatbot may still answer out-of-domain questions with false confidence.
-
-### Response Guidelines
-
-A chatbot usually needs instructions about how to answer, not just what it is.
-
-| Guideline Type | Why It Helps |
-| --- | --- |
-| length constraints | avoid overlong answers |
-| tone rules | keep responses consistent |
-| uncertainty handling | reduce unsupported invention |
-| escalation behavior | signal when human help is needed |
-
-Example: A finance chatbot may need to answer carefully, stay neutral, and avoid pretending to know real-time market events it cannot verify.
-
-### Conditional Behavior in Prompts
-
-Some chatbot instructions work best as simple rules.
-
-| Conditional Rule | Purpose |
-| --- | --- |
-| if in-domain, answer directly | keep the assistant useful |
-| if out-of-domain, redirect politely | preserve boundaries |
-| if evidence is missing, say so | reduce hallucination |
-| if user asks for unsafe content, refuse | enforce policy |
-
-Tip: Conditional prompting is often more reliable than hoping the model will infer your policy from tone alone.
-
-### Lack of Information Is a First-Class Case
-
-Chatbots should be designed to handle unknowns well.
-
-| Missing-Information Case | Desired Behavior |
-| --- | --- |
-| latest event outside model context | acknowledge uncertainty or use retrieval |
-| private personal fact | state that the system does not know it |
-| missing product details | ask for context or defer |
-
-Key point: "I do not know" is a product feature in a chatbot, not a failure.
-
-### Using Extra Information Well
-
-Additional context can be added through the system message or later user turns.
-
-| Added Context | Why It Helps |
-| --- | --- |
-| company service details | enables better support answers |
-| policy excerpts | anchors responses to real rules |
-| product descriptions | improves specificity |
-| recent user history | keeps the conversation coherent |
-
-This works best when the added material is clearly scoped and easy for the model to reference.
-
-### Multi-Turn Memory and Prior Assistant Messages
-
-Earlier turns influence later ones.
-
-| Conversation Element | Why It Matters |
-| --- | --- |
-| prior user requests | reveal evolving intent |
-| earlier assistant answers | shape consistency and continuity |
-| stored constraints | keep preferences or policies active |
-| unresolved questions | prevent abrupt topic loss |
-
-A chatbot prompt design is therefore partly a state-design problem.
-
-### Role-Playing Prompts
-
-Role-playing can be especially useful in chat systems.
-
-| Role Style | Practical Effect |
-| --- | --- |
-| gentle support agent | more empathetic user-facing answers |
-| tutor | clearer educational scaffolding |
-| domain expert | narrower, more specialized framing |
-
-Tip: Role-playing is valuable when it changes the response policy or user experience, not merely the wording.
-
-### A Practical Chatbot Prompt Checklist
-
-When designing a chatbot prompt, make sure you can answer:
-
-1. what domain the chatbot serves
-2. what the system prompt says about tone and boundaries
-3. how the bot behaves when it lacks information
-4. how out-of-domain or unsafe requests are handled
-5. what conversation history is retained and why
-
-## Reusable Prompt Workflows
-
-Once a ChatGPT workflow becomes repetitive, the main question is no longer "What prompt should I write?" It becomes "Which parts of this interaction should be reused, structured, or packaged?"
-
-Key point: Intermediate ChatGPT use is mostly about reducing repeated setup. Good customization turns one-off prompting habits into reusable interaction patterns.
-
-### Three Levels of Control
-
-Not every preference belongs in the same place.
-
-| Control Layer | Better Use |
-| --- | --- |
-| one prompt | solve one specific conversation or task |
-| custom instructions | keep stable personal or workflow preferences across many conversations |
-| custom GPT | package instructions, examples, knowledge, and capabilities into a reusable tool |
-
-Tip: Start with a normal prompt first. Move to custom instructions or a custom GPT only when the setup repeats often enough to justify the extra structure.
-
-### Prompt Versus Custom Instructions
-
-A useful distinction is:
-
-| Mechanism | Practical Meaning |
-| --- | --- |
-| prompt | preferences or constraints for one conversation |
-| custom instructions | preferences that should persist across conversations |
-
-Examples of prompt-level guidance:
-
-1. summarize this article in 5 bullets
-2. act as my interviewer for one mock session
-3. rewrite this email in a more concise tone
-
-Examples of custom-instruction guidance:
-
-1. answer briefly unless I ask for depth
-2. use a teaching style with practical examples
-3. default to markdown tables when comparing options
-
-Key point: If a preference applies every time, pushing it into the conversation repeatedly is usually unnecessary friction.
-
-### Custom Instructions Improve Interaction Consistency
-
-Custom instructions are useful when a user repeatedly wants the same style, audience framing, or response format.
-
-| Persistent Preference | Why It Helps |
-| --- | --- |
-| response tone | reduces style drift across chats |
-| preferred level of detail | avoids repeating "keep it short" or "go deeper" |
-| domain background | lets the assistant tailor explanations more consistently |
-| formatting habits | makes outputs easier to reuse |
-
-Warning: Custom instructions are broad defaults, not hard guarantees. They should guide recurring behavior, not replace task-specific prompting.
-
-### Simulation Prompts Can Turn Chat into Practice
-
-One strong ChatGPT pattern is simulation-style prompting.
-
-| Simulation Style | Example Use |
-| --- | --- |
-| mock interview | practice answers and receive coaching |
-| negotiation scenario | simulate a manager or client conversation |
-| teaching dialogue | ask the assistant to quiz, critique, and guide |
-| role-play rehearsal | practice difficult conversations before a real meeting |
-
-This is useful because the model can alternate between acting in the scenario and giving feedback on the user's response.
-
-Tip: Simulation prompts work best when you define roles, stopping conditions, and the type of feedback expected after each turn.
-
-### Multi-Role Prompts Need Clear Boundaries
-
-Some useful prompts ask ChatGPT to perform more than one role in the same interaction.
-
-| Role Pattern | Why It Works |
-| --- | --- |
-| actor plus coach | one role runs the scenario while another critiques it |
-| interviewer plus evaluator | one role asks questions while another scores answers |
-| manager plus mentor | one role applies pressure while another teaches improvements |
-
-Key point: Multi-role prompting is easier to manage when the prompt explicitly says when each role should speak and what output each role should produce.
-
-### XML Tags Help Structure Complex Prompts
-
-When prompts become long or contain several kinds of information, explicit structure helps.
-
-| Tag Purpose | Example Meaning |
-| --- | --- |
-| `<context>` | background information |
-| `<task>` | the main job to perform |
-| `<constraints>` | rules the answer must follow |
-| `<output_format>` | required answer shape |
-
-This makes the prompt easier for both humans and the model to parse.
-
-Key point: XML-style markup is not magic syntax. Its value is organizational clarity.
-
-### Structured Prompts Improve Reuse
-
-Tagged prompts are especially helpful when the same prompt pattern is reused across many inputs.
-
-| Benefit | Why It Matters |
-| --- | --- |
-| easier editing | one section can change without rewriting the whole prompt |
-| clearer separation of concerns | context, task, and constraints do not blur together |
-| better collaboration | teammates can inspect prompt parts more easily |
-| easier templating | applications can fill different fields programmatically |
-
-Tip: If a prompt keeps growing, add structure before adding more prose.
-
-### Custom GPTs Package a Reusable Workflow
-
-A custom GPT is useful when a repeated workflow needs more than persistent preferences.
-
-| Custom GPT Element | Why It Matters |
-| --- | --- |
-| name and description | communicate the GPT's role clearly |
-| instructions | define behavior, scope, and priorities |
-| conversation starters | guide users into the intended workflow |
-| knowledge files | provide reference material for repeated tasks |
-| capabilities | enable the GPT to work with the tools it actually needs |
-
-Key point: A custom GPT is best thought of as a packaged interaction design, not merely a saved prompt.
-
-### When a Custom GPT Is Better Than a Repeated Chat
-
-Custom GPTs become more valuable when:
-
-1. the same role and behavior are reused by many people
-2. the workflow depends on a recurring knowledge base
-3. users benefit from guided starters instead of blank-chat prompting
-4. the task needs a clear, branded, or constrained experience
-
-They are less necessary when a normal prompt already solves the task without repeated setup.
-
-### Testing Still Matters
-
-Reusable ChatGPT setups should be tested like any other workflow design.
-
-| Test Question | Why It Matters |
-| --- | --- |
-| does it stay within scope | prevents generic or drifting behavior |
-| do the defaults help most tasks | avoids overfitting to one example |
-| are instructions too broad or conflicting | reduces inconsistent output |
-| do conversation starters lead users well | improves adoption and usability |
-
-Warning: Reuse can scale both strengths and weaknesses. A bad prompt is annoying once; a bad reusable setup spreads the problem everywhere.
-
-### A Practical Escalation Path
-
-When a workflow becomes more complex, a useful progression is:
-
-1. start with a one-off prompt
-2. reuse the prompt as a template
-3. move repeated defaults into custom instructions
-4. package a stable workflow into a custom GPT
-
-Key point: Each step increases structure. Do not jump to the most elaborate setup before repetition actually exists.
-
-### Minimum Checklist
-
-Before calling a ChatGPT workflow well customized, make sure you can explain:
-
-1. which instructions belong to one prompt versus persistent defaults
-2. whether simulation or role-play is adding real value
-3. how complex prompts are being structured
-4. when a custom GPT is justified instead of a normal chat
-5. how the reusable setup is tested for drift, scope, and usability
+| 任務是否單一且明確？ | 每件事都做一半 |
+| 是否提供足夠 context，不必猜？ | 幻覺 |
+| 是否定義「資訊不足」時的輸出？ | 編造答案 |
+| 輸出格式是否明確且可解析？ | 下游程式壞掉 |
+| 是否在多樣、困難的輸入上測過？ | 上線後才發現失敗模式 |
+| 能用程式做的步驟是否交給程式？ | 計算、ID 查詢出錯 |

@@ -1,378 +1,228 @@
-# LLM API Patterns
+[LLM](../README.md) › [整合](README.md) › API 模式
 
-從「呼叫一次 API」到「可上線的請求處理」：先是 chat API 的心智模型（messages、roles、conversation state、temperature、token usage），再是應用層的模式（structured output、tool calling、retry、moderation、guardrails），最後是在 Python 裡直接用模型與 tokenizer 時要注意的事。
+# LLM API 模式 (LLM API Patterns)
 
-## Chat API Basics
+在程式中呼叫 LLM 時，請求不只是一句 prompt，而是 messages、參數、輸出格式與工具定義的組合；回應也不只是文字，還有 token 用量、工具呼叫與錯誤。本篇從單次呼叫一路到可上線的請求處理：structured output、tool calling、重試、moderation 與 guardrail。
 
-Working with an LLM API is not only about sending a prompt. It is about packaging instructions, context, conversation state, and output controls into a request that a downstream application can rely on.
+## Chat API 的心智模型
 
-Key point: An API call is a workflow boundary. Once a model is used inside code, the important question becomes how requests are structured, repeated, constrained, and measured.
+```
+請求 = 模型 ID + messages（system / user / assistant / tool）+ 參數 + [輸出 schema] + [工具定義]
+回應 = 生成內容 或 工具呼叫請求 + 停止原因 + token 用量
+```
 
-### The API Mental Model
-
-A chat-style LLM request usually includes:
-
-1. a model choice
-2. one or more messages or instruction blocks
-3. optional control parameters
-4. a returned response plus usage metadata
-
-This matters because application behavior depends on the full request structure, not only the last user sentence.
-
-### Single-Turn Versus Multi-Turn Use
-
-Some jobs only need one request. Others depend on ongoing conversation state.
-
-| Interaction Style | Better Fit |
+| Role | 放什麼 |
 | --- | --- |
-| single-turn | summarization, rewriting, labeling, extraction, or one-off Q&A |
-| multi-turn | tutoring, assistants, iterative drafting, or contextual follow-up |
-
-Key point: Multi-turn behavior is not magic memory. It is the result of resending relevant conversation history as part of later requests.
-
-### Roles as an Interface Contract
-
-Chat-style APIs often separate messages by role.
-
-| Role | Practical Job |
-| --- | --- |
-| system | define behavior, boundaries, tone, or policy |
-| user | provide the current task or new context |
-| assistant | preserve prior answers or provide example responses |
-
-This is more than prompt formatting. It is a way to separate stable instructions from changing requests.
-
-### What the System Layer Is Good For
-
-The system layer is usually the right place for durable behavioral rules.
-
-| System-Level Instruction | Why It Belongs Here |
-| --- | --- |
-| act as a finance study assistant | stable role definition |
-| answer briefly and clearly | persistent tone guidance |
-| do not guess when evidence is missing | recurring uncertainty policy |
-| stay within a domain | reusable boundary control |
-
-Warning: If you push all rules into ad hoc user prompts, behavior often becomes inconsistent across turns.
-
-### Assistant Messages as Structured Examples
-
-Prior assistant messages can do more than preserve conversation history. They can also act like examples.
-
-| Use | Why It Helps |
-| --- | --- |
-| preserve earlier answers | keeps follow-up questions coherent |
-| show desired answer style | creates a structured few-shot pattern |
-| demonstrate formatting | improves consistency without restating rules each time |
-
-Key point: Example conversations are often easier to maintain in message form than inside one giant prompt block.
-
-### Common API-Friendly Text Tasks
-
-Many early application wins come from text transformation jobs.
-
-| Task | Typical Value |
-| --- | --- |
-| editing | update wording, tone, names, or structure |
-| summarization | condense tickets, transcripts, or long notes |
-| classification | assign labels or route work |
-| drafting | create first-pass copy or product text |
-| extraction | pull structured facts from unstructured text |
-
-These tasks are useful because a human can usually review the result quickly.
-
-### Prompt Iteration Still Matters in Code
-
-Putting a prompt into an application does not make it stable automatically.
-
-| Iteration Lever | Why It Helps |
-| --- | --- |
-| add clearer constraints | reduces output drift |
-| specify categories explicitly | improves classification consistency |
-| include examples | helps the model infer the right mapping |
-| split tasks into steps | makes failures easier to diagnose |
-
-Tip: If a request works only on one example, the API integration is not ready yet.
-
-### Temperature and Output Control
-
-API parameters often influence variation and response length.
-
-| Control | Why It Matters |
-| --- | --- |
-| temperature | affects determinism versus variability |
-| output-length limits | protect cost and improve boundedness |
-| model choice | changes quality, latency, and capability |
-
-Lower variability is often better for extraction, routing, or repeatable transformations. Higher variability can help brainstorming or copy generation, but it also raises evaluation pressure.
-
-### Token Usage Is an Engineering Signal
-
-Many APIs return usage information alongside the result.
-
-| Signal | Why It Matters |
-| --- | --- |
-| input tokens | indicate prompt and context cost |
-| output tokens | indicate response cost and verbosity |
-| total tokens | help estimate latency and budget impact |
-
-Key point: Token usage is not bookkeeping only. It helps reveal when prompts are bloated or workflows are carrying too much history.
-
-### Conversation State Is a Design Choice
-
-Applications decide what to keep in memory and what to drop.
-
-| State Choice | Risk if Mishandled |
-| --- | --- |
-| keep too little history | follow-up answers lose context |
-| keep too much history | cost rises and irrelevant context accumulates |
-| keep unfiltered history | bad earlier turns can pollute later behavior |
-
-This is why conversation design often requires pruning, summarizing, or resetting context deliberately.
-
-### System Messages Can Reduce Misuse, Not Eliminate It
-
-System instructions help constrain the assistant, especially in domain-bounded applications.
-
-They are useful for:
-
-1. narrowing the assistant to a study, support, or product role
-2. encouraging refusal or caution outside scope
-3. setting a consistent tone for repeated interactions
-
-Warning: System messages are guardrails, not guarantees. High-risk systems still need stronger controls than prompt text alone.
-
-### A Practical API Development Loop
-
-A healthy workflow often looks like this:
-
-1. start with one narrow task such as summarization or classification
-2. write the smallest clear request that solves it
-3. inspect output quality and token usage
-4. add examples, constraints, or role instructions where failure patterns repeat
-5. decide whether the task should stay single-turn or become conversational
-
-Key point: Most reliable API integrations emerge from repeated tightening of task boundaries, not from one elaborate prompt written upfront.
-
-### Minimum Checklist
-
-Before calling an LLM API workflow healthy, make sure you can explain:
-
-1. whether the task is single-turn or multi-turn
-2. what belongs in system, user, and assistant messages
-3. which parameters affect reliability, creativity, and cost
-4. how token usage and conversation history are being controlled
-5. what review step or guardrail exists for important outputs
-
-## Application Patterns
-
-An LLM becomes an application component when you stop asking only for free-form text and start requiring structured behavior, controlled failure handling, and safer integration with external logic.
-
-Key point: A production-ready LLM call is usually more than a prompt. It includes output constraints, fallback logic, safety checks, and a clear way to connect model output to application code.
-
-### Free-Form Output Is Often Not Enough
-
-Natural language is easy for people to read, but hard for software to depend on.
-
-| Requirement | Why It Matters |
-| --- | --- |
-| consistent field names | enables downstream parsing |
-| predictable shape | reduces brittle glue code |
-| explicit missing-data behavior | avoids unsafe assumptions |
-| machine-readable output | supports routing, storage, and automation |
-
-This is why many applications need structured outputs rather than prose alone.
-
-### Structured Output Is a Core Pattern
-
-One of the simplest application upgrades is to ask the model for a constrained structure.
-
-| Structured Output Use | Typical Benefit |
-| --- | --- |
-| JSON-style extraction | convert unstructured text into usable records |
-| labeled classification results | support routing and analytics |
-| fixed response schemas | make validation and monitoring easier |
-| nested objects | preserve richer detail without ambiguous formatting |
-
-Key point: Structured output reduces ambiguity between what the model says and what the application needs.
-
-### Tool or Function Calling Connects the Model to Code
-
-Tool calling is useful when the model should decide which operation to trigger or which arguments to supply.
-
-| Tool-Calling Role | Why It Helps |
-| --- | --- |
-| collect arguments in a known schema | makes invocation safer |
-| choose among available functions | supports routing and delegation |
-| separate reasoning from execution | keeps application logic explicit |
-| support multi-step retrieval or action | enables richer workflows |
-
-This pattern is especially helpful when the model should not invent business data but should instead request it from code or APIs.
-
-### Good Tool Design Reduces Unsafe Assumptions
-
-A model should not confidently fabricate missing arguments just to satisfy a function schema.
-
-| Design Practice | Why It Helps |
-| --- | --- |
-| tell the model not to assume missing fields | encourages clarification |
-| make required arguments explicit | reduces silent misuse |
-| allow follow-up questions | improves data quality |
-| validate arguments before execution | prevents bad calls from reaching real systems |
-
-Warning: Tool calling is not safe merely because the output is structured. Bad arguments can still produce bad actions.
-
-### Parallel Tool Use Can Be Valuable
-
-Some systems benefit when several tool calls can be planned or requested together.
-
-| Parallel Pattern | Why It Helps |
-| --- | --- |
-| multiple lookups in one turn | reduces latency from serial orchestration |
-| separate retrieval targets | improves aggregation workflows |
-| multi-entity extraction | supports richer responses from one request |
-
-Use it when the orchestration layer can actually handle the parallelism cleanly.
-
-### Production Error Handling Needs Categories
-
-LLM applications fail in several distinct ways.
-
-| Error Type | Typical Meaning |
-| --- | --- |
-| authentication error | credentials or access setup is wrong |
-| bad request error | request structure or parameters are invalid |
-| not found or model error | the requested model or endpoint is unavailable |
-| connection error | network or service reachability failed |
-| rate or resource limit error | usage exceeded current quotas or capacity |
-
-Key point: Different error classes need different responses. A retry is helpful for transient failures, but not for malformed requests or invalid credentials.
-
-### Retries Should Be Selective
-
-Blind retries can waste time and money.
-
-| Retry Principle | Why It Matters |
-| --- | --- |
-| retry transient failures | useful for unstable connections or temporary service pressure |
-| back off exponentially | reduces repeated pressure during outage windows |
-| stop after bounded attempts | avoids runaway loops |
-| do not retry invalid requests unchanged | prevents repeated guaranteed failure |
-
-Tip: Retry policy belongs to the application layer, not inside the prompt.
-
-### Moderation Is a First-Class System Step
-
-For many applications, moderation should be treated as part of request handling rather than as an optional afterthought.
-
-| Moderation Use | Why It Helps |
-| --- | --- |
-| screen risky user input | reduces unsafe prompt handling |
-| classify sensitive content | supports safer branching logic |
-| detect policy-violating output candidates | adds protection before delivery |
-| provide context-aware safety checks | avoids simplistic keyword-only filtering |
-
-Key point: Moderation is most useful when it influences what the application does next, not only when it produces a label.
-
-### Guardrails Need More Than One Layer
-
-Prompt instructions help, but they are not enough on their own.
-
-| Guardrail Layer | Example |
-| --- | --- |
-| system instructions | define role, limits, and refusal behavior |
-| input limits | cap user input size or complexity |
-| output limits | bound cost and reduce overgeneration |
-| moderation checks | detect unsafe categories |
-| postprocessing validation | reject malformed or risky structured output |
-
-Warning: If a workflow is high-stakes, rely on several guardrail layers together.
-
-### Token Limits Are Also a Safety and Cost Tool
-
-Constraining input and output length is not only a performance choice.
-
-| Limit Type | Why It Helps |
-| --- | --- |
-| shorter user input bounds | reduce abuse surface and prompt bloat |
-| output token caps | control verbosity, latency, and cost |
-| bounded context windows | reduce accidental carryover from irrelevant history |
-
-This is one of the simplest ways to make an LLM workflow more predictable.
-
-### A Healthy Application Loop
-
-For many production patterns, the workflow looks like this:
-
-1. validate the request shape
-2. moderate or screen risky input if needed
-3. choose whether the task needs prose, structured output, or tool calls
-4. execute the request with bounded parameters
-5. validate the response or tool arguments
-6. retry only when the failure mode is transient
-7. log the outcome for later debugging and evaluation
-
-### Minimum Checklist
-
-Before calling an LLM workflow application-ready, make sure you can explain:
-
-1. whether the output must be free-form, structured, or tool-driven
-2. how tool arguments are validated before execution
-3. which error classes are retried and which are surfaced immediately
-4. where moderation or safety checks happen in the request flow
-5. how token and output limits are used to control risk, cost, and predictability
-
-## Model Interfaces and Tokenization in Python
-
-Python-based LLM work usually follows a repeatable path: choose a model interface, prepare text inputs, run inference, evaluate the outputs, and only then decide whether fine-tuning is justified.
-
-Key point: A useful workflow is less about memorizing one library API and more about understanding which layer of abstraction you need for the task.
-
-### Start with the Right Abstraction
-
-Many LLM libraries expose both high-level task wrappers and lower-level model classes.
-
-| Interface Style | Best Use | Tradeoff |
+| `system` | 穩定的規則：角色、範圍、語氣、資訊不足時的行為（Anthropic API 用獨立的 `system` 參數） |
+| `user` | 這次的任務與資料 |
+| `assistant` | 之前的回答；也可放「示範回答」作為 few-shot 範例 |
+| `tool` | 工具執行結果，回傳給模型繼續推理 |
+
+> API 是**無狀態**的：模型不記得上一次呼叫。多輪對話的「記憶」是每次把相關歷史重新送出，所以歷史越長，成本越高、雜訊越多。
+
+```python
+# OpenAI SDK（v1）
+from openai import OpenAI
+
+client = OpenAI()                      # 讀取環境變數 OPENAI_API_KEY；不要把金鑰寫進程式或 notebook
+MODEL = "..."                          # 填入帶日期 / 版本的模型 ID，不要用會變動的別名
+
+messages = [
+    {"role": "system", "content": "你是生物資訊助理。不確定時直接說不知道。"},
+    {"role": "user", "content": "用三點說明 DESeq2 的 size factor 是什麼。"},
+]
+resp = client.chat.completions.create(model=MODEL, messages=messages, temperature=0, max_tokens=400)
+answer = resp.choices[0].message.content
+resp.choices[0].finish_reason          # "stop" 正常結束；"length" 代表被 max_tokens 截斷
+resp.usage.prompt_tokens, resp.usage.completion_tokens
+
+# 多輪：把回答加回歷史再問下一題
+messages += [{"role": "assistant", "content": answer},
+             {"role": "user", "content": "那和 TPM 標準化有什麼不同？"}]
+```
+
+```python
+# Anthropic SDK：system 是獨立參數，max_tokens 必填
+import anthropic
+
+client = anthropic.Anthropic()         # 讀取 ANTHROPIC_API_KEY
+msg = client.messages.create(
+    model=MODEL, max_tokens=400, system="你是生物資訊助理。不確定時直接說不知道。",
+    messages=[{"role": "user", "content": "用三點說明 DESeq2 的 size factor 是什麼。"}],
+)
+msg.content[0].text, msg.stop_reason, msg.usage.input_tokens
+```
+
+| 參數 | 用途 | 注意 |
 | --- | --- | --- |
-| high-level pipeline | quick prototyping for summarization, classification, generation, or translation | faster setup but less control |
-| lower-level model and tokenizer classes | custom preprocessing, training, or evaluation flows | more flexibility but more moving parts |
+| `temperature` / `top_p` | 控制隨機性（原理見 [LLM 基礎](../llm-foundations.md#取樣參數-decoding)） | 部分推理模型不支援或忽略 |
+| `max_tokens` | 輸出上限，控制成本與延遲 | OpenAI 新模型改用 `max_completion_tokens`；推理模型的思考過程也計入 |
+| `stop` | 遇到指定字串停止 | — |
+| `seed` | 提高可重現性（部分 API） | 不保證完全一致 |
 
-Tip: Start high-level when the task is standard. Drop lower only when you need custom batching, training, inspection, or output handling.
+### 對話狀態管理
 
-### The Basic Inference Flow
+| 策略 | 優點 | 風險 |
+| --- | --- | --- |
+| 保留全部歷史 | 連貫 | 成本隨輪數增加；舊錯誤污染後續 |
+| 只保留最近 N 輪 | 成本可控 | 遺忘早期的約定 |
+| 舊對話摘要 + 最近幾輪 | 平衡 | 摘要本身可能遺漏或扭曲 |
+| 換主題就重置 | 乾淨 | 需判斷何時重置 |
 
-A practical Python workflow usually includes:
+## Structured Output
 
-1. select a model suited to the task
-2. load the tokenizer or input processor
-3. convert raw text into model-ready tokens
-4. run inference
-5. decode or structure the output for downstream use
+下游程式需要的是固定欄位，不是散文。用 schema 約束輸出，並在程式端再驗證一次。
 
-This framing matters because the model does not consume raw language directly. It consumes tokenized representations with sequence limits and formatting assumptions.
+```python
+from pydantic import BaseModel, Field
 
-### Tokenization Is Part of the System
+class GeneMention(BaseModel):
+    symbol: str = Field(description="原文中的基因寫法")
+    organism: str | None = Field(description="物種；原文沒寫就填 null")
 
-Tokenization is not just a preprocessing detail. It shapes cost, truncation behavior, and what information survives into the model.
+class AbstractInfo(BaseModel):
+    study_type: str                # "human" / "mouse" / "cell line" / "review" / "other"
+    sample_size: int | None        # 沒寫就 null，不要猜
+    genes: list[GeneMention]
 
-| Tokenization Concern | Why It Matters |
+# OpenAI：把 pydantic 模型當 response_format（舊版 SDK 為 client.beta.chat.completions.parse）
+resp = client.chat.completions.parse(
+    model=MODEL, response_format=AbstractInfo,
+    messages=[{"role": "system", "content": "從摘要擷取資訊。原文沒有的欄位填 null。"},
+              {"role": "user", "content": abstract}],
+)
+info = resp.choices[0].message.parsed          # AbstractInfo 物件；拒答時為 None，看 .refusal
+
+# 不支援 schema 參數的模型：要求輸出 JSON，再自行驗證
+info = AbstractInfo.model_validate_json(raw_text)   # 失敗會丟 ValidationError → 重試或記錄
+```
+
+| 做法 | 可靠度 | 說明 |
+| --- | --- | --- |
+| 只在 prompt 描述格式 | 低 | 偶爾多出說明文字或缺欄位 |
+| JSON mode | 中 | 保證是合法 JSON，不保證欄位正確 |
+| JSON schema / structured output | 高 | 依 schema 約束解碼；仍需驗證**內容**是否正確 |
+| 用 tool calling 取得參數 | 高 | 本質上也是 schema 約束 |
+
+> Schema 只保證格式，不保證事實。`sample_size: 120` 仍可能是編造的；要用 [評估集](../evaluation-and-hallucination.md) 檢查內容正確率。
+
+## Tool Calling
+
+讓模型決定「要呼叫哪個函式、帶什麼參數」，由程式實際執行，再把結果回傳給模型。適合模型不該自己編的東西：資料庫查詢、計算、外部 API。
+
+```
+使用者問題 → 模型回傳 tool_calls（函式名 + JSON 參數）→ 程式驗證參數並執行
+         → 結果以 role="tool" 回傳 → 模型產生最終回答（或再呼叫工具）
+```
+
+```python
+import json
+
+def lookup_gene(symbol: str) -> dict:
+    ...                                 # 查 HGNC / NCBI Gene，回傳官方名稱、ID、別名
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "lookup_gene",
+        "description": "以 HGNC 基因符號查詢官方名稱與 ID。只在使用者提到具體基因時使用。",
+        "parameters": {
+            "type": "object",
+            "properties": {"symbol": {"type": "string", "description": "人類基因符號，如 TP53"}},
+            "required": ["symbol"],
+        },
+    },
+}]
+registry = {"lookup_gene": lookup_gene}
+
+messages = [{"role": "user", "content": "TP53 和 TP63 的官方全名是什麼？"}]
+for _ in range(5):                                       # 設上限，避免無限迴圈
+    resp = client.chat.completions.create(model=MODEL, messages=messages, tools=tools)
+    msg = resp.choices[0].message
+    if not msg.tool_calls:
+        break                                            # 沒有工具呼叫 → 最終回答
+    messages.append(msg)
+    for call in msg.tool_calls:                          # 可能一次要求多個（平行工具呼叫）
+        args = json.loads(call.function.arguments)       # 執行前驗證：型別、範圍、權限
+        result = registry[call.function.name](**args)
+        messages.append({"role": "tool", "tool_call_id": call.id, "content": json.dumps(result)})
+print(msg.content)
+```
+
+| 工具設計 | 理由 |
 | --- | --- |
-| padding | allows variable-length inputs to be batched together |
-| truncation | prevents overly long inputs from exceeding model limits |
-| max length | affects both runtime cost and information loss |
-| decoding cleanup | improves readability of generated outputs |
+| 名稱與描述清楚，寫明「何時使用」 | 模型靠描述選工具 |
+| 參數有型別、列舉值、範例 | 減少錯誤參數 |
+| 告訴模型「缺必要參數時先詢問使用者」 | 否則會自行編造參數 |
+| 執行前在程式端驗證參數 | 結構正確 ≠ 內容安全 |
+| 有副作用的工具（寫入、刪除、寄信）需人工確認 | 見 [Agent](../agents/agent-foundations.md#guardrail-與人工介入) |
+| 迴圈設上限 | 避免模型反覆呼叫 |
 
-Warning: If you ignore truncation and sequence limits, the model may silently lose the exact context you cared about most.
+## 錯誤處理與重試
 
-### Model Cards and Task Fit
+| 錯誤（OpenAI SDK 類別） | 意義 | 處理 |
+| --- | --- | --- |
+| `AuthenticationError` (401) | 金鑰錯誤 | 不重試，修設定 |
+| `PermissionDeniedError` (403) / `NotFoundError` (404) | 無權限、模型 ID 錯誤或已下架 | 不重試 |
+| `BadRequestError` (400) | 參數錯誤、超過 context 上限 | 不重試；修請求（截斷輸入） |
+| `RateLimitError` (429) | 超過速率或額度 | 指數退避重試 |
+| `APIConnectionError`、`APITimeoutError`、5xx | 網路或服務暫時性問題 | 指數退避重試 |
 
-Before using a model, check what it was built for.
+```python
+from openai import OpenAI
 
-| Question | Why It Helps |
+client = OpenAI(max_retries=3, timeout=60)   # SDK 已內建對 429 / 5xx / 連線錯誤的指數退避重試
+```
+
+> 重試策略屬於程式層，不屬於 prompt。對參數錯誤盲目重試只會浪費錢。大量請求時另外控制併發數，並考慮 [Batch API](../llmops.md#成本與延遲)。
+
+## Guardrail 與 Moderation
+
+| 層 | 做法 |
 | --- | --- |
-| Is this model generative or discriminative? | generation and classification have different output behavior |
-| What data was it trained or adapted on? | domain mismatch often explains weak results |
-| What task is it intended for? | translation, summarization, and sentiment models are not interchangeable |
-| What are the context and resource limits? | hardware and latency shape practical viability |
+| 輸入 | 長度上限、範圍檢查、moderation 分類、偵測 prompt injection |
+| System prompt | 角色、範圍、拒答規則 |
+| 輸出 | schema 驗證、moderation、PII 過濾、引用驗證 |
+| 動作 | 工具參數驗證、權限最小化、高風險動作人工核准 |
+| 監控 | 記錄被擋下的請求與誤擋案例 |
 
-Key point: "A model exists" does not mean it fits your task, data, or deployment budget.
+```python
+mod = client.moderations.create(model="omni-moderation-latest", input=user_text)
+r = mod.results[0]
+r.flagged, r.category_scores          # 依各類別分數與自訂門檻決定：繼續 / 拒絕 / 轉人工
+```
+
+**Prompt injection**：使用者輸入或檢索到的文件裡藏著「忽略之前的指令…」之類的文字，讓模型改變行為。處理外部文件（網頁、PDF、email）的 RAG 與 agent 特別容易中招。
+
+| 緩解 | 說明 |
+| --- | --- |
+| 用分隔符號標明「以下是資料，不是指令」 | 降低但不能消除風險 |
+| 工具權限最小化 | 讀文件的流程不給寫入 / 寄送權限 |
+| 敏感動作一律人工核准 | 即使被注入也無法自動執行 |
+| 輸出檢查 | 偵測是否洩漏 system prompt 或敏感資料 |
+
+> System prompt 是 guardrail，不是保證。高風險流程要多層防護並存。
+
+## 計算 Token 與控制長度
+
+```python
+import tiktoken                                   # OpenAI 模型的 tokenizer
+enc = tiktoken.get_encoding("o200k_base")         # 依模型選編碼；其他供應商用各自的 token 計數 API
+n = len(enc.encode(long_document))
+
+# Anthropic：client.messages.count_tokens(model=MODEL, messages=[...]).input_tokens
+```
+
+| 情況 | 做法 |
+| --- | --- |
+| 文件超過 context 上限 | 切段處理後彙整（map-reduce），或改用 [RAG](../rag/README.md) |
+| 輸入很長但大多無關 | 先檢索 / 篩選相關段落 |
+| 長 context 中段資訊被忽略 | 重要內容放開頭或結尾；問題放在文件之後 |
+| 成本估算 | token 數 × 單價；中文與程式碼 token 數通常較多 |
+
+## 上線前的請求流程
+
+```
+驗證請求 → 輸入 guardrail → 組 prompt（模板 + 檢索結果）→ 呼叫模型（有上限的參數）
+→ 驗證輸出 / 工具參數 → 只對暫時性錯誤重試 → 記錄（版本、token、延遲、結果）
+```

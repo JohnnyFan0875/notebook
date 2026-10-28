@@ -1,132 +1,112 @@
-# Hugging Face Hub and Pipelines
+[LLM](../README.md) › [整合](README.md) › Hugging Face
 
-Hugging Face is both a software ecosystem and a shared platform for discovering models, datasets, and task-specific tooling.
+# Hugging Face Hub 與 Pipelines
 
-Key point: The Hub is useful not just because it hosts many models, but because it connects model artifacts, task metadata, dataset access, and lightweight inference patterns in one workflow.
+Hugging Face 是開源模型與資料集的集散地，`transformers` 是使用這些模型的標準函式庫。實務上分兩層：`pipeline` 一行完成常見任務；需要自訂前處理、批次或訓練時，才改用 tokenizer + 模型類別。
 
-## What the Hub Actually Provides
+## Hub 提供什麼
 
-It helps teams do more than download checkpoints.
-
-| Capability | Why It Matters |
+| 功能 | 用途 |
 | --- | --- |
-| model discovery | find models aligned to a task or domain |
-| dataset access | reuse public datasets for experimentation and evaluation |
-| model cards | inspect intended use, limitations, and training context |
-| shared artifacts | make models and datasets easier to reproduce across teams |
+| 模型 | 依任務、語言、授權篩選；含生醫模型（BiomedBERT、BioBERT、ESM 等） |
+| Model card | 訓練資料、預期用途、限制、評估結果、授權 → **使用前先讀** |
+| Datasets | `datasets` 套件直接載入、切分、串流大型資料集 |
+| Spaces | 互動 demo |
 
-Tip: Before trying a model, read its card first. A poor task match is often more damaging than a mediocre model.
-
-## Pipelines Are a Task Interface
-
-Pipelines are a high-level way to run common tasks without wiring every preprocessing and decoding step by hand.
-
-| Task Pattern | Example Use |
+| 讀 model card 時確認 | 理由 |
 | --- | --- |
-| text classification | sentiment, topic, or entailment-style labeling |
-| zero-shot classification | assign labels dynamically without task-specific retraining |
-| summarization | condense long passages for review or handoff |
-| question answering | answer from a provided context passage |
-| text generation | continue prompts or draft candidate text |
+| 任務類型（分類、NER、生成、embedding） | 任務不符時程式仍能跑，但結果沒有意義 |
+| 訓練資料與領域 | 一般網頁訓練的模型在臨床文字上表現常大幅下降 |
+| 標籤定義 | 社群模型常輸出 `LABEL_0`、`LABEL_1`，要查清楚對應什麼 |
+| 授權 | 部分模型限制商業使用或需同意條款（gated） |
+| 大小與硬體需求 | 參數量決定記憶體需求（fp16 約 2 bytes / 參數） |
 
-Key point: A pipeline is best understood as a ready-made task wrapper around a model, tokenizer, and output formatter.
+## Pipeline：依任務呼叫
 
-## Choosing a Pipeline Task
+```python
+from transformers import pipeline
 
-The task name matters because it controls the behavior you are asking the stack to perform.
+# 1. 零樣本分類：執行時才給標籤，不需訓練
+clf = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+clf("Single-cell RNA-seq reveals T cell exhaustion in tumors",
+    candidate_labels=["immunology", "neuroscience", "plant biology"])   # labels 依分數排序
 
-| If you need... | A Better Fit Is... |
-| --- | --- |
-| fixed labels from known classes | standard text classification |
-| user-defined labels at runtime | zero-shot classification |
-| short answers from supplied documents | question answering |
-| condensed restatements of source text | summarization |
-| open-ended continuations | text generation |
+# 2. 實體辨識：aggregation_strategy 把子詞合併成完整實體
+ner = pipeline("token-classification", model="<生醫 NER 模型>", aggregation_strategy="simple")
 
-Warning: If the task wrapper and model intent do not match, the system may still run while producing misleading or low-value outputs.
+# 3. 抽取式問答：答案必須是 context 中的一段文字
+qa = pipeline("question-answering", model="deepset/roberta-base-squad2")
+qa(question="Which gene was knocked out?", context=methods_text)       # {'answer': ..., 'score': ...}
 
-## Model Choice Still Matters
+# 4. 摘要、生成
+summ = pipeline("summarization", model="facebook/bart-large-cnn")
+summ(long_text, max_length=130, min_length=30)
 
-Pipelines reduce boilerplate, but they do not eliminate model selection.
+# 通用參數：device=0（GPU）、batch_size=16、truncation=True
+```
 
-| Selection Question | Why It Helps |
-| --- | --- |
-| Is the model adapted to this exact task? | general models and task-tuned models behave very differently |
-| Is the model domain-appropriate? | legal, biomedical, and multilingual settings often need specialization |
-| What output labels mean? | some community models expose opaque labels that need interpretation |
-| What latency or memory footprint is acceptable? | practical deployment limits narrow the candidate set quickly |
-
-Tip: Community models can be useful, but label semantics and evaluation quality should be checked before they enter a real workflow.
-
-## Datasets Are Part of the Same Workflow
-
-The Hugging Face ecosystem also makes it easy to load and inspect datasets.
-
-| Dataset Workflow Step | Why It Matters |
-| --- | --- |
-| load a dataset or split | creates a reusable starting point for experiments |
-| inspect fields and labels | prevents schema misunderstandings |
-| filter or select records | supports focused debugging and evaluation |
-| reuse the same dataset across runs | improves comparability |
-
-Key point: Good model experimentation depends on stable input data, not just easy model access.
-
-## Summarization Tradeoffs
-
-Summarization examples often hide an important distinction.
-
-| Style | Strength | Weakness |
+| 任務名稱 | 輸出 | 適合 |
 | --- | --- | --- |
-| extractive summarization | preserves wording from the source | less flexible and may feel choppy |
-| abstractive summarization | produces more natural restatements | higher risk of omission or invention |
+| `text-classification` | 固定標籤 + 分數 | 已有對應標籤的微調模型 |
+| `zero-shot-classification` | 自訂標籤排序 | 快速 baseline、標籤會變動 |
+| `token-classification` | 實體與位置 | NER |
+| `question-answering` | 原文中的片段 | 文件內查找答案（抽取式，不會編造原文以外內容） |
+| `summarization` | 生成的摘要 | 抽象式摘要可能遺漏或捏造 |
+| `text-generation` | 續寫文字 | 開源 LLM 對話 / 生成 |
+| `feature-extraction` | 向量 | embedding（語意搜尋多用 `sentence-transformers`，見 [Embedding](../rag/embeddings-and-semantic-search.md)） |
 
-Warning: A summary that reads better is not automatically more faithful to the source.
+| 摘要方式 | 優點 | 缺點 |
+| --- | --- | --- |
+| 抽取式 (extractive) | 保留原文措辭，不會捏造 | 不連貫 |
+| 抽象式 (abstractive) | 自然流暢 | 可能遺漏、扭曲或捏造 |
 
-## Common Classification Patterns
+## Tokenizer 與模型類別
 
-Classification can mean several different jobs.
+需要自訂批次、檢查中間結果、取得 embedding 或訓練時，改用底層類別。
 
-| Pattern | Typical Use |
+```python
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+name = "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext"
+tok = AutoTokenizer.from_pretrained(name)
+model = AutoModelForSequenceClassification.from_pretrained(name, num_labels=2)   # 分類頭隨機初始化 → 需要微調
+
+batch = tok(texts, padding=True, truncation=True, max_length=512, return_tensors="pt")
+with torch.no_grad():
+    probs = model(**batch).logits.softmax(dim=-1)
+```
+
+| Tokenizer 參數 | 作用 | 陷阱 |
+| --- | --- | --- |
+| `padding=True` | 補到批次中最長序列 | 搭配 `attention_mask`（tokenizer 自動產生） |
+| `truncation=True`、`max_length` | 截斷超長輸入 | BERT 類多為 512 token；**被截掉的內容模型完全看不到**，長文件要先切段 |
+| `return_tensors="pt"` | 回傳 PyTorch tensor | — |
+
+| 介面 | 適合 | 代價 |
+| --- | --- | --- |
+| `pipeline` | 原型、標準任務 | 前處理與輸出格式控制少 |
+| `AutoTokenizer` + `AutoModelFor*` | 自訂批次、取中間層、訓練 | 程式較多 |
+| `Trainer` / `SFTTrainer` | 微調 | 見 [Fine-tuning](fine-tuning.md) |
+
+## Datasets
+
+```python
+from datasets import load_dataset
+
+ds = load_dataset("<dataset-id>")                     # DatasetDict：{"train": ..., "test": ...}
+ds["train"].features                                  # 欄位與標籤定義
+small = ds["train"].shuffle(seed=0).select(range(200))
+tokenized = ds.map(lambda b: tok(b["text"], truncation=True), batched=True)
+```
+
+用固定的資料集與切分做比較，實驗才可重現；切分時注意同一篇論文 / 同一病人的資料不要跨訓練與測試集（見 [資料洩漏](../../machine-learning/foundations/data-leakage.md)）。
+
+## 何時用 pipeline、何時不用
+
+| 夠用 | 不夠用 |
 | --- | --- |
-| sentiment analysis | reviews, feedback, and social signal tracking |
-| grammatical correctness or quality labeling | writing assistance and screening workflows |
-| entailment or QNLI-style classification | compare a statement against a question or claim |
-| zero-shot routing | map open text into candidate categories |
-
-This is why "text classification" is too broad to be a design decision by itself.
-
-## Question Answering Needs Context Discipline
-
-Question-answering pipelines usually work over a provided context rather than the model's free-form memory.
-
-That makes them useful for document-grounded tasks, but only when:
-
-1. the context actually contains the answer
-2. the passage boundaries are reasonable
-3. the question is specific enough to anchor retrieval or extraction
-
-Key point: A QA pipeline does not replace retrieval design. It usually depends on retrieval quality.
-
-## When Pipelines Are Enough
-
-Pipelines are often enough when:
-
-1. the task is common and well supported
-2. you need quick prototyping or demos
-3. you care more about speed of experimentation than fine-grained customization
-
-They are usually not enough when:
-
-1. you need custom preprocessing or batching
-2. output post-processing is central to the workflow
-3. training, evaluation, or orchestration logic must be tightly controlled
-
-## Minimum Checklist
-
-Before using Hugging Face models in a workflow, make sure you can explain:
-
-1. why the selected task wrapper matches the real job
-2. what the model card says about task fit and limitations
-3. what the output labels or generated fields actually mean
-4. which dataset or evaluation set will be used for validation
-5. when a high-level pipeline should be replaced with a lower-level custom flow
+| 常見任務、快速原型 | 自訂前處理、長文件切段後彙整 |
+| 只需最終結果 | 需要 logits、embedding、注意力等中間結果 |
+| 小量資料 | 大量資料要精細控制批次與 GPU 記憶體 |
+| — | 訓練或微調 |

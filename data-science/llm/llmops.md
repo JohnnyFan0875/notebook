@@ -1,320 +1,127 @@
+[Data Science](../README.md) › [LLM](README.md) › LLMOps
+
 # LLMOps
 
-LLM 應用上線後的營運面：prompt 版本管理、測試、部署、監控、feedback loop、成本控制；以及 agent 系統規模化時多出來的問題（routing、grounding、human-in-the-loop、tool failure、queueing）。一般 ML 的部署與監控見 [Deployment and Monitoring](../machine-learning/production/deployment-and-monitoring.md)。
+LLM 應用上線後的營運：prompt 與設定的版本管理、回歸測試、監控、回饋迴圈、成本與延遲控制；以及 agent 系統規模化後多出來的問題（路由、工具失敗、排隊、人工把關）。一般 ML 的部署與監控見 [部署與監控](../machine-learning/production/deployment-and-monitoring.md)；評估方法本身見 [評估與幻覺](evaluation-and-hallucination.md)。
 
-## LLMOps Fundamentals
+## LLMOps vs MLOps
 
-LLMOps is the operational practice of managing, testing, deploying, and improving LLM-based applications over time.
-
-Key point: LLMOps extends MLOps, but it puts more emphasis on prompts, non-deterministic outputs, safety checks, feedback collection, and application-level observability.
-
-### Why LLMOps Exists
-
-LLM systems are difficult to operate because they combine model behavior with prompts, tools, retrieval, user context, and workflow state.
-
-| Operational Challenge | Why It Matters |
-| --- | --- |
-| prompt changes alter behavior | small wording changes can cause large quality shifts |
-| outputs are probabilistic | repeated runs may differ even with the same task |
-| workflows are multi-component | failures can come from retrieval, tools, formatting, or orchestration |
-| user input is open-ended | edge cases appear faster than in many traditional systems |
-
-### LLMOps Versus MLOps
-
-The two are related, but the center of gravity is different.
-
-| Topic | LLMOps Emphasis | Traditional MLOps Emphasis |
+| 面向 | 傳統 [MLOps](../machine-learning/production/mlops-overview.md) | LLMOps |
 | --- | --- | --- |
-| behavior control | prompts, context assembly, retrieval, guardrails | feature pipelines and model weights |
-| evaluation | output quality, factuality, safety, task completion | prediction metrics on labeled data |
-| iteration unit | prompt, chain, tool policy, retrieval config | model retraining or feature updates |
-| production risk | hallucination, prompt injection, tool misuse | drift, bias, calibration, service reliability |
+| 改變行為的方式 | 重訓模型、改特徵 | 改 prompt、檢索設定、工具、換模型版本 |
+| 版本管理對象 | 資料、模型權重 | prompt 模板、模型 ID、參數、檢索索引、工具定義 |
+| 評估 | 有標籤的測試集 + 固定指標 | 評估集 + rubric + LLM-as-judge + 人工審查 |
+| 主要風險 | 資料漂移、校準、偏誤 | 幻覺、prompt injection、工具誤用、供應商改版 |
+| 可重現性 | 固定 seed 即可 | 取樣隨機、API 模型會被更新或下架 |
 
-### Prompt and Version Management
+> LLM 應用中要測試的單位是**整條 pipeline**（檢索 + prompt + 模型 + 解析 + 工具），不是單一 prompt。
 
-Operational discipline starts earlier than deployment.
+## Prompt 與設定的版本管理
 
-| Practice | Why It Helps |
+| 做法 | 理由 |
 | --- | --- |
-| version prompts | makes behavioral changes traceable |
-| keep evaluation pairs | lets teams compare prompt revisions consistently |
-| test in a playground first | speeds iteration before application rollout |
-| separate dev and production configs | reduces accidental regressions |
+| prompt 模板放進 git，與程式碼一起 review | 行為改變可追溯；不要散落在 notebook 或聊天紀錄 |
+| 鎖定模型版本（帶日期的 model ID，而非 `latest` 別名） | 供應商更新別名指向的模型時，行為會無預警改變 |
+| 把模型 ID、參數、prompt 版本、索引版本一起記錄到每筆輸出 | 回饋與錯誤才能對應到產生它的設定 |
+| dev / staging / production 設定分離 | 避免實驗中的 prompt 直接影響使用者 |
+| 每次改動跑評估集 | 防止修好一個案例、壞掉十個（回歸） |
 
-Tip: Treat prompts as production assets, not informal text snippets copied between notebooks or chat windows.
+```
+改 prompt / 換模型 / 改檢索
+        ↓
+跑評估集（golden set + 困難案例 + 安全測試）
+        ↓
+與目前版本配對比較（同一批題目）
+        ↓  沒有退化
+小流量上線（canary / A-B）→ 監控 → 全量
+```
 
-### From Prompt to Application
+## 測試類型
 
-A prompt can become an application once it is embedded in a larger workflow.
+| 測試 | 檢查 | 自動化方式 |
+| --- | --- | --- |
+| 格式測試 | 輸出符合 JSON schema、必要欄位存在 | pydantic 驗證，可放進 CI |
+| Golden set 回歸 | 核心案例仍正確 | 精確比對 / 指標 / LLM-as-judge |
+| 安全測試 | 拒絕超出範圍、有害、prompt injection 的輸入 | 對抗樣本集 |
+| 檢索測試 | 正確段落有被找到 | recall@k（見 [RAG 評估](rag/rag-pipeline.md#評估-rag)） |
+| 工作流程測試 | 工具呼叫、路由、重試行為正確 | 模擬工具（mock）+ trace 檢查 |
+| 負載測試 | 延遲、rate limit、併發 | 壓測工具 |
 
-| Layer | Example |
+## 監控
+
+| 層 | 監看什麼 | 例子 |
+| --- | --- | --- |
+| 輸入 | 分布變化、異常請求、注入攻擊 | 新類型問題變多、長度暴增 |
+| 功能 | 工具失敗、檢索落空、逾時、重試次數 | 某個 API 錯誤率上升 |
+| 輸出 | 拒答率、格式錯誤率、使用者評分、抽樣人工評分 | 拒答率突然從 2% 升到 15% |
+| 成本 / 效能 | token 用量、延遲 p50 / p95、每次請求成本 | 某次 prompt 改版讓輸入 token 翻倍 |
+
+Tracing 要記錄**從輸入到最終輸出的完整路徑**（每次檢索結果、每次模型呼叫、每次工具呼叫），只看最後答案無法定位錯誤。常用工具：LangSmith、Langfuse、Arize Phoenix、MLflow tracing。
+
+> 記錄完整 prompt 與輸出時，等於也記錄了使用者輸入的個資或病人資料。log 要套用與原始資料相同的存取控制與保存期限（見 [隱私與法規](../responsible-ai/privacy-and-regulation.md)）。
+
+## 回饋迴圈
+
+| 來源 | 用途 |
 | --- | --- |
-| prompt logic | instructions, examples, output schema |
-| augmentation | retrieval, examples, or tool outputs added at runtime |
-| orchestration | chains, routing, retries, and fallbacks |
-| interface | API, chat UI, or internal workflow integration |
+| 使用者評分（讚 / 倒讚、修正後的內容） | 找失敗案例，加入評估集 |
+| 支援單、抱怨 | 揭露真正重要的失敗模式 |
+| Trace 抽樣審查 | 找出不良路由、過時檢索、弱 prompt |
+| 自動評審 (LLM-as-judge) | 大量但不完美；要定期用人工標註校正 |
 
-Key point: Once an LLM is part of an application, the unit you test is the whole pipeline, not just the prompt text.
+## 成本與延遲
 
-### Testing LLM Applications
+成本 ≈ 輸入 token × 輸入單價 + 輸出 token × 輸出單價（輸出單價通常是輸入的數倍）。延遲主要由**輸出 token 數**與模型大小決定。
 
-LLM testing is less deterministic than traditional ML evaluation.
+| 手段 | 效果 | 代價 |
+| --- | --- | --- |
+| 小模型處理簡單任務、大模型處理困難任務（路由） | 成本常降一個數量級 | 要有路由規則與評估 |
+| Prompt caching（固定前綴放前面） | 重複的 system prompt / 文件不必重複計全價，也較快 | 前綴要完全相同才命中 |
+| 結果快取 | 相同請求直接回傳 | 只適合不需即時性的請求 |
+| 縮短 prompt、精簡檢索結果 | 降低輸入 token | 可能遺漏 context |
+| 限制輸出長度、要求精簡格式 | 降低輸出 token 與延遲 | 可能截斷 |
+| Batch API（非同步批次） | 大量離線任務（如篩選上萬篇摘要）通常較便宜 | 數小時內才回傳 |
+| 串流 (streaming) | 使用者較早看到輸出，體感延遲降低 | 總時間不變 |
+| 自架開源模型 | 大量呼叫時單價低、資料不出機構 | GPU、維運成本 |
 
-| Test Type | What It Checks |
+> 先用強模型找出「做得到」的上限，再往下換更小、更便宜的模型，直到評估分數開始下降。
+
+## Agent 系統的營運
+
+Agent 在 demo 中能跑，不代表在真實流量下能穩定運作。
+
+| Prototype 關心 | 規模化後關心 |
 | --- | --- |
-| golden examples | whether core prompts still produce acceptable outputs |
-| safety checks | whether the system refuses unsafe or off-policy requests |
-| format checks | whether responses satisfy required schemas |
-| workflow tests | whether retrieval, tools, and routing behave correctly together |
+| 能不能完成一次任務 | 能不能在真實條件下重複完成 |
+| 一次工具呼叫成功 | 失敗、重試、備援怎麼處理 |
+| Prompt 夠不夠好 | 模組怎麼版本化、監控、改進 |
+| 一條路徑是否合理 | 路由與協作是否仍好維護 |
 
-If human feedback is available, it can become a high-value evaluation signal. If not, teams still need proxy checks such as rubric-based review, constraint validation, or model-assisted judging.
-
-Warning: A prompt that looks good on one demo example is not evidence that the application is ready for deployment.
-
-### Deployment Thinking
-
-Deploying an LLM application means deploying each important component, not just exposing one model endpoint.
-
-| Component | Operational Concern |
+| 原則 | 做法 |
 | --- | --- |
-| model access | hosting, latency, quotas, and fallback providers |
-| retrieval layer | index freshness, permissions, and metadata quality |
-| tool layer | API reliability, timeouts, and side-effect controls |
-| application service | scaling, auth, logging, and release process |
+| 模組化 | router / supervisor、專職 agent、工具介面、驗證層各自獨立，可單獨測試與替換 |
+| 明確路由 | 每個 agent 職責不重疊；有明確結束條件，避免無限委派 |
+| 先減少錯誤決策 | 工具描述清楚、限制可用工具、接上可信資料；重試只是最後手段 |
+| Agent 專屬監控 | 工具選擇分布、每步延遲、失敗 / 重試次數、任務完成率、業務指標 |
+| 人工把關 | 高影響動作（刪資料、寄信、改大量紀錄）需人工核准；模糊案例轉人工 |
 
-A lightweight deployment lifecycle often includes:
-
-1. build the application artifact
-2. run deployment tests
-3. release to a controlled environment
-4. watch behavior closely after rollout
-
-### Monitoring and Observability
-
-Observability is what turns production use into learnable evidence.
-
-| Signal | Why It Matters |
+| 工具失敗策略 | 適合 |
 | --- | --- |
-| input patterns | detect changing user behavior or prompt injection attempts |
-| latency and failure rates | reveal system reliability problems |
-| output quality metrics | track regressions against testing baselines |
-| tool and retrieval traces | show where the workflow actually failed |
+| 指數退避重試 | 暫時性網路 / 服務錯誤 |
+| 呼叫前驗證 | 可疑的工具選擇或參數 |
+| 快取備援 | 允許資料稍舊的查詢；不適合即時資料 |
+| 佇列延後重試 | 可非同步完成的工作；避免失敗呼叫持續佔用資源 |
+| 回報並停止 | 參數錯誤、權限錯誤（重試也沒用） |
 
-Tip: Observability should capture the whole path from user input to final answer, not only the last model response.
+> 太早移除人工把關，agent 看起來更有效率，實際上把風險推到下游。
 
-### Input, Functional, and Output Monitoring
+## 檢查清單
 
-Different failures show up in different layers.
-
-| Monitoring Layer | What to Watch |
+| 問題 | 對應段落 |
 | --- | --- |
-| Input monitoring | distribution shifts, malformed requests, suspicious prompt-like injections |
-| Functional monitoring | tool failures, retrieval misses, broken chains, timeout behavior |
-| Output monitoring | factuality, task completion, refusal quality, user satisfaction |
-
-Data drift changes the inputs. Model drift shows up as changing output behavior relative to expectations. Both matter.
-
-### Feedback Loops
-
-A healthy LLMOps workflow keeps learning after launch.
-
-| Feedback Source | Operational Use |
-| --- | --- |
-| human ratings | create labeled examples for future evaluation |
-| support tickets | reveal failure modes users actually care about |
-| trace review | identify weak prompts, bad routing, or stale retrieval |
-| automated judges | provide scalable but imperfect review support |
-
-Key point: Feedback is most useful when it is linked back to the exact prompt, config, and application version that produced the output.
-
-### Cost and Performance Controls
-
-Operational quality includes efficiency.
-
-| Lever | Why It Helps |
-| --- | --- |
-| prompt compression | reduces token cost and latency |
-| caching | avoids repeated work for repeated requests |
-| smaller models for simpler tasks | lowers cost without sacrificing quality |
-| retrieval and routing discipline | prevents unnecessary calls |
-
-### Minimum Checklist
-
-Before calling an LLM application operationally healthy, make sure you can explain:
-
-1. how prompts and configs are versioned
-2. which evaluation cases guard against regressions
-3. what is deployed besides the model itself
-4. which production signals are monitored
-5. how feedback becomes the next round of improvements
-
-## Operating Agent Systems
-
-An agent that works in a demo is not automatically an agent that scales. Once an agent is expected to run repeatedly, call tools reliably, coordinate subagents, and survive real traffic, its operating design becomes part of the product.
-
-Key point: Scalable agent systems depend less on one smart model and more on modular design, robustness under failure, and operational visibility.
-
-### When Agent Scaling Becomes a Different Problem
-
-A small agent prototype and a production agent system fail in different ways.
-
-| Prototype Concern | Scaled-System Concern |
-| --- | --- |
-| can the workflow solve the task once | can it solve the task repeatedly under real conditions |
-| does one tool call work | how do failures, retries, and fallback behave |
-| is the prompt good enough | how are modules versioned, monitored, and improved |
-| is one path coherent | how do routing and coordination stay maintainable |
-
-Tip: The moment an agent needs multiple tools, longer runtime, or team ownership, you should start thinking like an operator rather than only a prompt designer.
-
-### Three Pillars of Scalable Agent Design
-
-Several practical concerns tend to reappear in scalable agent systems.
-
-| Pillar | Why It Matters |
-| --- | --- |
-| modularity | makes parts easier to swap, test, and maintain in isolation |
-| robustness | keeps the system useful when tools, data, or routing fail |
-| adaptability | helps the system evolve as tasks, tools, and workloads change |
-
-Key point: These pillars are linked. A system that is not modular is harder to make robust, and a system that is not robust becomes painful to adapt.
-
-### Modularity Makes Maintenance Possible
-
-Scalable agents should be decomposed into understandable responsibilities.
-
-| Module Type | Practical Role |
-| --- | --- |
-| router or supervisor | decides which path or subagent should act |
-| specialist agent | handles one narrower task well |
-| tool interface | isolates external-system interaction |
-| validation layer | checks outputs before the next step |
-
-This matters because maintenance and evaluation become easier when each unit can be inspected separately.
-
-### Routing Should Be Explicit
-
-As agent systems grow, routing becomes architecture rather than implementation detail.
-
-| Routing Pattern | Why It Helps |
-| --- | --- |
-| router agent | delegates subtasks explicitly |
-| functional-area agents | split work by domain or role |
-| workflow end conditions | prevent endless delegation loops |
-| clear agent roles | reduce overlap and ambiguous responsibility |
-
-Tip: If two agents appear to do almost the same job, the architecture is probably drifting toward maintenance trouble.
-
-### Robustness Starts with Grounding and Verification
-
-Agent systems break when they choose the wrong action, select the wrong tool, or act on weak context.
-
-| Failure Mode | Better Design Response |
-| --- | --- |
-| erroneous tool use | verify whether the tool is needed before invocation |
-| incorrect tool selection | constrain role and tool contracts more clearly |
-| weak grounding | connect the agent to trusted data or retrieval |
-| brittle outputs | add validation before continuing the workflow |
-
-Key point: Robustness is not only about retries. It starts with reducing bad decisions upstream.
-
-### Monitoring Needs to Be Agent-Aware
-
-Generic application monitoring is not enough for agent systems.
-
-| Monitoring Signal | Why It Matters |
-| --- | --- |
-| tool selection patterns | reveal misrouting and prompt drift |
-| step-level latency | shows where orchestration is slowing down |
-| failure and retry counts | expose fragile dependencies |
-| completion outcomes | distinguish useful resolutions from stalled workflows |
-| custom business metrics | tie agent behavior back to real operational value |
-
-This is why custom monitoring is often needed once agents affect real workflows.
-
-### Human-in-the-Loop Is an Operating Control
-
-Human review is often part of scalability, not a sign that the system failed.
-
-| Human Checkpoint | Why It Helps |
-| --- | --- |
-| approval for high-impact actions | reduces risk of unsafe side effects |
-| review of large changes | protects systems that can alter many records or files |
-| escalation for ambiguous cases | preserves service quality when confidence is weak |
-
-Warning: Removing humans too early can make an agent look efficient while actually increasing downstream operational risk.
-
-### Tool Failure Handling Needs More Than One Strategy
-
-Agent systems should expect tool calls to fail sometimes.
-
-| Failure Strategy | Better Fit |
-| --- | --- |
-| retry mechanism | transient API or infrastructure failures |
-| verification checks | uncertain or suspicious tool-selection decisions |
-| cached fallback | repeated queries where stale data is acceptable |
-| queue management | workloads where failed calls can be retried later |
-
-Tip: Cache fallback is useful only when freshness is not critical. It is a poor default for real-time tools.
-
-### Queueing and Backpressure Are Real Agent Concerns
-
-When many requests or tool calls arrive together, orchestration has to manage pressure.
-
-| Queue Concern | Why It Matters |
-| --- | --- |
-| repeated failed calls | can consume resources without progress |
-| overloaded tool layer | slows the whole system, not just one request |
-| delayed retries | may be better than immediate repeated failure |
-| ordering logic | affects fairness and perceived responsiveness |
-
-Key point: Scaling an agent can mean scaling its waiting and recovery behavior, not just its model calls.
-
-### Deployment Choices Affect the Architecture
-
-Scalable agent systems are shaped by where they run.
-
-| Deployment Choice | Why It Matters |
-| --- | --- |
-| hybrid deployment | balance local control with hosted capabilities |
-| lower-latency infrastructure | matters when agents use several sequential steps |
-| maintainable hosting model | affects updates, observability, and cost |
-| real-time data access | supports coordination across multiple agents or services |
-
-This matters because architecture decisions can either simplify or multiply later operating pain.
-
-### Interoperability Becomes a Scaling Issue
-
-Larger agent systems often need to work across teams, vendors, or tool stacks.
-
-| Interoperability Need | Why It Helps |
-| --- | --- |
-| tool-stack agnostic design | reduces lock-in and integration friction |
-| dynamic tool discovery | lowers the cost of adding new capabilities |
-| multi-agent collaboration patterns | make specialized agents easier to combine |
-| stable interfaces | preserve maintainability as the system grows |
-
-Key point: A scalable agent should be extendable without rewriting the whole system each time a new tool appears.
-
-### Testing Should Reflect Operational Reality
-
-Agent evaluation should include more than output quality on one example.
-
-| Test Focus | Why It Matters |
-| --- | --- |
-| speed and latency | agents often chain several slow operations |
-| reliability under failure | reveals weak tool and retry behavior |
-| tool-choice correctness | catches bad routing before production incidents |
-| workflow completion | checks whether the system actually resolves tasks |
-
-Tip: For agents, "correct answer" is often too narrow a metric. You also need to know whether the workflow behaved well.
-
-### Minimum Checklist
-
-Before calling an agent system operationally scalable, make sure you can explain:
-
-1. how the system is modularized into agents, tools, and control layers
-2. what makes the workflow robust when tool calls fail or routing goes wrong
-3. which custom monitoring signals reveal real agent health
-4. where human approval or escalation is still required
-5. how deployment, queueing, caching, and interoperability affect the design
+| prompt、模型版本、參數、索引是否一起版本化並記錄在輸出上？ | [版本管理](#prompt-與設定的版本管理) |
+| 改動前是否跑評估集並與現行版本配對比較？ | [測試類型](#測試類型) |
+| 是否能從一筆錯誤輸出追溯到每次檢索與工具呼叫？ | [監控](#監控) |
+| 使用者回饋是否回流成評估案例？ | [回饋迴圈](#回饋迴圈) |
+| 是否知道每次請求的成本與 p95 延遲？ | [成本與延遲](#成本與延遲) |
+| 高影響動作是否有人工核准？ | [Agent 系統的營運](#agent-系統的營運) |

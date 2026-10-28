@@ -1,44 +1,47 @@
-# LLM Applications and Systems
+[Data Science](../README.md) › LLM
 
-This section focuses on how large language models are used in practice: prompting, retrieval, tool use, agents, evaluation, and the system design choices around them.
+# 大型語言模型應用 (LLM Applications and Systems)
 
-Key point: Training a language model and building a useful LLM product are different problems. This section emphasizes workflows, components, and failure modes in real applications.
+怎麼把 LLM 用成可靠的工具：prompt、API 整合、檢索 (RAG)、agent、評估與上線營運。訓練模型與做出好用的 LLM 應用是兩件事；本章著重後者。Transformer 內部機制見 [Deep Learning](../deep-learning/nlp-and-transformers/transformers-and-attention.md)。
 
-## Recommended Learning Path
+> 多數 LLM 應用的失敗其實是**系統**問題：檢索不到對的段落、工具定義不清、沒有評估集、沒有人工把關，而不是模型本身不夠強。
 
-1. [LLM Foundations](./llm-foundations.md): what an LLM is, how tokens, embeddings, transformers, and training stages fit together, plus generative-AI model families
-2. [Prompt Engineering](./prompt-engineering.md): how task definition, context, examples, system prompts, and output constraints shape model behavior
-3. [Integration](./integration/README.md): API patterns, structured output, tool calling, provider choice, multimodal workflows, and fine-tuning
-4. [RAG](./rag/README.md): connect an LLM to external knowledge through retrieval
-5. [Agents](./agents/README.md): what makes an agent different from a plain chatbot, and when tool use matters
-6. [LLMOps](./llmops.md): version, test, deploy, monitor, and improve LLM applications and agent systems
+## 建議順序
 
-Tip: Many LLM application errors are really system errors. The model may be fine, but the retrieval, tool design, prompt structure, or approval flow is weak.
+```
+基礎 → Prompt → API 整合 → RAG → Agent → 評估與幻覺 → LLMOps
+                                          └→ 生醫應用（依需要）
+```
 
-## Modules
+## 筆記
 
-| Module | Core Topics | Main Questions |
+| 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
-| [LLM Foundations](./llm-foundations.md) | tokens, embeddings, transformers, training, model families, and model limits | What is an LLM actually doing under the hood, and why does it fail in predictable ways? |
-| [Prompt Engineering](./prompt-engineering.md) | task framing, examples, formatting, system prompts, reusable prompt setups | How do you make the model understand the job clearly enough to answer reliably? |
-| [Integration](./integration/README.md) | API patterns, Hugging Face, LangChain, multimodal, fine-tuning | How do you turn model access into a usable development workflow? |
-| [RAG](./rag/README.md) | embeddings, vector databases, retrieval, grounding | How can an LLM answer from documents instead of memory alone? |
-| [Agents](./agents/README.md) | tool use, delegation, guardrails, and multi-agent patterns | When should an LLM act, call tools, or hand work to another agent? |
-| [LLMOps](./llmops.md) | evaluation, deployment, monitoring, feedback loops, scaling agents | How do you keep an LLM application reliable after it leaves the prototype stage? |
+| [LLM 基礎](llm-foundations.md) | token、embedding、next-token 預測、取樣參數、訓練階段、生成式模型家族、限制 | LLM 實際在做什麼？為什麼會以可預期的方式出錯？ |
+| [Prompt Engineering](prompt-engineering.md) | prompt 結構、few-shot、拆解推理、prompt chaining、system prompt、可重用模板 | 怎麼把任務講清楚，讓輸出穩定？ |
+| [整合](integration/README.md) | API 模式、structured output、tool calling、選模型、Hugging Face、LangChain、多模態、fine-tuning | 怎麼在程式裡可靠地使用模型？ |
+| [RAG](rag/README.md) | embedding、向量資料庫、chunking、hybrid search、reranking、RAG 評估 | 怎麼讓模型根據文件回答，並附來源？ |
+| [Agent](agents/README.md) | tool use、LangGraph、多 agent、guardrail、human-in-the-loop | 什麼時候該讓 LLM 自己決定下一步？ |
+| [評估與幻覺](evaluation-and-hallucination.md) | 評估集設計、指標、LLM-as-judge、幻覺偵測、樣本數與信賴區間 | 怎麼知道改了 prompt 是真的變好？ |
+| [LLMOps](llmops.md) | 版本管理、回歸測試、監控、成本 / 延遲、agent 系統營運 | 上線後怎麼維持品質與成本？ |
+| [生醫領域的 LLM](bio-and-medical-llm.md) | 文獻探勘、實體擷取與標準化、細胞類型標註、生醫模型、隱私與限制 | 生資 / 醫療情境能怎麼用？哪裡不能信？ |
 
-## A Practical System Map
+## 系統分層
 
-Useful LLM systems usually combine several layers:
+| 層 | 負責 | 主要筆記 |
+| --- | --- | --- |
+| Prompt | 任務定義、輸出格式、限制 | [Prompt Engineering](prompt-engineering.md) |
+| 檢索 / 工具 | 引入外部事實、API、精確計算 | [RAG](rag/README.md)、[API 模式](integration/llm-api-patterns.md) |
+| 狀態 | 對話歷史、流程進度、記憶 | [LangGraph](agents/langgraph-agent-workflows.md) |
+| 編排 (orchestration) | 下一步由哪個工具 / agent 執行 | [Agent](agents/README.md) |
+| Guardrail | 擋掉不安全、低信心、超出範圍的行為 | [API 模式](integration/llm-api-patterns.md#guardrail-與-moderation)、[Responsible AI](../responsible-ai/README.md) |
+| 評估 | 品質、可靠度、延遲、成本 | [評估與幻覺](evaluation-and-hallucination.md)、[LLMOps](llmops.md) |
 
-| Layer | Typical Responsibility |
+## 建議路線
+
+| 讀者 | 路線 |
 | --- | --- |
-| Prompting | define the task, response shape, and constraints |
-| Retrieval or tools | bring in external facts, APIs, or calculations |
-| State | keep track of user context, workflow progress, or memory |
-| Orchestration | decide which step, tool, or agent acts next |
-| Guardrails | prevent unsafe, low-confidence, or off-policy behavior |
-| Evaluation | check quality, reliability, latency, and business usefulness |
-
-Warning: If you only evaluate model output quality and ignore latency, tool failure, stale context, or escalation behavior, the system can still fail in production.
-
-[Back to Data Science](../README.md)
+| 想用 LLM 加速分析工作 | [基礎](llm-foundations.md) → [Prompt](prompt-engineering.md) → [生醫應用](bio-and-medical-llm.md) |
+| 要做文獻 / 文件問答系統 | [API 模式](integration/llm-api-patterns.md) → [RAG](rag/README.md) → [評估與幻覺](evaluation-and-hallucination.md) |
+| 要做會呼叫工具的自動化流程 | [API 模式](integration/llm-api-patterns.md) → [Agent](agents/README.md) → [LLMOps](llmops.md) |
+| 考慮微調模型 | [評估與幻覺](evaluation-and-hallucination.md) → [Fine-tuning](integration/fine-tuning.md)（先確認 prompt / RAG 不夠） |

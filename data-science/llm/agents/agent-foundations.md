@@ -1,209 +1,121 @@
-# Agent Foundations
+[LLM](../README.md) › [Agent](README.md) › Agent 基礎
 
-An LLM agent is a language-model-based system that can decide what to do next, use external tools or resources, and continue a task beyond a single response.
+# Agent 基礎 (Agent Foundations)
 
-Key point: A chatbot only answers. An agent can answer, retrieve, filter, delegate, and act within a workflow.
+Agent = LLM + 工具 + 編排：模型判斷還缺什麼資訊、呼叫工具取得、觀察結果、決定下一步，直到完成任務。Chatbot 只回答；agent 能檢索、計算、委派與執行動作。能力越大，guardrail 與人工把關就越重要。
 
-## A Simple Definition
+## 從 Chatbot 到 Agent
 
-One useful working definition is that an AI agent can reason, plan, and act by interacting with its environment.
+| 系統 | 行為 | 例子 |
+| --- | --- | --- |
+| Chatbot | 根據 prompt 與內建知識回答 | 解釋統計概念 |
+| 固定流程 (chain) | 事先寫好的步驟，可能包含檢索與工具 | 摘要 → 擷取 → 存資料庫 |
+| 會用工具的助理 | 單輪中決定是否呼叫工具 | 問基因時查 NCBI |
+| Agent | 多步驟、依中間結果決定下一步、有狀態 | 「找出最近 3 年 ferroptosis 的單細胞研究，下載資料集 metadata，整理成表」 |
 
-| Capability | Why It Matters |
+| 元件 | 角色 | 弱點會造成 |
+| --- | --- | --- |
+| 模型 | 理解任務、推理、選擇下一步 | 選錯工具、誤判完成 |
+| 工具 | 取得外部資訊或執行動作 | 拿到錯的資料、執行錯的動作 |
+| 編排 (orchestration) | 管理順序、狀態、路由、停止條件 | 無限迴圈、遺失上下文 |
+
+## Thought → Action → Observation
+
+```
+任務 ──→ 思考：還缺什麼？下一步做什麼？
+            ↓
+         行動：呼叫工具（搜尋 PubMed、查 GEO、執行程式）
+            ↓
+         觀察：讀取工具結果
+            ↓
+         完成了嗎？── 否 → 回到思考
+            │
+            是 → 最終回答
+```
+
+| 階段 | 文獻助理範例 |
 | --- | --- |
-| Reasoning | helps the system interpret the task and decide what information is missing |
-| Planning | helps the system break work into steps rather than answering impulsively |
-| Acting | lets the system call tools, retrieve data, or trigger workflow steps |
+| 思考 | 「需要先找到相關論文清單」 |
+| 行動 | `search_pubmed("ferroptosis single-cell", years=3)` |
+| 觀察 | 回傳 42 篇，其中 15 篇提到 GEO accession |
+| 思考 | 「要取得這 15 個資料集的物種與樣本數」 |
+| 行動 | `fetch_geo_metadata(["GSE...", ...])` |
+| 觀察 | ……完成後彙整成表格 |
 
-Tip: The strongest difference between a model and an agent is not "intelligence level." It is whether the system can keep moving through a task with state, decisions, and external interaction.
+這個迴圈的實作就是 [tool calling](../integration/llm-api-patterns.md#tool-calling) 外加迴圈與停止條件；框架（[LangGraph](langgraph-agent-workflows.md)）讓迴圈變得可見、可控制。
 
-## From Chatbot to Agent
+## 工具
 
-The most useful shift is not the framework name. It is the change in responsibilities.
+| 模型的限制 | 工具 | 生資例子 |
+| --- | --- | --- |
+| 知識過時或缺漏 | 檢索、搜尋 | PubMed、內部文件 [RAG](../rag/README.md) |
+| 編造 ID 與事實 | 資料庫查詢 | NCBI Gene、UniProt、Ensembl REST API |
+| 算術、統計不可靠 | 程式執行 | Python sandbox 跑 pandas / scipy |
+| 只能產生文字 | 動作 API | 建立工單、寫入 LIMS、送出計算任務 |
 
-| System Type | Typical Behavior |
+| 工具設計原則 | 理由 |
 | --- | --- |
-| Plain chatbot | responds from prompt and built-in knowledge |
-| Tool-using assistant | answers and calls external resources when needed |
-| Agent | manages a task flow, uses tools, applies guardrails, and may collaborate with other agents |
+| 少而精；每個工具職責單一 | 每多一個工具就多一種選錯的可能 |
+| 名稱與描述寫清楚何時用、何時不用 | 模型靠描述選工具 |
+| 參數有型別與範例；程式端驗證 | 結構化不等於正確 |
+| 回傳精簡、結構化的結果 | 大量原始輸出會塞滿 context |
+| 唯讀工具與有副作用工具分開 | 有副作用的需要更嚴格的控制 |
+| 錯誤訊息要讓模型看得懂 | 「找不到基因 XYZ，請確認符號」比 stack trace 有用 |
 
-One useful progression is:
+## 需要 agent 嗎？
 
-1. welcome the user
-2. answer common questions
-3. follow safety guardrails
-4. collaborate with other agents when tasks should be split
-
-## Core Components of an Agent
-
-Many agent designs can be reduced to a small set of building blocks.
-
-| Component | Role |
+| 指向 agent | 指向固定流程或傳統程式 |
 | --- | --- |
-| Model | interprets instructions, reasons about the task, and chooses the next step |
-| Tools | connect the agent to external information or actions |
-| Orchestration | manages sequencing, routing, state, and coordination across steps |
+| 下一步取決於前一步的結果 | 步驟固定、可事先寫死 |
+| 大量非結構化輸入（文件、自由文字） | 輸入結構化、規則明確 |
+| 規則多到難以維護 | 規則少且穩定 |
+| 需要探索（搜尋、比較、追問） | 需要完全可預測與可稽核 |
 
-Key point: If one of these three components is weak, the overall agent becomes unreliable even if the language model itself is strong.
+適合的例子：程式碼助理（讀程式碼、修改、跑測試）、文獻研究助理（搜尋多來源再彙整）、複雜的支援流程。不適合：確定性的資料轉換、固定格式的報表，這些用一般程式或 [prompt chaining](../prompt-engineering.md#prompt-chaining) 更簡單、更安全。
 
-## Thought-Action-Observation Cycle
+> 從最簡單的做法開始：一次 LLM 呼叫 → 固定流程 → 單一 agent → 多 agent。每升一級都要有評估證明值得。
 
-A common mental model for agents is a repeated cycle:
+## Guardrail 與人工介入
 
-1. thought: decide what needs to happen next
-2. action: call a tool or perform a step
-3. observation: inspect the result and update the next decision
+Agent 會**執行動作**，不只產生文字，所以需要明確的安全邊界。
 
-| Stage | Example in Support Workflow |
+| 控制 | 例子 |
 | --- | --- |
-| Thought | "I need to understand this customer's situation." |
-| Action | access the customer database and retrieve subscription history |
-| Observation | see that the customer renewed a premium plan three days ago |
+| 輸入範圍檢查 | 不屬於 agent 職責的請求，轉介或拒絕 |
+| 工具權限最小化 | 文獻助理只有唯讀工具；不能刪檔、不能寄信 |
+| 參數與動作驗證 | 刪除前檢查影響筆數；超過門檻就停止 |
+| 輸出過濾 | 移除個資（病歷號、身分證號、地址） |
+| 人工核准 | 寫入資料庫、寄出 email、送出付費運算前需人確認 |
+| 步數與成本上限 | 最多 N 次工具呼叫、最多 $X；超過就停止並回報 |
+| 完整紀錄 | 每次思考、工具呼叫與結果都留存，可事後稽核 |
 
-Tip: This cycle is useful because it separates planning from acting. That makes failures easier to debug and workflows easier to evaluate.
+> 高影響的流程一定要設計人工介入點。沒有升級路徑的自主性是治理失誤，不是產品特色。
 
-## Why Agents Need Tools
-
-Language models are flexible, but they are not all-knowing.
-
-| Limitation | Why a Tool Helps |
+| 何時要人工介入 | 理由 |
 | --- | --- |
-| Stale or missing facts | retrieval or search can access newer information |
-| Private business knowledge | internal FAQs or databases can provide controlled context |
-| Exact calculation | calculators or code tools reduce arithmetic mistakes |
-| Workflow actions | APIs let the system do more than generate text |
+| 不可逆動作 | 刪除、寄出、付款 |
+| 影響大量資料 | 批次修改紀錄或檔案 |
+| 模型信心低或來源互相矛盾 | 避免把猜測當結論 |
+| 涉及病人、臨床或法規 | 責任歸屬必須是人 |
 
-Key point: Tool use extends capability beyond built-in model knowledge and usually improves reliability for task-specific work.
+## Agent 框架
 
-## Common Tool Types
-
-A practical agent often connects to a small set of external resources.
-
-| Tool Type | Typical Example |
+| 框架 | 特色 |
 | --- | --- |
-| Knowledge lookup | company FAQ database |
-| Open-web information | web search |
-| Deterministic computation | calculator |
-| Domain action | internal business API or workflow system |
+| [LangGraph](langgraph-agent-workflows.md) | 以圖定義狀態與轉移；細緻控制、checkpoint、人工核准 |
+| OpenAI Agents SDK、Claude Agent SDK、Google ADK | 各供應商的 agent 開發套件；工具、handoff、guardrail 內建 |
+| CrewAI、AutoGen | 偏向多 agent 角色協作 |
+| MCP (Model Context Protocol) | 工具與資料來源的標準介面，讓同一組工具可被不同 agent / 應用使用 |
 
-Tip: Tools should be added because they solve a concrete reliability or action gap, not just because the framework supports them.
+框架減少樣板程式碼，但不會替你決定流程、工具與治理方式。
 
-## Common Types of Agent Thoughts
+## 設計檢查清單
 
-Agent behavior often includes several recurring reasoning patterns.
-
-| Thought Type | Practical Use |
+| 問題 | 沒想清楚的後果 |
 | --- | --- |
-| Memory integration | reuse earlier user context when making the next decision |
-| Self-reflection | revise an answer or approach after noticing a weakness |
-| Goal-setting | identify missing information before acting |
-| Prioritization | decide which step should happen first |
-
-Warning: Exposing full chain-of-thought is not required for useful agent design. The main engineering goal is reliable behavior, traceability, and controllable workflow structure.
-
-## Choosing the Right Tools
-
-Tool choice should match the use case.
-
-| Use Case | Likely Tool Needs |
-| --- | --- |
-| Customer support | FAQs, policy lookup, account or ticket systems |
-| Financial assistance | calculators, rules, structured records, auditability |
-| News agent | web retrieval, freshness checks, source selection |
-| AI-assisted coding | code context, execution, file access, or documentation lookup |
-
-Warning: More tools do not automatically make a better agent. Each added tool also adds failure modes, routing complexity, and evaluation burden.
-
-## Reliable Answers with Tools
-
-Tools matter most when answers should come from trusted resources instead of model memory alone.
-
-| Support Task | Better Pattern |
-| --- | --- |
-| Greeting users | simple prompt behavior is usually enough |
-| Answering company questions | retrieve from company data rather than relying only on the model |
-| Following policy | combine prompts with explicit rules or safe lookup layers |
-
-Key point: For support workflows, the main value of tools is not just capability. It is grounding.
-
-## What Agents Are Good At
-
-Agents are most useful when a task has multiple steps, context changes over time, or external information is required.
-
-| Good Fit | Why It Fits |
-| --- | --- |
-| Multi-step support flows | the system may need lookup, response shaping, and escalation logic |
-| Structured operational workflows | the agent can coordinate reasoning and actions across tools |
-| Role-based decomposition | specialized agents can split planning, retrieval, and execution |
-
-Agents are less compelling when:
-
-1. the task is a single straightforward response
-2. no external information or action is needed
-3. the added orchestration cost outweighs the benefit
-
-## Do You Really Need an Agent?
-
-Not every AI workflow should become agentic.
-
-| Good Criterion | Why It Points Toward an Agent |
-| --- | --- |
-| Complex decision-making | the workflow cannot be captured as one simple prompt |
-| Heavy reliance on unstructured data | the system must interpret text, documents, or mixed context |
-| Hard-to-maintain rules | static branching logic becomes brittle or expensive |
-| Adaptive problem solving | the next step depends on what was discovered earlier |
-
-Typical strong-fit examples include:
-
-1. autonomous customer support systems
-2. coding assistants that inspect codebases and propose or implement changes
-3. deep research assistants that synthesize many sources
-
-Key point: If the task is deterministic, narrow, and stable, traditional automation is often simpler and safer than an agent.
-
-## The Power of Teamwork
-
-Some workflows benefit from multiple agents with narrower responsibilities.
-
-| Pattern | Benefit |
-| --- | --- |
-| Specialist agents | each agent can focus on one type of task or policy domain |
-| Delegation | complex work can be broken into smaller subproblems |
-| Coordination | one agent can route or supervise the work of others |
-
-Tip: Use multi-agent designs only when specialization improves clarity, control, or maintainability. Otherwise, a single well-scoped agent is often simpler and safer.
-
-## Guardrails and Human Intervention
-
-Agents need explicit safety boundaries because they do more than generate text.
-
-| Control | Example |
-| --- | --- |
-| Input relevance guardrail | redirect requests that do not belong to the agent's domain |
-| Output PII filter | remove personal addresses or SSNs before sending a response |
-| Output validation | check tone, format, or policy compliance before final delivery |
-| Human intervention | require approval, escalation, or override for sensitive actions |
-
-Warning: Always design for human intervention in high-impact workflows. Autonomy without escalation paths is usually a governance failure, not a product feature.
-
-## Where a Toolkit Fits
-
-Frameworks such as Google ADK are helpful because they reduce infrastructure work around defining agents and composing tool-using or multi-agent behavior.
-
-| Framework Value | Practical Meaning |
-| --- | --- |
-| Agent definition | easier ways to declare agents and their roles |
-| Tool integration | simpler connection to external functions |
-| Multi-agent composition | support for collaboration patterns across agents |
-| Infrastructure handling | less boilerplate for orchestration plumbing |
-
-Warning: A toolkit can speed up implementation, but it does not choose the right workflow, tools, or governance model for you.
-
-## Minimum Design Checklist
-
-Before building an agent, you should be able to explain:
-
-1. what task the agent is responsible for
-2. which tool gaps exist in model-only behavior
-3. what sources the agent is allowed to consult
-4. when the agent should escalate, refuse, or delegate
-5. whether a single agent is enough or specialization is justified
+| Agent 負責什麼、不負責什麼？ | 範圍蔓延，什麼都做不好 |
+| 哪些缺口需要工具？ | 工具過多或過少 |
+| 允許存取哪些資料與動作？ | 權限過大 |
+| 何時該升級給人、拒絕或委派？ | 錯誤動作無人攔阻 |
+| 停止條件與上限是什麼？ | 無限迴圈、成本失控 |
+| 怎麼評估任務完成率？ | 無法證明比固定流程好 |

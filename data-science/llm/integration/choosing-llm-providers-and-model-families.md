@@ -1,299 +1,89 @@
-# Choosing LLM Providers and Model Families
+[LLM](../README.md) › [整合](README.md) › 選擇模型與供應商
 
-Choosing an LLM is rarely about finding the single "best" model. In practice, teams choose among providers, model families, and size tiers based on task fit, latency, context needs, safety expectations, and cost.
+# 選擇模型與供應商 (Choosing LLM Providers and Model Families)
 
-Key point: Model selection is a product decision as much as a technical one. A slower frontier model may be wasteful for routine labeling, while a lightweight model may fail badly on long or reasoning-heavy work.
+選模型不是找「最強的那個」，而是找**能穩定達到任務標準的最小、最便宜的模型**。模型版本更新很快，排行榜上的名次幾個月就會變，所以重點是一套可重複的比較方法，而不是記住哪個模型最好。
 
-## Providers Compete on Different Strengths
+## 模型層級
 
-Different providers often emphasize different capabilities.
+多數供應商都提供同一家族的多個層級：
 
-| Common Strength Area | Why It Matters |
+| 層級 | 特性 | 適合 |
+| --- | --- | --- |
+| 小 / 快速 | 便宜、低延遲 | 分類、路由、簡單擷取、大量批次處理 |
+| 中 / 平衡 | 品質與成本折衷 | 多數正式環境任務 |
+| 大 / 旗艦 | 品質最高、最貴最慢 | 複雜推理、長文件分析、困難程式 |
+| 推理模型 | 回答前先產生推理過程 | 數學、規劃、多步驟除錯；延遲與 token 成本高 |
+
+## 選擇準則
+
+| 任務 | 優先考量 |
 | --- | --- |
-| safety emphasis | affects refusal behavior and risk tolerance |
-| reasoning quality | matters for complex analysis or planning |
-| long-context handling | matters for long documents and large histories |
-| speed and price | matters for repeated or high-volume calls |
-| ecosystem and tooling | affects integration effort and deployment flexibility |
+| 摘要、改寫 | 忠實度、context 長度 |
+| 資訊擷取、分類 | 一致性、structured output 支援、成本 |
+| 寫程式 | 程式能力、工具使用、長 context |
+| 多步驟規劃、agent | 指令遵循、tool calling 可靠度 |
+| 大量文獻篩選 | 成本、batch API、速率限制 |
+| 含病人資料的任務 | **資料處理位置與合約**優先於模型能力 |
 
-This is why provider choice should be tied to the job, not just to benchmark headlines.
-
-## Model Families Usually Come in Tiers
-
-Many providers offer a family of models instead of one universal option.
-
-| Tier Pattern | Best Use |
+| 其他面向 | 為什麼重要 |
 | --- | --- |
-| small or fast tier | simple transformations, routing, or lightweight chat |
-| balanced tier | everyday production work needing decent quality and speed |
-| top-capability tier | difficult reasoning, long documents, or high-stakes drafting |
+| Context window | 決定能否一次放入整份文件；但窗口大 ≠ 能有效利用全部內容 |
+| 安全與拒答行為 | 有些模型對醫療、藥物問題拒答較多，影響使用體驗 |
+| 多模態 | 是否能讀圖、PDF、音訊 |
+| 資料政策 | 輸入是否保留、是否用於訓練、資料存放區域 |
+| 版本穩定性 | 舊版本何時下架；是否能鎖定版本 |
+| 生態系 | SDK、文件、框架整合 |
 
-Tip: If a small model already solves the task well enough, using a larger model can add cost and latency without meaningful product value.
+## 開源 vs 商用 API
 
-## Long Context Is a Real Selection Criterion
+| | 商用 API（閉源） | 開源權重 (open-weight) |
+| --- | --- | --- |
+| 能力 | 通常最強 | 差距持續縮小；中型模型已足以應付許多任務 |
+| 資料位置 | 送到供應商（企業方案可簽資料處理協議） | 可完全留在機構內部 → 適合病歷、未發表資料 |
+| 成本結構 | 按 token 計費 | GPU 與維運；大量使用時單價低 |
+| 可重現性 | 版本會被更新、下架 | 權重固定，可完全重現 |
+| 客製化 | 有限的微調選項 | 可完整 [fine-tune](fine-tuning.md) |
+| 部署工具 | — | Ollama（個人電腦）、vLLM / TGI（伺服器）、llama.cpp（CPU / 量化） |
 
-Some models are stronger when the task involves large source material or long-running conversation history.
+> 研究中若需要「論文發表後他人可重現」，開源權重模型 + 固定版本較能滿足；API 模型應至少在方法中記錄確切的模型 ID 與呼叫日期。
 
-| Long-Context Use Case | Why It Benefits |
+## 選擇流程
+
+```
+1. 定義任務與通過標準（例：篩選 recall ≥ 0.95）
+2. 建評估集（見「評估與幻覺」）
+3. 至少測一個小模型與一個大模型
+4. 同時比較品質、延遲、每千次請求成本
+5. 選能穩定通過標準的最小模型；困難案例可路由給大模型
+6. 新模型推出時，用同一評估集重測
+```
+
+失敗時先排除 prompt 問題再怪模型：
+
+| 現象 | 通常是 | 先修 |
+| --- | --- | --- |
+| 回答空泛 | 任務定義不清 | [Prompt](../prompt-engineering.md) |
+| 編造事實 | 缺 context | [RAG](../rag/README.md)、允許拒答 |
+| 格式不穩 | 未用 schema | [Structured output](llm-api-patterns.md#structured-output) |
+| 分類邊界錯 | 缺範例 | few-shot 範例涵蓋邊界案例 |
+
+## 多供應商平台 (Managed LLM Platforms)
+
+雲端平台（AWS Bedrock、Azure AI Foundry、Google Vertex AI）或 API 閘道（OpenRouter、自建 LiteLLM proxy）讓多家模型透過同一個入口存取。
+
+| 好處 | 說明 |
 | --- | --- |
-| report summarization | more source detail can be preserved in one pass |
-| document analysis | fewer manual chunking steps may be needed |
-| extended multi-turn collaboration | earlier decisions can remain visible longer |
-| policy or contract review | broader context reduces local misreading risk |
+| 單一入口存取多家模型 | 比較或切換模型不必重寫整合 |
+| 沿用既有雲端帳號的權限、計費、稽核 | 企業 / 機構治理需求 |
+| 資料留在已簽約的雲端區域 | 合規較容易 |
+| 內建 guardrail、日誌、監控 | 省去部分自建工作 |
 
-Warning: A larger context window does not guarantee better reasoning. It only increases how much information can be supplied.
-
-## Safety Positioning Affects Product Behavior
-
-Providers differ in how strongly they optimize for safe and policy-aligned behavior.
-
-| Safety Question | Why It Matters |
+| 注意 | 說明 |
 | --- | --- |
-| how readily does the model refuse risky content | affects user experience and compliance behavior |
-| how does it handle ambiguous requests | affects false confidence and misuse risk |
-| how much instruction shaping is needed | affects prompt design effort |
-
-Key point: Safety is not only about blocking harmful content. It also shapes tone, caution, and how the model reacts when a request is underspecified or risky.
-
-## Capability Should Match Task Type
-
-Different tasks stress different model traits.
-
-| Task Type | What to Prioritize |
-| --- | --- |
-| summarization and rewriting | clarity, faithfulness, and context capacity |
-| coding help | structured reasoning and syntax reliability |
-| classification or routing | consistency, low latency, and low cost |
-| iterative planning | multi-turn coherence and instruction following |
-| customer-facing support | tone control, safety, and stable output style |
-
-This is why one team may use multiple models in the same product.
-
-## Multi-Turn Work Changes the Choice
-
-Some models feel stronger in conversational or iterative work because they maintain coherence well across turns.
-
-| Conversation Need | Why It Matters |
-| --- | --- |
-| preserving earlier decisions | helps collaborative drafting and planning |
-| building context incrementally | supports exploratory problem solving |
-| handling long back-and-forth threads | reduces the need to restate prior context constantly |
-
-Tip: Even with strong conversation models, major topic shifts are often cleaner in a fresh thread than in one endlessly extended conversation.
-
-## Prompt Quality Still Dominates
-
-Provider differences matter, but prompt quality still explains many failures.
-
-| Failure Cause | Better Fix |
-| --- | --- |
-| vague task definition | improve the instruction |
-| missing context | add the relevant source material |
-| unstable tone or formatting | use clearer system or role guidance |
-| poor example coverage | add representative examples |
-
-Warning: Do not blame the provider for problems caused by weak task design.
-
-## Cost Scales with Volume
-
-Model choice becomes more important when calls are frequent.
-
-| Scale Concern | Why It Matters |
-| --- | --- |
-| repeated API calls | cost grows quickly in production loops |
-| long prompts and histories | increase both price and latency |
-| large-model defaulting | often overpays for routine work |
-
-This is why production systems often start with a stronger model for discovery and then downshift to cheaper models where possible.
-
-## Human Review Still Matters
-
-Even a well-chosen model needs output review for important workflows.
-
-| Review Need | Why It Matters |
-| --- | --- |
-| factual accuracy | fluent mistakes still happen |
-| policy fit | safe defaults are not perfect guarantees |
-| style consistency | customer-facing outputs need quality control |
-| business correctness | local product context may still be missing |
-
-Key point: Strong model selection reduces failure rates. It does not remove the need for evaluation and human judgment.
-
-## A Practical Selection Process
-
-For most teams, a good selection flow is:
-
-1. define the real job, not just "use an LLM"
-2. identify whether speed, long context, safety, or reasoning quality matters most
-3. test at least one cheaper and one stronger model on realistic examples
-4. compare quality, latency, and cost together
-5. choose the smallest model that reliably meets the workflow standard
-
-## Minimum Checklist
-
-Before choosing a provider or model family, make sure you can explain:
-
-1. which task characteristics matter most for the workflow
-2. whether a fast, balanced, or top-capability tier is appropriate
-3. whether long-context support changes the design materially
-4. how safety behavior affects the user experience
-5. how quality, latency, and cost will be evaluated together
-
-## Managed LLM Platforms
-
-Managed LLM platforms sit between your application and one or more underlying model providers. They reduce infrastructure work by offering a common control plane for model access, request routing, and operational safeguards.
-
-Key point: A managed platform is not just a place to call a model. It is a way to standardize how teams discover models, enable access, send prompts, parse responses, and apply guardrails at runtime.
-
-### What a Managed Platform Actually Buys You
-
-These platforms usually provide access to multiple model families without requiring you to host the models yourself.
-
-| Platform Benefit | Why It Matters |
-| --- | --- |
-| shared API access to several providers | reduces one-off integration work |
-| pay-as-you-go usage | avoids early hosting or training overhead |
-| model catalog and metadata | helps compare capabilities before use |
-| built-in access controls | supports enterprise governance |
-
-This is especially useful when teams want provider flexibility without building a custom gateway first.
-
-### Model Gateway Thinking
-
-A managed platform often works like a gateway to many foundation models.
-
-| Gateway Capability | Practical Effect |
-| --- | --- |
-| text and chat models | support Q&A, drafting, summarization, and agents |
-| image or multimodal models | extend beyond text-only workflows |
-| embedding models | support retrieval and semantic search |
-| provider-specific offerings under one platform | makes switching or comparison easier |
-
-Key point: The application can remain relatively stable even when the underlying model choice changes.
-
-### Access Is a Separate Step from Invocation
-
-In managed platforms, model use often depends on explicit enablement and permissions.
-
-| Access Step | Why It Matters |
-| --- | --- |
-| enable platform access | without it, requests fail before model logic matters |
-| grant runtime permissions | separates application access from user intent |
-| enable specific models | some providers or models require opt-in |
-
-Warning: Many integration failures are access and permission failures, not prompt or model failures.
-
-### Model Metadata Is Operationally Useful
-
-A platform model catalog often exposes metadata that helps with selection.
-
-| Metadata | Why It Helps |
-| --- | --- |
-| provider name | reveals the actual source model family |
-| streaming support | affects interface and UX design |
-| model identifier | needed for routing and reproducibility |
-| modality or task support | prevents using the wrong model type |
-
-Tip: Treat model metadata as configuration input, not as a dashboard detail.
-
-### Requests May Look Similar but Responses Do Not
-
-One practical challenge in multi-model platforms is that different models can return different response shapes.
-
-| Response Concern | Why It Matters |
-| --- | --- |
-| nested JSON bodies | require explicit parsing |
-| provider-specific output fields | make adapters necessary |
-| status and metadata fields | help with debugging and monitoring |
-| token or usage info | supports cost tracking and tuning |
-
-Key point: A multi-provider platform still benefits from a normalization layer inside your own application.
-
-### Structured Output Still Matters
-
-Even on a managed platform, you usually need to ask for predictable output shapes.
-
-| Practice | Why It Helps |
-| --- | --- |
-| specify output format in the prompt | improves downstream parsing |
-| include examples | increases consistency |
-| separate content from formatting rules | reduces ambiguous responses |
-| validate parsed structure | catches broken outputs early |
-
-Warning: A platform gateway does not remove the need for output validation.
-
-### Runtime Parameters Should Match the Job
-
-Managed platforms still expose familiar generation controls.
-
-| Parameter | Typical Use |
-| --- | --- |
-| temperature | control determinism versus variability |
-| top-p or similar sampling controls | shape diversity further |
-| max token limits | bound cost and output size |
-
-For example, lower variability often fits Q&A or extraction, while higher variability may fit drafting or creative generation.
-
-### Conversation State Is Still Your Responsibility
-
-Even if the platform exposes chat-style models, your application still decides how to preserve context.
-
-| Conversation Choice | Why It Matters |
-| --- | --- |
-| retain recent turns | improves continuity |
-| trim old turns | controls prompt size and noise |
-| reset on topic shifts | reduces context pollution |
-| store role-tagged history | makes follow-up behavior more coherent |
-
-A managed platform can host the call, but your application still owns conversation quality.
-
-### Guardrails Are a Platform Feature, Not a Complete Safety Strategy
-
-Managed platforms often offer content filtering, bias controls, or safety-oriented protections.
-
-| Guardrail Goal | Why It Matters |
-| --- | --- |
-| reduce harmful output | lowers obvious safety risk |
-| protect sensitive use cases | supports privacy and regulated workflows |
-| monitor anomalies | helps detect unstable or suspicious behavior |
-| support policy enforcement | improves operational consistency |
-
-Key point: Platform guardrails are helpful, but high-stakes systems still need application-level review and policy checks.
-
-### Error Handling and Postprocessing Matter
-
-Production use requires more than a successful demo request.
-
-| Reliability Practice | Why It Helps |
-| --- | --- |
-| parse response bodies carefully | avoids silent downstream failures |
-| validate expected fields | catches schema drift or malformed outputs |
-| use retries thoughtfully | improves resilience for transient failures |
-| batch safely | improves throughput without losing control |
-
-Tip: Good platform integration includes adapters, validators, and retry policy, not just a prompt string.
-
-### When a Managed Platform Is Worth It
-
-It is often a strong choice when:
-
-1. you want access to several providers through one enterprise environment
-2. governance, access control, and auditability matter
-3. your team prefers managed infrastructure over custom model hosting
-4. you expect model switching or comparison over time
-
-It is less compelling when:
-
-1. you only need one provider with a stable direct API
-2. you need highly specialized low-level control the platform does not expose
-3. platform indirection adds more complexity than it removes
-
-### Minimum Checklist
-
-Before adopting a managed LLM platform, make sure you can explain:
-
-1. which models are available and how they differ
-2. how access and permissions are enabled
-3. how provider-specific responses are normalized in your code
-4. which runtime parameters are tuned for each workflow
-5. what platform guardrails exist and what safety gaps still remain
+| 存取要另外開通 | 很多「模型呼叫失敗」其實是帳號未啟用該模型或 IAM 權限不足 |
+| 各模型回應格式不同 | 程式中仍需一層轉接 (adapter) 統一格式 |
+| 功能可能落後原廠 API | 新參數、新模型上架時間不同 |
+| 平台 guardrail 不等於完整安全策略 | 高風險流程仍需應用層檢查 |
+
+只用單一供應商、需求簡單時，直接用原廠 API 較單純；需要比較多家模型、或機構已綁定特定雲端時，平台較划算。
