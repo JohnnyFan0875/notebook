@@ -74,7 +74,7 @@ Matplotlib 提供最細緻的圖表控制能力，適合需要完整掌握 figur
 | **Examples**  | `plt.bar(x, y)`, `ax.plot(x, y)`                     | `df.plot(kind='bar')`, `df.plot(kind='scatter')` |
 | **Best For**  | Publication-quality, complex figures                 | Exploratory data analysis (EDA)                  |
 
-For Pandas visualization examples, see [Pandas Visualization](../../../python-foundations/pandas/visualization.md).
+For Pandas visualization examples, see [Pandas Visualization](../pandas-plotting.md).
 
 ## 這一章要解決什麼
 

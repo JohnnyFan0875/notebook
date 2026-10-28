@@ -97,41 +97,9 @@ plt.show()
 - `axhline`: horizontal reference line.
 - `axvline`: vertical reference line.
 
-## Dual Axes
+## Dual Axes and Annotation
 
-```python
-fig, ax1 = plt.subplots()
-ax2 = ax1.twinx()
-
-ax1.plot(iris.index, iris["sepal_length"], color="blue", label="Sepal Length")
-ax2.plot(iris.index, iris["petal_length"], color="red", label="Petal Length")
-
-ax1.set_xlabel("Index")
-ax1.set_ylabel("Sepal Length", color="blue")
-ax2.set_ylabel("Petal Length", color="red")
-plt.title("Dual Axis Line Plot")
-plt.show()
-```
-
-- `twinx()`: overlay two plots with different y-axes.
-- Useful for comparing two series with different scales.
-
-## Annotation
-
-```python
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["sepal_length"], color="blue")
-
-ax.annotate("Outlier?",
-            xy=(iris.index[10], iris["sepal_length"][10]),
-            xytext=(20, 8),
-            arrowprops={"arrowstyle": "->", "color": "gray"})
-
-ax.set_title("Line Plot with Annotation")
-plt.show()
-```
-
-- `annotate()`: highlight interesting points with text and arrows.
+`twinx()` 雙 y 軸與 `annotate()` 箭頭註解見 [Matplotlib: Advanced](advanced.md)。
 
 ## Key Takeaways
 

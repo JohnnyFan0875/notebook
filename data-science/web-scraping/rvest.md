@@ -32,22 +32,7 @@ titles <- page %>%
 
 ## HTML 的心智模型
 
-HTML 是一棵樹，不是平面文字。真正決定你能不能穩定抓資料的，是你有沒有看懂節點之間的父子與巢狀關係。
-
-例如：
-
-```html
-<html>
-  <body>
-    <div>
-      <h2>A first example</h2>
-      <p>A text paragraph.</p>
-    </div>
-  </body>
-</html>
-```
-
-如果你不知道目標內容是在 `div > p`、`table td.role` 還是某個帶 class 的 `span`，selector 很容易越寫越脆弱。
+HTML 樹狀結構見 [Web Scraping: 共用觀念](README.md#html-是一棵樹)。
 
 ## `html_element()` 與 `html_elements()`
 
@@ -262,7 +247,6 @@ response <- GET(
 )
 ```
 
-這不只是禮貌，也有助於站方在需要時聯繫你，而不是把流量直接當成匿名可疑請求。
 
 ## 控制抓取速度
 
@@ -280,11 +264,7 @@ urls <- c("https://example.com/a", "https://example.com/b")
 responses <- map(urls, slow_get)
 ```
 
-原則很簡單：
-
-- 不要對同一網站瞬間連發大量請求
-- 尊重 robots / 使用條款
-- 失敗時重試也要有節制
+原則見 [禮貌與合法性](README.md#禮貌與合法性)。
 
 ## 什麼情況 selector 會失效
 

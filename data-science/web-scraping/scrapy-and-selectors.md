@@ -15,34 +15,12 @@ A practical scraping loop is:
 
 This note focuses on the `scrapy` style of parsing and selection, because it gives a clean mental model for both simple scripts and larger crawlers.
 
+
+> **待修（改寫階段）**：`extract()` / `extract_first()` 是舊 API，改成 `.getall()` / `.get()`。
+
 ## HTML Structure First
 
-Before writing selectors, you need a rough picture of the HTML tree.
-
-Typical tags:
-
-```html
-<html>
-  <body>
-    <div id="content" class="course-block">
-      <a href="/course/python">Python Course</a>
-      <p>Hello world</p>
-    </div>
-  </body>
-</html>
-```
-
-Useful reminders:
-
-- tags define structure
-- attributes add metadata
-- text often lives inside nested tags, not directly on the element you first inspect
-
-Common attributes:
-
-- `id`: usually intended to be unique
-- `class`: can appear on many elements
-- `href`: hyperlink target on `<a>` tags
+HTML 樹狀結構與常見 attribute 見 [Web Scraping: 共用觀念](README.md#html-是一棵樹)。
 
 ## What You Usually Extract
 
@@ -137,12 +115,7 @@ Quick mapping:
 
 ## XPath vs CSS
 
-Both are good tools. A rough rule of thumb:
-
-- use CSS for common class/id/child selections
-- use XPath when you need more structural precision or text/attribute logic
-
-You do not need a philosophical preference here. Use the one that makes the selector easiest to reason about.
+選擇原則見 [CSS selector vs XPath](README.md#css-selector-vs-xpath)。
 
 ## Extracting Attributes
 

@@ -353,3 +353,13 @@ WHERE NOT EXISTS (
 - 只想檢查存在性時，先想 `EXISTS` / `NOT EXISTS`。
 
 [Back to Databases](README.md)
+
+## `NATURAL JOIN` Should Be Used Carefully
+
+`NATURAL JOIN` 會自動用同名欄位當 join key，語法很短，但風險也比較高：
+
+- 不容易一眼看出實際 join key
+- schema 一改，結果可能跟著變
+- 同名但語意不同的欄位可能被誤用
+
+除非資料模型非常穩定，否則通常還是用明確 `ON` 比較安全。

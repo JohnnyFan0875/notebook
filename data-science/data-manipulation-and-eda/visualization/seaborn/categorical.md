@@ -1,6 +1,6 @@
 # Seaborn: Categorical Plots
 
-This page is about visualizing categorical variables and category-based summaries. If you need to define category order, labels, or encoding in the dataframe first, see [Pandas: Categorical Data & Encoding](../../../python-foundations/pandas/categorical.md).
+This page is about visualizing categorical variables and category-based summaries. If you need to define category order, labels, or encoding in the dataframe first, see [Pandas: Categorical Data & Encoding](../../../python-foundations/pandas/dtypes-categorical-strings.md).
 
 Categorical plots (`catplot`) are used to visualize the distribution of a categorical variable or the relationship between a categorical and a numerical variable. They provide multiple plot types such as **count, bar, box, violin, boxen, and point plots**.
 
@@ -133,8 +133,7 @@ plt.show()
 
 ## FAQ: Countplot vs Histplot
 
-- **Countplot**: for **categorical variables** (counts of categories).
-- **Histplot**: for **continuous variables** (distribution into bins).
+類別變數用 `countplot`、連續變數用 `histplot`；對照範例見 [Distribution: Countplot vs Histplot](distribution.md#comparison-countplot-vs-histplot)。
 
 ## Key Takeaways
 

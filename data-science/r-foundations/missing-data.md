@@ -7,7 +7,7 @@
 3. 視覺化缺值模式
 4. 最後才決定刪除、標記、或 impute
 
-這篇筆記偏重 R 裡的操作習慣與 `naniar` 風格 workflow，而不是單純的 missingness 理論分類。
+這篇只講 R 的 `naniar` 工具用法。缺失機制（MCAR / MAR / MNAR）見 [Missing Data Mechanisms](../data-manipulation-and-eda/missing-data.md)；刪除 vs 插補與插補方法見 [Imputation](../machine-learning/preprocessing/imputation.md)。
 
 ## Missing Data Is Normal
 
@@ -125,20 +125,6 @@ replace_with_na_all(condition = ~ .x == -99)
 - 只有 numeric 欄位才會用 `-99`
 - 只有 character 欄位才會出現 `"missing"`
 
-## Missingness Mechanisms Still Matter
-
-雖然這篇偏 R 操作，但背後的 missingness 假設仍然重要：
-
-- `MCAR`
-- `MAR`
-- `MNAR`
-
-如果你要的是概念版整理，可以搭配：
-
-- [Missing Data Mechanisms](../data-manipulation-and-eda/missing-data.md)
-
-這裡的重點是：R 工具能幫你觀察模式，但不會自動替你判定 missingness 機制。
-
 ## Shadow Matrix
 
 shadow matrix 的概念是：除了原始資料值之外，再建立一份與原資料同行同列的「缺值狀態表」。
@@ -245,22 +231,6 @@ impute_below(c(5, 6, 7, NA, 9, 10))
 5. 視需求選擇 delete、indicator、exploratory imputation 或正式 imputation
 6. 在需要補值時，盡量保留「哪些值被補過」的追蹤資訊
 
-## Deletion vs Imputation
-
-不是每次都該補值。
-
-一些常見判斷：
-
-- 缺值很少且近似隨機時，刪除可能就夠
-- 缺值有結構時，直接刪除常會偏
-- exploratory imputation 可以幫你看圖，但不等於正式建模方案
-
-課程裡很重要的一個提醒是：
-
-- bad imputation can lead to poor estimates and decisions
-
-所以補值不是越早做越好，而是越晚越好，直到你真的知道為什麼要補。
-
 ## Common Traps
 
 - 假設所有缺值都已經是 `NA`
@@ -275,3 +245,4 @@ impute_below(c(5, 6, 7, NA, 9, 10))
 - [Functions in R](functions.md)
 - [Defensive Programming in R](defensive-programming.md)
 - [Missing Data Mechanisms](../data-manipulation-and-eda/missing-data.md)
+- [Imputation](../machine-learning/preprocessing/imputation.md)

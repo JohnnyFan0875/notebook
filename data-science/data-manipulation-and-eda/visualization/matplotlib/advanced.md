@@ -92,26 +92,9 @@ plt.show()
 
 - Demonstrates combining advanced features.
 
-## Missing Data Visualization with Missingno
-
-`missingno` is a small library that provides a simple way to visualize missing data patterns. It uses Matplotlib under the hood.
-
-```python
-import missingno as msno
-
-# Example: airquality dataset
-airquality = sns.load_dataset("titanic").drop(columns=["alive"])  # simulate missingness
-
-msno.matrix(airquality.sort_values("age"))
-plt.show()
-```
-
-- `msno.matrix()`: visualizes missing values in a matrix plot.
-- Helps identify patterns in missing data.
-
 ## Key Takeaways
 
 - Use **dual axes** (`twinx`) for comparing variables with different scales.
 - **Annotations** enhance interpretability by highlighting points of interest.
 - Combine features (dual axes + annotations) for advanced storytelling.
-- Specialized libraries like **missingno** extend Matplotlib for domain-specific tasks (e.g., missing data visualization).
+- 缺失值視覺化（`missingno`）見 [Pandas: Missing Data](../../../python-foundations/pandas/missing-data.md#graphical-analysis-with-missingno)。

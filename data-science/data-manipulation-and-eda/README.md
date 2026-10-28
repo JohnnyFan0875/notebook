@@ -4,18 +4,16 @@
 
 ## 建議閱讀順序
 
-1. [EDA Workflow](eda-workflow.md): 建立一套固定的資料盤點與探索節奏。
-2. [Data Profiling](data-profiling.md): 學會快速看懂資料型態、品質與欄位風險。
-3. [Geospatial Data in Python](geospatial-data-in-python.md): 當資料帶有位置欄位時，先搞懂 geometry、CRS 與空間關係。
-4. 追蹤群組隨時間的留存 / 流失：改用存活分析，見 [Kaplan–Meier](../statistics/survival-analysis/kaplan-meier.md)。
-5. [Missing Data](missing-data.md): 釐清缺失值成因、處理策略與常見誤區。
-6. [Visualization](visualization/README.md): 把 EDA 的發現轉成可比較、可溝通的圖表。
+1. [EDA Workflow](eda-workflow.md): 先做 data profiling（型別、完整性、唯一性），再走固定的探索節奏。
+2. [Missing Data](missing-data.md): 缺失機制（MCAR / MAR / MNAR）與刪除策略；工具用法見 [pandas](../python-foundations/pandas/missing-data.md) / [R](../r-foundations/missing-data.md)，插補見 [Imputation](../machine-learning/preprocessing/imputation.md)。
+3. [Visualization](visualization/README.md): 把 EDA 的發現轉成可比較、可溝通的圖表。
+4. [Geospatial Data in Python](geospatial-data-in-python.md)（選讀）: 資料帶有位置欄位時，geometry、CRS 與空間關係。
+5. 追蹤群組隨時間的留存 / 流失：改用存活分析，見 [Kaplan–Meier](../statistics/survival-analysis/kaplan-meier.md)。
 
 ## 這一章要解決什麼
 
 - 我拿到的新資料集，第一步該看什麼？
 - 哪些欄位有資料品質風險，會影響後面分析？
-- 如果是 user / customer data，要怎麼拆 cohort 才看得出 retention 變化？
 - 如果資料有經緯度、區域邊界或地理圖層，分析前要先確認哪些前提？
 - 缺失值到底要刪掉、填補，還是先保留並記錄？
 - 圖表與摘要統計要如何搭配，避免只看平均數就下結論？

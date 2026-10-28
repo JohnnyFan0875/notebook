@@ -65,6 +65,22 @@ strength_trend = max(0, 1 - var_r / np.var(res.trend + res.resid))
 strength_seasonal = max(0, 1 - var_r / np.var(res.seasonal + res.resid))
 ```
 
+## 比較多條序列的趨勢
+
+多條序列各自分解後，把同一成分（如趨勢）組成 DataFrame，再看哪些序列「一起動」：
+
+```python
+import pandas as pd
+import seaborn as sns
+from statsmodels.tsa.seasonal import STL
+
+trend_df = pd.DataFrame({col: STL(jobs[col], period=12).fit().trend for col in jobs.columns})
+trend_corr = trend_df.corr(method="spearman")
+sns.clustermap(trend_corr, annot=True, linewidth=0.4)
+```
+
+比原始序列直接算相關更好：去掉季節成分後，相關不會被共同的季節循環灌水。
+
 ## 分解之後
 
 | 觀察 | 下一步 |

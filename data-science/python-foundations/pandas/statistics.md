@@ -2,7 +2,7 @@
 
 Pandas provides a rich set of statistical functions for analyzing numerical and categorical data. These include dataset overview, summary statistics, rolling/expanding calculations, differences, correlations, and covariance.
 
-This note focuses on **DataFrame-oriented statistics**: column summaries, rolling windows, correlations, and table-level inspection inside pandas. For array-level numerical statistics and transformations without DataFrame semantics, see [NumPy Statistics](../numpy/statistics.md).
+This note focuses on **DataFrame-oriented statistics**: column summaries, rolling windows, correlations, and table-level inspection inside pandas. For array-level numerical statistics and transformations without DataFrame semantics, see [NumPy Statistics](../numpy/random-and-statistics.md).
 
 ## Example Dataset
 

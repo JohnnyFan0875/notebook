@@ -234,6 +234,20 @@ R 函數不一定只能「算成功」或「直接爆掉」，還有幾種常見
 - 無法產生可信結果時用 `stop()`
 - 還能產生結果，但有風險時用 `warning()`
 
+### Catching Errors with `try()`
+
+有些步驟可以容忍失敗，這時可以先攔住錯誤，再決定怎麼處理。
+
+```r
+result <- try("Scotland" + "World cup", silent = TRUE)
+
+if (inherits(result, "try-error")) {
+  message("Computation failed")
+}
+```
+
+這種模式適合批次流程，但不要拿來掩蓋本來就應該修掉的核心 bug。
+
 ## Coercion and Defensive Defaults
 
 有些參數表面上看起來是單一布林值，但使用者可能傳進長度大於 1 的向量，或型別不完全對。
@@ -244,7 +258,7 @@ R 函數不一定只能「算成功」或「直接爆掉」，還有幾種常見
 - 明確轉成 logical
 - 對奇怪輸入提供 warning 或 error
 
-這種 defensive programming 會讓函數在 notebook 之外也更穩定。
+這種 defensive programming 會讓函數在 notebook 之外也更穩定。命名、風格、`lintr` 與專案結構見 [Defensive Programming in R](defensive-programming.md)。
 
 ## Design Guidelines
 

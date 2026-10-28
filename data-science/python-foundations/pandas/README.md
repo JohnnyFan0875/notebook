@@ -4,26 +4,19 @@ pandas 是資料科學最常用的表格資料工具，建立在 NumPy 之上，
 
 ## 建議閱讀順序
 
-1. [Creating Data](creating-data.md)、[Indexing and Slicing](indexing-slicing.md)、[Filtering](filtering.md): 先把最基本的資料框操作練順。
-2. [Missing Data](missing-data.md)、[Dtypes and Strings](dtypes-strings.md)、[Categorical](categorical.md): 先處理欄位語意與型別，再做彙總。
-3. [Updating](updating.md)、[Adding and Removing](adding-removing.md)、[Row Operations](row-operations.md): 學會穩定修改資料框，而不是邊試邊改。
-4. [Sorting](sorting.md)、[Binning](binning.md)、[Sampling and Duplicates](sampling-duplicates.md): 這一層處理排序、抽樣、去重與分箱這些常見前置整理。
-5. [Groupby](groupby.md)、[Statistics](statistics.md)、[Reshape and Merge](reshape-merge.md)、[Index and MultiIndex](index-multiindex.md): 這一層才是真正的分析工作底盤。
-6. [Datetime](datetime.md)、[Time-series Visualization](time-series-visualization.md)、[Visualization](visualization.md) 與 [Performance](performance.md): 當資料開始變大、有時間結構，或要快速檢查圖形時再補上。
+| 順序 | 筆記 | 內容 |
+| --- | --- | --- |
+| 1 | [Creating Data](creating-data.md) | 由 dict / list 建立 Series、DataFrame；設定 index 與欄名（檔案讀取見 [Importing Data](../importing-data.md)） |
+| 2 | [Selection](selection.md) | `loc` / `iloc`、boolean filtering、`query` |
+| 3 | [Dtypes, Categorical and Strings](dtypes-categorical-strings.md) | `astype`、`category`、`.str` |
+| 4 | [Missing Data](missing-data.md) | pandas / missingno 缺值 API |
+| 5 | [Modifying](modifying.md) | 更新值、新增 / 刪除欄列 |
+| 6 | [Ordering, Binning and Sampling](ordering-binning-sampling.md) | 排序、`cut` / `qcut`、抽樣、去重 |
+| 7 | [Groupby](groupby.md)、[Statistics](statistics.md) | 分組彙總與描述統計 |
+| 8 | [Reshape and Merge](reshape-merge.md)、[Index and MultiIndex](index-multiindex.md) | pivot / melt、merge / concat、階層索引 |
+| 9 | [Performance](performance.md) | 向量化、`apply` vs 迴圈、row-wise 操作 |
 
-## 主題分組
-
-- Data creation: `creating-data.md`
-- Indexing and filtering: `indexing-slicing.md`, `filtering.md`
-- Updating and reshaping: `updating.md`, `row-operations.md`, `reshape-merge.md`
-- Performance patterns: `performance.md`
-- Grouped analysis: `groupby.md`, `statistics.md`
-- Missing data and dtypes: `missing-data.md`, `dtypes-strings.md`, `categorical.md`
-- Time-related work: `datetime.md`, `time-series-visualization.md`
-- Structure management: `adding-removing.md`, `index-multiindex.md`
-- Sampling and duplicates: `sampling-duplicates.md`
-- Ordering and binning: `sorting.md`, `binning.md`
-- Quick charts: `visualization.md`
+時間欄位見 [Datetime](../datetime.md)；快速作圖見 [Pandas Plotting](../../data-manipulation-and-eda/visualization/pandas-plotting.md)。
 
 ## 這一章要解決什麼
 

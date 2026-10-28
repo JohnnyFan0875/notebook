@@ -90,44 +90,44 @@
 ## Phase 3：基礎層整併（Python / R / EDA / web-scraping / databases）
 
 **python-foundations**
-- [ ] datetime：`pandas/datetime.md` + `pandas/dtypes-strings.md` 的 datetime 段 + `data-type-transformation.md` 的 String↔Datetime → 統一到 `python-foundations/datetime.md`（stdlib + pandas 兩節）
-- [ ] importing-data：`pandas/creating-data.md` 的 I/O 半部 + `data-type-transformation.md` → 併入 `importing-data.md`；HTTP 段改連 `api-http.md`
-- [ ] 文字處理：`regex.md` + `string-matching.md` → `text-cleaning-and-regex.md`；連 `computing/operating-system/regex-wildcard.md`
-- [ ] scripting：`argparse.md`、`if-name-main.md`、`subprocess.md`、`config-files.md`、`file-io.md`、`python-snippets.md` → `scripting-and-cli.md`
-- [ ] 錯誤處理：`assert.md` + `try-except.md` → `errors-and-assertions.md`
-- [ ] 效能：建 `performance-and-scaling/`：`efficient-python.md`、`parallel.md`（`multiprocessing.md` + `dask.md`）、`polars.md`；`pandas/performance.md` + `pandas/row-operations.md` 合成 `pandas/performance.md`
-- [ ] numpy 8 → 4：`array-basics`（properties + creation + indexing）、`vectorization-and-reshape`（operations + reshape-concatenate）、`random-and-statistics`、`linear-algebra`；`operations.md` 裡 DataFrame boolean indexing 移去 pandas
-- [ ] pandas 21 → ~11：`selection`（indexing-slicing + filtering）、`modifying`（updating + adding-removing）、`ordering-binning-sampling`（sorting + binning + sampling-duplicates）、`dtypes-categorical-strings`（dtypes-strings + categorical）；`index-multiindex`、`groupby`、`reshape-merge`、`statistics`、`missing-data`、`performance` 保留
-- [ ] `pandas/time-series-visualization.md`：ACF / PACF / decomposition 段併入 `statistics/time-series-analysis/`（autocorrelation、decomposition），繪圖段併入 `pandas/visualization.md`
-- [ ] `pandas/visualization.md` → 搬到 `data-manipulation-and-eda/visualization/pandas-plotting.md`
-- [ ] `python-packages.md`：標記過時的 setup.py / MANIFEST.in，改寫階段換成 pyproject + uv（並連 `computing/containers-and-env/`）
+- [x] datetime：`pandas/datetime.md` + `pandas/dtypes-strings.md` 的 datetime 段 + `data-type-transformation.md` 的 String↔Datetime → 統一到 `python-foundations/datetime.md`（stdlib + pandas 兩節）
+- [x] importing-data：`pandas/creating-data.md` 的 I/O 半部 + `data-type-transformation.md` → 併入 `importing-data.md`；HTTP 段改連 `api-http.md`
+- [x] 文字處理：`regex.md` + `string-matching.md` → `text-cleaning-and-regex.md`；連 `computing/operating-system/regex-wildcard.md`
+- [x] scripting：`argparse.md`、`if-name-main.md`、`subprocess.md`、`config-files.md`、`file-io.md`、`python-snippets.md` → `scripting-and-cli.md`
+- [x] 錯誤處理：`assert.md` + `try-except.md` → `errors-and-assertions.md`
+- [x] 效能：建 `performance-and-scaling/`：`efficient-python.md`、`parallel.md`（`multiprocessing.md` + `dask.md`）、`polars.md`；`pandas/performance.md` + `pandas/row-operations.md` 合成 `pandas/performance.md`
+- [x] numpy 8 → 4：`array-basics`（properties + creation + indexing）、`vectorization-and-reshape`（operations + reshape-concatenate）、`random-and-statistics`、`linear-algebra`；`operations.md` 裡 DataFrame boolean indexing 移去 pandas
+- [x] pandas 21 → ~11：`selection`（indexing-slicing + filtering）、`modifying`（updating + adding-removing）、`ordering-binning-sampling`（sorting + binning + sampling-duplicates）、`dtypes-categorical-strings`（dtypes-strings + categorical）；`index-multiindex`、`groupby`、`reshape-merge`、`statistics`、`missing-data`、`performance` 保留
+- [x] `pandas/time-series-visualization.md`：ACF / PACF / decomposition 段併入 `statistics/time-series-analysis/`（autocorrelation、decomposition），繪圖段併入 `pandas/visualization.md`
+- [x] `pandas/visualization.md` → 搬到 `data-manipulation-and-eda/visualization/pandas-plotting.md`
+- [x] `python-packages.md`：標記過時的 setup.py / MANIFEST.in，改寫階段換成 pyproject + uv（並連 `computing/containers-and-env/`）（已在檔頭加「待改寫」註記）
 
 **r-foundations**
-- [ ] `vectors.md` + `data-frames.md` + `lists.md` → `data-structures.md`
-- [ ] `functional-programming-with-purrr.md` + `-advanced.md` + `apply-family.md` → `functional-programming.md`（for vs apply vs purrr）
-- [ ] `defensive-programming.md` 與 `functions.md` 的 Input Validation / Errors 段去重（併入 functions）
-- [ ] `statistical-functions.md`：刪 regression 段（改連 `explanatory-modeling-in-r.md`）
-- [ ] `sampling-in-r.md` + `survey-data-analysis.md` → `statistics/inferential-statistics/survey-sampling.md`（bootstrap 重複段改連 `sampling-estimation.md`）
-- [ ] `missing-data.md`（R）：刪 MCAR/MAR/MNAR 理論，只留 naniar 工具用法，連到 EDA 的 missing-data
+- [x] `vectors.md` + `data-frames.md` + `lists.md` → `data-structures.md`
+- [x] `functional-programming-with-purrr.md` + `-advanced.md` + `apply-family.md` → `functional-programming.md`（for vs apply vs purrr）
+- [x] `defensive-programming.md` 與 `functions.md` 的 Input Validation / Errors 段去重（併入 functions）
+- [x] `statistical-functions.md`：刪 regression 段（改連 `explanatory-modeling-in-r.md`）
+- [x] `sampling-in-r.md` + `survey-data-analysis.md` → `statistics/inferential-statistics/survey-sampling.md`（bootstrap 重複段改連 `sampling-estimation.md`）
+- [x] `missing-data.md`（R）：刪 MCAR/MAR/MNAR 理論，只留 naniar 工具用法，連到 EDA 的 missing-data
 
 **data-manipulation-and-eda**
-- [ ] `data-profiling.md` 併入 `eda-workflow.md`（profiling 作為第一節）
-- [ ] missing data 單一歸屬：機制理論只在 `data-manipulation-and-eda/missing-data.md`；`pandas/missing-data.md` 只留 pandas / missingno API；插補方法只在 `machine-learning/preprocessing/imputation.md`；刪 `matplotlib/advanced.md` 的 missingno 段
-- [ ] `geospatial-data-in-python.md`：留在原處但 README 標為「選讀」
-- [ ] matplotlib `line-plot.md` vs `advanced.md` 雙軸 / annotation 去重；seaborn `categorical` vs `distribution` 的 countplot vs histplot 去重
+- [x] `data-profiling.md` 併入 `eda-workflow.md`（profiling 作為第一節）
+- [x] missing data 單一歸屬：機制理論只在 `data-manipulation-and-eda/missing-data.md`；`pandas/missing-data.md` 只留 pandas / missingno API；插補方法只在 `machine-learning/preprocessing/imputation.md`；刪 `matplotlib/advanced.md` 的 missingno 段
+- [x] `geospatial-data-in-python.md`：留在原處但 README 標為「選讀」
+- [x] matplotlib `line-plot.md` vs `advanced.md` 雙軸 / annotation 去重；seaborn `categorical` vs `distribution` 的 countplot vs histplot 去重
 
 **web-scraping**
-- [ ] 三篇（scrapy、bs4-selenium、rvest）共用的 CSS vs XPath、User-Agent、節流、合法性移到 `web-scraping/README.md`，各篇只留工具用法
-- [ ] 記下待修 bug：`random.randint(5)`、Selenium 4 前的 `webdriver.Chrome(ChromeDriverManager().install())`、Scrapy `extract_first` → `.get()`
+- [x] 三篇（scrapy、bs4-selenium、rvest）共用的 CSS vs XPath、User-Agent、節流、合法性移到 `web-scraping/README.md`，各篇只留工具用法
+- [x] 記下待修 bug：`random.randint(5)`、Selenium 4 前的 `webdriver.Chrome(ChromeDriverManager().install())`、Scrapy `extract_first` → `.get()`（已在各篇檔頭加「待修」註記）
 
 **databases**
-- [ ] `postgresql-window-functions-and-pivoting.md` + `sql-server-window-functions.md` → `sql-window-functions.md`（通用）；PG crosstab 留一小節
-- [ ] `postgresql-transactions-and-exception-handling.md` + `sql-server-transactions-and-error-handling.md` → `sql-transactions.md`（PG / T-SQL 對照欄）
-- [ ] `postgresql-query-performance.md` + `sql-server-query-performance.md` → `sql-query-performance.md`（通用 + EXPLAIN / execution plan 子節）
-- [ ] `sql-server-basics.md` + `sql-server-tsql-patterns.md` + `snowflake-sql-patterns.md` + Oracle 救下來的段落 → `sql-dialect-cheatsheet.md`（TOP / LIMIT、NVL / ISNULL / COALESCE、日期函式、FLATTEN 對照表）
-- [ ] `postgresql.md` → 精簡成 `postgresql-psql-and-copy.md`（psql、`COPY` 匯入匯出）
-- [ ] JOIN / NULL / aggregation 重複段只留在 `sql-query-foundations.md` 與 `sql-joins-and-set-operations.md`
-- [ ] 連結檢查 → commit
+- [x] `postgresql-window-functions-and-pivoting.md` + `sql-server-window-functions.md` → `sql-window-functions.md`（通用）；PG crosstab 留一小節
+- [x] `postgresql-transactions-and-exception-handling.md` + `sql-server-transactions-and-error-handling.md` → `sql-transactions.md`（PG / T-SQL 對照欄）
+- [x] `postgresql-query-performance.md` + `sql-server-query-performance.md` → `sql-query-performance.md`（通用 + EXPLAIN / execution plan 子節）
+- [x] `sql-server-basics.md` + `sql-server-tsql-patterns.md` + `snowflake-sql-patterns.md` + Oracle 救下來的段落 → `sql-dialect-cheatsheet.md`（TOP / LIMIT、NVL / ISNULL / COALESCE、日期函式、FLATTEN 對照表）
+- [x] `postgresql.md` → 精簡成 `postgresql-psql-and-copy.md`（psql、`COPY` 匯入匯出）
+- [x] JOIN / NULL / aggregation 重複段只留在 `sql-query-foundations.md` 與 `sql-joins-and-set-operations.md`
+- [x] 連結檢查 → commit
 
 ## Phase 4：中間層整併（data-engineering / data-communication / responsible-ai / llm）
 

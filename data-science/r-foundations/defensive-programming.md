@@ -45,36 +45,9 @@ isTRUE(2)
 
 這樣可以避免把非零數字、長度不對的邏輯向量，或其他模糊輸入誤當成布林條件。
 
-## Warnings and Errors
+## Input Validation and Errors
 
-R 至少有兩種常見的問題訊號：
-
-- `warning()`：提醒有風險，但程式仍繼續執行
-- `stop()`：中止執行，表示條件已經不適合再往下算
-
-```r
-warning("You have been warned!")
-stop("Standard deviation must be positive")
-```
-
-簡單判斷原則：
-
-- 還能產出有意義的結果，用 `warning()`
-- 再算下去會誤導人，用 `stop()`
-
-## Catching Errors with `try()`
-
-有些步驟可以容忍失敗，這時可以先攔住錯誤，再決定怎麼處理。
-
-```r
-result <- try("Scotland" + "World cup", silent = TRUE)
-
-if (inherits(result, "try-error")) {
-  message("Computation failed")
-}
-```
-
-這種模式適合批次流程，但不要拿來掩蓋本來就應該修掉的核心 bug。
+輸入檢查、`stop()` / `warning()` / `message()` 的選擇與 `try()` 見 [Functions in R](functions.md#input-validation)。
 
 ## DRY over Copy-Paste
 
