@@ -1,814 +1,269 @@
-# Python: Importing Data from Common File Formats
+[Data Science](../README.md) › [Python Foundations](README.md) › 匯入資料
 
-Importing data in Python is not one skill but a small family of patterns. The main question is usually:
+# 匯入資料 (Importing Data)
 
-This note focuses on **Python-side import patterns**: files, URLs, Python objects, and format-specific libraries. If your primary workflow is in R, see [Importing Data in R](../r-foundations/importing-data.md). If the concern is ingestion as part of a repeatable data pipeline, see [Data Engineering](../data-engineering/README.md).
+匯入資料前先問三件事：純文字還是二進位？表格還是巢狀？要的是 NumPy array、pandas DataFrame，還是專用物件（`AnnData`、`pysam.AlignmentFile`）？R 的對應寫法見 [R 匯入資料](../r-foundations/importing-data.md)；資料庫見 [Databases](../databases/README.md)；HTTP / API 見 [API 與 HTTP](api-http.md)；做成可重複的匯入管線見 [Data Engineering](../data-engineering/README.md)。
 
-- Is this plain text or binary?
-- Is the structure tabular or nested?
-- Do I want a NumPy array, a pandas DataFrame, or a library-specific object?
+## 選工具
 
-For most data science workflows:
+| 資料 | 讀取 | 得到 |
+| --- | --- | --- |
+| 乾淨的純數值文字 | `np.loadtxt` / `np.genfromtxt`（有缺值） | `ndarray` |
+| CSV / TSV（有欄名、混合型別） | `pd.read_csv` | `DataFrame` |
+| Excel | `pd.read_excel`（需 `openpyxl`） | `DataFrame` |
+| JSON / JSON Lines | `json`、`pd.read_json`、`pd.json_normalize` | `dict` / `DataFrame` |
+| Parquet / Feather | `pd.read_parquet` / `pd.read_feather`（需 `pyarrow`） | `DataFrame`（保留 dtype） |
+| HDF5 | `h5py`；pandas 寫的用 `pd.read_hdf` | 群組 / dataset 階層 |
+| SAS / Stata / SPSS | `pd.read_sas` / `pd.read_stata` / `pd.read_spss` | `DataFrame` |
+| MATLAB `.mat` | `scipy.io.loadmat`（v7.3 以後是 HDF5，改用 `h5py`） | `dict` of arrays |
+| Python 物件快照 | `pickle` / `joblib` | 任意物件（**不可讀不受信任的來源**） |
+| SQL 資料庫 | `pd.read_sql` + SQLAlchemy | `DataFrame` |
+| 網頁上的表格 | `pd.read_html`（需 `lxml`） | `list[DataFrame]` |
 
-- use NumPy for numeric arrays
-- use pandas for tabular data with labels
-- use format-specific libraries when the file is not a plain text table
+### 生資常見格式
 
-## Data Sources You Meet Often
+| 格式 | Python 工具 | 備註 |
+| --- | --- | --- |
+| FASTA / FASTQ | `Bio.SeqIO`（Biopython）、`pyfastx`、`pysam.FastxFile` | 逐筆 iterator；自己寫 parser 見 [迭代器與生成器](iterator.md#生成器-generators惰性求值) |
+| SAM / BAM / CRAM | `pysam` | 需要 `.bai` 索引才能依區間查詢 |
+| VCF / BCF | `pysam.VariantFile`、`cyvcf2`；`scikit-allel` 轉成 array | |
+| BED / GTF / GFF | `pd.read_csv(sep="\t", header=None, comment="#")`、`pyranges`、`gtfparse` | BED 是 0-based、GTF 是 1-based |
+| 計數矩陣（TSV / MTX） | `pd.read_csv`、`scipy.io.mmread`（稀疏） | 10x 輸出用 `scanpy.read_10x_mtx` |
+| `.h5ad`（單細胞） | `anndata.read_h5ad` / `scanpy` | HDF5 為底；`backed="r"` 不全部載入 |
+| Zarr / 大型陣列 | `zarr`、`xarray` | 雲端友善、可分塊 |
 
-A practical mental split:
-
-- flat files: `.txt`, `.csv`, delimiter-separated text
-- web-hosted files: datasets accessed by URL
-- serialized Python objects: pickle
-- statistical data formats: SAS, Stata
-- scientific binary formats: HDF5, MATLAB `.mat`
-- relational databases: use SQL tools rather than treating them like ordinary files
-
-This note focuses on the file side. Database access is already covered separately in `database-access-sqlalchemy.md`.
-
-## Flat Files
-
-Flat files are still the default exchange format in a lot of data work.
-
-Examples:
-
-- `.csv`
-- tab-delimited `.txt`
-- custom delimiter text files
-
-They are popular because they are:
-
-- portable
-- easy to inspect
-- easy to move across tools
-
-But they also have common problems:
-
-- header rows
-- mixed types
-- comments
-- missing values
-- inconsistent delimiters
-
-## Importing Files from the Web
-
-Sometimes the file is still a CSV or text file, but it lives behind a URL instead of on disk.
-
-Two common patterns:
-
-- download it to a local file first
-- fetch it directly into memory
-
-### Download a Remote File with `urlretrieve()`
+## CSV / TSV：`pd.read_csv`
 
 ```python
-from urllib.request import urlretrieve
+import pandas as pd
 
-url = "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
-urlretrieve(url, "winequality-white.csv")
+df = pd.read_csv(
+    "counts.tsv",
+    sep="\t",                       # TSV；不確定分隔符時 sep=None, engine="python" 讓它猜
+    index_col=0,                    # 第一欄當 index（例如 gene ID）
+    header=0,                       # 欄名在第幾列；無欄名用 header=None, names=[...]
+    skiprows=2,                     # 跳過開頭的說明行
+    comment="#",                    # 忽略 # 開頭的註解
+    usecols=["gene", "S1", "S2"],   # 只讀需要的欄，省記憶體
+    dtype={"gene": "string", "chrom": "category"},   # 明確指定型別
+    na_values=["NA", ".", "-"],     # 額外視為缺值的字串
+    parse_dates=["collected"],
+    nrows=1000,                     # 先讀一小段確認格式
+    compression="infer",            # .gz / .zip / .zst 依副檔名自動解壓
+    encoding="utf-8",
+)
+df = pd.read_csv("https://example.org/data.csv")   # 直接讀 URL
 ```
 
-This is useful when:
-
-- you want a persistent local copy
-- downstream code expects a filename
-- the dataset is reused multiple times
-
-### Open a URL Like a File with `urlopen()`
+讀完立刻檢查——`read_csv` 成功不代表資料可以用：
 
 ```python
-from urllib.request import Request, urlopen
-
-url = "https://www.example.com/data.csv"
-request = Request(url)
-response = urlopen(request)
-raw = response.read()
+df.shape
+df.head()
+df.info()                         # dtype 對嗎？數值欄變成 object / str 代表有雜值
+df.describe(include="all")
+df.isna().sum()
+df.index.is_unique                # ID 有沒有重複
 ```
 
-- `urlopen()` accepts URLs instead of filenames
-- `.read()` gives the response body as bytes
-- this is a lower-level pattern than `requests`, but still useful to know
+### 常見陷阱
 
-If your goal is general HTTP work rather than simple download, `requests` is usually more ergonomic.
+| 症狀 | 原因 | 處理 |
+| --- | --- | --- |
+| 數值欄變成字串 | 混進 `"NA"`、`"."`、`"<0.01"`、千分位逗號 | `na_values=`、`thousands=","`；`pd.to_numeric(errors="coerce")` 後檢查變 NaN 的列 |
+| ID 前導零消失（`00123` → `123`） | 被當成整數 | `dtype={"id": "string"}` |
+| 大整數 ID 變成浮點數 | 欄位有缺值，int 被升格成 float | `dtype="Int64"`（可為 NA 的整數） |
+| 基因名變成日期（`SEPT2`、`MARCH1` → 日期） | 檔案曾被 Excel 開過存檔 | 回原始來源取檔；HGNC 已改名為 `SEPTIN2`、`MARCHF1` |
+| 只有一欄 | 分隔符錯了 | 用 `sep="\t"` 或先用 `head` 看檔案 |
+| 記憶體爆掉 | 整檔一次讀入 | `usecols`、`dtype`、`chunksize`、改用 Parquet 或 [Polars](performance-and-scaling/polars.md) |
 
-## HTTP Requests for Import Work
+### 大檔與多檔
 
-資料來源在網路上時，匯入通常從 `requests.get()` 開始：`r.text`（HTML）、`r.json()`（JSON）、`r.content`（binary）。完整 HTTP / API 用法見 [API HTTP](api-http.md)。
+```python
+# 分塊處理：記憶體只放一塊
+totals = None
+for chunk in pd.read_csv("large.csv", chunksize=100_000):
+    part = chunk.groupby("sample")["reads"].sum()
+    totals = part if totals is None else totals.add(part, fill_value=0)
 
-## Importing Numeric Flat Files with NumPy
+# 同一 schema 的多個檔案：讀成 list 後合併，並保留來源
+from pathlib import Path
+files = sorted(Path("data").glob("sample_*.csv"))
+df = pd.concat(
+    [pd.read_csv(f).assign(source=f.stem) for f in files],
+    ignore_index=True,
+)
+```
 
-If the file is mostly numeric and you want an array, `np.loadtxt()` is a simple starting point.
+> 合併前確認各檔欄位一致：`{tuple(pd.read_csv(f, nrows=0).columns) for f in files}` 應該只有一個元素。
+
+### 純數值：NumPy
 
 ```python
 import numpy as np
 
-filename = "mnist.csv"
-data = np.loadtxt(filename, delimiter=",")
+X = np.loadtxt("mnist.csv", delimiter=",", skiprows=1, usecols=[0, 2], dtype=float)
+X = np.genfromtxt("with_missing.csv", delimiter=",", skip_header=1)   # 缺值變 nan
+X = df.to_numpy()                                                     # 從 DataFrame 轉
 ```
 
-This is best when:
+`np.loadtxt` 要求檔案規則、型別一致；有缺值、註解或混合型別時改用 pandas。
 
-- the file is regular
-- most values are numeric
-- you do not need column labels
-
-### Customizing `np.loadtxt()`
+## Excel
 
 ```python
-data = np.loadtxt(
-    "MNIST_header.txt",
-    delimiter=",",
-    skiprows=1,
-    usecols=[0, 2],
-)
+pd.read_excel("data.xlsx", sheet_name="Sheet1", skiprows=3, usecols="A:F")
+pd.read_excel("data.xlsx", sheet_name=None)        # 所有工作表 → {sheet_name: DataFrame}
+
+xls = pd.ExcelFile("fruit_tabs.xlsx")              # 先看有哪些工作表再逐張讀
+xls.sheet_names                                    # ['price', 'color']
+price = xls.parse("price")
 ```
 
-Useful arguments:
+> Excel 適合交給人看，不適合當分析中間檔：會自動轉日期、截斷大數字的精度、隱藏格式。分析流程內改存 CSV 或 Parquet。
 
-- `delimiter=`
-- `skiprows=`
-- `usecols=`
-- `dtype=`
-
-If the data contains strings:
+## JSON
 
 ```python
-data = np.loadtxt("data.csv", delimiter=",", dtype=str)
-```
+import json
 
-## When `np.loadtxt()` Is Too Strict
+with open("config.json", encoding="utf-8") as f:
+    data = json.load(f)                            # 檔案 → dict / list
+data = json.loads('{"fruit": "apple", "n": 10}')   # 字串 → dict
 
-`np.loadtxt()` assumes the file is clean and regular. It becomes awkward when:
-
-- rows have missing values
-- comments appear in the file
-- types vary by column
-
-In those cases, pandas is usually the better default.
-
-## Importing Tabular Data with pandas
-
-For messy or labeled tables, `pd.read_csv()` is the workhorse.
-
-```python
-import pandas as pd
-
-df = pd.read_csv("winequality-red.csv")
-```
-
-Why pandas is often the default:
-
-- it keeps column names
-- it handles mixed dtypes better
-- it integrates directly with analysis workflows
-
-After the file loads, the next questions are usually:
-
-- what does each row represent?
-- which columns are numeric, categorical, or dates?
-- are there obvious missing values or malformed fields?
-
-That means importing is usually followed immediately by a quick inspection pass:
-
-```python
-import pandas as pd
-
-df = pd.read_csv("sales.csv")
-
-print(df.head())
-print(df.info())
-print(df.describe(include="all"))
-```
-
-This first pass is important because a successful `read_csv()` call does not guarantee the table is analysis-ready. Columns may still have the wrong dtype, date fields may still be strings, and identifiers may be mixed with measures.
-
-If needed, convert back to a NumPy array:
-
-```python
-data_array = df.to_numpy()
-```
-
-## Useful `read_csv()` Options
-
-When the file is not perfectly clean, these options matter a lot:
-
-```python
-df = pd.read_csv(
-    "data.csv",
-    sep=",",
-    header=0,
-    skiprows=2,
-    nrows=1000,
-)
-```
-
-Common options:
-
-- `sep=` for delimiter
-- `header=` for which row contains column names
-- `skiprows=` to ignore leading junk
-- `nrows=` to sample part of a file
-
-If you only need part of a very large file:
-
-```python
-df_iter = pd.read_csv("large.csv", chunksize=10000)
-
-for chunk in df_iter:
+# JSON Lines / NDJSON：一行一筆記錄（log、API 匯出常見）
+df = pd.read_json("events.jsonl", lines=True)
+for chunk in pd.read_json("events.jsonl", lines=True, chunksize=10_000):   # 大檔分塊
     ...
+
+# 巢狀 JSON → 平面表格
+records = [
+    {"id": 1, "user": {"name": "A", "loc": "TW"}, "tags": ["x", "y"]},
+    {"id": 2, "user": {"name": "B"}, "tags": []},
+]
+pd.json_normalize(records)                         # 欄位：id, tags, user.name, user.loc
+pd.json_normalize(records, record_path="tags", meta=["id"])   # 把 list 欄展開成多列
 ```
 
-This pattern avoids loading the whole file into memory at once.
+| 巢狀資料原則 | 說明 |
+| --- | --- |
+| 只攤平需要的欄位 | 先挑出關鍵路徑，不必一次把整份文件攤平 |
+| 欄位不一定每筆都有 | 某些路徑只在特定記錄類型存在（如轉推才有 `quoted_status`）；用 `.get()` 或接受 NaN |
+| 「有值」本身可能是篩選偏誤 | 例如只有少數記錄有精確座標，這群人不代表全體；把缺值比例一併報告 |
+| 不同精度的欄位不要混成一欄 | 自填地點 / 範圍框 / 精確座標 是不同層級的資訊 |
 
-## Loading Many Similar CSV Files
-
-如果一個資料集被拆成多個 CSV 檔，常見做法是先找出檔名，再批次讀入。
-
-```python
-import glob
-import pandas as pd
-
-csv_files = glob.glob("*.csv")
-all_dfs = [pd.read_csv(path) for path in csv_files]
-```
-
-這個 pattern 適合：
-
-- 每個檔案 schema 類似
-- 想先各自清理，再決定是否 `concat`
-- 想避免手動把每個檔名寫死
-
-如果要合併成單一表格：
+## 二進位與統計軟體格式
 
 ```python
-combined = pd.concat(all_dfs, ignore_index=True)
-```
-
-Key point: list comprehension 只是把「重複讀很多檔」壓縮成更短的寫法；真正要先確認的，仍然是這些檔案欄位是否一致。
-
-## Importing JSON from a Local File
-
-JSON is common when data is nested rather than purely tabular.
-
-```python
-import json
-
-with open("snakes.json", "r", encoding="utf-8") as json_file:
-    json_data = json.load(json_file)
-```
-
-The imported object is usually a Python:
-
-- `dict`
-- `list`
-- nested combination of both
-
-A quick way to inspect it:
-
-```python
-for key, value in json_data.items():
-    print(key, value)
-```
-
-This is often the fastest first step before deciding whether the data should stay nested or be normalized into a DataFrame.
-
-## Line-Delimited JSON and Event Streams
-
-Some datasets are not one big JSON object. Instead, they are newline-delimited JSON records, often called:
-
-- NDJSON
-- JSON Lines
-- one-JSON-object-per-line event logs
-
-This is common in logs, API exports, and social media archives.
-
-```python
-import json
-
-records = []
-
-with open("all_tweets.json", "r", encoding="utf-8") as fh:
-    for line in fh:
-        line = line.strip()
-        if not line:
-            continue
-        records.append(json.loads(line))
-```
-
-Key point: if the file is really NDJSON, think "iterate over records", not "load the whole file as one nested object".
-
-## Flatten Only the Nested Fields You Actually Need
-
-Nested JSON often contains far more structure than you want in the first analysis pass.
-
-A practical pattern is:
-
-1. identify the few nested keys that matter
-2. copy them into top-level fields
-3. then build a DataFrame
-
-```python
-tweet_obj["text"] = tweet_obj["text"]
-
-if "extended_tweet" in tweet_obj:
-    tweet_obj["extended_tweet-full_text"] = (
-        tweet_obj["extended_tweet"]["full_text"]
-    )
-```
-
-This keeps the first DataFrame usable without pretending the whole JSON document is flat.
-
-Social-media-style payloads are a good example:
-
-- `tweet["text"]`
-- `tweet["extended_tweet"]["full_text"]`
-- `tweet["user"]["description"]`
-- `tweet["user"]["location"]`
-- `tweet["quoted_status"]["extended_tweet"]["full_text"]`
-
-The lesson is broader than Twitter: nested structures often depend on record type, so some paths exist only for certain rows.
-
-## Convert a List of Parsed Records into a DataFrame
-
-After extracting the fields you care about, convert the record list into tabular form:
-
-```python
-import pandas as pd
-
-tweets = pd.DataFrame(records)
-```
-
-This is usually the handoff point where semi-structured import becomes ordinary pandas cleaning.
-
-## JSON Can Encode Different Levels of Geographic Precision
-
-Another common nested JSON pattern is location data with multiple precision levels.
-
-For example, one record may contain:
-
-- a free-text user location
-- a `place` object with a bounding box
-- a `coordinates` object with an exact point
-
-These are not interchangeable.
-
-- free-text location is user-entered and messy
-- a bounding box gives an area
-- coordinates give a point
-
-If you later map or aggregate these records, preserve that distinction instead of collapsing everything into one generic "location" column.
-
-Also remember that geolocation fields are often missing for most records. In social-media-style datasets, the rows with explicit coordinates can be a small and highly selective subset of all observations.
-
-Key point: geographic JSON is often both nested and biased. Treat "has location" as a sampling filter, not just a convenience field.
-
-## Importing JSON from an API
-
-If the server already returns JSON, `requests` can parse it directly.
-
-```python
-import requests
-
-url = "http://www.omdbapi.com/?t=hackers"
-r = requests.get(url)
-json_data = r.json()
-
-for key, value in json_data.items():
-    print(key, value)
-```
-
-Useful mental model:
-
-- `r.text` gives raw text
-- `r.json()` decodes JSON into Python objects
-
-If you are manually reading query strings like `?t=hackers`, that is a sign you may want to switch to `params=` in real code for better readability and safer encoding.
-
-## Importing HTML for Quick Parsing
-
-Sometimes the source is not a downloadable file or JSON API, but an HTML page you need to inspect or parse.
-
-```python
-import requests
-from bs4 import BeautifulSoup
-
-url = "https://www.crummy.com/software/BeautifulSoup/"
-r = requests.get(url)
-html_doc = r.text
-soup = BeautifulSoup(html_doc)
-```
-
-This gives you parsed HTML you can inspect or query.
-
-For example:
-
-```python
-print(soup.prettify())
-```
-
-This is useful for:
-
-- exploratory inspection of page structure
-- quick-turnaround scraping
-- confirming whether the data is embedded in HTML or loaded later by JavaScript
-
-For a fuller note on selectors, extraction, and crawlers, see `web-scraping.md`.
-
-## Pickle Files
-
-Pickle stores serialized Python objects.
-
-```python
-import pickle
-
-with open("pickled_fruit.pkl", "rb") as file:
-    data = pickle.load(file)
-```
-
-Use pickle when:
-
-- the producer and consumer are both Python
-- you want to preserve Python object structure
-
-Be careful:
-
-- pickle is Python-specific
-- pickle is not a good interchange format across languages
-- never unpickle untrusted data
-
-## SAS Files
-
-SAS data files often appear in enterprise or public-sector datasets.
-
-```python
-import pandas as pd
-from sas7bdat import SAS7BDAT
-
-with SAS7BDAT("urbanpop.sas7bdat") as file:
-    df_sas = file.to_data_frame()
-```
-
-This gives you a pandas DataFrame, which is usually the format you want downstream.
-
-## Stata Files
-
-Pandas supports Stata directly.
-
-```python
-import pandas as pd
-
-df = pd.read_stata("urbanpop.dta")
-```
-
-This is one of the cases where pandas hides the format complexity nicely.
-
-## HDF5 Files
-
-HDF5 is common in scientific computing because it can store large structured binary datasets efficiently.
-
-```python
+# Parquet：欄式儲存，保留 dtype、壓縮率高、可只讀部分欄位 → 分析中間檔首選
+df.to_parquet("counts.parquet")
+pd.read_parquet("counts.parquet", columns=["gene", "S1"])
+
+# HDF5：群組 (group) / 資料集 (dataset) 的階層結構
 import h5py
+with h5py.File("data.h5", "r") as f:
+    list(f.keys())                                 # 先看結構
+    f.visit(print)                                 # 列出所有路徑
+    strain = f["strain/Strain"][:]                 # [:] 才真正讀進記憶體
+    f["strain/Strain"].attrs["Xspacing"]           # metadata 存在 attrs
 
-filename = "H-H1_LOSC_4_V1-815411200-4096.hdf5"
-file = h5py.File(filename, "r")
-```
+pd.read_hdf("store.h5", key="mydata")              # 只能讀 pandas 自己寫的 HDF5（需 tables）
 
-A useful mental model:
-
-- HDF5 behaves more like a hierarchy of groups and datasets
-- it is not just "read table into DataFrame"
-
-Typical next step is to inspect keys and datasets before extracting arrays.
-
-## MATLAB `.mat` Files
-
-MATLAB files are common in older research and signal-processing workflows.
-
-```python
+# MATLAB
 import scipy.io
-
 mat = scipy.io.loadmat("albeck_gene_expression.mat")
+[k for k in mat if not k.startswith("__")]         # 略過 __header__ 等 metadata
+
+# SAS / Stata / SPSS
+pd.read_sas("urbanpop.sas7bdat")
+pd.read_stata("urbanpop.dta")
+pd.read_spss("survey.sav")                         # 需 pyreadstat
+
+# pickle：只用於自己產生、同版本 Python / 套件的暫存
+import pickle
+with open("model.pkl", "rb") as f:
+    obj = pickle.load(f)
 ```
 
-What you get back is usually a dictionary-like object containing arrays and metadata.
+| 中間檔格式 | 跨語言 | 保留 dtype | 速度 / 大小 | 適用 |
+| --- | --- | --- | --- | --- |
+| CSV | 是 | 否 | 慢 / 大 | 交換、人工檢視 |
+| Parquet | 是（R arrow、Spark、DuckDB） | 是 | 快 / 小 | **分析中間檔首選** |
+| Feather | 是 | 是 | 最快 | 短期暫存 |
+| HDF5 | 是 | 是 | 快 | 大型多維陣列、科學資料 |
+| pickle | 否（僅 Python） | 是（任意物件） | 快 | 暫存物件；**勿載入他人提供的檔案**（可執行任意程式碼） |
 
-This is often a conversion step:
-
-1. load the `.mat`
-2. inspect keys
-3. pull out the arrays you actually need
-
-## Choosing the Right Import Tool
-
-A quick rule of thumb:
-
-- numeric plain text -> `np.loadtxt()`
-- messy or labeled table -> `pd.read_csv()`
-- Python object snapshot -> `pickle.load()`
-- SAS/Stata -> pandas or format-specific reader
-- HDF5 / `.mat` -> scientific library first, then convert as needed
-
-## Practical Workflow
-
-When opening an unfamiliar file:
-
-1. identify the format from the extension and context
-2. decide whether you want arrays or DataFrames
-3. import a small sample first if the file is large
-4. check dtypes, shape, missing values, and headers immediately
-5. only then continue with cleaning or analysis
-
-This avoids spending time debugging downstream issues that were actually caused by a bad import decision.
-
-## Common Failure Modes
-
-- using NumPy for mixed-type tables that really want pandas
-- forgetting to skip metadata rows or comments
-- assuming a delimiter instead of checking it
-- loading a huge file fully when chunked reading would be safer
-- treating format-specific binary files like plain text
-
-## pandas Reader 速查
-
-### From CSV File
+## 網路來源
 
 ```python
-df_csv = pd.read_csv(
-    "iris.csv",
-    index_col=0,             # use first column as index
-    parse_dates=None,        # can specify datetime columns
-    nrows=5,                 # read only first 5 rows
-    header=0                 # first row as column names
-)
+from urllib.request import urlretrieve
+urlretrieve("https://archive.ics.uci.edu/.../winequality-white.csv", "wine.csv")   # 下載存檔
+
+import requests
+r = requests.get("https://www.omdbapi.com/", params={"t": "hackers", "apikey": KEY}, timeout=10)
+r.raise_for_status()
+r.json()                                           # JSON → dict；r.text 是 HTML 字串，r.content 是 bytes
+
+tables = pd.read_html("https://en.wikipedia.org/wiki/Iris_flower_data_set")   # 網頁中所有 <table>
+tables[0]
 ```
 
-- Reading large CSV in chunks:
+查詢參數用 `params=` 而不是手動拼 `?t=...`，會自動處理編碼。完整的 HTTP、認證、重試見 [API 與 HTTP](api-http.md)；HTML 解析與爬蟲見 [Web Scraping](../web-scraping/README.md)。
 
-```python
-chunks = []
-for chunk in pd.read_csv("iris.csv", chunksize=50):
-    chunks.append(chunk)
-iris_chunked = pd.concat(chunks, ignore_index=True)
-```
-
-### From TXT File
-
-```python
-df_txt = pd.read_csv("iris.txt", sep="\t")
-```
-
-### From Excel File
-
-```python
-# Method 1
-df_excel = pd.read_excel('iris.xlsx', sheet_name='Sheet1')
-
-# Method 2
-excel_file = pd.ExcelFile('iris.xlsx')
-df_excel_sheet = excel_file.parse('Sheet1')
-```
-
-如果活頁簿有多個工作表，`ExcelFile` 很適合先檢查再逐張讀：
-
-```python
-workbook = pd.ExcelFile("fruit_tabs.xlsx")
-print(workbook.sheet_names)
-# ['price', 'color']
-
-price_df = workbook.parse("price")
-color_df = workbook.parse("color")
-```
-
-這個流程特別適合：
-
-- 不確定 workbook 裡有哪些 sheet
-- 不想一次把所有工作表都讀進來
-- 不同工作表稍後還要 merge / compare
-
-如果你已經知道目標工作表名稱，`read_excel(..., sheet_name=...)` 會比較短；如果你需要先探索 workbook 結構，`ExcelFile(...).sheet_names` 會更自然。
-
-### From HTML
-
-```python
-df_htmls = pd.read_html("https://en.wikipedia.org/wiki/Iris_flower_data_set")
-df = df_htmls[0]  # pick first table
-```
-
-- `pd.read_html()` reads all table elements from a webpage or HTML file.
-
-### From Pickle
-
-```python
-df_pickle = pd.read_pickle("iris.pkl")
-```
-
-### From HDF5
-
-```python
-df_hdf = pd.read_hdf("iris.h5", key="mydata")
-```
-
-### From SQL
-
-```python
-import sqlite3
-conn = sqlite3.connect("iris.db")
-df_sql = pd.read_sql("SELECT * FROM iris", conn)
-conn.close()
-```
-
-With SQLAlchemy:
+## 資料庫
 
 ```python
 from sqlalchemy import create_engine
-engine = create_engine("sqlite:///iris.db")
-df_sql = pd.read_sql("SELECT * FROM iris", engine)
+
+engine = create_engine("sqlite:///iris.db")        # PostgreSQL: postgresql+psycopg://user:pw@host/db
+df = pd.read_sql("SELECT * FROM iris WHERE species = :sp", engine, params={"sp": "setosa"})
+df.to_sql("iris_copy", engine, if_exists="replace", index=False)
 ```
 
-## Data Type Transformation
+詳見 [Python 與 SQLAlchemy](../databases/python-sqlalchemy.md)。
 
-Transforming data between different formats is a common task in Python programming. This document covers some of the most useful conversions, starting with JSON and dictionaries.
+## 格式互轉 (Data Type Transformation)
 
-### JSON ↔ Dictionary
-
-Python provides the `json` module for working with JSON data.
-
-#### Dictionary → JSON file
+| 轉換 | 寫法 |
+| --- | --- |
+| dict ↔ JSON 檔 | `json.dump(d, f, indent=2)` / `json.load(f)` |
+| dict ↔ JSON 字串 | `json.dumps(d)` / `json.loads(s)` |
+| list ↔ tuple | `tuple(x)` / `list(x)` |
+| 字串 ↔ datetime | `strptime` / `strftime`，見 [日期與時間](datetime.md) |
+| CSV ↔ list of dict | `csv.DictReader` / `csv.DictWriter` |
+| list of list / array → DataFrame | `pd.DataFrame(data, columns=[...])` |
+| DataFrame → array | `df.to_numpy()`（混合型別會變 `object`，先 `select_dtypes("number")`） |
+| DataFrame → dict | `df.to_dict(orient="records")`（另有 `dict`、`list`、`series`、`split`、`index`） |
+| Series → list | `s.tolist()` |
+| DataFrame → 檔案 | `to_csv(index=False)`、`to_parquet()`、`to_excel()`、`to_json(orient="records", lines=True)` |
 
 ```python
-import json
+import csv, json
 
-sample_dict = {
-    "name": "Alice",
-    "age": 30,
-    "city": "New York"
-}
+with open("sample.json", "w", encoding="utf-8") as f:
+    json.dump({"name": "Alice", "age": 30}, f, indent=2, ensure_ascii=False)   # 中文不轉成 \uXXXX
 
-with open("sample.json", "w") as f_output:
-    json.dump(sample_dict, f_output, indent=4)
+with open("sample.csv", newline="", encoding="utf-8") as f:   # csv 模組要 newline=""
+    rows = list(csv.DictReader(f))                            # 每列一個 dict，值都是字串
+
+with open("out.csv", "w", newline="", encoding="utf-8") as f:
+    w = csv.DictWriter(f, fieldnames=["name", "age"])
+    w.writeheader()
+    w.writerows([{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}])
+
+df = pd.DataFrame([[1, "Alice", 30], [2, "Bob", 25]], columns=["ID", "Name", "Age"])
+df.to_dict(orient="records")       # [{'ID': 1, 'Name': 'Alice', 'Age': 30}, ...]
+df.select_dtypes("number").to_numpy()
 ```
 
-#### JSON file → Dictionary
+## 匯入流程檢查表
 
-```python
-import json
-
-with open("sample.json", "r") as j_sample:
-    d_sample = json.loads(j_sample.read())
-
-print(d_sample["name"])  # Alice
+```
+辨識格式（副檔名 + 用 head / less 看前幾行）
+  → 決定目標結構（array / DataFrame / 專用物件）
+  → 大檔先讀一小段（nrows / chunksize）
+  → 檢查 shape、dtype、缺值、ID 唯一性、欄名
+  → 才進入清理與分析
 ```
 
-### Dictionary ↔ JSON string
-
-Sometimes you want to work directly with JSON strings rather than files.
-
-#### Dictionary → JSON string
-
-```python
-import json
-
-sample_dict = {"fruit": "apple", "quantity": 10}
-json_str = json.dumps(sample_dict, indent=2)
-print(json_str)
-```
-
-#### JSON string → Dictionary
-
-```python
-import json
-
-json_str = '{"fruit": "apple", "quantity": 10}'
-parsed_dict = json.loads(json_str)
-print(parsed_dict["fruit"])  # apple
-```
-
-### List ↔ Tuple
-
-#### List → Tuple
-
-```python
-numbers_list = [1, 2, 3]
-numbers_tuple = tuple(numbers_list)
-```
-
-#### Tuple → List
-
-```python
-numbers_tuple = (1, 2, 3)
-numbers_list = list(numbers_tuple)
-```
-
-### CSV ↔ Dictionary
-
-Use the `csv` module for structured tabular data.
-
-#### CSV file → List of dictionaries
-
-```python
-import csv
-
-with open("sample.csv", newline="") as csvfile:
-    reader = csv.DictReader(csvfile)
-    data = [row for row in reader]
-
-print(data)
-```
-
-#### Dictionary list → CSV file
-
-```python
-import csv
-
-data = [
-    {"name": "Alice", "age": 30},
-    {"name": "Bob", "age": 25}
-]
-
-with open("output.csv", "w", newline="") as csvfile:
-    writer = csv.DictWriter(csvfile, fieldnames=["name", "age"])
-    writer.writeheader()
-    writer.writerows(data)
-```
-
-### Array ↔ DataFrame
-
-#### Array → DataFrame
-
-```python
-import pandas as pd
-
-data = [
-    [1, "Alice", 30],
-    [2, "Bob", 25],
-]
-
-df = pd.DataFrame(data, columns=["ID", "Name", "Age"])
-```
-
-#### DataFrame → Array
-
-```python
-import pandas as pd
-import seaborn as sns
-
-iris = sns.load_dataset("iris")
-numeric_df = iris.select_dtypes(include='number')
-array = numeric_df.to_numpy()
-```
-
-### DataFrame ↔ Other Formats
-
-#### DataFrame → Dictionary
-
-```python
-import pandas as pd
-
-iris = pd.DataFrame({
-    "col": [1, 2, 3]
-})
-
-df_dict = iris.to_dict()
-print(df_dict)
-```
-
-- `.to_dict()` converts the DataFrame into a dictionary.
-- Orientations can be specified: `dict`, `list`, `series`, `records`, `split`.
-
-#### DataFrame Series → List
-
-```python
-col_list = iris['col'].tolist()
-print(col_list)
-```
-
-- `.tolist()` converts a Series to a Python list.
-- Useful when exporting a column to a standard Python structure.
-
-#### DataFrame → CSV Output
-
-```python
-iris.to_csv("output.csv")
-```
-
-- `.to_csv()` exports the DataFrame to a CSV file.
-- Options include `index=False`, custom separators, encoding, etc.
-
-### Summary
-
-- **JSON ↔ dict**: `json.dump`, `json.load`, `json.dumps`, `json.loads`
-- **List ↔ tuple**: `list()`, `tuple()`
-- **String ↔ datetime**: `strftime`, `strptime`
-- **CSV ↔ dict/list**: `csv.DictReader`, `csv.DictWriter`
-- **Array ↔ DataFrame**: `pd.DataFrame`, `.to_numpy()`
-- **DataFrame ↔ dict/list**: `.to_dict()`, `.tolist()`
-- **DataFrame → CSV**: `.to_csv()`
-
-## Key Takeaways
-
-- Choose the import function based on the file format and the target in-memory structure.
-- `np.loadtxt()` is great for clean numeric text, but pandas is safer for real-world tables.
-- `pd.read_csv()` is the default workhorse for tabular text data.
-- Binary and scientific formats usually need their own library before conversion to arrays or DataFrames.
-- Import is part of data quality work; verify the result immediately instead of assuming it loaded correctly.
+很多下游的奇怪結果（平均數是 NaN、merge 後列數暴增、類別多出一個 `"NA"`）其實是匯入時就錯了。清理步驟見 [EDA 工作流程](../data-manipulation-and-eda/eda-workflow.md)。

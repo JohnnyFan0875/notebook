@@ -1,52 +1,58 @@
-# Python Foundations
+[Data Science](../README.md) › Python Foundations
 
-這個章節整理資料科學工作最常反覆用到的 Python 基礎。重點不是把語法全部背下來，而是建立一套能安全處理資料、撰寫可重用腳本、並理解 NumPy / pandas 行為的工作底層。
+# Python 基礎 (Python Foundations)
 
-## 建議閱讀順序
+資料科學工作中反覆用到的 Python：語言本身、把 notebook 變成可重跑的腳本與套件、讀取各種資料，以及 NumPy / pandas 與效能工具。R 的對應內容見 [R Foundations](../r-foundations/README.md)。
 
-1. [Core Data Types](core-data-types.md): 先把 list、tuple、dict、set 與常見資料容器觀念補穩。
-2. [Control Flow](control-flow.md) 與 [Function](function.md): 建立條件判斷、迴圈、函式拆分與參數設計的基本能力。
-3. [Scripting and CLI](scripting-and-cli.md): entry point、argparse、設定檔、檔案 I/O、subprocess，把一次性的 notebook 操作改成可重跑腳本。
-4. [NumPy](numpy/README.md): 理解 array、shape、broadcasting 與向量化，這是後面 pandas 與 machine learning 的共同基礎。
-5. [pandas](pandas/README.md): 把資料清理、篩選、彙總、重塑與時間欄位處理串成日常工作流。
-6. [Testing](testing.md) 與 [Errors and Assertions](errors-and-assertions.md): 補上腳本穩定性與除錯能力。
+## 建議順序
 
-## 主題分組
+```
+核心型別 → 控制流程 → 函式 → 迭代器 → NumPy → pandas → 匯入資料
+                                          ↓
+              腳本與 CLI → 錯誤處理 → 測試 → 套件與環境 → 效能
+```
 
-### 語言與資料結構
+只寫 notebook 的人，常卡在「無法把流程整理成可重跑的程式」：優先讀第二排。
 
-| 筆記 | 內容 |
+## 語言與資料結構
+
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [核心資料型別](core-data-types.md) | list、tuple、dict、set、`collections`、淺複製 | 該用哪個容器？為什麼改了 b 連 a 也變了？ |
+| [控制流程](control-flow.md) | if、for、while、truthiness、`match` | 迴圈怎麼寫才不出錯？ |
+| [函式](function.md) | 參數、scope、閉包、decorator、`functools` | 如何設計可重用的函式？ |
+| [類別](class.md) | class、`dataclass`、繼承、property、特殊方法 | 什麼時候該寫 class？ |
+| [迭代器與生成器](iterator.md) | iterator 協定、comprehension、generator、`itertools` | 如何逐筆處理比記憶體大的檔案？ |
+| [日期與時間](datetime.md) | `datetime`、`zoneinfo`、pandas `.dt`、resample | 時區與日期欄位怎麼處理才不出錯？ |
+| [文字清理與正規表示式](text-cleaning-and-regex.md) | `re`、樣本名稱解析、模糊比對 | 如何擷取、驗證、清理文字欄位？ |
+
+## 腳本與工程實務
+
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [腳本與 CLI](scripting-and-cli.md) | `__main__`、argparse、設定檔、`pathlib`、logging、subprocess | 如何把 notebook 變成可重跑的腳本？ |
+| [錯誤處理與斷言](errors-and-assertions.md) | try / except、raise、自訂例外、assert | 何時該捕捉、何時該丟出錯誤？ |
+| [測試](testing.md) | pytest、fixture、parametrize、測 DataFrame | 改程式後怎麼確定沒改壞？ |
+| [軟體工程實務](software-engineering.md) | 專案結構、ruff、命名、docstring、可重現性 | 如何讓程式幾個月後還能用？ |
+| [Python 套件與環境](python-packages.md) | `pyproject.toml`、uv、lock 檔、build / publish | 如何讓別人（或自己換台電腦）重建同樣環境？ |
+
+## 資料、數值與效能
+
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [NumPy](numpy/README.md) | array、broadcasting、向量化、線性代數 | shape 與向量化怎麼想？ |
+| [pandas](pandas/README.md) | 選取、groupby、reshape、merge、缺值 | 表格資料怎麼清理與彙總？ |
+| [匯入資料](importing-data.md) | CSV、Excel、JSON、Parquet、HDF5、生資格式、格式互轉 | 這個檔案該用什麼讀？讀完要檢查什麼？ |
+| [API 與 HTTP](api-http.md) | requests、狀態碼、重試、分頁、認證 | 如何穩定地從 Ensembl / NCBI 抓資料？ |
+| [scipy.stats 速查](scipy-stats.md) | `default_rng`、機率分配、檢定、R 對照 | 這個統計方法在 Python 裡怎麼寫？ |
+| [效能與擴展](performance-and-scaling/README.md) | 量測、向量化、Numba、multiprocessing、Dask、Polars | 程式太慢或資料太大怎麼辦？ |
+
+## 相關章節
+
+| 需求 | 去哪裡 |
 | --- | --- |
-| [Core Data Types](core-data-types.md) | list、tuple、dict、set |
-| [Control Flow](control-flow.md) | 條件、迴圈、comprehension |
-| [Function](function.md) | 參數、scope、lambda、decorator |
-| [Class](class.md) | OOP 基礎 |
-| [Iterator](iterator.md) | iterator、generator |
-| [Datetime](datetime.md) | stdlib `datetime` / timezone 與 pandas datetime 欄位 |
-| [Text Cleaning and Regex](text-cleaning-and-regex.md) | `re`、字串清理、thefuzz 模糊比對 |
-
-### 腳本與工程實務
-
-| 筆記 | 內容 |
-| --- | --- |
-| [Scripting and CLI](scripting-and-cli.md) | `if __name__ == "__main__"`、argparse、設定檔、file I/O、subprocess、常用片段 |
-| [Errors and Assertions](errors-and-assertions.md) | try-except、raise、assert |
-| [Testing](testing.md) | pytest |
-| [Software Engineering](software-engineering.md) | 模組化、文件、風格 |
-| [Python Packages](python-packages.md) | 本地 package 結構（待改寫成 pyproject + uv） |
-
-### 資料存取與效能
-
-| 筆記 | 內容 |
-| --- | --- |
-| [Importing Data](importing-data.md) | flat file、JSON、Excel、HDF5、SAS / Stata、pandas reader、格式互轉 |
-| [API HTTP](api-http.md) | requests、REST API |
-| [Performance and Scaling](performance-and-scaling/README.md) | Efficient Python、multiprocessing / Dask、Polars |
-
-## 閱讀提醒
-
-- 如果你常卡在 shape、索引或向量化，先補 [NumPy](numpy/README.md)。
-- 如果你常卡在資料清理、彙總與欄位操作，先補 [pandas](pandas/README.md)。
-- 寫分析腳本時，[Scripting and CLI](scripting-and-cli.md) 與 [Errors and Assertions](errors-and-assertions.md) 會直接影響可維護性。
-- 如果你已經能寫 notebook，但常常無法把流程整理成可重跑程式，優先讀「腳本與工程實務」那一組。
-- 用 Python 連資料庫見 [Databases](../databases/README.md)（[SQLAlchemy](../databases/python-sqlalchemy.md)、[PyMongo](../databases/mongodb-pymongo.md)）；抓網頁見 [Web Scraping](../web-scraping/README.md)。
+| 用 Python 連資料庫 | [SQLAlchemy](../databases/python-sqlalchemy.md)、[PyMongo](../databases/mongodb-pymongo.md) |
+| 抓網頁 | [Web Scraping](../web-scraping/README.md) |
+| 畫圖與探索 | [Data Manipulation and EDA](../data-manipulation-and-eda/README.md) |
+| 統計方法的選擇與解讀 | [Statistics](../statistics/README.md) |
+| 環境：conda、Docker | [Containers and Environments](../../computing/containers-and-env/README.md) |

@@ -1,252 +1,179 @@
-# Datetime（stdlib 與 pandas）
+[Data Science](../README.md) › [Python Foundations](README.md) › 日期與時間
 
-Working with dates and times is a common task in Python. The `datetime` module provides classes for manipulating dates, times, and time intervals, while `dateutil` extends functionality for more advanced timezone handling.
+# 日期與時間 (Datetime)
 
-前半是 **Python 標準庫**（`datetime`、`timedelta`、parsing、formatting、timezone），後半是 [pandas datetime 欄位](#pandas-datetime-欄位)（`pd.to_datetime`、`.dt`、`DatetimeIndex`、resample）。For the analogous workflow in R, see [Date and Time in R](../r-foundations/datetime.md).
+前半是 Python 標準庫（`datetime`、`timedelta`、`zoneinfo`），後半是 [pandas datetime 欄位](#pandas-datetime-欄位)（`pd.to_datetime`、`.dt`、`DatetimeIndex`、resample）。R 的對應寫法見 [R 日期與時間](../r-foundations/datetime.md)。
 
-## Import Packages
+| 型別 | 表示 | 例子 |
+| --- | --- | --- |
+| `date` | 日期 | 採樣日 `2024-03-15` |
+| `datetime` | 日期 + 時間（可帶時區） | 儀器輸出時間戳 |
+| `timedelta` | 時間長度 | 處理後 48 小時 |
+| `pd.Timestamp` / `DatetimeIndex` | pandas 版 datetime（向量化） | 整欄時間 |
+| `pd.Timedelta` / `pd.DateOffset` | 固定長度 / 日曆偏移（「下個月」） | `+ pd.DateOffset(months=1)` |
 
-```python
-import datetime
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
-from dateutil import tz
-```
-
-## Create Datetime Objects
+## 建立、解析與格式化
 
 ```python
-# Date only
-dates = datetime(2016, 7, 16)
+from datetime import date, datetime, timedelta, timezone
 
-# Date and time
-dt = datetime(2017, 10, 1, 15, 23, 25, 500000)
-# Equivalent form:
-# dt = datetime(year=2017, month=10, day=1, hour=15, minute=23, second=25, microsecond=500000)
+d = datetime(2016, 7, 16)                          # 只有日期 → 00:00:00
+dt = datetime(2017, 10, 1, 15, 23, 25, 500000)     # 年月日時分秒微秒
+now_utc = datetime.now(timezone.utc)               # 現在（UTC，aware）
+date.today()
 
-# Current date and time (naive)
-now = datetime.now()
+d.year, d.weekday()                                # 2016, 5（Monday=0, Sunday=6）
+dt.date(), dt.time()
 
-# Current date and time in UTC
-now_utc = datetime.now(timezone.utc)
+# datetime → 字串
+d.isoformat()                                      # '2016-07-16T00:00:00'
+d.date().isoformat()                               # '2016-07-16'
+dt.strftime("%Y/%m/%d %H:%M:%S")                   # '2017/10/01 15:23:25'
+
+# 字串 → datetime
+datetime.strptime("12/30/2017 15:19:13", "%m/%d/%Y %H:%M:%S")
+datetime.fromisoformat("2024-03-15T14:30:00+08:00")   # ISO 8601 首選，3.11+ 接受大多數 ISO 寫法
+
+# Unix timestamp → datetime：一定要指定 tz，否則依「執行這台電腦」的時區解讀
+datetime.fromtimestamp(1514665153, tz=timezone.utc)   # 2017-12-30 20:19:13+00:00
+
+dt.replace(minute=0, second=0, microsecond=0)      # 截到整點
 ```
 
-## General Information
+| 代碼 | 意義 | 代碼 | 意義 |
+| --- | --- | --- | --- |
+| `%Y` | 4 位數年 | `%H` | 24 小時制 |
+| `%m` | 月（01–12） | `%I` / `%p` | 12 小時制 / AM、PM |
+| `%d` | 日 | `%M` / `%S` | 分 / 秒 |
+| `%B` / `%b` | 月份全名 / 縮寫 | `%f` | 微秒 |
+| `%A` / `%a` | 星期全名 / 縮寫 | `%z` | UTC 偏移（`+0800`） |
+| `%j` | 一年中第幾天 | `%%` | 字面 `%` |
+
+> 存檔、交換資料一律用 ISO 8601（`2024-03-15` / `2024-03-15T14:30:00Z`）：字典序 = 時間序，也沒有 `03/04` 是 3 月 4 日還是 4 月 3 日的歧義。
+
+## 日期運算
 
 ```python
-# Today's date
-today_date = datetime.today().date()
+datetime(2016, 7, 17) - d                          # timedelta(days=1)
+(datetime(2016, 7, 17) - d).total_seconds()        # 86400.0
+d + timedelta(days=1, hours=6)
+d - timedelta(weeks=1)                             # 用 timedelta，不要手動改 day（月底會出錯）
+datetime(1997, 7, 2) < datetime(1997, 10, 27)      # True：比較前先 parse，不要比字串
 
-# Year and weekday
-dates_year = dates.year
-dates_day = dates.weekday()  # Monday=0, Sunday=6
+# 「加一個月」不是固定天數：timedelta 沒有 months，用 dateutil 或 pandas
+from dateutil.relativedelta import relativedelta
+datetime(2024, 1, 31) + relativedelta(months=1)    # 2024-02-29（自動夾到月底）
 ```
 
-## Formatting
+## 時區 (Timezones)
 
-Convert `datetime` objects to string in various formats:
+| | naive | aware |
+| --- | --- | --- |
+| 有 `tzinfo`？ | 否 | 是 |
+| 意義 | 只是牆上時間的字面值 | 能對齊到 UTC 的確切時刻 |
+| 能互相比較 / 相減？ | naive 與 aware 混用會 `TypeError` | |
+
+| 操作 | 效果 | pandas 對應 |
+| --- | --- | --- |
+| `replace(tzinfo=...)` | **只貼標籤**，牆上時間不變 | `.dt.tz_localize()` |
+| `astimezone(...)` | **換算**到另一時區，同一時刻 | `.dt.tz_convert()` |
 
 ```python
-dates_isoformat = dates.isoformat()  # '2016-07-16'
-dt_isoformat = dt.isoformat()        # '2017-10-01T15:23:25.500000'
+from zoneinfo import ZoneInfo                      # 3.9+ 標準庫；Windows 需 pip install tzdata
+
+ny = ZoneInfo("America/New_York")
+dt = datetime(2017, 12, 30, 15, 9, 3, tzinfo=ny)   # 2017-12-30 15:09:03-05:00
+dt.astimezone(timezone.utc)                        # 2017-12-30 20:09:03+00:00
+dt.astimezone(ZoneInfo("Asia/Kolkata"))            # 2017-12-31 01:39:03+05:30
+
+dt.replace(tzinfo=timezone.utc)                    # 15:09:03+00:00：錯把當地時間標成 UTC，偏了 5 小時
+
+fixed = timezone(timedelta(hours=-5))              # 固定偏移：不處理夏令時間，盡量用具名時區
+
+# 夏令時間 (DST) 陷阱：同一 aware 時區內的加減是「牆上時間」運算
+a = datetime(2024, 3, 10, 1, 30, tzinfo=ny)
+a + timedelta(hours=1)                             # 02:30-05:00：當天 02:00–03:00 根本不存在
+(a.astimezone(timezone.utc) + timedelta(hours=1)).astimezone(ny)   # 03:30-04:00：正確
 ```
 
-Custom formatting with `strftime`:
+| 原則 | 說明 |
+| --- | --- |
+| 內部一律存 UTC | 只有顯示給人看時才轉當地時間 |
+| 用具名時區 | `ZoneInfo("Asia/Taipei")`，不用固定偏移；舊程式的 `pytz` / `dateutil.tz` 可換掉 |
+| 跨 DST 的計算先轉 UTC | 量測經過時間、排程間隔 |
+| 不要用 `datetime.utcnow()` | 回傳 naive 物件，3.12 起已棄用；改 `datetime.now(timezone.utc)` |
 
-```python
-string_Ymd = dates.strftime('%Y/%m/%d')         # '2016/07/16'
-string_YmdHMS = dt.strftime('%Y/%m/%d %H:%M:%S')  # '2017/10/01 15:23:25'
-```
+## pandas datetime 欄位
 
-Parsing strings into datetime with `strptime`:
-
-```python
-dt = datetime.strptime("12/30/2017 15:19:13", "%m/%d/%Y %H:%M:%S")
-```
-
-## Timestamps
-
-Convert Unix timestamps to `datetime`:
-
-```python
-ts = 1514665153.0
-print(datetime.fromtimestamp(ts))  # 2017-12-30 15:19:13
-```
-
-## Replace Values
-
-```python
-dt_replace = dt.replace(minute=0)  # Replace only the minute
-```
-
-常見用法是把時間截到整點或整分：
-
-```python
-dt_hr = dt.replace(minute=0, second=0, microsecond=0)
-```
-
-## Date Calculations
-
-Perform arithmetic with `datetime` and `timedelta`:
-
-```python
-# Difference between two dates
-duration = datetime(2016, 7, 17) - dates
-duration_day = duration.days        # 1
-duration_seconds = duration.total_seconds()
-
-# Add a timedelta
-td = timedelta(days=1, seconds=1)
-new_date = dates + td
-```
-
-Comparing datetimes is also straightforward:
-
-```python
-asian_crisis = datetime(1997, 7, 2)
-world_mini_crash = datetime(1997, 10, 27)
-
-asian_crisis < world_mini_crash   # True
-asian_crisis == world_mini_crash  # False
-```
-
-Creating relative dates should use `timedelta`, not manual day arithmetic:
-
-```python
-dt = datetime(2019, 1, 14)
-
-# Safe
-one_week_ago = dt - timedelta(days=7)
-
-# Unsafe near month boundaries
-# datetime(dt.year, dt.month, dt.day - 15)
-```
-
-## Timezones
-
-Using `timezone` with `timedelta`:
-
-```python
-ET = timezone(timedelta(hours=-5))
-dt = datetime(2017, 12, 30, 15, 9, 3, tzinfo=ET)
-# 2017-12-30 15:09:03-05:00
-```
-
-Convert between timezones:
-
-```python
-# Change timezone
-IST = timezone(timedelta(hours=5, minutes=30))
-dt_IST = dt.astimezone(IST)   # 2017-12-31 01:39:03+05:30
-
-dt_UTC = dt.astimezone(timezone.utc)  # 2017-12-30 20:09:03+00:00
-
-# Set new timezone directly
-dt_UTC = dt.replace(tzinfo=timezone.utc)  # 2017-12-30 15:09:03+00:00
-```
-
-Using `dateutil.tz` for named timezones:
-
-```python
-et = tz.gettz('America/New_York')
-last = datetime(2017, 12, 30, 15, 9, 3, tzinfo=et)
-# 2017-12-30 15:09:03-05:00
-```
-
-### Naive vs Aware Datetime
-
-- `naive datetime`：沒有 `tzinfo`，只表示某個時間字面值。
-- `aware datetime`：有 `tzinfo`，知道自己如何對齊 UTC。
-
-```python
-naive = datetime(2024, 1, 1, 9, 0, 0)
-aware = datetime(2024, 1, 1, 9, 0, 0, tzinfo=timezone.utc)
-```
-
-一個很重要的差別是：
-
-- `replace(tzinfo=...)` 只是在原本日期時間上「貼標籤」。
-- `astimezone(...)` 會真的把時間換算到另一個時區。
-
-```python
-utc_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-tw_time = utc_time.astimezone(tz.gettz("Asia/Taipei"))
-```
-
-如果你把 local time 誤用 `replace(tzinfo=timezone.utc)`，很容易造成時間偏移被靜默寫錯。
-
-## Pandas Datetime Workflow
-
-很多資料問題不是出在 `datetime` 本身，而是 CSV 讀進來時欄位仍是字串。
-
-### Parse Dates on Read
+### 讀檔與轉型
 
 ```python
 import pandas as pd
 
-rides = pd.read_csv(
-    "capital-onebike.csv",
-    parse_dates=["Start date", "End date"],
-)
+rides = pd.read_csv("rides.csv", parse_dates=["start", "end"])   # 讀檔時直接轉
+
+s = pd.Series(["2024-01-01", "bad", "2024-06-20"])
+pd.to_datetime(s, errors="coerce")                 # 無法解析的變 NaT（Not a Time）
+pd.to_datetime(s, format="%Y-%m-%d", errors="coerce")  # 指定格式：更快，且避免猜錯
+pd.to_datetime(["03/04/2024"], dayfirst=True)      # 2024-04-03：歐洲格式
+pd.to_datetime(df["ts"], unit="s", utc=True)       # Unix 秒數
+
+df["when"] = pd.to_datetime(df["date"] + " " + df["time"], errors="coerce")  # 日期、時間分兩欄時先合併
 ```
 
-如果 `parse_dates` 沒成功，再明確轉型：
+> `errors="coerce"` 會把錯誤靜默變成 `NaT`。轉完務必 `.isna().sum()` 檢查，數量異常多通常代表格式猜錯（例如混了 `MM/DD` 與 `DD/MM`）。
+
+### 取成分、格式化與運算
 
 ```python
-rides["Start date"] = pd.to_datetime(rides["Start date"])
-rides["End date"] = pd.to_datetime(rides["End date"])
+t = df["measurement_date"]
+t.dt.year, t.dt.month, t.dt.day                    # 數值成分
+t.dt.day_name()                                    # 'Monday'...
+t.dt.dayofweek                                     # Monday=0
+t.dt.quarter, t.dt.isocalendar().week
+t.dt.normalize()                                   # 去掉時間，只留日期（仍是 datetime）
+t.dt.floor("h")                                    # 截到整點
+t.dt.strftime("%d-%m-%Y")                          # → 字串
+
+(pd.Timestamp.today() - t).dt.days                 # 距今天數：相減得 Timedelta
+(df["end"] - df["start"]).dt.total_seconds() / 60  # 持續分鐘數
+t + pd.Timedelta(days=30)                          # 固定長度
+t + pd.DateOffset(months=1)                        # 日曆月：01-31 → 02-29
+
+df[t > "2024-01-03"]                               # 可直接和字串比較
+df[t.between("2024-01-01", "2024-03-31")]
+
+# 時區：localize 貼標籤，convert 換算
+df["start"].dt.tz_localize("America/New_York").dt.tz_convert("UTC")
 ```
 
-### Localize vs Convert
+`DatetimeIndex` 的成分直接用 `df.index.month`、`df.index.day_name()`，不需要 `.dt`。
 
-pandas 與 Python 標準庫的觀念相同：
-
-- `.tz_localize()`：設定時區，但保留原本牆上時間。
-- `.tz_convert()`：換到新時區，會調整實際時間值。
+### 以時間為索引：篩選與 resample
 
 ```python
-rides["Start date"] = (
-    rides["Start date"]
-    .dt.tz_localize("America/New_York")
-    .dt.tz_convert("UTC")
-)
+ts = df.set_index("measurement_date").sort_index()
+ts.loc["2024-01"]                                  # 部分字串索引：整個一月
+ts.loc["2024-01-15":"2024-02-15"]                  # 時間切片（含兩端）
+
+ts["value"].resample("D").mean()                   # 每天一筆，沒資料的天補 NaN
+ts["value"].resample("W").sum()
+ts["value"].resample("ME").mean()                  # 月底；pandas 2.2+ 用 "ME"，舊寫法 "M" 已棄用
+ts["value"].rolling("7D").mean()                   # 7 天移動平均
+
+ts.groupby(ts.index.month)["value"].mean()         # 季節性：所有年的一月合在一起
 ```
 
-### Typical Analysis Pattern
+| 寫法 | 結果 | 用途 |
+| --- | --- | --- |
+| `groupby(index.month)` | 最多 12 列，跨年合併同月份 | 比較季節型態 |
+| `resample("ME")` | 每個實際月份一列，依時間排序 | 得到正規時間序列 |
 
-```python
-rides["Duration"] = rides["End date"] - rides["Start date"]
-rides["Duration minutes"] = rides["Duration"].dt.total_seconds() / 60
-```
+| 頻率代碼 | 意義 | 頻率代碼 | 意義 |
+| --- | --- | --- | --- |
+| `D` | 日 | `ME` / `MS` | 月底 / 月初 |
+| `h` / `min` / `s` | 時 / 分 / 秒 | `QE` | 季底 |
+| `W` | 週（預設週日結束） | `YE` | 年底 |
+| `B` | 營業日 | | |
 
-這種寫法通常比手動拆 `year/month/day/hour` 更安全，也更容易和時區處理一起工作。
-
-## Best Practices
-
-- Always use `datetime` objects with timezone information (`tzinfo`) for applications that cross regions.
-- Use `datetime.utcnow().replace(tzinfo=timezone.utc)` or `datetime.now(timezone.utc)` for consistent UTC timestamps.
-- Prefer `dateutil.tz` for named timezones (`America/New_York`, `Asia/Taipei`) instead of fixed offsets.
-- Use `timedelta` for safe date arithmetic instead of manually adjusting year, month, or day.
-- If you compare datetimes from strings, parse them first with `strptime()` so the comparison happens on true datetime values.
-
-## pandas Datetime 欄位
-
-Datetime handling is essential for working with time series or date-related data. Pandas provides powerful methods for parsing, extracting, formatting, and performing arithmetic on datetime values.
-
-### Example Dataset
-
-```python
-import seaborn as sns
-import pandas as pd
-
-# Use the Iris dataset and add a fake datetime column
-iris = sns.load_dataset("iris")
-iris["measurement_date"] = pd.to_datetime([
-    '2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05'
-] * 30)  # repeat dates for all 150 rows
-
-iris.head()
-```
-
-#
+時間序列建模（趨勢、季節分解、自相關）見 [時間序列分析](../statistics/time-series-analysis/README.md)；畫時間序列圖見 [pandas 繪圖](../data-manipulation-and-eda/visualization/pandas-plotting.md)。

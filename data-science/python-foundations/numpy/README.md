@@ -22,7 +22,7 @@ NumPy 是 Python 科學計算的基礎層。只要你在做向量化運算、矩
 
 - Each file contains examples with output and short explanations.
 - Use this section as both a learning path and a quick reference when working with arrays for data science, statistics, or linear algebra tasks.
-- For related conversions (e.g., array -> DataFrame), see [Data Type Transformation](../importing-data.md#data-type-transformation).
+- For related conversions (e.g., array -> DataFrame), see [Data Type Transformation](../importing-data.md#格式互轉-data-type-transformation).
 
 ## 先掌握的三件事
 

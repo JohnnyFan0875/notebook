@@ -1,319 +1,157 @@
-# Python: Control Flow
+[Data Science](../README.md) › [Python Foundations](README.md) › 控制流程
 
-This note focuses on Python syntax and iteration patterns. If you are working in R, use [Control Flow in R](../r-foundations/control-flow.md); the core ideas overlap, but the language rules around iteration, vectorization, and block structure are different.
+# 控制流程 (Control Flow)
 
-控制流程的核心不是記住 `if`、`for`、`while` 的語法，而是知道什麼情況下要做一次判斷、什麼情況下要遍歷一個序列、以及什麼情況下需要持續重複直到條件改變。
+控制流程決定程式「做一次判斷」、「逐一處理一批資料」還是「重複到條件改變」。R 的對應寫法見 [R 控制流程](../r-foundations/control-flow.md)。
 
-## Mental Model
+| 結構 | 執行模式 | 何時用 |
+| --- | --- | --- |
+| `if` / `elif` / `else` | 條件成立就執行**一次** | 分類、規則分支 |
+| `for` | 對 iterable 的**每個元素**執行一次 | 遍歷已知資料（首選） |
+| `while` | 條件成立就**一直重複** | 次數未知、停止條件已知（重試、收斂） |
+| `match` / `case`（3.10+） | 依值或結構比對 | 多分支且依資料形狀分派 |
 
-可以先用這個簡化版心智模型：
+## 縮排就是語法
 
-- `if`: 檢查一次條件
-- `for`: 對一個 iterable 中的每個元素做事
-- `while`: 只要條件成立就持續做事
+Python 不用 `{}` 或 `end` 標示區塊：冒號 `:` 開啟區塊、下一層縮排是區塊內容、縮排退回代表結束。統一用 4 個空白，不要混用 tab。
 
-## Whitespace Is Part of the Syntax
-
-Python 和很多其他語言不一樣，縮排不是排版偏好，而是語法本身的一部分。
-
-```python
-if 5 == 5:
-    print("True")
-```
-
-這裡的縮排代表 `print("True")` 屬於 `if` 區塊。
-
-實務上可以把它理解成：
-
-- 冒號 `:` 開啟一個區塊
-- 下一層縮排表示區塊內容
-- 縮排退回去，代表區塊結束
-
-如果你有 R、JavaScript 或 MATLAB 背景，這個差異通常是最先需要重新適應的地方，因為 Python 不靠 `{}` 或 `end` 來標示區塊。
-
-## `if`, `elif`, `else`
+## 條件判斷
 
 ```python
 price = 120
-
 if price > 100:
-    print("expensive")
+    label = "expensive"
 elif price > 50:
-    print("mid-range")
+    label = "mid-range"
 else:
-    print("cheap")
-```
+    label = "cheap"
 
-這類結構適合：
+label = "expensive" if price > 100 else "cheap"   # 條件運算式（一行版）
 
-- 單次分類
-- 規則分支
-- 根據條件選擇不同行為
-
-### Logical Operators
-
-```python
-if "HT91" in products_dict and min(products_dict.values()) > 5:
+# 邏輯運算：and / or / not；in / not in 做成員檢查
+if "HT91" in products and min(products.values()) > 5:
     ...
-
-if "HT91" in products_dict or min(products_dict.values()) < 5:
+if 0 < pvalue <= 0.05:                           # 比較可串接，等同 0 < p and p <= 0.05
     ...
 ```
 
-實務上最常見的是：
+### Truthiness 與 `None`
 
-- `and`: 所有條件都要成立
-- `or`: 任一條件成立即可
-- `not`: 對布林條件取反
-
-## `for` Loops
-
-`for` loop 適合「遍歷一個已知 iterable」。
+| 視為 `False` | 視為 `True` |
+| --- | --- |
+| `False`、`None`、`0`、`0.0`、`""`、`[]`、`{}`、`set()` | 其他幾乎所有值 |
 
 ```python
-prices = [10, 20, 30]
-
-for price in prices:
-    print(price)
+if not records:            # 空 list → 進入
+    ...
+if value is None:          # 檢查 None 用 is，不用 ==
+    ...
+if count:                  # 陷阱：count == 0 時也會跳過，意思是「非 0」而不是「有值」
+    ...
 ```
 
-這裡的重點不是 index，而是每次直接拿到元素本身。
+> NumPy array 與 pandas Series 不能直接放進 `if`（`ValueError: truth value ... is ambiguous`），要明講 `.any()`、`.all()` 或 `.empty`。
 
-如果你有 MATLAB 背景，這一點特別值得記：
+## `for` 迴圈
 
-- MATLAB 初學常把 `for` 想成「讓 counter 往前跑」
-- Python 更自然的心智模型是「依序拿出 iterable 裡的每個元素」
-
-所以很多 Python `for` 不需要先寫 `1:n` 這種計數範圍，因為資料本身就能被直接遍歷。
-
-### Loop Through Strings
+`for` 直接拿出 iterable 的每個元素，不需要先寫 `1:n` 計數範圍（MATLAB / R 習慣要改）。
 
 ```python
-username = "alice"
-
-for char in username:
-    print(char)
+for gene in ["TP53", "EGFR"]:            # list
+    ...
+for char in "ATGC":                      # 字串逐字元
+    ...
+for key, value in products.items():      # dict：同時取 key 與 value
+    ...
+for i in range(1, 6):                    # range(start, stop)：含 start、不含 stop → 1..5
+    ...
+for i, gene in enumerate(genes, start=1):  # 需要索引時用 enumerate，不用 range(len(...))
+    ...
+for g, p in zip(genes, pvalues):         # 平行走兩個序列
+    ...
+for row in X:                            # 2D NumPy array：每次拿到一整列
+    ...
 ```
 
-字串本身也是 iterable，所以可以逐字元遍歷。
-
-### Loop Through Dictionaries
-
-字典最常見的三種遍歷方式：
+### 累積結果 → comprehension
 
 ```python
-products_dict = {"AG32": 87.99, "HT91": 21.50}
-
-for key, value in products_dict.items():
-    print(key, value)
-```
-
-```python
-for key in products_dict.keys():
-    print(key)
-
-for value in products_dict.values():
-    print(value)
-```
-
-實務上：
-
-- 要同時拿 key 和 value，用 `.items()`
-- 只要 key，用直接 `for key in products_dict:` 或 `.keys()`
-- 只要 value，用 `.values()`
-
-如果你把 `dict` 想成有欄位名稱的記錄集合，`.items()` 幾乎就是最接近「逐筆拿欄位名與內容」的迭代方式。
-
-## `range()`
-
-`range()` 很常和 `for` 搭配，用來產生整數序列。
-
-```python
-for i in range(1, 6):
-    print(i)
-```
-
-記法：
-
-- `range(start, stop)`
-- 包含 `start`
-- 不包含 `stop`
-
-所以 `range(1, 6)` 會得到 `1, 2, 3, 4, 5`。
-
-當你真的只需要重複固定次數，`range()` 很自然；但如果你已經有 list、dict、array、DataFrame，就優先直接迭代它們，而不是硬把問題改寫成 index loop。
-
-### Loop Through Arrays and Tables
-
-很多資料工作最後不是在 loop 數字，而是在 loop 結構。
-
-```python
-import numpy as np
-
-X = np.array([[1, 2, 3], [4, 5, 6]])
-
-for row in X:
-    print(row)
-```
-
-這裡每次拿到的是一整列，不是 row index。
-
-如果是 pandas DataFrame，雖然也能逐列迭代：
-
-```python
-for idx, row in df.iterrows():
-    print(idx, row["fruit"], row["color"])
-```
-
-但實務上通常還是優先考慮 vectorized 操作，只有在逐列邏輯真的必要時才退回 loop。
-
-## Build Results Incrementally
-
-很多入門 loop 的本質都是：
-
-1. 先建立一個空容器
-2. 遍歷資料
-3. 只把符合條件的結果存進去
-
-```python
-expensive_products = []
-
-for key, value in products_dict.items():
+# 空容器 + 迴圈 + 條件
+expensive = []
+for key, value in products.items():
     if value > 25:
-        expensive_products.append(key)
+        expensive.append(key)
+
+# 邏輯簡單時改寫成 comprehension，意思相同
+expensive = [key for key, value in products.items() if value > 25]
+
+any(p < 0.05 for p in pvalues)           # 是否至少一個顯著
+all(len(s) == 150 for s in reads)        # 是否全部等長
 ```
 
-這是理解 comprehension 的前一步。當邏輯變簡單後，才值得再改寫成 comprehension。
+comprehension、generator 的完整說明見 [迭代器與生成器](iterator.md)。
 
-## `while` Loops
+> DataFrame 不要用 `iterrows()` 逐列處理，優先用向量化運算；見 [Efficient Python](performance-and-scaling/efficient-python.md) 與 [pandas 效能](pandas/performance.md)。
 
-`while` 適合「重複次數不先固定，而是看條件何時不成立」的情境。
-
-```python
-num_purchases = 0
-stock = 5
-
-while num_purchases < stock:
-    num_purchases += 1
-```
-
-常見使用情境：
-
-- 等待某個狀態改變
-- 持續重試直到成功或超限
-- 不知道會跑幾次，但知道停止條件
-
-### A Convergence-Style Example
-
-有些 `while` 不是在處理使用者輸入，而是在做逐步逼近。
+## `while` 迴圈
 
 ```python
-error = 50.0
-
-while error > 1:
-    error = error / 4
-```
-
-這種寫法很適合表達：
-
-- iterative refinement
-- optimization loop
-- numerical stopping condition
-
-Key point: `while` 的停止條件不一定來自外部事件，也可能來自某個數值已經收斂到可接受範圍。
-
-### `if` vs `while`
-
-差別不是語法，而是執行次數。
-
-- `if`：條件成立就進去一次
-- `while`：條件成立就持續重複
-
-如果你只是想做一次條件判斷，不要誤用 `while`。
-
-## `break`
-
-有時候 loop 的停止條件不是只靠外層 `while` 或 `for` 自然結束，而是想在迴圈中途提早終止。
-
-```python
-while num_purchases < stock:
-    if num_purchases == 3:
+# 重試直到成功或超過上限
+attempt = 0
+while attempt < 3:
+    attempt += 1
+    if try_download():
         break
-    num_purchases += 1
+
+# 數值收斂：停止條件來自數值本身
+error, n_iter = 50.0, 0
+while error > 1e-6 and n_iter < 1000:   # 一定要有上限，避免無限迴圈
+    error /= 4
+    n_iter += 1
 ```
 
-`break` 也可以用在 `for` loop：
+| 能用 `for` 就用 `for` 的理由 |
+| --- |
+| 不容易寫出無限迴圈（不會忘記更新計數器） |
+| 直接表達「對這些元素逐一操作」 |
+
+## `break`、`continue`、`else`
+
+| 關鍵字 | 作用 |
+| --- | --- |
+| `break` | 立刻結束整個迴圈 |
+| `continue` | 跳過本輪剩下的程式，進下一輪 |
+| `for ... else` / `while ... else` | `else` 區塊只在**沒有被 `break`** 時執行 |
+| `pass` | 什麼都不做的佔位 |
 
 ```python
-for price in prices:
-    if price > 100:
+for line in lines:
+    if line.startswith("#"):
+        continue                 # 跳過註解行
+    if not line.strip():
+        break                    # 遇到空行就停
+
+for gene in genes:
+    if gene in blacklist:
+        print("found", gene)
         break
+else:
+    print("no blacklisted gene") # 整個迴圈跑完都沒 break 才執行
 ```
 
-適用情境：
-
-- 找到第一個符合條件的值就停
-- 偵測到錯誤或特殊狀況就提前結束
-- 避免不必要的後續迭代
-
-## Membership Checks Inside Control Flow
-
-搭配 `in` / `not in`，很多條件會更直觀。
+## `match` / `case`（Python 3.10+）
 
 ```python
-if "OS31" in products_dict:
-    ...
-
-if "OS31" not in products_dict:
-    ...
+def describe(record):
+    match record:
+        case {"type": "SNV", "ref": r, "alt": a}:
+            return f"SNV {r}>{a}"
+        case {"type": "indel", "length": n} if n > 50:
+            return "large indel"
+        case {"type": "indel"}:
+            return "indel"
+        case _:
+            return "unknown"
 ```
 
-這種寫法通常比先取 keys 再做多餘轉換更直接。
-
-## Choosing Between `for` and `while`
-
-優先順序通常是：
-
-1. 如果你在遍歷某個 iterable，先用 `for`
-2. 如果你在等待條件變化，才用 `while`
-
-因為：
-
-- `for` 比較不容易寫出無限迴圈
-- `for` 直接表達「對這些元素逐一操作」
-- `while` 比較適合事件驅動或狀態驅動的邏輯
-
-## Comparison Expressions Drive Control Flow
-
-很多 control flow 最後其實都建立在 comparison expression 上。
-
-例如：
-
-```python
-2 < 3        # True
-3 <= 3       # True
-2 == 3       # False
-"carl" < "chris"   # True
-```
-
-這提醒兩件事：
-
-- `if` 和 `while` 最終都在吃布林值
-- 某些型別可以比較大小，但不同型別未必可以直接比較
-
-## Practical Checklist
-
-- 一次判斷：`if`
-- 逐一遍歷資料：`for`
-- 重複直到條件改變：`while`
-- 提早結束迴圈：`break`
-- 同時拿字典 key / value：`.items()`
-- 篩選累積結果：空容器 + loop + condition
-
-## Takeaways
-
-- `if`、`for`、`while` 的差異，核心在於執行模式，不只是語法。
-- 大多數資料遍歷工作優先用 `for`。
-- `while` 適合未知次數、已知停止條件的流程。
-- `break` 是中途終止，而不是主要控制結構。
-- 會寫 loop 只是起點，接下來才是判斷何時該改成 comprehension、built-ins 或向量化。
+`match` 是結構比對 (structural pattern matching)，不只是 switch：可以拆解 dict、tuple、class 並加 guard（`if`）。單純比較值時，`if`/`elif` 或查表用的 dict 通常更簡單。

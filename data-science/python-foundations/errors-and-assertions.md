@@ -1,228 +1,135 @@
-# Python Errors and Assertions
+[Data Science](../README.md) › [Python Foundations](README.md) › 錯誤處理與斷言
 
-`try-except` 處理預期中的執行期錯誤，`assert` 檢查不該發生的內部假設；兩者用途不同，不要互相取代。
+# 錯誤處理與斷言 (Errors & Assertions)
 
-## Python Try-Except
+`try`/`except` 處理**預期中可能發生**的執行期錯誤（檔案不存在、網路逾時）；`raise` 主動拒絕不合法的輸入；`assert` 檢查**照理不該發生**的內部假設。三者用途不同，不要互相取代。
 
-Exception handling in Python is done with the `try-except` block. It helps you catch errors gracefully, log useful debug information, and prevent your program from crashing unexpectedly.
+| 工具 | 回答的問題 | 例子 |
+| --- | --- | --- |
+| `try` / `except` | 這一層能不能合理恢復？ | 下載失敗 → 重試；缺檔 → 跳過並記錄 |
+| `if ...: raise` | 呼叫端給的東西是否違反約定？ | `alpha` 不在 0–1 之間 |
+| `assert` | 程式本身有沒有寫錯？ | 內部函式假設輸入已排序 |
+| 測試 (`pytest`) | 功能是否符合預期？ | 見 [測試](testing.md) |
 
-### Basic Structure
-
-```python
-try:
-    # Code that might raise an exception
-    result = 10 / 0
-except ZeroDivisionError as e:
-    print("Error occurred:", e)
-```
-
-### Additional Clauses
-
-- **`try-except-else`**: The `else` block runs only if no exception occurs.
-- **`try-except-finally`**: The `finally` block runs whether an exception occurred or not (commonly used for cleanup).
+## `try` / `except`
 
 ```python
 try:
-    f = open("example.txt", "r")
-    data = f.read()
+    df = pd.read_csv(path)
 except FileNotFoundError:
-    print("File not found!")
+    log.warning("missing %s, skipped", path)       # 能恢復：記錄後繼續
+    df = None
+except (pd.errors.ParserError, UnicodeDecodeError) as e:
+    raise ValueError(f"cannot parse {path}") from e  # 不能恢復：轉成更清楚的錯誤往上丟
 else:
-    print("Read success.")
+    log.info("loaded %d rows", len(df))           # 沒有例外才執行
 finally:
-    if 'f' in locals():
-        f.close()
+    cleanup_tmp()                                  # 無論如何都執行（清理）
 ```
 
-### Exception Message
+| 子句 | 何時執行 |
+| --- | --- |
+| `except X` | `try` 內發生 `X`（或其子類別） |
+| `else` | `try` 完全沒出錯 |
+| `finally` | 一定執行，即使 `return` 或再次丟出例外 |
 
-You can capture detailed exception information (type, message, call stack, etc.) using the `traceback` and `sys` modules.
+> 檔案、連線的清理優先用 `with`（context manager），比 `finally` 手動關閉安全，見 [函式](function.md#context-manager)。
+
+### 原則
+
+| 原則 | 錯誤示範 | 原因 |
+| --- | --- | --- |
+| 捕捉**具體**例外 | `except:` / `except Exception:` 包一大段 | 會吞掉 `KeyboardInterrupt`、拼字錯誤造成的 `NameError` |
+| `try` 區塊越小越好 | 整個函式包在 `try` 裡 | 不知道是哪一行出錯 |
+| 不要靜默吞掉 | `except ValueError: pass` | 錯誤消失，結果卻是錯的 |
+| 轉換例外時保留原因 | `raise NewError(...)`（沒有 `from`） | `raise ... from e` 保留原始 traceback |
+| 記錄完整 traceback | `print(e)` | `log.exception(...)` 會附上 stack trace |
+
+### 取得錯誤資訊
 
 ```python
-def exception_calling(err):
-    import traceback, sys
-    err_type = err.__class__.__name__    # Error class name
-    info = err.args[0]                   # Error details
-    detains = traceback.format_exc()     # Full traceback string
-
-    n1, n2, n3 = sys.exc_info()                   # Current exception info
-    lastCallStack = traceback.extract_tb(n3)[-1]  # Most recent call stack
-    fn = lastCallStack[0]                         # Filename where error occurred
-    lineNum = lastCallStack[1]                    # Line number of the error
-    funcName = lastCallStack[2]                   # Function name
-
-    errMesg = (
-        f"FileName: {fn}, lineNum: {lineNum}, Fun: {funcName}, "
-        f"reason: {info}, trace:\n {traceback.format_exc()}"
-    )
-    print(errMesg)
+import logging, traceback
+log = logging.getLogger(__name__)
 
 try:
-    print(1/0)
-except Exception as err:
-    exception_calling(err)
+    1 / 0
+except ZeroDivisionError as err:
+    type(err).__name__        # 'ZeroDivisionError'
+    str(err)                  # 'division by zero'
+    traceback.format_exc()    # 完整 traceback 字串
+    tb = traceback.extract_tb(err.__traceback__)[-1]
+    tb.filename, tb.lineno, tb.name   # 出錯的檔案、行號、函式名
+    log.exception("division failed")  # 在 except 內使用：自動附 traceback
 ```
 
-**Output Example:**
+logging 設定見 [腳本與 CLI](scripting-and-cli.md)。
 
-```
-FileName: <stdin>, lineNum: 22, Fun: <module>, reason: division by zero, trace:
- Traceback (most recent call last):
-  File "<stdin>", line 22, in <module>
-ZeroDivisionError: division by zero
-```
+## `raise`：主動拒絕不合法輸入
 
-### Key Points
+選語意明確的例外類別，上層才能精準捕捉並分別處理。
 
-- Catch **specific exceptions** first (`ValueError`, `FileNotFoundError`, etc.) before using `Exception`.
-- Use `traceback` for detailed debugging.
-- Always ensure proper cleanup (use `finally` or `with`).
-- Avoid **swallowing exceptions** silently—log them instead.
-
-### `raise` vs `try-except`
-
-這兩者常一起出現，但責任不同。
-
-`try-except` 的用途通常是：
-
-- 在可以恢復的地方處理錯誤
-- 轉成較友善的 fallback 行為
-- 補上記錄、清理、重試等流程
-
-`raise` 的用途通常是：
-
-- 主動宣告輸入或狀態不合法
-- 在不應繼續執行時中止流程
-- 把錯誤往上層呼叫端交回去決定怎麼處理
-
-例如：
+| 例外 | 意義 |
+| --- | --- |
+| `TypeError` | 型別不對（傳了 str 給要 list 的參數） |
+| `ValueError` | 型別對但值不合理（負的樣本數、p 值 > 1） |
+| `KeyError` / `IndexError` | 缺少必要的 key / 索引超出範圍 |
+| `FileNotFoundError` | 檔案不存在 |
+| `NotImplementedError` | 子類別必須覆寫的方法 |
+| `RuntimeError` | 其他執行期狀態錯誤 |
 
 ```python
-def average(values):
-    if not isinstance(values, (list, set, tuple)):
-        raise TypeError("average() expects a list, set, or tuple.")
-    return sum(values) / len(values)
+def set_alpha(alpha: float) -> float:
+    if not isinstance(alpha, (int, float)):
+        raise TypeError(f"alpha must be a number, got {type(alpha).__name__}")
+    if not 0 < alpha < 1:
+        raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    return alpha
+
+# 自訂例外：讓呼叫端能區分「你的套件的錯」和其他錯誤
+class SampleSheetError(ValueError):
+    """Raised when the sample sheet is malformed."""
+
+def check_sheet(df):
+    missing = {"sample_id", "condition"} - set(df.columns)
+    if missing:
+        raise SampleSheetError(f"missing columns: {sorted(missing)}")
+    if df["sample_id"].duplicated().any():
+        raise SampleSheetError("duplicated sample_id")
 ```
 
-這裡 `raise` 比 `try-except` 更合適，因為：
+> 在資料進入分析的**入口**做驗證（讀檔後馬上檢查欄位、重複、範圍），比在管線中段才出現奇怪的 NaN 好除錯得多。大型表格驗證可用 `pandera` 或 Great Expectations，見 [資料品質檢查](../data-engineering/data-quality-checks.md)。
 
-- 問題不是執行時偶發故障
-- 而是呼叫端提供了不符合 contract 的輸入
-
-一個簡化判斷方式是：
-
-- 如果你能在這一層合理恢復，就考慮 `try-except`
-- 如果這一層不應該默默繼續，就明確 `raise`
-
-### Raise Specific Exceptions
-
-比起裸 `raise Exception(...)`，通常更應該選擇語意明確的 exception type。
-
-常見例子：
-
-- `TypeError`: 型別不符合預期
-- `ValueError`: 型別對，但值不合理
-- `KeyError`: 缺少必要 key
-- `FileNotFoundError`: 檔案不存在
+## `assert`：檢查內部假設
 
 ```python
-def set_discount(rate):
-    if not 0 <= rate <= 1:
-        raise ValueError("rate must be between 0 and 1")
+assert condition, "message shown on failure"   # 不成立就丟 AssertionError
+
+def merge_counts(a, b):
+    assert list(a.index) == list(b.index), "gene order must match"   # 程式邏輯應保證
+    return a + b
 ```
 
-這樣上層呼叫端比較容易：
+| 用 `assert` | 不要用 `assert` |
+| --- | --- |
+| 「這個內部函式只會收到排序過的 list」 | 使用者輸入、外部檔案、API 回應 |
+| 開發中確認中間結果的形狀（`assert X.shape[0] == len(y)`） | 正式環境必須執行的檢查 |
+| 測試中的預期（`pytest` 的 `assert`） | 有副作用的運算式（`assert items.pop()`） |
 
-- 精準捕捉特定錯誤
-- 根據錯誤類型做不同處理
-- 從 traceback 更快理解問題性質
+> `python -O script.py` 會**移除所有 `assert`**。必須執行的檢查要用 `if ...: raise`。
 
-## Python `assert`
-
-The `assert` statement in Python is used for debugging and testing assumptions in code. It is most useful when a condition should always be true if the program is correct. If the condition evaluates to `False`, Python raises an `AssertionError`.
-
-### Basic Syntax
-
-```python
-assert condition, message
-```
-
-- **condition** → an expression that should evaluate to `True`
-- **message** (optional) → error message shown if the assertion fails
-
-### Examples
-
-#### Simple Assertion
-
-```python
-x = 5
-assert x > 0  # Passes silently since condition is True
-```
-
-#### Assertion with Message
-
-```python
-x = -1
-assert x > 0, "x must be positive"
-```
-
-Output:
+## 例外階層速查
 
 ```
-AssertionError: x must be positive
+BaseException
+├── KeyboardInterrupt, SystemExit       ← 不該被一般 except 攔下
+└── Exception
+    ├── ArithmeticError → ZeroDivisionError, OverflowError
+    ├── LookupError → KeyError, IndexError
+    ├── OSError → FileNotFoundError, PermissionError, TimeoutError
+    ├── ValueError → UnicodeDecodeError
+    ├── TypeError, AttributeError, NameError
+    ├── RuntimeError → NotImplementedError, RecursionError
+    └── AssertionError
 ```
 
-#### Using in Functions
-
-```python
-def divide(a, b):
-    assert b != 0, "Divider cannot be zero"
-    return a / b
-
-print(divide(10, 2))  # 5.0
-print(divide(10, 0))  # AssertionError
-```
-
-### When to Use
-
-- **Debugging**: to verify assumptions during development
-- **Testing**: to validate function inputs or outputs
-- **Documentation**: makes expected conditions explicit in code
-
-### A Good Mental Model
-
-Use `assert` for programmer errors, not user errors. In other words:
-
-- "This internal helper should only ever receive a sorted list" -> `assert`
-- "The user may forget to upload a file" -> normal exception handling
-
-### When _Not_ to Use
-
-- **Production-critical checks**: Assertions can be globally disabled with the `-O` (optimize) flag when running Python:
-
-  ```bash
-  python -O script.py
-  ```
-
-  In optimized mode, all `assert` statements are ignored.
-
-- **User input validation**: Use exceptions (`if` + `raise`) instead, since those should not be skipped.
-
-### Common Pitfalls
-
-- Using `assert` to validate external data or API input
-- Putting side effects inside assertions
-- Forgetting that `python -O` disables assertions
-
-### Best Practices
-
-- Use assertions for conditions that should **always be true** if the program is correct.
-- Avoid side effects inside assertions (e.g., modifying variables).
-- Provide clear error messages for easier debugging.
-
-### Summary
-
-- `assert` is a lightweight way to check assumptions.
-- Raises `AssertionError` when condition fails.
-- Good for debugging and testing, but not for handling user errors.
-- Can be disabled with the `-O` flag, so do not rely on it for production-critical validation.
+捕捉父類別會一併捕捉所有子類別（`except LookupError` 同時接住 `KeyError` 與 `IndexError`）；多個 `except` 時把具體的放前面。

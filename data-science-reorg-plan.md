@@ -206,21 +206,19 @@
 
 每批 10–30 篇、一個子資料夾；每批完成跑連結檢查、commit 再做下一批。依「被引用越多越先做」排序：
 
-| 批次 | 目標資料夾 | 備註 |
-| --- | --- | --- |
-| 1 | `python-foundations/`（不含 numpy / pandas） | 補 pyproject + uv、`default_rng`、scipy.stats 對照 |
-| 2 | `python-foundations/numpy/` + `pandas/` | view vs copy、dtype、Parquet / HDF5 |
-| 3 | `r-foundations/`（前半：資料結構、tidyverse、dplyr、tidyr、data.table、importing、datetime、missing） | 連 Bioconductor 筆記 |
-| 4 | `r-foundations/`（後半：functional、OOP、效能、Rcpp、parallel、package、R Markdown、regex、text） | 補 renv、Quarto |
-| 5 | `data-manipulation-and-eda/`（含 visualization/） | |
-| 6 | `databases/` + `web-scraping/` | 修 web-scraping bug；考慮補 DuckDB / Parquet |
-| 7 | `deep-learning/` | 依 Phase 5 清單補新筆記 |
-| 8 | `llm/` | 評估、幻覺、成本、隱私；生資文獻探勘 / bio-LLM |
-| 9 | `responsible-ai/` | HIPAA、EU AI Act 醫材、基因資料匿名化 |
-| 10 | `data-engineering/` + `data-communication/` | Spark 處理大型 omics（Glow / Hail） |
-| 11 | `applied-domains/` + `network-analysis/` + `image-analysis/` + `understanding-data-science.md` | |
-| 12（選做） | 新增筆記：AnnData / scanpy / h5ad、scipy.sparse、ggplot2 | 填補缺口 |
-| 13（選做） | `biology/` RNA-seq、DESeq2、QTL、ChIP-seq 筆記補連到 statistics（multiple-testing、glm-count-models、mixed-effects、confounding-bias、pca） | 跨領域連結 |
+- [X] 批次 1：`python-foundations/`（不含 numpy / pandas）（補 pyproject + uv、`default_rng`、scipy.stats 對照）（已新增 `scipy-stats.md`；`python-packages.md` 改為 pyproject + uv；補回 phase 3 合併時被截斷的 `datetime.md` pandas 段）
+- [ ] 批次 2：`python-foundations/numpy/` + `pandas/`（view vs copy、dtype、Parquet / HDF5）
+- [ ] 批次 3：`r-foundations/` 前半：資料結構、tidyverse、dplyr、tidyr、data.table、importing、datetime、missing（連 Bioconductor 筆記）
+- [ ] 批次 4：`r-foundations/` 後半：functional、OOP、效能、Rcpp、parallel、package、R Markdown、regex、text（補 renv、Quarto）
+- [ ] 批次 5：`data-manipulation-and-eda/`（含 visualization/）
+- [ ] 批次 6：`databases/` + `web-scraping/`（修 web-scraping bug；考慮補 DuckDB / Parquet）
+- [ ] 批次 7：`deep-learning/`（依 Phase 5 清單補新筆記）
+- [ ] 批次 8：`llm/`（評估、幻覺、成本、隱私；生資文獻探勘 / bio-LLM）
+- [ ] 批次 9：`responsible-ai/`（HIPAA、EU AI Act 醫材、基因資料匿名化）
+- [ ] 批次 10：`data-engineering/` + `data-communication/`（Spark 處理大型 omics（Glow / Hail））
+- [ ] 批次 11：`applied-domains/` + `network-analysis/` + `image-analysis/` + `understanding-data-science.md`
+- [ ] 批次 12（選做）：新增筆記：AnnData / scanpy / h5ad、scipy.sparse、ggplot2（填補缺口）
+- [ ] 批次 13（選做）：`biology/` RNA-seq、DESeq2、QTL、ChIP-seq 筆記補連到 statistics（multiple-testing、glm-count-models、mixed-effects、confounding-bias、pca）（跨領域連結）
 
 ## 驗證
 
