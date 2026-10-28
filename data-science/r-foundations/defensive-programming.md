@@ -101,4 +101,4 @@ project/
 | 關鍵輸入加 `stopifnot()` | 一行 | 早失敗 |
 | warning 要讀，不要一律 `suppressWarnings()` | 零 | 解析失敗、NA 產生常藏在 warning 裡 |
 | 固定 seed：`set.seed(42)` | 一行 | 隨機結果可重現 |
-| `sessionInfo()` 或 `renv` 記錄版本 | 一行 | 結果可重現 |
+| `sessionInfo()` 或 [renv](reproducible-environments-with-renv.md) 記錄版本 | 一行 | 結果可重現 |

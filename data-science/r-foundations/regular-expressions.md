@@ -1,232 +1,142 @@
-# Regular Expressions in R
+[Data Science](../README.md) › [R Foundations](README.md) › 正規表示式
 
-當文字資料有固定但不完全整齊的格式時，regex 是 R 裡最直接的模式描述工具。它最常出現在：
+# 正規表示式 (Regular Expressions in R)
 
-- 驗證欄位格式
-- 從半結構化字串抽值
-- 批次清理或改寫文字
-- 從 log、API 回傳或報表列中取欄位
+樣本名稱、檔名、基因 ID、註解欄位常有固定但不整齊的格式。正規表示式 (regex) 用來**偵測、擷取、取代**這些模式。R 中主要透過 `stringr`（tidyverse，底層是 ICU 的 `stringi`）使用；語法與 Python `re` 幾乎相同，Python 版見 [文字清理與正規表示式](../python-foundations/text-cleaning-and-regex.md)，shell 的 `grep` / wildcard 見 [Regex 與 Wildcard](../../computing/operating-system/regex-wildcard.md)。
 
-在 R 實務上，regex 常和 `stringr` 一起使用。
+## stringr 函式速查
 
-## Core `stringr` Helpers
+| 想做 | stringr | base R | 回傳 |
+| --- | --- | --- | --- |
+| 有沒有符合 | `str_detect(x, p)` | `grepl(p, x)` | logical |
+| 哪幾個符合 | `str_which(x, p)` | `grep(p, x)` | 索引 |
+| 只留符合的 | `str_subset(x, p)` | `grep(p, x, value = TRUE)` | character |
+| 擷取第一個符合 | `str_extract(x, p)` | `regmatches(x, regexpr(p, x))` | character（無則 `NA`） |
+| 擷取全部符合 | `str_extract_all(x, p)` | `regmatches(x, gregexpr(p, x))` | list |
+| 擷取 capture groups | `str_match(x, p)` | `regexec()` | matrix：第 1 欄完整符合，之後每個 group 一欄 |
+| 取代第一個 / 全部 | `str_replace()` / `str_replace_all()` | `sub()` / `gsub()` | character |
+| 移除 | `str_remove()` / `str_remove_all()` | `gsub(p, "", x)` | character |
+| 計數 | `str_count(x, p)` | | integer |
+| 切分 | `str_split(x, p)` | `strsplit(x, p)` | list |
+| 拆成多欄（data frame） | `tidyr::separate_wider_regex()` | | tibble |
 
-這份課程的核心函數主要是：
+> 參數順序：stringr 一律**資料在前、pattern 在後**，可以接 pipe；base R 的 `grepl` / `sub` 是 pattern 在前。
 
-- `str_detect()`：判斷是否符合模式
-- `str_match()`：擷取第一個完整 match 與 capture groups
-- `str_match_all()`：擷取所有 matches
-- `str_replace()`：取代第一個 match
-- `str_replace_all()`：取代所有 matches
+## 語法速查
 
-例如判斷字串是否以某個字元開頭：
+R 字串中的 `\` 本身要跳脫，所以 regex 的 `\d` 要寫成 `"\\d"`。R ≥ 4.0 可用 raw string `r"(\d+)"` 避免雙反斜線。
 
-```r
-stringr::str_detect("cat", pattern = "^c")
-```
-
-## Anchors
-
-anchors 用來限制 match 發生的位置。
-
-- `^`：字串開頭
-- `$`：字串結尾
-
-```r
-str_match("Book", "^.")
-str_match("Book", ".$")
-str_match("Book", "\\.")
-str_match("Book.", "\\.")
-```
-
-這幾個例子分別在說：
-
-- `^.` 會抓第一個字元
-- `.$` 會抓最後一個字元
-- `\\.` 才是字面上的點號
-
-Key point: `.` 本身是 regex 特殊字元，若要匹配真正的句點，需要 escape。
-
-## Character Classes
-
-character classes 用來描述「哪一類字元可以出現」。
-
-常見例子：
-
-- `\\d`：digit
-- `\\w`：word character
-- `\\s`：whitespace
-- `[A-Za-z]`：英文字母
-- `[\\d\\s]`：digit 或 whitespace
-
-例如：
+| 類別 | 語法 | 意義 |
+| --- | --- | --- |
+| 錨點 | `^` / `$` | 字串開頭 / 結尾 |
+| | `\\b` | 字詞邊界 |
+| 字元類別 | `.` | 任意字元（字面的點要寫 `\\.`） |
+| | `\\d` / `\\D` | 數字 / 非數字 |
+| | `\\w` / `\\W` | 字母數字底線 / 相反 |
+| | `\\s` / `\\S` | 空白 / 非空白 |
+| | `[ACGT]` / `[^ACGT]` | 集合內 / 集合外任一字元 |
+| | `[A-Za-z]`、`[[:alpha:]]`、`[[:punct:]]` | 範圍、POSIX 類別 |
+| 數量 | `*` / `+` / `?` | 0 次以上 / 1 次以上 / 0 或 1 次 |
+| | `{n}` / `{n,}` / `{n,m}` | 恰好 n 次 / 至少 n / n 到 m 次 |
+| | `+?`、`*?` | 非貪婪（盡量少） |
+| 群組 | `(...)` | 擷取群組；取代時用 `\\1`、`\\2` 引用 |
+| | `(?:...)` | 只分組不擷取 |
+| | `a\|b` | 或 |
+| 環視 | `(?=...)` / `(?!...)` | 後面是 / 不是（不消耗字元） |
+| | `(?<=...)` / `(?<!...)` | 前面是 / 不是 |
 
 ```r
-str_match_all("Hi John_35", "\\d")
-str_match_all("Hi John_35", "\\w")
-str_match_all("Toy Story 3", "[\\d\\s]")
+library(stringr)
+
+str_match("Book", "^.")        # "B"
+str_match("Book", ".$")        # "k"
+str_match("Book", "\\.")       # NA：沒有字面上的點
+str_match_all("Toy Story 3", "[\\d\\s]")   # " ", " ", "3"
 ```
 
-這類模式常用在從混合字串中拆出編號、空白、代碼或 token 類型。
-
-## Negated Classes
-
-很多 class 都有相反版本：
-
-- `\\D`：非 digit
-- `\\W`：非 word character
-- `\\S`：非 whitespace
-
-這在「找符合條件的字元」和「排除某類字元」之間非常好用。實務上常比手寫大範圍 class 更簡潔。
-
-## Alternation
-
-`|` 表示「或」：
+## 修飾：大小寫、字面比對
 
 ```r
-str_detect(lines, "Columbia|Pixar")
+str_detect("TP53", regex("tp53", ignore_case = TRUE))   # TRUE
+str_detect("a.b", fixed("."))                           # 字面比對，不解讀為 regex，也最快
+str_detect(x, coll("é", locale = "fr"))                  # 依語系比較（重音、大小寫規則）
+str_view(c("chr1", "chrX"), "chr\\d")                   # 在 console 標示符合位置，除錯用
 ```
 
-這會匹配包含 `Columbia` 或 `Pixar` 的字串。它很適合處理：
-
-- 多個品牌或來源名稱
-- 多種合法格式
-- 同義標記或替代寫法
-
-## Quantifiers
-
-quantifiers 描述前一個模式可以重複幾次。
-
-- `+`：one or more
-- `*`：zero or more
-
-像這樣的模式：
+## 擷取與重組
 
 ```r
-"[A-Za-z]+, \\d+, \\d+"
+log <- "payload: 'Adam, 5, 3', headers: 'Auth...'"
+p   <- "([A-Za-z]+), (\\d+), (\\d+)"
+
+str_match(log, p)
+#      [,1]          [,2]   [,3] [,4]
+# [1,] "Adam, 5, 3"  "Adam" "5"  "3"
+
+str_replace(log, p, "\\1 tried to log in \\2 times.")
+# "payload: 'Adam tried to log in 5 times.', headers: 'Auth...'"
 ```
 
-可以用來匹配像 `Adam, 5, 3` 這樣的結構：
-
-- 一串字母
-- 逗號加空白
-- 一串數字
-- 再接另一串數字
-
-## Capturing Groups
-
-括號 `(...)` 會把部分 match 存成可重用的群組。
+長 pattern 拆成具名片段再組合，比一行難讀的 regex 好維護：
 
 ```r
-str_match(
-  "payload: 'Adam, 5, 3', headers: 'Auth...'",
-  pattern = "([A-Za-z]+), (\\d+), (\\d+)"
-)
+pieces <- c(name = "[A-Za-z]+", sep = ", ", attempts = "\\d+", sep = ", ", logins = "\\d+")
+pattern <- paste0(pieces, collapse = "")
+
+# 直接拆成 data frame 欄位：具名的片段變成欄，未命名的被丟棄
+tibble::tibble(x = c("Adam, 5, 3", "Bea, 2, 1")) |>
+  tidyr::separate_wider_regex(x, c(name = "[A-Za-z]+", ", ", attempts = "\\d+", ", ", logins = "\\d+"))
 ```
 
-回傳結果中：
-
-- 第 1 欄是完整 match
-- 第 2 欄開始是每個 capture group
-
-這很適合把一段半結構化文字拆成欄位，例如：
-
-- name
-- attempts
-- logins
-
-## Backreferences in Replacement
-
-capture groups 不只可用來抽值，也可在 replacement 中重組句子。
+## 生資常見範例
 
 ```r
-str_replace(
-  "payload: 'Adam, 5, 3', headers: 'Auth...'",
-  pattern = "([A-Za-z]+), (\\d+), (\\d+)",
-  replacement = "\\1 tried to log in \\2 times."
-)
+# 1. 去掉 Ensembl ID 的版本號，才能和其他註解表 join
+str_remove("ENSG00000141510.18", "\\.\\d+$")            # "ENSG00000141510"
+
+# 2. 驗證 ID 格式
+str_detect(ids, "^ENSG\\d{11}(\\.\\d+)?$")
+
+# 3. 從 FASTQ 檔名解析樣本、lane、read（Illumina 命名慣例）
+f <- "Tumor-01_S3_L002_R1_001.fastq.gz"
+str_match(f, "^(.+)_S(\\d+)_L(\\d{3})_R([12])_\\d{3}\\.fastq\\.gz$")[, -1]
+# "Tumor-01" "3" "002" "1"
+
+# 4. 統一樣本名稱：大小寫、空白、分隔符
+str_to_lower(x) |> str_squish() |> str_replace_all("[\\s.-]+", "_")
+
+# 5. 染色體命名統一（UCSC "chr1" vs Ensembl "1"）
+str_remove(chrom, "^chr")
+
+# 6. 找 motif 的所有位置（含重疊）：用 lookahead 才不會消耗字元
+str_locate_all("ATATAT", "(?=ATA)")[[1]][, "start"]     # 1 3
+str_count("ATATAT", "ATA")                              # 1：一般比對不重疊
 ```
 
-這裡：
+序列層級的比對（容許錯配、反向互補）用 Bioconductor `Biostrings::matchPattern()` / `vmatchPattern()`，不要用 regex 硬寫。
 
-- `\\1` 代表第一個 group
-- `\\2` 代表第二個 group
+## 字串模板：glue
 
-這種寫法特別適合把原始 log line 改寫成可讀句子，或從一種命名格式轉成另一種。
-
-## `str_match()` vs `str_detect()`
-
-兩者常一起出現，但目的不同：
-
-- `str_detect()`：只在意有沒有 match
-- `str_match()`：在意匹配內容與 capture groups
-
-如果你只想做 filter 或旗標欄位，`str_detect()` 通常就夠了。  
-如果你想把字串拆欄，應優先想 `str_match()`。
-
-## Building Complex Patterns with `glue`
-
-課程第二章也強調，不一定要把長 regex 全擠成一條難讀字串。可以先組片段，再拼接：
+組訊息、檔名、標籤時，`glue` 比 `paste0()` 好讀：
 
 ```r
-pattern <- glue::glue_collapse(c(
-  "name" = "[A-Za-z]+",
-  ", ",
-  "attempts" = "\\d+",
-  ", ",
-  "logins" = "\\d+"
-))
+library(glue)
+sample <- "S01"; n <- 23e6
+glue("{sample}: {format(n, big.mark = ',')} reads")      # "S01: 23,000,000 reads"
+glue("results/{sample}_{Sys.Date()}.csv")
+glue("Hi {a} and {b}", a = "Ann", b = NA, .na = "")     # NA 顯示為空字串
 ```
 
-這種做法的價值是：
+`stringr::str_glue()` 是同樣的功能。
 
-- 可讀性更高
-- 較容易逐段測試
-- 日後修改某一段規則比較安全
+## 常見錯誤
 
-如果 pattern 很長，與其追求一行寫完，不如先命名子模式。
-
-## `glue` for String Construction
-
-`glue` 本身不是 regex 套件，但常和 regex workflow 一起出現，因為清理與重組文字時常需要模板字串。
-
-```r
-username <- "Adam"
-glue::glue("Hi {username}")
-```
-
-它也可以處理 `NA`：
-
-```r
-glue::glue(
-  "Hi {username_1} and {username_2}",
-  .na = ""
-)
-```
-
-這在產生訊息、標籤、或 regex replacement 後續報表字串時很方便。
-
-## Practical Workflow
-
-一個常見的 regex 分析流程是：
-
-1. 先用 `str_detect()` 驗證資料大致格式
-2. 用 anchors、classes、quantifiers 寫出最小可行模式
-3. 用 `str_match()` 或 `str_match_all()` 取出想要的片段
-4. 若 pattern 太長，用 `glue_collapse()` 或命名片段拆開
-5. 需要重組文字時，再用 `str_replace()` / `str_replace_all()`
-
-## Common Mistakes
-
-- 忘記 escape 特殊字元，例如把 `.` 當字面句點。
-- 把 `str_detect()` 當成抽值函數，結果只得到 `TRUE/FALSE`。
-- capture groups 寫好了，但 replacement 忘記用 `\\1`, `\\2` 之類 backreference。
-- pattern 太長還硬寫成單行，導致日後難以維護。
-
-## Takeaways
-
-- regex 在 R 裡通常透過 `stringr` 使用
-- anchors、character classes、alternation、quantifiers 是最核心的積木
-- `str_match()` 對拆欄特別重要，因為它會保留 capture groups
-- `str_replace()` 可以配合 backreference 重組資訊
-- 對長 pattern，先拆片段再用 `glue` 組回去，通常比硬寫一大串更穩
+| 錯誤 | 修正 |
+| --- | --- |
+| 用 `.` 想比對句點 | `\\.` 或 `fixed(".")` |
+| 少一個反斜線：`"\d"` | R 字串需 `"\\d"`；或 raw string `r"(\d)"` |
+| 沒加錨點：`"chr1"` 也符合 `chr10`、`chr11` | `"^chr1$"` 或 `\\b` |
+| 用 `str_detect()` 想取值 | 它只回 `TRUE` / `FALSE`；取值用 `str_extract()` / `str_match()` |
+| 貪婪比對吃太多：`"<.*>"` 在 `"<a><b>"` 符合整串 | 非貪婪 `"<.*?>"` 或否定類別 `"<[^>]*>"` |
+| 取代時忘記 backreference | `"\\1"`，不是 `"$1"` |
+| `ifelse(str_detect(x, p), ...)` 遇到 `NA` | `str_detect(NA, p)` 回傳 `NA`；必要時先處理缺值 |
