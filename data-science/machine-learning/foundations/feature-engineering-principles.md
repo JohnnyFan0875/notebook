@@ -1,127 +1,72 @@
-# Feature Engineering Principles
+[Machine Learning](../README.md) › [基礎概念](README.md) › 特徵工程原則
 
-Feature engineering is the process of turning raw data into informative inputs for a model.
+# 特徵工程原則 (Feature Engineering Principles)
 
-## Why It Matters
+特徵工程是把原始資料轉成對模型有資訊量的輸入。好特徵帶來的提升常大於換演算法；爛特徵會引入 [資料洩漏](data-leakage.md)、雜訊或不穩定。
 
-- Better features often improve performance more than switching algorithms.
-- Features determine what information the model can actually use.
-- Poor feature design can introduce [leakage](data-leakage.md), noise, or instability.
+> 好特徵的三個條件：**有資訊量**、**預測當下拿得到**、**夠穩定、能長期維護**。
 
-## Common Principles
+## 1. 先理解資料
 
-- Make features reflect information available at prediction time.
-- Prefer meaningful domain-driven transformations over arbitrary complexity.
-- Respect the structure of the data: numeric, categorical, text, temporal, grouped.
-- Keep transformations reproducible and consistent between training and inference.
+特徵工程不是從「做一堆轉換」開始，而是先回答：
 
-## Start with Data Understanding
+| 問題 | 為什麼 |
+| --- | --- |
+| 資料怎麼收集的？ | 收集流程決定偏誤與缺失型態 |
+| 每個欄位代表什麼？ | 避免把流程副產品（審核狀態、處理時間）當成訊號 |
+| 預測目標到底是什麼？ | 決定哪些欄位與目標有合理關係 |
 
-特徵工程不該從「先做一堆轉換」開始，而是先回答：
+不理解資料來源與欄位語意，常會把無關、洩漏或雜訊欄位誤當有效特徵。
 
-- 這份資料是怎麼被收集的
-- 欄位代表什麼
-- 哪些欄位只是記錄流程副產品
-- 分析或預測的目標到底是什麼
+## 2. 刪除也是特徵工程
 
-如果對資料來源、業務流程或欄位語意沒有基本理解，常常會把無關欄位、洩漏欄位或噪音欄位誤當成有效特徵。
+| 層級 | 優先檢查 |
+| --- | --- |
+| 欄位 | 自動產生的 ID、幾乎全是常數的欄位、與任務無關的描述、join 後重複的欄位 |
+| 列 | 重複紀錄、格式錯誤、其實是錄入錯誤的極端值 |
 
-## Feature Engineering Also Includes Dropping Data
+> 刪重前先定義「哪些欄位組合相同才算同一筆」，不要機械地 `drop_duplicates()`。見 [資料品質](../../statistics/descriptive-statistics/data-quality.md)。
 
-很多時候，最重要的特徵工程不是新增欄位，而是先移除沒有價值的資料。
+## 3. 常見特徵構造
 
-常見該優先檢查的欄位包括：
+| 類型 | 例子 |
+| --- | --- |
+| 數值轉換 | 右偏變數取 log（表現量、金額）；見 [資料轉換](../../statistics/descriptive-statistics/univariate-numerical.md#資料轉換-transformation) |
+| 時間拆解 | 星期幾、月份、是否假日、距今天數 |
+| 組合 | 乘積（面積 = 長 × 寬）、比值（BMI）、差值 |
+| 交互作用 | 兩個特徵相乘，讓線性模型捕捉交互效果 |
+| 分箱 (binning) | 年齡 → 年齡層 |
+| 存在 / 不存在 | 計數 → 是否 > 0 |
+| 聚合 | 過去一段時間的次數、總和、平均（見 [Basetable](basetable-and-time-aware-feature-engineering.md)） |
+| 領域知識 | 基因 → pathway 分數；序列 → k-mer 頻率、GC 含量 |
 
-- auto-generated record id
-- 幾乎全為常數的欄位
-- 與任務無關的描述欄位
-- 合併或 join 後重複出現的欄位
+## 4. 缺失值也是特徵工程
 
-row-level 也要檢查：
+| 步驟 | 內容 |
+| --- | --- |
+| 1. 量化 | 缺多少、集中在哪些欄位 |
+| 2. 判斷機制 | 稀少且近似隨機？還是缺失本身帶有資訊（沒做檢查 = 醫師認為不需要）？ |
+| 3. 決定處理 | 刪除、補值（規則 / 統計量 / 模型），或另做缺失指標 (missingness indicator) |
 
-- duplicated records
-- 明顯格式錯誤的觀測
-- 少數極端值是否其實是資料錄入錯誤
+重點不是有沒有補值，而是補值方式合理、且能在上線時重現。見 [補值](../preprocessing/imputation.md)。
 
-如果 duplicate removal 會影響結果，要先定義「哪種欄位組合才算同一筆資料」，不要只機械地刪重。
+## 5. 尊重時間
 
-## Common Examples
+| 規則 | 違反時 |
+| --- | --- |
+| 不用未來資料產生當下的特徵 | [時間洩漏](data-leakage.md) |
+| 時間序列不隨機切分 | 用未來預測過去 |
+| 聚合窗只使用預測時點以前的資料 | 特徵在上線時拿不到 |
 
-- Log-transforming skewed numeric variables
-- Extracting day-of-week or month from timestamps
-- Creating interaction features
-- Aggregating behavior over a past time window
-- Building one-row-per-entity basetables for a specific reference date
+事件紀錄、交易紀錄、使用者歷程類資料，先固定**預測單位、reference date、特徵窗、目標窗**，再判斷每個欄位能不能進模型，見 [Basetable 與時間感知特徵](basetable-and-time-aware-feature-engineering.md)。這步沒做好，後面的補值、編碼、縮放只是把錯的資料整理得更整齊。
 
-也常見這些更直接的特徵構造：
+## 風險
 
-- multiplying two numeric features，例如面積 = 長 × 寬
-- differencing 或 ratio features
-- binning continuous variables into ranges
-- 把 count 類欄位轉成 binary presence / absence signal
+| 風險 | 說明 |
+| --- | --- |
+| [資料洩漏](data-leakage.md) | 特徵含有預測時拿不到的資訊 |
+| 過於稀疏或雜訊大 | 增加變異、拖慢訓練 |
+| 高基數類別編碼不穩 | 罕見類別的統計量不可靠，見 [類別編碼](../preprocessing/categorical-encoding.md) |
+| 依賴會變動的業務規則 | 規則一改特徵就失效 |
 
-## Risks
-
-- [Data leakage](data-leakage.md)
-- Overly sparse or noisy features
-- Unstable encodings for high-cardinality categories
-- Features that depend on business rules that later change
-
-## Missing Data Is Part of Feature Engineering
-
-缺值處理不是獨立話題，它本身就是特徵工程的一部分。
-
-常見決策順序是：
-
-1. 先量化缺值有多少、集中在哪些欄位
-2. 判斷缺值是否稀少、是否近似隨機
-3. 決定要刪除、保留、補值，還是另外做 missingness indicator
-
-補值方式通常包括：
-
-- rule-based: 依 business logic 指定值
-- statistics-based: mean、median、mode
-- model-based: 用其他特徵預測缺值
-
-真正重要的不是「有沒有補值」，而是補值方式是否合理且能在 production 重現。
-
-## Time Awareness Matters
-
-如果資料帶有時間順序，特徵工程與資料切分都必須尊重時間。
-
-例如：
-
-- 不要用未來資料生成當下可用的特徵
-- train / test split 不應任意打散時間序列
-- 聚合特徵要確認 window 只使用當下以前的資訊
-
-很多 feature leakage 其實不是模型太複雜，而是時間邏輯被忽略。
-
-## Basetable Thinking Helps
-
-如果你的資料其實來自 event log、transaction log 或 user history，先把問題轉成 `basetable` 往往更清楚。
-
-實務上會先固定：
-
-- prediction unit
-- reference date
-- feature window
-- target window
-
-然後再問每個欄位能不能合法地進入模型。
-
-如果這個步驟沒有做好，後面的補值、編碼、scaling 都只是把錯的資料整理得更整齊而已。
-
-## Practical Rule
-
-Ask whether the feature is informative, available at prediction time, and stable enough to maintain.
-
-## Related Concepts
-
-- [Data Leakage](data-leakage.md)
-- [Feature Selection](../preprocessing/feature-selection.md)
-- [Categorical Encoding](../preprocessing/categorical-encoding.md)
-- [Pipeline Basics](../workflow/pipeline-basic.md)
-- [Basetable and Time-Aware Feature Engineering](basetable-and-time-aware-feature-engineering.md)
-
-[Back to Foundations](README.md)
+所有會從資料學習的轉換（補值、編碼、縮放、[特徵選擇](../preprocessing/feature-selection.md)）都要放進 [Pipeline](../workflow/pipeline-basic.md)。

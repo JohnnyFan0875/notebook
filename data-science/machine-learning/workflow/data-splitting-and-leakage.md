@@ -1,58 +1,62 @@
-# Data Splitting and Leakage
+[Machine Learning](../README.md) › [工作流程](README.md) › 資料切分與洩漏
 
-[Data leakage](../foundations/data-leakage.md) happens when information from outside the training data influences the model or preprocessing during training.
-It makes validation scores look better than reality.
+# 資料切分與洩漏 (Data Splitting and Leakage)
 
-## Correct Order
+[資料洩漏](../foundations/data-leakage.md) 讓驗證分數好於現實。這篇是實作面：用什麼順序、什麼切法避免洩漏。洩漏型態的完整清單見基礎概念那篇。
 
-1. Define the prediction unit and timestamp.
-2. Split the data using a strategy that matches the problem.
-3. Fit preprocessing only on the training portion.
-4. Use validation or [cross-validation](cross-validation.md) for model selection.
-5. Evaluate once on the final untouched test set.
+## 正確順序
 
-## Common Split Strategies
+```
+1. 定義預測單位與時間點
+2. 依問題結構切分 ──► train │ (validation) │ test（test 鎖起來）
+3. 只在 train 上 fit 前處理（放進 Pipeline）
+4. 用 validation 或交叉驗證選模型、調參
+5. 最後在 test 上評估一次
+```
 
-- **Random split**: general default when observations are independent and identically distributed.
-- **Stratified split**: [classification](../supervised-learning/classification/README.md) tasks where [class balance](../evaluation/class-imbalance.md) matters.
-- **Group split**: when multiple rows belong to the same user, patient, device, or store.
-- **Time-based split**: forecasting or any problem with temporal order.
-- **Snapshot-aware split**: when multiple basetables are built from repeated reference dates for the same entities.
+## 切分策略
 
-## Common Leakage Patterns
+| 策略 | 何時用 | sklearn |
+| --- | --- | --- |
+| 隨機切分 | 觀測彼此獨立且同分布 (i.i.d.) | `train_test_split`、`KFold` |
+| 分層切分 | [分類](../supervised-learning/classification/README.md)，尤其 [類別不平衡](../evaluation/class-imbalance.md) | `stratify=y`、`StratifiedKFold` |
+| 分組切分 | 同一使用者 / 病人 / 裝置 / 店家 / 批次有多筆資料 | `GroupShuffleSplit`、`GroupKFold` |
+| 時間切分 | 預測未來、資料有時間順序 | `TimeSeriesSplit`、依日期切 |
+| 快照感知切分 | 同一實體在多個 reference date 各有一筆（[Basetable](../foundations/basetable-and-time-aware-feature-engineering.md)） | 依實體分組或依快照日期切 |
+| 外部驗證 | 要宣稱能用在其他醫院 / 族群 / 平台 | 用另一個來源當 test |
 
-- Scaling, [imputation](../preprocessing/imputation.md), or encoding on the full dataset before splitting
-- Feature engineering that uses future data
-- Duplicated entities appearing in both train and test
-- Target encoding done outside [cross-validation](cross-validation.md) folds
-- [Hyperparameter tuning](hyperparameter-tuning.md) evaluated on the final test set repeatedly
+```python
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
 
-## Leakage Prevention
+# 分層隨機切分
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42)
 
-- Use [`Pipeline`](pipeline-basic.md) and `ColumnTransformer`
-- Keep a final test set untouched
-- Validate feature availability at prediction time
-- For grouped data, split by entity rather than by row
-- For time data, train on the past and validate on the future
-- For stacked snapshots, avoid placing nearly identical snapshots of the same entity across train and validation unless that matches the deployment setting
+# 依病人分組切分：同一病人的所有樣本只會在 train 或 test 其中一邊
+gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+train_idx, test_idx = next(gss.split(X, y, groups=patient_id))
 
-## Mental Model
+# 依時間切分
+train = df[df["date"] < "2024-01-01"]
+test = df[df["date"] >= "2024-01-01"]
+```
 
-Ask: "Would I truly know this value at the moment the prediction is made?"
-If not, the feature or preprocessing design may be leaking information.
+各種 CV 切法的圖解見 [交叉驗證](cross-validation.md)；`train_test_split` 的參數細節見 [Train-Test Split](../preprocessing/train-test-split.md)。
 
-在 repeated-snapshot 問題裡，還要再多問一句：
+## 預防洩漏
 
-"我現在看到的 validation row，是否只是 train row 的隔月版本？"
+| 做法 | 防止的洩漏 |
+| --- | --- |
+| 前處理放進 [`Pipeline`](pipeline-basic.md) / `ColumnTransformer` | 補值、縮放、編碼、特徵選擇在全資料上 fit |
+| Target encoding 在 fold 內計算 | 用到驗證資料的目標值 |
+| 測試集只用一次 | 對測試集過度調參 |
+| 逐欄確認預測時點可得性 | 目標洩漏、時間洩漏 |
+| 分組資料依實體切 | 同一實體跨 train / test |
+| 時間資料用過去訓練、未來驗證 | 用未來預測過去 |
+| 多快照資料避免同一實體的相鄰快照跨 train / validation | 驗證列只是訓練列的「下個月版本」 |
 
-如果答案是 yes，分數可能仍然過度樂觀。
+## 心智模型
 
-## Related Concepts
-
-- [Data Leakage](../foundations/data-leakage.md)
-- [Train-Test Split](../preprocessing/train-test-split.md)
-- [Cross-Validation Methods](cross-validation.md)
-- [Pipeline Basics](pipeline-basic.md)
-- [Basetable and Time-Aware Feature Engineering](../foundations/basetable-and-time-aware-feature-engineering.md)
-
-[Back to Workflow](README.md)
+> 每個特徵都問：**預測當下我真的知道這個值嗎？**
+>
+> 多快照問題再多問一句：**這筆驗證資料，是不是只是某筆訓練資料的隔月版本？** 如果是，分數仍可能過度樂觀。

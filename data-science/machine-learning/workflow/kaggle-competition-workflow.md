@@ -1,188 +1,121 @@
-# Kaggle Competition Workflow
+[Machine Learning](../README.md) › [工作流程](README.md) › Kaggle 競賽流程
 
-Kaggle 競賽最容易讓人誤會的地方，是以為它只是「多試幾個模型，看 leaderboard 分數」。實際上，穩定進步的關鍵通常是 workflow 品質，而不是某個神奇模型。
+# Kaggle 競賽流程 (Kaggle Competition Workflow)
 
-## Core Loop
+Kaggle 競賽不是「多試幾個模型、看 leaderboard」。穩定進步的關鍵是建立一套能**可靠判斷改動是否有效**的驗證與實驗系統，而不是某個神奇模型。這套流程同樣適用於研究中的模型比較。
 
-可以先把整體流程想成：
+## 核心循環
 
-1. 理解比賽任務與評估指標
-2. 建立 local validation
-3. 做一個可靠 baseline
-4. 逐步改 feature、model、validation 或 ensemble
-5. 用 submission 驗證 local score 和 public leaderboard 是否一致
-
-如果第二步沒有做對，後面所有 feature engineering 和 tuning 都可能只是在追假分數。
-
-## Start with the Metric, Not the Model
-
-競賽第一件事不是選 XGBoost 或 neural net，而是搞清楚：
-
-- 預測目標是 regression、classification 還是 ranking
-- 官方 metric 是 RMSE、AUC、log loss 還是別的
-- 測試資料與訓練資料是否可能有時間差、群組差或分布漂移
-
-很多 Kaggle 問題其實不是模型不夠強，而是 validation metric 和 competition metric 沒對齊。
-
-## Build Local Validation Early
-
-最基本情況可以先切出一塊 hold-out：
-
-```python
-from sklearn.model_selection import train_test_split
-
-train_part, valid_part = train_test_split(
-    train_df,
-    test_size=0.3,
-    random_state=123
-)
+```
+理解任務與指標 → 建立 local validation → 可靠的 baseline
+        ↑                                        ↓
+  用 submission 檢查 local 與 public LB 是否同步 ← 逐步改特徵 / 模型 / ensemble
 ```
 
-但更重要的是切分方式要符合資料結構：
+第二步沒做對，後面所有特徵工程與調參都只是在追假分數。
 
-- i.i.d. tabular data -> `KFold`
-- classification with class imbalance -> `StratifiedKFold`
-- time-dependent data -> `TimeSeriesSplit`
-- grouped entities -> group-aware split
+## 1. 先看指標，再看模型
 
-Key point: good local validation 不只是「切一塊資料」，而是盡量模擬 competition test set 的生成方式。
+| 確認 | 為什麼 |
+| --- | --- |
+| 任務是迴歸、分類還是排序 | 決定模型與損失 |
+| 官方指標（RMSE、AUC、log loss…） | local validation 要用**同一個指標** |
+| 測試資料與訓練資料是否有時間差、分組差、分布漂移 | 決定 local validation 怎麼切 |
 
-## Compare Public Leaderboard with Local Score
+很多時候問題不是模型不夠強，而是 validation 指標與競賽指標沒對齊。
 
-submission 的角色不只是上傳分數，而是檢查你的 local validation 是否可信。
+## 2. 建立 local validation
 
-理想狀況是：
+| 資料結構 | 切法 |
+| --- | --- |
+| i.i.d. 表格 | `KFold` |
+| 分類、類別不平衡 | `StratifiedKFold` |
+| 有時間順序 | `TimeSeriesSplit` 或依時間切 |
+| 有分組實體 | `GroupKFold` |
 
-- local score 變好
-- public leaderboard 也大致同步變好
+> 好的 local validation 不只是「切一塊出來」，而是盡量**模擬測試集的生成方式**。各種切法見 [交叉驗證](cross-validation.md)。
 
-如果兩者長期不一致，常見原因包括：
-
-- validation strategy 和 test distribution 不匹配
-- leakage
-- public leaderboard sample 太小，波動太大
-- 你正在過度適應 validation fold
-
-## Baselines Should Be Simple but Honest
-
-baseline 不是用來拿高分，而是用來提供穩定比較基準。
-
-例如回歸問題，你可以先做：
-
-- global mean baseline
-- group mean baseline
-- 簡單樹模型或線性模型
-
-像這種 group mean baseline 就很常見：
+以 CV 平均作為主要比較指標，但也要看各 fold 的波動：平均變好但 fold 間變異很大，代表策略不穩。
 
 ```python
-naive_prediction_groups = (
-    train_df.groupby("passenger_count")["fare_amount"]
-    .mean()
-)
+import numpy as np
+from sklearn.model_selection import KFold
+
+kf = KFold(n_splits=5, shuffle=True, random_state=123)
+folds = list(kf.split(train_df))       # 存下來，每次實驗都用同一組 folds
+
+fold_scores = []
+for tr_idx, va_idx in folds:
+    model.fit(X.iloc[tr_idx], y.iloc[tr_idx])
+    fold_scores.append(metric(y.iloc[va_idx], model.predict(X.iloc[va_idx])))
+np.mean(fold_scores), np.std(fold_scores)
 ```
 
-一個好的 baseline 至少要滿足：
+## 3. 簡單但誠實的 baseline
 
-- 可重現
-- 評估方式正確
-- 能讓你判斷新改動到底有沒有真的進步
-
-## Feature Engineering Often Beats Fancy Modeling
-
-在表格競賽裡，早期提升很多時候來自 feature engineering，而不是直接上更複雜模型。
-
-常見方向：
-
-- group aggregates
-- count / frequency features
-- time decomposition
-- interaction features
-- missingness indicators
-- target-dependent encoding，但只能在正確 fold 內計算
-
-尤其像 mean target encoding 這類方法，若不是在 fold 內做，幾乎很容易直接造成 leakage。
-
-## Cross-Validation Is the Main Score, Not a Decoration
-
-Kaggle workflow 裡，單次 hold-out 分數通常不夠穩。
-
-更常見做法是：
-
-- 跑 K-fold / StratifiedKFold / TimeSeriesSplit
-- 取得每個 fold 的 validation score
-- 再取平均作為主要比較指標
-
-簡化來說：
+Baseline 不是拿來拿高分，而是提供穩定的比較基準：可重現、評估方式正確、能判斷新改動是否真的進步。
 
 ```python
-overall_validation_score = sum(fold_scores) / len(fold_scores)
+# 迴歸：全域平均 → 分組平均 → 簡單線性 / 樹模型
+global_mean = train_df["fare_amount"].mean()
+group_mean = train_df.groupby("passenger_count")["fare_amount"].mean()
+pred = valid_df["passenger_count"].map(group_mean).fillna(global_mean)
 ```
 
-真正重要的是：
+見 [Baseline 與錯誤分析](../evaluation/baselines-and-error-analysis.md)。
 
-- 不只看平均
-- 也看各 fold 波動
+## 4. 特徵工程通常勝過花俏模型
 
-如果平均分數變好，但 fold variance 很大，通常代表策略不夠穩。
+表格競賽早期的提升多半來自特徵：
 
-## Tune Hyperparameters Only After the Pipeline Is Trustworthy
+| 方向 | 例子 |
+| --- | --- |
+| 分組聚合 | 每個使用者的平均消費、每家店的平均銷量 |
+| 計數 / 頻率 | 類別出現次數 |
+| 時間拆解 | 小時、星期、是否假日 |
+| 交互作用 | 兩特徵相乘或相除 |
+| 缺失指標 | 是否缺失 |
+| Target encoding | **只能在 fold 內計算**，否則幾乎必然洩漏（見 [類別編碼](../preprocessing/categorical-encoding.md)） |
 
-很多人太早開始調參，結果是在壞的 validation 上把錯誤流程調到最好看。
+## 5. 流程可信後才調參
 
-較穩的順序通常是：
+順序：切分與指標對齊 → baseline → 核心特徵 → [調參](hyperparameter-tuning.md)。太早調參，只是在壞的驗證上把錯誤流程調到最好看。
 
-1. 先把資料切分和 metric 對齊
-2. 先做 baseline
-3. 先把核心 features 做好
-4. 再進入 hyperparameter tuning
+## 6. Ensemble：Blending vs Stacking
 
-手動 grid 其實也是很常見的起點：
+| | Blending | Stacking |
+| --- | --- | --- |
+| 做法 | 多個模型的預測直接加權平均 | 用各模型的 **out-of-fold (OOF) 預測**當第二層模型的輸入 |
+| 優點 | 簡單、不容易出錯 | 能學到模型之間的互補性 |
+| 風險 | 權重若在 validation 上調也會過擬合 | OOF 做錯就洩漏 |
 
-```python
-for candidate_alpha in alpha_grid:
-    model = Ridge(alpha=candidate_alpha)
-    # fit and score on validation
-```
+見 [Stacking](../supervised-learning/ensemble/stacking.md)、[Voting](../supervised-learning/ensemble/voting.md)。
 
-當搜尋空間變大時，再考慮 `RandomizedSearchCV`、Optuna 或其他更有效率的方法。
+## 7. Public leaderboard 是訊號，不是真相
 
-## Blending vs Stacking
+理想狀況是 local score 變好、public LB 也大致同步變好。長期不一致時：
 
-競賽後期常見 ensemble。
+| 可能原因 | 檢查 |
+| --- | --- |
+| Validation 切法與測試分布不符 | 測試集是否在時間上、分組上不同 |
+| 洩漏 | 特徵是否用到測試時拿不到的資訊 |
+| Public LB 樣本太小 | 波動本來就大，不要追 |
+| 對 validation 或 public LB 過度調整 | 最後的 private LB 會掉（shake-up） |
 
-先用一句話區分：
+## 實務習慣
 
-- blending: 直接把多個 submission / prediction 加權平均
-- stacking: 用 out-of-fold predictions 當第二層模型輸入
+| 習慣 | 原因 |
+| --- | --- |
+| 固定 random seed、存下 folds | 比較時減少雜訊 |
+| 記錄每次實驗的資料版本、特徵集合、分數 | 知道哪個改動有效（可用 [MLflow](../production/mlflow.md)） |
+| submission 有命名規則 | 不要只有 `submission_final_v7.csv` |
+| 單模型穩定後再做 ensemble | 基礎不穩時 ensemble 只是掩蓋問題 |
 
-blending 的好處是：
+## 常見失敗
 
-- 簡單
-- 不容易出現額外實作錯誤
-
-stacking 的好處是：
-
-- 更有機會學到模型互補性
-
-但 stacking 的前提是 OOF predictions 做得正確，否則非常容易 leakage。
-
-## Practical Competition Habits
-
-- 固定 random seed，減少比較時的噪音
-- 保留每次實驗的資料版本、特徵集合與分數
-- 把 folds 存起來，避免每次重新切不同資料
-- submission 要有命名規則，不要只留 `submission_final_v7.csv`
-- public leaderboard 只當訊號，不當唯一真相
-
-## Common Failure Modes
-
-- local validation 設計錯
-- 在整份資料上做 target-aware feature engineering
-- 把 public leaderboard 當 tuning set
-- 沒有 baseline，導致每次改動都無法比較
-- ensemble 很複雜，但單模基礎其實還不穩
-
-## Takeaway
-
-Kaggle workflow 的核心不是「找到最強模型」，而是建立一個能讓你穩定判斷什麼真的有效的驗證與實驗系統。
+| 失敗 | 結果 |
+| --- | --- |
+| Local validation 設計錯 | 所有改動的判斷都不可靠 |
+| 在整份資料上做 target-aware 特徵 | 洩漏 |
+| 把 public LB 當調參集 | Private LB 大幅下滑 |
+| 沒有 baseline | 無法判斷改動是否有效 |

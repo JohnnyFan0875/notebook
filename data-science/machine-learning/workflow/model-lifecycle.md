@@ -1,58 +1,42 @@
-# Model Lifecycle
+[Machine Learning](../README.md) › [工作流程](README.md) › 模型生命週期
 
-模型不是一次性產物，而是一個會隨資料、業務規則與環境改變而持續演進的系統。把 model lifecycle 想清楚，才能避免把大量精力花在一個很快過時的版本上。
+# 模型生命週期 (Model Lifecycle)
 
-## Typical Lifecycle
+模型不是一次性產物，而是會隨資料、業務規則與環境改變而持續演進的系統。先想清楚生命週期，才不會把大量精力花在一個很快就過時的版本上。
 
-1. Frame the problem
-2. Collect and audit data
-3. Split data and define validation
-4. Build a [baseline](../evaluation/baselines-and-error-analysis.md)
-5. Preprocess and train candidate models
-6. Tune and compare models
-7. Perform [error analysis](../evaluation/baselines-and-error-analysis.md) and diagnostics
-8. Package and deploy the chosen model
-9. Monitor predictions, data drift, and outcome drift
-10. Retrain or redesign when performance degrades
+## 流程
 
-## 每個階段都該留下什麼
+```
+問題定義 → 收集與稽核資料 → 切分、定義驗證 → Baseline → 前處理與訓練候選模型
+                                                                  ↓
+     重訓或重新設計 ← 監控（預測、資料漂移、結果漂移） ← 部署 ← 錯誤分析與診斷 ← 調參與比較
+```
 
-- 問題定義：目標、限制、評估指標、利害關係人。
-- 資料階段：資料來源、欄位定義、抽樣規則、清理決策。
-- 訓練階段：模型設定、超參數、驗證方式、比較結果。
-- 部署階段：版本、服務介面、依賴套件、輸入輸出 schema。
-- 監控階段：告警規則、重訓條件、負責人。
+## 每個階段該留下什麼
 
-## What Often Gets Missed
+| 階段 | 產出 | 常被漏掉 |
+| --- | --- | --- |
+| 問題定義 | 目標、限制、評估指標、利害關係人 | 現行做法（baseline）是什麼 |
+| 資料 | 資料來源、欄位定義、抽樣規則、清理決策、資料版本 | 特徵在上線時是否拿得到 |
+| 訓練 | 模型設定、超參數、驗證方式、比較結果 | [Baseline 與錯誤分析](../evaluation/baselines-and-error-analysis.md) |
+| 部署 | 版本、服務介面、相依套件、輸入輸出 schema | 前處理與模型一起打包（[Pipeline](pipeline-basic.md)） |
+| 監控 | 告警規則、重訓條件、負責人 | 明確的重訓標準 |
 
-- baselines
-- error analysis
-- feature availability checks
-- monitoring after deployment
-- clear retraining criteria
+實驗紀錄與模型版本管理可用 [MLflow](../production/mlflow.md)；部署與漂移監控見 [部署與監控](../production/deployment-and-monitoring.md)。
 
-## 實務上很重要的兩個問題
+## 實務上最重要的兩個問題
 
-### 1. 這個模型的輸入在上線後真的拿得到嗎？
+| 問題 | 沒想清楚的後果 |
+| --- | --- |
+| **模型的輸入上線後真的拿得到嗎？** | notebook 裡表現很好，但某些特徵上線要晚兩天才到、或來自人工標註，無法即時推論 |
+| **什麼情況算模型退化？** | 沒有預先定義效能閾值、漂移指標與重訓規則，通常要等問題已經影響業務才被動處理 |
 
-很多專案在 notebook 裡表現很好，但某些特徵實際上線時要晚兩天才到，或來自人工標註，導致無法即時推論。
+## 好習慣
 
-### 2. 什麼情況算模型退化？
-
-若沒有預先定義性能閾值、漂移指標與重訓規則，團隊通常會在問題已經影響業務後才被動處理。
-
-## Good Practice
-
-- Version the dataset or extraction logic
-- Log parameters and evaluation results
-- Save the preprocessing graph together with the model
-- Define who owns monitoring and retraining
-
-## Related Concepts
-
-- [Problem Framing](problem-framing.md)
-- [Baselines and Error Analysis](../evaluation/baselines-and-error-analysis.md)
-- [Deployment and Monitoring](../production/deployment-and-monitoring.md)
-- [Generalization](../foundations/generalization.md)
-
-[Back to Workflow](README.md)
+| 習慣 | 為什麼 |
+| --- | --- |
+| 版本化資料或擷取邏輯 | 能重現任何一次訓練 |
+| 記錄參數與評估結果 | 比較不同實驗 |
+| 前處理與模型一起存 | 避免訓練 / 上線不一致 |
+| 記錄環境（套件版本、random seed） | 可重現性 |
+| 指定監控與重訓的負責人 | 沒人負責就等於沒人監控 |

@@ -1,262 +1,122 @@
-# Cross-Validation Methods
+[Machine Learning](../README.md) › [工作流程](README.md) › 交叉驗證
 
-Cross-validation is a resampling method used to evaluate machine learning models on a limited data sample. It helps reduce [overfitting](../foundations/overfitting-underfitting.md) and provides a more reliable estimate of model performance.
+# 交叉驗證 (Cross-Validation)
 
-## Interview Fast Answer
+交叉驗證把資料輪流切成訓練與驗證部分，重複配適後取平均，比單次切分更穩定地估計 [泛化](../foundations/generalization.md) 能力。它是**模型評估與選擇**的工具，不是最終測試集的替代品。
 
-如果面試官問「為什麼要做 cross-validation」，最穩的回答通常是：
+## 切分策略
 
-- 單一次 split 太不穩
-- cross-validation 能更可靠地估計 generalization
-- 對資料量有限時尤其重要
+| 方法 | 做法 | 何時用 |
+| --- | --- | --- |
+| `KFold` | 切成 k 份，輪流用 1 份驗證、k−1 份訓練 | 迴歸、一般 i.i.d. 表格資料 |
+| `StratifiedKFold` | 每個 fold 保持與全體相同的類別比例 | **分類的預設**，尤其 [類別不平衡](../evaluation/class-imbalance.md)、小樣本 |
+| `GroupKFold` | 同一組（病人、使用者、批次）只會出現在同一個 fold | 同一實體有多筆資料 |
+| `StratifiedGroupKFold` | 分組 + 盡量維持類別比例 | 分組且不平衡 |
+| `TimeSeriesSplit` | 訓練永遠在驗證之前，訓練窗逐步擴大 | 時間序列、有時間順序的資料 |
+| `RepeatedStratifiedKFold` | 用不同隨機切法重複 k-fold | 小樣本，降低估計的變異 |
+| `LeaveOneOut` | k = n | 極小樣本；估計變異大、計算量大，通常不如重複 5 / 10-fold |
+| Nested CV | 內層調參、外層評估 | 要調參又要報告誠實的效能（小樣本必備） |
 
-可以再補一句：
+![CV split strategies](src/cross-validation-split-strategies.png)
 
-- cross-validation 是 model evaluation / model selection 的工具，不是 final test set 的替代品
+藍色 = 訓練、紅色 = 驗證；下方兩列是類別與分組。`StratifiedKFold` 的每個驗證 fold 都含有黑色少數類；`GroupKFold` 的紅色區塊永遠對齊完整的分組；`TimeSeriesSplit` 的驗證永遠在訓練之後。
 
-## Bootstrapping vs Cross-Validation
-
-這兩者很容易被一起問到。
-
-- **Cross-validation**: 重複切分資料，主要拿來估計模型在 unseen data 上的表現
-- **Bootstrapping**: 對資料做有放回抽樣，常拿來估計統計量不確定性，或作為 bagging 的資料來源
-
-簡單記法：
-
-- CV 比較偏 evaluation of predictive performance
-- bootstrap 比較偏 resampling-based uncertainty estimation 或 ensemble sampling
-
-## K-Fold Cross-Validation
-
-- Splits dataset into **k equal-sized folds**.
-- For each iteration, use **k-1 folds for training** and **1 fold for validation**.
-- Repeat k times → average the results.
+## 基本用法
 
 ```python
-from sklearn.model_selection import cross_val_score, KFold
-from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import load_iris
-import numpy as np
-
-# Dataset
-data = load_iris()
-X, y = data.data, data.target
-
-# Model
-model = LogisticRegression(max_iter=200)
-
-# K-Fold
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
-cv_scores = cross_val_score(model, X, y, cv=kf, scoring='accuracy')
-
-print("Cross-validation scores:", cv_scores)
-print("Mean accuracy:", np.mean(cv_scores))
-```
-
-**Critical Notes:**
-
-- Shuffling is recommended to ensure randomness.
-- Higher k (e.g., 10) → more stable estimates but higher computation.
-
-## Train-Validation Split + Cross-Validation (Kaggle-style)
-
-- Used when the **test set has no labels** (common in Kaggle competitions).
-- Split `train.csv` into **training + hold-out validation sets**.
-- Perform cross-validation on the training portion, then evaluate the hold-out validation set separately.
-
-```python
-import pandas as pd
-from sklearn.model_selection import KFold, cross_val_score, train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import (KFold, StratifiedKFold, GroupKFold, TimeSeriesSplit,
+                                     cross_val_score, cross_validate, cross_val_predict)
 
-data = pd.read_csv('train.csv')
-X = data.drop('target', axis=1)  # Features
-y = data['target']  # Target variable
+X, y = load_iris(return_X_y=True)
+model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))   # 前處理放在 pipeline 內
 
-# Train-validation split
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-
+# 1. K-Fold：分數 + 平均 ± 標準差
 kf = KFold(n_splits=5, shuffle=True, random_state=42)
-pipeline = Pipeline([
-    ('scaler', StandardScaler()),
-    ('model', RandomForestClassifier(n_estimators=100, random_state=42))
-])
+scores = cross_val_score(model, X, y, cv=kf, scoring="accuracy")
+scores                        # [1.0, 0.967, 0.933, 0.9, 0.967]
+scores.mean(), scores.std()   # 0.953, 0.034
 
-cv_scores = cross_val_score(pipeline, X_train, y_train, cv=kf, scoring='accuracy')
-
-pipeline.fit(X_train, y_train)
-y_pred = pipeline.predict(X_val)
-final_accuracy = accuracy_score(y_val, y_pred)
-
-print("Cross-validation scores:", cv_scores)
-print("Final hold-out validation accuracy:", final_accuracy)
-```
-
-**Critical Notes:**
-
-- Ensures both CV accuracy and an independent validation score.
-- Commonly used when the competition test set has no labels.
-- Keep preprocessing inside the [pipeline](pipeline-basic.md) so each fold learns only from its training portion.
-
-## Direct K-Fold Split (without hold-out set)
-
-- Use all of `train.csv` with K-Fold.
-- Each fold is used once as validation, results are averaged.
-
-```python
-import pandas as pd
-from sklearn.model_selection import KFold
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
-data = pd.read_csv('train.csv')
-X = data.drop('target', axis=1)
-y = data['target']
-
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
-
-fold_accuracies = []
-
-for train_index, test_index in kf.split(X):
-    cv_train, cv_test = X.iloc[train_index], X.iloc[test_index]
-    cv_train_labels, cv_test_labels = y.iloc[train_index], y.iloc[test_index]
-
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', RandomForestClassifier(n_estimators=100, random_state=42))
-    ])
-
-    pipeline.fit(cv_train, cv_train_labels)
-    y_pred = pipeline.predict(cv_test)
-
-    acc = accuracy_score(cv_test_labels, y_pred)
-    fold_accuracies.append(acc)
-
-mean_accuracy = sum(fold_accuracies) / len(fold_accuracies)
-print("Mean accuracy:", mean_accuracy)
-```
-
-**Critical Notes:**
-
-- No separate hold-out set is used.
-- Provides a good estimate of [generalization](../foundations/generalization.md) error, but cannot check on unseen validation data.
-
-## Stratified K-Fold Cross-Validation
-
-- Ensures that each fold maintains the **same class distribution** as the original dataset.
-- Important for [**imbalanced classification problems**](../evaluation/class-imbalance.md).
-
-```python
-from sklearn.model_selection import StratifiedKFold
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-import pandas as pd
-import numpy as np
-
-# Example dataset
-train_df = pd.read_csv('train.csv')
-X = train_df.drop(columns=['target'])
-y = train_df['target']
-
+# 2. 分類用 StratifiedKFold；cross_validate 可一次算多個指標、也回傳訓練分數
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-accuracies = []
+res = cross_validate(model, X, y, cv=skf, scoring=["accuracy", "f1_macro"],
+                     return_train_score=True)
+res["test_accuracy"].mean(), res["train_accuracy"].mean()   # 0.953, 0.973
 
-for train_index, val_index in skf.split(X, y):
-    X_train, X_val = X.iloc[train_index], X.iloc[val_index]
-    y_train, y_val = y.iloc[train_index], y.iloc[val_index]
+# 3. Out-of-fold 預測：每筆資料都由「沒看過它」的模型預測（畫 ROC、stacking 用）
+oof_proba = cross_val_predict(model, X, y, cv=skf, method="predict_proba")
 
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_val)
+# 4. 分組：groups 是每列所屬的病人 / 使用者 ID
+cross_val_score(model, X_all, y_all, groups=patient_id, cv=GroupKFold(n_splits=5))
 
-    acc = accuracy_score(y_val, y_pred)
-    accuracies.append(acc)
-
-print("Average StratifiedKFold accuracy:", np.mean(accuracies))
+# 5. 時間序列：資料先依時間排序，不可 shuffle；gap 在訓練與驗證之間留空檔
+cross_val_score(reg_model, X_sorted, y_sorted, cv=TimeSeriesSplit(n_splits=5, gap=7),
+                scoring="neg_root_mean_squared_error")
 ```
 
-**Critical Notes:**
+> `cv=5` 這種整數寫法：分類器預設用 `StratifiedKFold`、迴歸用 `KFold`，**都不會 shuffle**。資料若依類別或時間排序過，請明確傳入 `KFold(..., shuffle=True)`。
 
-- Always use **StratifiedKFold** for [classification](../supervised-learning/classification/README.md) to avoid biased folds.
-- Useful for small or **imbalanced datasets**.
+時間序列的滾動驗證 (walk-forward) 與預測評估見 [預測評估](../../statistics/time-series-analysis/forecast-evaluation.md#時間序列交叉驗證-walk-forward-validation)。
 
-### Interview Prompt: Which CV Split Should I Use?
+## 選 k 與重複次數
 
-常見的高訊號回答是：
+| k | 偏誤 | 變異 | 計算量 |
+| --- | --- | --- | --- |
+| 小（如 3） | 每次訓練資料少 → 效能估計偏悲觀 | 低 | 低 |
+| 5 或 10 | 常用折衷 | 中 | 中 |
+| n（LOOCV） | 最低 | 高（各 fold 模型幾乎相同） | 最高 |
 
-- classification: 優先考慮 `StratifiedKFold`
-- regression / general tabular task: `KFold`
-- time-ordered data: `TimeSeriesSplit`
-- extremely small data: 可能提高 `k`，但要考慮 variance 與 computation
+小樣本時，與其加大 k，不如用 `RepeatedStratifiedKFold(n_splits=5, n_repeats=10)`，並報告平均 ± 標準差。
 
-## Time Series Split
+## Nested CV
 
-- Used for **time-dependent data**.
-- Ensures training data always comes **before validation data** (no look-ahead bias).
+調參時看到的「最佳 CV 分數」本身是挑選出來的，會偏樂觀。要同時調參又要報告效能時，把 `GridSearchCV` 整個包進外層 CV：
 
 ```python
-from sklearn.model_selection import TimeSeriesSplit
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
-import pandas as pd
+from sklearn.model_selection import GridSearchCV
 
-# Load time series data
-df = pd.read_csv('train.csv', parse_dates=['Date'])
-df = df.sort_values('Date')
-
-features = [col for col in df.columns if col not in ['Date', 'Target']]
-X, y = df[features], df['Target']
-
-tscv = TimeSeriesSplit(n_splits=5)
-fold_scores = []
-
-for fold, (train_index, val_index) in enumerate(tscv.split(X), 1):
-    X_train, X_val = X.iloc[train_index], X.iloc[val_index]
-    y_train, y_val = y.iloc[train_index], y.iloc[val_index]
-
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_val)
-
-    rmse = mean_squared_error(y_val, y_pred, squared=False)
-    fold_scores.append(rmse)
-
-print("Average RMSE across folds:", np.mean(fold_scores))
+inner = StratifiedKFold(5, shuffle=True, random_state=0)
+outer = StratifiedKFold(5, shuffle=True, random_state=1)
+search = GridSearchCV(pipe, param_grid, cv=inner)
+nested_scores = cross_val_score(search, X, y, cv=outer)   # 外層分數 = 整個流程（含調參）的效能
 ```
 
-**Critical Notes:**
+外層每個 fold 選出的參數可能不同，這是正常的；外層分數評估的是「調參程序」而不是某組參數。最終模型用全部資料再跑一次 `search.fit(X, y)`。實例與數字見 [高維小樣本](../foundations/high-dimensional-data.md#nested-cv-與置換檢定)。
 
-- Must preserve **temporal order** of data.
-- Do **not shuffle** in time series problems.
-- Commonly used in finance, forecasting, and sequential datasets.
+## 有獨立 hold-out 的做法（Kaggle 式）
 
-## Key Takeaways
+測試集沒有標籤（競賽）或想多一道防線時：先切出 hold-out，在其餘資料上做 CV 選模型，最後再看 hold-out。
 
-- **K-Fold:** General method for cross-validation.
-- **Train-Validation + CV:** Kaggle-style when test labels are unavailable.
-- **Direct K-Fold:** Uses all training data in k folds.
-- **Stratified K-Fold:** Use for classification, especially with class imbalance.
-- **Time Series Split:** Use when data has a natural order over time.
-- Cross-validation improves [generalization](../foundations/generalization.md) but increases computational cost.
-- Preprocessing that learns from data should happen inside each fold, usually via a [pipeline](pipeline-basic.md).
+```python
+from sklearn.model_selection import train_test_split
 
-## Common Interview Traps
+X_tr, X_val, y_tr, y_val = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+cross_val_score(model, X_tr, y_tr, cv=skf).mean()     # 0.958  ← 用來比較、調參
+model.fit(X_tr, y_tr).score(X_val, y_val)             # 0.933  ← 只看一次
+```
 
-- 把 CV score 當 final test performance
-- 先做 scaling / imputation / feature selection，再把處理後資料送進 CV
-- 在 class imbalance 問題上仍用普通 `KFold`
-- 在 time series 資料上 shuffle
+CV 分數與 hold-out 分數差距大時，先懷疑切分方式與資料分布，而不是模型。競賽流程見 [Kaggle 競賽流程](kaggle-competition-workflow.md)。
 
-## Related Concepts
+## CV vs Bootstrap
 
-- [Generalization](../foundations/generalization.md)
-- [Data Leakage](../foundations/data-leakage.md)
-- [Class Imbalance](../evaluation/class-imbalance.md)
-- [Hyperparameter Tuning](hyperparameter-tuning.md)
+| | 交叉驗證 | Bootstrap |
+| --- | --- | --- |
+| 抽樣 | 不放回、切成 k 份 | 有放回抽 n 筆 |
+| 主要用途 | 估計預測效能、選模型 | 估計統計量的不確定性（CI）、[Bagging](../supervised-learning/ensemble/bagging.md) |
+| 驗證資料 | 該 fold | 沒被抽到的約 36.8%（out-of-bag） |
 
-[Back to Workflow](README.md)
+見 [Bootstrap](../../statistics/probability-and-distributions/monte-carlo-simulation.md#拔靴法-bootstrap)。
+
+## 常見錯誤
+
+| 錯誤 | 後果 | 改正 |
+| --- | --- | --- |
+| 先做 scaling / 補值 / 特徵選擇，再把處理後資料送進 CV | 洩漏 | 全部放進 [Pipeline](pipeline-basic.md) |
+| 把 CV 分數當最終測試效能 | 偏樂觀（尤其調過參） | 保留測試集或用 nested CV |
+| 不平衡分類用普通 `KFold` | 某些 fold 幾乎沒有少數類 | `StratifiedKFold` |
+| 時間序列 shuffle | 用未來預測過去 | `TimeSeriesSplit` |
+| 同一病人的多筆樣本隨機切 | 模型認得病人 → 分數虛高 | `GroupKFold` |
+| 只報平均不報變異 | 無法判斷差異是否只是雜訊 | 報告 mean ± SD；比較模型時用同一組 folds |

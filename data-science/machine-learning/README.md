@@ -1,43 +1,53 @@
-# Machine Learning
+[Data Science](../README.md) › Machine Learning
 
-這個章節以「從問題到部署」的完整工作流來整理機器學習，而不是單純羅列模型。若你只記演算法名稱，卻沒有先建立 workflow、evaluation 與 data leakage 的觀念，實務上很容易得出看似漂亮但不可用的結果。
+# 機器學習 (Machine Learning)
 
-## How to Navigate
+以「從問題到部署」的工作流程整理機器學習，而不是只羅列演算法。
 
-- [foundations](foundations/README.md): Core ideas such as bias-variance tradeoff and overfitting.
-- [workflow](workflow/README.md): Problem framing, data splitting, leakage, cross-validation, pipelines, and tuning.
-- [preprocessing](preprocessing/README.md): Missing values, encoding, scaling, outliers, and feature selection.
-- [supervised-learning](supervised-learning/README.md): Classification, regression, and ensemble methods.
-- [unsupervised-learning](unsupervised-learning/README.md): Clustering, dimensionality reduction, and association rules.
-- [recommender-systems](recommender-systems/README.md): Recommendation logic, collaborative filtering, ALS, and implicit feedback.
-- [evaluation](evaluation/README.md): Metrics, thresholds, calibration, class imbalance, and error analysis.
-- [interpretability-and-diagnostics](interpretability-and-diagnostics/README.md): Feature importance, diagnostics, and model debugging.
-- [production](production/README.md): Deployment, monitoring, drift, and retraining considerations.
-- [packages](packages/README.md): Package-specific notes such as `[scikit-learn](packages/scikit-learn/README.md)` and `statsmodels`.
+> 只記演算法名稱、沒有先建立驗證設計與資料洩漏 (data leakage) 的觀念，很容易得到「分數漂亮但不能用」的模型。好的流程是：**定義問題 → 切對資料 → 建 baseline → 在 pipeline 內前處理與調參 → 用對的指標評估 → 監控**。
 
-## Suggested Learning Order
+**找方法**：不知道該用哪個模型、指標或驗證方式時，先看 [ML 方法速查](model-selection.md)。
 
-1. Start with [foundations](foundations/README.md).
-2. Read the core [workflow](workflow/README.md) notes, especially data splitting and leakage.
-3. Learn [preprocessing](preprocessing/README.md) together with [Pipeline Basics](workflow/pipeline-basic.md).
-4. Go into [supervised-learning](supervised-learning/README.md), [unsupervised-learning](unsupervised-learning/README.md), or [recommender-systems](recommender-systems/README.md) depending on the problem.
-5. Study [evaluation](evaluation/README.md) before trusting any model result.
-6. Add [interpretability-and-diagnostics](interpretability-and-diagnostics/README.md) and [production](production/README.md) for real-world practice.
+## 模組
 
-## Naming Conventions
+| 模組 | 核心內容 | 回答的問題 |
+| --- | --- | --- |
+| [基礎概念](foundations/README.md) | 泛化、損失函數、bias-variance、正則化、資料洩漏、高維資料 | 為什麼訓練分數高不代表模型好？ |
+| [工作流程](workflow/README.md) | 問題定義、資料切分、交叉驗證、pipeline、調參 | 怎麼設計一個不會騙自己的實驗流程？ |
+| [前處理](preprocessing/README.md) | 缺失值、編碼、縮放、離群值、特徵選擇 | 原始資料要怎麼變成模型能用的輸入？ |
+| [監督式學習](supervised-learning/README.md) | 迴歸、分類、集成方法 | 有標籤時該用哪個模型？ |
+| [非監督式學習](unsupervised-learning/README.md) | 分群、降維、異常偵測、關聯規則 | 沒有標籤時能找出什麼結構？ |
+| [推薦系統](recommender-systems/README.md) | 協同過濾、ALS、隱式回饋 | 怎麼從使用者行為推薦項目？ |
+| [模型評估](evaluation/README.md) | 指標、閾值、校準、類別不平衡、錯誤分析 | 模型到底好不好？好在哪、錯在哪？ |
+| [可解釋性與診斷](interpretability-and-diagnostics/README.md) | 特徵重要性、模型診斷 | 模型依據什麼做預測？可信嗎？ |
+| [上線與維運](production/README.md) | 部署、監控、漂移、MLflow | 模型上線後怎麼維持品質？ |
+| [套件](packages/README.md) | scikit-learn、statsmodels | 特定套件怎麼用？ |
 
-- Feature = predictor variable = independent variable = explanatory variable
-- Target = dependent variable = response variable
-- Label = observed target for supervised learning
-- Hyperparameter = setting chosen before training, such as `alpha`, `max_depth`, or `n_neighbors`
+## 建議路線
 
-## Important Reminders
+| 讀者 | 路線 |
+| --- | --- |
+| 初學 | 基礎概念 → 工作流程 → 前處理 → 監督式 / 非監督式學習 → 模型評估 → 可解釋性 → 上線與維運 |
+| **生物資訊** | [資料洩漏](foundations/data-leakage.md) → [高維小樣本](foundations/high-dimensional-data.md) → [交叉驗證（Group / Nested CV）](workflow/cross-validation.md) → [Pipeline](workflow/pipeline-basic.md) → [正則化](foundations/regularization.md) → [類別不平衡](evaluation/class-imbalance.md) → [降維](unsupervised-learning/dimensionality-reduction/README.md) / [分群](unsupervised-learning/clustering/README.md) → [可解釋性](interpretability-and-diagnostics/model-interpretability.md) |
+| 統計背景 | [損失函數（↔ MLE）](foundations/loss-functions.md) → [Bias-Variance](foundations/bias-variance-tradeoff.md) → [正則化（↔ 先驗）](foundations/regularization.md) → [交叉驗證](workflow/cross-validation.md) → [集成方法](supervised-learning/ensemble/README.md) → [statsmodels](packages/statsmodels/README.md) |
 
-- Do not fit scalers, imputers, or encoders on the full dataset before splitting.
-- Use a validation strategy that matches the data: random split, stratified split, group split, or time-based split.
-- Keep a final test set untouched until model selection is done.
-- Always compare against a simple baseline before celebrating a complex model.
+## 名詞對照
 
-## A Practical Path
+| ML | 統計 | 說明 |
+| --- | --- | --- |
+| 特徵 (feature) | 自變數、預測變數、解釋變數 | 輸入 X |
+| 目標 (target) / 標籤 (label) | 依變數、反應變數 | 輸出 y；label 指監督式學習中已觀測到的 y |
+| 訓練 (training) | 配適 (fitting)、估計 | 找出參數 |
+| 損失函數 (loss) | 負 log-likelihood | 見 [損失函數](foundations/loss-functions.md) |
+| 正則化 (regularization) | 收縮 (shrinkage)、先驗 | 見 [正則化](foundations/regularization.md) |
+| 超參數 (hyperparameter) | 調整參數 (tuning parameter) | 訓練前就決定的設定，如 `alpha`、`max_depth`、`n_neighbors` |
+| 泛化誤差 (generalization error) | 預測誤差、樣本外誤差 | 見 [泛化](foundations/generalization.md) |
 
-If you are new to this section, read `foundations -> workflow -> preprocessing -> supervised or unsupervised -> evaluation -> interpretability -> production`. That order mirrors how real projects mature.
+## 四條貫穿全程的規則
+
+| 規則 | 為什麼 |
+| --- | --- |
+| 先切資料，再 fit 任何前處理 | scaler、imputer、encoder、特徵選擇在全資料上 fit 就是洩漏 |
+| 驗證方式要符合資料結構 | 分組、時間序列、重複量測不能隨機切 |
+| 測試集只用一次 | 反覆看測試集等於拿它調參 |
+| 先和簡單 baseline 比 | 沒有基準就無法判斷複雜模型是否真的有進步 |
