@@ -1,147 +1,62 @@
-# K-Nearest Neighbors (KNN) Classification Workflow
+[Machine Learning](../../README.md) › [監督式學習](../README.md) › [分類](README.md) › KNN
 
-## Basic Knowledge of KNN
+# K 近鄰 (K-Nearest Neighbors, KNN)
 
-- **K-Nearest Neighbors (KNN)** is a simple, non-parametric, and instance-based learning algorithm.
-- **Idea**: To classify a new data point, KNN looks at the _k_ closest labeled data points (neighbors) and assigns the class that is most common among them.
-- **Distance metrics**: Common choices include Euclidean, Manhattan, Chebyshev, or cosine distance.
-- **Key hyperparameters**:
-  - `k` (number of neighbors): Small k → sensitive to noise; Large k → smoother decision boundary.
-  - `weights`: `'uniform'` (all neighbors equal) or `'distance'` (closer neighbors have more influence).
-- **Advantages**: Easy to understand, no explicit training step, works well for small to medium-sized datasets.
-- **Disadvantages**: Computationally expensive for large datasets, sensitive to irrelevant features and [feature scaling](../../preprocessing/feature-scaling.md).
+要分類一個新樣本，找訓練資料中距離最近的 k 個鄰居，用多數決（或依距離加權）決定類別。沒有真正的「訓練」步驟，只是把資料存起來（instance-based、無母數）。迴歸版本 `KNeighborsRegressor` 改成取鄰居 y 的平均。
 
-## Overview
+## k 的影響
 
-This example demonstrates how to build, tune, and evaluate a **K-Nearest Neighbors (KNN)** classifier using [scikit-learn](../../packages/scikit-learn/README.md). It includes:
+![KNN k effect](src/knn-k-effect.png)
 
-- Data preprocessing and scaling
-- [Train-test split](../../preprocessing/train-test-split.md)
-- [Cross-Validation](../../workflow/cross-validation.md)
-- [Hyperparameter tuning](../../workflow/hyperparameter-tuning.md) with GridSearchCV
-- Evaluation with accuracy, [confusion matrix](../../evaluation/confusion-metrics.md), [ROC curve](../../evaluation/roc-auc.md), and [AUC](../../evaluation/roc-auc.md)
-- Making predictions on new data
+| k | 邊界 | 偏誤 / 變異 |
+| --- | --- | --- |
+| 小（k = 1） | 崎嶇，每個點都有自己的小島；訓練 accuracy = 1 | 低偏誤、高變異 → [過擬合](../../foundations/overfitting-underfitting.md) |
+| 適中（k = 15） | 平滑，訓練與測試分數接近 | 平衡 |
+| 大（k = 100） | 過度平滑，邊緣細節被抹平 | 高偏誤 → 欠擬合 |
 
-### Step 1: Import Libraries
+二元分類時 k 用奇數可避免平手。
+
+## 用法
 
 ```python
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
-from sklearn.datasets import load_iris
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, roc_curve, auc
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
+
+# 承乳癌範例（X_train, y_train；1 = 惡性）
+cv = StratifiedKFold(5, shuffle=True, random_state=0)
+
+# 1. 一定要縮放：未縮放時「worst area」（數百到數千）主導距離
+cross_val_score(KNeighborsClassifier(), X_train, y_train, cv=cv).mean()                                 # 0.930
+cross_val_score(make_pipeline(StandardScaler(), KNeighborsClassifier()), X_train, y_train, cv=cv).mean()  # 0.962
+
+# 2. 調 k 與加權方式
+search = GridSearchCV(make_pipeline(StandardScaler(), KNeighborsClassifier()),
+                      {"kneighborsclassifier__n_neighbors": [1, 3, 5, 7, 11, 15, 21, 31],
+                       "kneighborsclassifier__weights": ["uniform", "distance"]},
+                      cv=cv, scoring="roc_auc").fit(X_train, y_train)
+search.best_params_      # n_neighbors=31, weights="distance"；CV AUC 0.988
 ```
 
-### Step 2: Load and Prepare Data
+## 參數
 
-```python
-data = load_iris()
-X = data.data
-y = data.target  # includes classes 0, 1, 2
+| 參數 | 選項 | 說明 |
+| --- | --- | --- |
+| `n_neighbors` | 整數 | 最重要的參數，用 CV 選 |
+| `weights` | `"uniform"`、`"distance"` | distance：越近的鄰居權重越大 |
+| `metric` | `"minkowski"`（預設，p=2 即歐氏距離）、`"manhattan"`、`"cosine"` | 文字、表現量 profile 常用 cosine |
+| `algorithm` | `"auto"`、`"kd_tree"`、`"ball_tree"`、`"brute"` | 只影響速度 |
 
-# Restrict to binary classification (classes 0 and 1)
-X = X[y != 2]
-y = y[y != 2]
+## 優缺點
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-```
+| 優點 | 缺點 |
+| --- | --- |
+| 直覺、無需訓練 | 預測慢：每次都要算與所有訓練點的距離 |
+| 可以畫任意形狀的邊界 | **對縮放與無關特徵極度敏感** |
+| 自然支援多類別 | 高維時距離失去意義（維度詛咒），見 [高維小樣本](../../foundations/high-dimensional-data.md) |
+| — | 機率輸出粗糙（只是 k 個鄰居的比例） |
 
-### Step 3: Feature Scaling
+> 生資中的 KNN：單細胞分析的 KNN 圖（Leiden / Louvain 分群、UMAP 的基礎）、`KNNImputer` 補值、以已知標註細胞做 label transfer。這些都是在 **PCA 降維後**的空間計算距離，避免高維的距離集中問題。
 
-```python
-scaler = MinMaxScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-```
-
-### Step 4: Cross-Validation
-
-```python
-knn = KNeighborsClassifier()
-cv_scores = cross_val_score(knn, X_train, y_train, cv=5, scoring='accuracy')
-print(cv_scores)  # array of accuracy scores from 5 folds
-```
-
-### Step 5: Hyperparameter Tuning (Grid Search)
-
-```python
-param_grid = {
-    'n_neighbors': [3, 5, 7, 9, 11],
-    'weights': ['uniform', 'distance'],
-    'metric': ['euclidean', 'manhattan', 'chebyshev']
-}
-
-grid_search = GridSearchCV(estimator=knn, param_grid=param_grid, cv=5, scoring='accuracy')
-grid_search.fit(X_train, y_train)
-
-best_knn = grid_search.best_estimator_
-best_params = grid_search.best_params_
-best_score = grid_search.best_score_
-```
-
-### Step 6: Model Evaluation
-
-```python
-y_pred = best_knn.predict(X_test)
-y_prob = best_knn.predict_proba(X_test)[:, 1]  # probabilities for class 1
-
-classification_rep = classification_report(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-# Accuracy
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Test Accuracy: {accuracy:.3f}")
-```
-
-### Step 7: Visualizations
-
-```python
-# Confusion Matrix
-sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=["Class 0", "Class 1"], yticklabels=["Class 0", "Class 1"])
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix')
-plt.show()
-
-# ROC Curve
-fpr, tpr, thresholds = roc_curve(y_test, y_prob)
-roc_auc = auc(fpr, tpr)
-
-plt.figure(figsize=(8, 6))
-plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
-plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('ROC Curve for KNN Classifier')
-plt.legend(loc='lower right')
-plt.show()
-```
-
-### Step 8: Predict on New Data
-
-```python
-new_data = np.array([[5.1, 3.5, 1.4, 0.2], [6.7, 3.1, 4.4, 1.4]])
-new_data_scaled = scaler.transform(new_data)
-new_predictions = best_knn.predict(new_data_scaled)
-print(new_predictions)
-```
-
-### Recommended Notes
-
-- For **multiclass problems**, use **one-vs-rest (OvR)** or **macro-averaged metrics** when computing ROC/[AUC](../../evaluation/roc-auc.md).
-- Always scale features for distance-based algorithms like KNN.
-- Use [cross-validation](../../workflow/cross-validation.md) to reduce variance in model evaluation.
-- GridSearchCV can be computationally expensive; for large datasets, consider **RandomizedSearchCV**.
-- Evaluate not only accuracy but also **precision, recall, F1-score**, especially with [imbalanced](../../evaluation/class-imbalance.md) data.
-
-## Related Concepts
-
-- [Feature Scaling](../../preprocessing/feature-scaling.md)
-- [Train-Test Split](../../preprocessing/train-test-split.md)
-- [Cross-Validation Methods](../../workflow/cross-validation.md)
-- [ROC curve, AUC](../../evaluation/roc-auc.md)
-
-[Back to Classification](README.md)
+相關：[特徵縮放](../../preprocessing/feature-scaling.md)、[補值](../../preprocessing/imputation.md)、[分群](../../unsupervised-learning/clustering/README.md)。

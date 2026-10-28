@@ -1,129 +1,79 @@
-# Logistic Regression
+[Machine Learning](../../README.md) › [監督式學習](../README.md) › [分類](README.md) › 邏輯斯迴歸
 
-Logistic Regression is a widely used classification algorithm that models the probability of a binary outcome using a logistic (sigmoid) function. Despite its name, it is a **classification** method, not a [regression](../regression/README.md) method. It is interpretable, computationally efficient, and often used as a [baseline](../../evaluation/baselines-and-error-analysis.md) for classification tasks.
+# 邏輯斯迴歸 (Logistic Regression)
 
-This note focuses on the **machine-learning workflow**: scaling, regularization, hyperparameter tuning, baseline modeling, and evaluation. For odds-ratio interpretation and the GLM viewpoint, see [Statistics: Logistic Regression](../../../statistics/regression-analysis/logistic-regression.md). For inference-oriented package usage, see [Statsmodels: Logistic Regression](../../packages/statsmodels/logistic-regression.md).
+雖然名字有「迴歸」，它是**分類**方法：用特徵的線性組合預測**對數勝算 (log-odds)**，再經 sigmoid 轉成機率。可解釋、訓練快、機率通常校準良好，是二元分類的標準 baseline。
 
-## Key Concepts
+這篇是 **ML 用法**（縮放、正則化、調參、評估）。odds ratio 解讀與 GLM 觀點見 [統計：邏輯斯迴歸](../../../statistics/regression-analysis/logistic-regression.md)；推論導向的用法見 [statsmodels 邏輯斯迴歸](../../packages/statsmodels/logistic-regression.md)。
 
-- **Log-odds linear relationship**: Logistic regression assumes that the log-odds of the target variable are a linear combination of input features.
-- **Sigmoid function**: Converts the linear combination into a probability between 0 and 1.
-- **[Regularization](../../foundations/regularization.md)**: Helps prevent [overfitting](../../foundations/overfitting-underfitting.md). `C` controls the strength (smaller `C` = stronger regularization).
-- **Solvers**: Different optimization algorithms (`liblinear`, `saga`, `lbfgs`) are suitable for different data sizes and [regularization](../../foundations/regularization.md) types.
+## 模型
 
-⚠️ **Critical Notes:**
+$$
+\log \frac{p}{1-p} = \beta_0 + \beta_1 x_1 + \cdots + \beta_p x_p
+\qquad\Longleftrightarrow\qquad
+p = \frac{1}{1 + e^{-(\beta_0 + \beta^\top x)}}
+$$
 
-- Logistic regression requires features to be on a comparable scale → always use scaling (e.g., `StandardScaler`).
-- Works best for **linearly separable** problems. Nonlinear relationships may require [feature engineering](../../foundations/feature-engineering-principles.md) or kernel methods.
-- Outliers can strongly affect the coefficients.
-- For [imbalanced](../../evaluation/class-imbalance.md) datasets, accuracy is not enough → use precision, recall, F1-score, and [ROC-AUC](../../evaluation/roc-auc.md).
+| 概念 | 說明 |
+| --- | --- |
+| 決策邊界 | $\beta^\top x = 0$（閾值 0.5 時），是一條**直線 / 超平面** |
+| 係數 $\beta_j$ | $x_j$ 增加 1 單位，log-odds 增加 $\beta_j$；$e^{\beta_j}$ = odds ratio |
+| 損失函數 | Log loss（= Bernoulli 負 log-likelihood），見 [損失函數](../../foundations/loss-functions.md) |
+| 多類別 | sklearn 預設 multinomial（softmax）；舊參數 `multi_class` 已移除 |
 
-## Example: Logistic Regression with Hyperparameter Tuning
+## 用法
 
 ```python
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, roc_curve, auc, classification_report, confusion_matrix, RocCurveDisplay
+from sklearn.metrics import roc_auc_score
 
-# Generate dataset
-X, y = make_classification(n_samples=1000, n_features=20, n_classes=2, random_state=42)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+y = 1 - y                                      # 1 = 惡性
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=42)
 
-# Scale features
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+# C = 1/λ：越小正則化越強；l1_ratio：0 = L2、1 = L1（sklearn ≥ 1.8 寫法）
+pipe = make_pipeline(StandardScaler(), LogisticRegression(solver="saga", max_iter=5000))
+grid = {"logisticregression__C": [0.01, 0.1, 1, 10],
+        "logisticregression__l1_ratio": [0, 0.5, 1]}
+search = GridSearchCV(pipe, grid, cv=StratifiedKFold(5, shuffle=True, random_state=0), scoring="roc_auc")
+search.fit(X_train, y_train)
+search.best_params_            # C=1, l1_ratio=1（L1）
+search.best_score_             # CV AUC 0.993
+roc_auc_score(y_test, search.predict_proba(X_test)[:, 1])   # 0.998
 
-# Initialize model
-log_reg = LogisticRegression()
-
-# Cross-validation
-cv_scores = cross_val_score(log_reg, X_train_scaled, y_train, cv=5, scoring='accuracy')
-
-# Hyperparameter tuning
-param_grid = {
-    'C': [0.01, 0.1, 1, 10, 100],
-    'solver': ['liblinear', 'saga'],
-    'max_iter': [100, 200, 300],
-}
-
-grid_search = GridSearchCV(estimator=log_reg, param_grid=param_grid, cv=5, scoring='accuracy')
-grid_search.fit(X_train_scaled, y_train)
-
-best_log_reg = grid_search.best_estimator_
-best_params = grid_search.best_params_
-best_score = grid_search.best_score_
-
-# Predictions
-y_pred = best_log_reg.predict(X_test_scaled)
-accuracy = accuracy_score(y_test, y_pred)
-
-classification_rep = classification_report(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-# ROC curve
-fpr, tpr, thresholds = roc_curve(y_test, best_log_reg.predict_proba(X_test_scaled)[:, 1])
-roc_auc = auc(fpr, tpr)
-
-plt.figure(figsize=(8, 6))
-RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc).plot()
-plt.title("ROC Curve")
-plt.show()
-
-# Predict new data
-new_data = np.random.rand(5, X_train.shape[1])
-new_data_scaled = scaler.transform(new_data)
-predictions = best_log_reg.predict(new_data_scaled)
+# 係數 → 每增加 1 個標準差的 odds ratio
+coef = pd.Series(search.best_estimator_[-1].coef_[0], index=X.columns)
+(coef != 0).sum()                                        # L1 保留 15 / 30 個特徵
+np.exp(coef).sort_values(ascending=False).head(3)        # radius error 12.9、worst texture 7.2、worst area 5.2
 ```
 
-## Visualizing the Log-Odds Relationship
+> 30 個特徵中半徑、周長、面積高度相關，個別 odds ratio 會隨正則化與特徵組合大幅變動，**不能當成獨立效果解讀**。要做係數推論請用少量、有理論依據的特徵配合 statsmodels。
 
-Logistic regression assumes a linear relationship between features and the **log-odds** of the outcome.
+## 常用參數
 
-```python
-from sklearn.datasets import load_iris
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+| 參數 | 說明 |
+| --- | --- |
+| `C` | 正則化強度的倒數；預設 1.0 |
+| `l1_ratio` | 0（L2，預設）→ 1（L1），中間為 Elastic Net；L1 需 `saga` 或 `liblinear`，Elastic Net 只能 `saga` |
+| `solver` | `lbfgs`（預設，L2）、`saga`（大資料、L1 / Elastic Net）、`liblinear`（小資料、二元） |
+| `class_weight="balanced"` | 不平衡資料；會放大陽性機率，見 [類別不平衡](../../evaluation/class-imbalance.md) |
+| `max_iter` | 不收斂（`ConvergenceWarning`）時加大；先確認有標準化 |
 
-# Load dataset
-data = load_iris(as_frame=True)
-X = data.data
-y = (data.target == 0).astype(int)  # Binary: setosa vs. not-setosa
+> sklearn 1.8 起 `penalty=` 已 deprecated（預計 1.10 移除），改用 `l1_ratio`；`C=np.inf` 等於不正則化。
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+## 何時用、限制
 
-model = LogisticRegression()
-model.fit(X_train, y_train)
+| 適合 | 限制 / 對策 |
+| --- | --- |
+| 任何二元分類的第一個 baseline | 只能畫線性邊界 → 加多項式 / 交互作用特徵，或改用樹模型 |
+| 高維小樣本（基因表現）：搭配 L1 / Elastic Net | 共線時係數不穩 → L2 / Elastic Net |
+| 需要可信的機率（風險分數） | 對離群值敏感 → 檢查 [離群值處理](../../preprocessing/outlier-handling.md) |
+| 需要解釋方向與大小 | 完全可分 (perfect separation) 時無正則化的係數會發散 → 正則化 |
 
-# Probabilities
-y_prob = model.predict_proba(X_test)[:, 1]
-log_odds = np.log(y_prob / (1 - y_prob))
-
-plt.scatter(X_test['sepal length (cm)'], log_odds)
-plt.xlabel('Sepal Length (cm)')
-plt.ylabel('Log-Odds')
-plt.title('Feature vs Log-Odds')
-plt.show()
-```
-
-## When to Use Logistic Regression
-
-- Baseline for binary classification problems.
-- Useful when interpretability is important (coefficients show feature influence on log-odds).
-- Effective for smaller datasets where complex models may overfit.
-
-> Logistic regression is simple yet powerful. Always check assumptions, scale features, and consider [regularization](../../foundations/regularization.md) when applying it in practice.
-
-## Related Concepts
-
-- [Confusion Matrix](../../evaluation/confusion-metrics.md)
-- [ROC curve, AUC](../../evaluation/roc-auc.md)
-- [Classification Thresholds and Calibration](../../evaluation/classification-thresholds-and-calibration.md)
-- [Regularization](../../foundations/regularization.md)
-
-[Back to Classification](README.md)
+> 臨床預測模型（風險評分）常用邏輯斯迴歸，不只因為簡單：它的機率校準好、係數可審查，而且在中小型表格資料上常和複雜模型差不多準。乳癌資料上它的 CV AUC (0.992) 和 SVM、XGBoost、stacking 都在 0.99 左右。

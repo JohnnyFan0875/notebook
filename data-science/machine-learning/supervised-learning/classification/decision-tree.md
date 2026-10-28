@@ -1,102 +1,68 @@
-# Decision Tree (Classification)
+[Machine Learning](../../README.md) › [監督式學習](../README.md) › [分類](README.md) › 決策樹
 
-Decision Trees are versatile supervised learning algorithms commonly used for **classification** tasks. In [scikit-learn](../../packages/scikit-learn/README.md), this is implemented as:
+# 決策樹：分類 (Decision Tree Classification)
 
-This note focuses on **classification trees**: class prediction, impurity-based splitting, probability output, and classification evaluation. For the regression-tree variant, see [Decision Tree (Regression)](../regression/decision-tree.md).
+決策樹反覆挑一個特徵與切點，把資料分成更「純」的子群，直到停止條件。結果是一組 if-else 規則，容易解讀，但單棵樹**很不穩定、容易過擬合**，實務上多作為 [隨機森林](../ensemble/random-forest.md)、[Gradient Boosting](../ensemble/gradient-boosting.md) 的基本單元。迴歸版本見 [迴歸樹](../regression/decision-tree.md)。
 
-- `DecisionTreeClassifier`
+![Decision tree structure](src/decision-tree-structure.png)
 
-They recursively split the data based on feature values, creating a tree-like model that is easy to interpret but prone to [overfitting](../../foundations/overfitting-underfitting.md) if not pruned or regularized.
+乳癌資料深度 2 的樹：先看 `worst perimeter`，再看 `worst concave points`。每個節點顯示樣本數、`value = [良性, 惡性]` 與 Gini 不純度。最左葉 252 筆中有 11 筆惡性被歸為良性。這棵 4 個葉節點的樹測試 accuracy 0.906。
 
-## Key Parameters
+## 分裂準則
 
-- **`max_depth`**: Maximum depth of the tree. Limits complexity to avoid [overfitting](../../foundations/overfitting-underfitting.md).
-- **`min_samples_split`**: Minimum samples required to split an internal node.
-- **`min_samples_leaf`**: Minimum samples required to be at a leaf node.
-- **`criterion`**: Metric to evaluate split quality (`gini`, `entropy` for classification).
-- **`max_features`**: Number of features to consider when looking for the best split.
+| `criterion` | 公式 | 說明 |
+| --- | --- | --- |
+| `"gini"`（預設） | $1 - \sum_k p_k^2$ | 計算快 |
+| `"entropy"` / `"log_loss"` | $-\sum_k p_k \log p_k$ | 資訊增益；結果通常與 Gini 相近 |
 
-## Example: Breast Cancer Classification
+每次分裂選「子節點加權不純度下降最多」的特徵與切點（貪婪演算法，不保證全域最佳）。
+
+## 控制複雜度
+
+| 參數 | 作用 |
+| --- | --- |
+| `max_depth` | 最大深度 |
+| `min_samples_leaf` | 葉節點最少樣本數（常是最有效的單一參數） |
+| `min_samples_split` | 節點至少要有多少樣本才能再分 |
+| `max_leaf_nodes` | 葉節點上限 |
+| `ccp_alpha` | 成本複雜度剪枝 (cost-complexity pruning)：長完再剪 |
+| `class_weight` | 不平衡資料 |
 
 ```python
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_curve, auc
+from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
-# Load dataset
-data = load_breast_cancer()
-X = data.data
-y = data.target
+# 承乳癌範例
+full = DecisionTreeClassifier(random_state=0).fit(X_train, y_train)
+full.get_depth(), full.get_n_leaves()      # 8 層、19 葉
+full.score(X_train, y_train)               # 1.0   ← 記住了訓練資料
+full.score(X_test, y_test)                 # 0.901
 
-# Split data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+search = GridSearchCV(DecisionTreeClassifier(random_state=0),
+                      {"max_depth": [2, 3, 4, 5, None], "min_samples_leaf": [1, 5, 10],
+                       "ccp_alpha": [0, 0.005, 0.01, 0.02]},
+                      cv=StratifiedKFold(5, shuffle=True, random_state=0), scoring="roc_auc")
+search.fit(X_train, y_train)               # 最佳：min_samples_leaf=5，CV AUC 0.954
 
-# Initialize classifier
-dt_classifier = DecisionTreeClassifier(random_state=42)
-
-# Cross-validation
-cv_scores = cross_val_score(dt_classifier, X_train, y_train, cv=5)
-
-# Hyperparameter tuning
-param_grid = {
-    'max_depth': [3, 5, 10, None],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4]
-}
-
-grid_search = GridSearchCV(estimator=dt_classifier, param_grid=param_grid, cv=5, scoring='accuracy')
-grid_search.fit(X_train, y_train)
-
-# Best model
-best_model = grid_search.best_estimator_
-best_params = grid_search.best_params_
-best_score = grid_search.best_score_
-
-# Predictions
-y_pred = best_model.predict(X_test)
-y_pred_prob = best_model.predict_proba(X_test)[:, 1]
-
-# Evaluation
-accuracy = accuracy_score(y_test, y_pred)
-classification_rep = classification_report(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
-roc_auc = auc(fpr, tpr)
-
-# Predict unseen data
-unseen_data = X_test[0].reshape(1, -1)
-unseen_prediction = best_model.predict(unseen_data)
-
-# Plot decision tree
-plt.figure(figsize=(15, 10))
-plot_tree(
-    best_model,
-    filled=True,
-    feature_names=list(data.feature_names),
-    class_names=list(data.target_names),
-    rounded=True,
-    fontsize=12
-)
-plt.title('Decision Tree for Breast Cancer Classification', fontsize=16)
-plt.show()
+# 讀規則
+print(export_text(DecisionTreeClassifier(max_depth=2).fit(X_train, y_train),
+                  feature_names=list(X.columns)))
+# |--- worst perimeter <= 112.80
+# |   |--- worst concave points <= 0.18  → class 0
+# ...
+plot_tree(search.best_estimator_, feature_names=list(X.columns), filled=True, max_depth=3)
 ```
 
-## Critical Notes
+調過參的單棵樹 CV AUC 0.954，仍明顯低於邏輯斯迴歸（0.992）與隨機森林（0.986）。
 
-- **[Overfitting](../../foundations/overfitting-underfitting.md)**: Decision trees can perfectly fit training data if not controlled. Use parameters like `max_depth` and `min_samples_leaf`.
-- **Interpretability**: Trees are easy to visualize and explain, making them useful for interpretability.
-- **Unstable splits**: Small changes in data can lead to very different trees. Ensemble methods ([Random Forest](../ensemble/random-forest.md), [Gradient Boosting](../ensemble/gradient-boosting.md)) are often preferred.
-- **Feature importance**: Trees provide a natural way to rank features by importance.
+## 優缺點
 
-## Related Concepts
+| 優點 | 缺點 |
+| --- | --- |
+| 規則可讀，可直接給領域專家審查 | **不穩定**：資料稍變，樹結構就大幅改變 |
+| 不需縮放，能處理 NaN（sklearn ≥ 1.3） | 容易過擬合，需剪枝 |
+| 自動捕捉非線性與交互作用 | 邊界只能是軸平行的矩形 |
+| 混合數值與類別特徵 | 機率輸出粗糙（葉節點比例） |
+| — | `feature_importances_` 偏好高基數特徵，見 [可解釋性](../../interpretability-and-diagnostics/model-interpretability.md#mdi-的偏誤) |
 
-- [Confusion Matrix](../../evaluation/confusion-metrics.md)
-- [Cross-Validation Methods](../../workflow/cross-validation.md)
-- [Hyperparameter Tuning](../../workflow/hyperparameter-tuning.md)
-- [Random Forest](../ensemble/random-forest.md)
-
-[Back to Classification](README.md)
+> 需要「可解釋的規則」又要準確度時：用淺樹當作解釋工具，主模型用集成方法；或檢查淺樹與集成模型的表現差距是否可以接受。

@@ -1,145 +1,84 @@
-# Gradient Boosting
+[Machine Learning](../../README.md) › [監督式學習](../README.md) › [集成方法](README.md) › Gradient Boosting
 
-Gradient Boosting is an ensemble technique that builds models sequentially, where each new model tries to correct the errors of the previous ones using gradient descent on the loss function.
+# 梯度提升 (Gradient Boosting)
 
-- **GradientBoostingClassifier** for [classification](../classification/README.md) tasks.
-- **GradientBoostingRegressor** for [regression](../regression/README.md) tasks.
+依序加入淺樹，每棵新樹擬合**目前模型損失函數的負梯度**（平方損失時就是殘差），再乘上學習率加進模型。等於在「函數空間」做梯度下降。是表格資料上最常勝出的模型家族（XGBoost、LightGBM、CatBoost 都屬於這一類）。
 
-## Gradient Boosting Classifier
+$$
+F_m(x) = F_{m-1}(x) + \eta \cdot h_m(x), \qquad h_m \approx -\frac{\partial L(y, F_{m-1}(x))}{\partial F_{m-1}(x)}
+$$
 
-```python
-import numpy as np
-import pandas as pd
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV, StratifiedKFold
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import classification_report, accuracy_score
+## 關鍵參數
 
-# Load dataset
-data = load_iris()
-X = data.data
-y = data.target
+| 參數 | 作用 | 常用範圍 |
+| --- | --- | --- |
+| `learning_rate` (η) | 每棵樹的貢獻縮放；越小越穩但需要越多樹 | 0.01–0.1 |
+| `n_estimators` / `max_iter` | 樹的數量；**會過擬合**，用 early stopping 決定 | 數百到數千 |
+| `max_depth` / `max_leaf_nodes` | 每棵樹的複雜度（交互作用的階數） | 深度 3–8 |
+| `subsample` | 每棵樹用的樣本比例（< 1 = stochastic GB） | 0.5–0.9 |
+| `min_samples_leaf` | 葉節點最少樣本 | 依資料量 |
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+![Ensemble n_estimators](src/ensemble-n-estimators.png)
 
-# Gradient Boosting Classifier
-gb_clf = GradientBoostingClassifier()
+右圖：學習率 1.0 很快收斂；0.1 需要約 800 輪；0.02 在 800 輪時還沒收斂。學習率與樹數必須一起調，實務做法是**固定較小的學習率，用 early stopping 決定樹數**。
 
-# Hyperparameter grid
-param_grid = {
-    'n_estimators': [50, 100, 200],
-    'learning_rate': [0.05, 0.1, 0.2],
-    'max_depth': [3, 4, 5],
-    'subsample': [0.8, 1.0],
-    'min_samples_split': [2, 5]
-}
+## 兩種 sklearn 實作
 
-# Grid search
-grid_search = GridSearchCV(
-    estimator=gb_clf,
-    param_grid=param_grid,
-    cv=StratifiedKFold(n_splits=5),
-    scoring='accuracy',
-    n_jobs=-1
-)
-
-grid_search.fit(X_train, y_train)
-
-best_params_ = grid_search.best_params_
-best_model = grid_search.best_estimator_
-best_score = grid_search.best_score_
-
-# Predictions
-y_pred = best_model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
-
-# Cross-validation
-cv_scores = cross_val_score(best_model, X_train, y_train, cv=5, scoring='accuracy')
-
-print(f"Test Accuracy: {accuracy:.4f}")
-print(f"Cross-Validation Accuracy: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
-```
-
-**Critical Notes:**
-
-- Gradient Boosting is sensitive to **learning_rate**: smaller values require more estimators but may generalize better.
-- `subsample < 1.0` introduces randomness (stochastic gradient boosting), reducing [overfitting](../../foundations/overfitting-underfitting.md).
-- Deep trees can lead to [overfitting](../../foundations/overfitting-underfitting.md); tune `max_depth` carefully.
-
-## Gradient Boosting Regressor
+| | `GradientBoostingClassifier/Regressor` | `HistGradientBoostingClassifier/Regressor` |
+| --- | --- | --- |
+| 速度 | 慢（精確分裂） | **快很多**（特徵先分箱成 ≤ 255 個 bin），適合數萬筆以上 |
+| 缺失值 | 需補值 | **原生支援 NaN** |
+| 類別特徵 | 需編碼 | `categorical_features="from_dtype"` 原生支援 |
+| Early stopping | `n_iter_no_change` + `validation_fraction` | `early_stopping="auto"`（n > 10,000 時自動開啟） |
+| 對應 | 經典版本 | 類似 LightGBM |
 
 ```python
-import numpy as np
-from sklearn.datasets import make_regression
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.ensemble import GradientBoostingClassifier, HistGradientBoostingClassifier
 
-# Generate regression dataset
-X, y = make_regression(n_samples=200, n_features=10, noise=0.2, random_state=42)
+# 承乳癌範例
+# 1. 經典版 + early stopping：設很大的 n_estimators，讓驗證分數決定何時停
+gb = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.05, max_depth=3, subsample=0.8,
+                                validation_fraction=0.2, n_iter_no_change=20, random_state=0)
+gb.fit(X_train, y_train)
+gb.n_estimators_          # 113：實際只用了 113 棵就停止
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# 2. HistGradientBoosting：預設值就很強，大資料首選
+hgb = HistGradientBoostingClassifier(learning_rate=0.05, max_iter=1000, early_stopping=True,
+                                     random_state=0)
+hgb.fit(X_train, y_train)
+hgb.n_iter_               # 80
 
-# Gradient Boosting Regressor
-gb_reg = GradientBoostingRegressor()
-
-# Hyperparameter grid
-param_grid = {
-    'n_estimators': [50, 100, 200],
-    'learning_rate': [0.05, 0.1, 0.2],
-    'max_depth': [3, 4, 5],
-    'subsample': [0.8, 1.0],
-    'min_samples_split': [2, 5]
-}
-
-# Grid search
-grid_search = GridSearchCV(
-    estimator=gb_reg,
-    param_grid=param_grid,
-    cv=5,
-    scoring='r2',
-    n_jobs=-1
-)
-
-grid_search.fit(X_train, y_train)
-
-best_params_ = grid_search.best_params_
-best_model = grid_search.best_estimator_
-best_score = grid_search.best_score_
-
-# Predictions
-y_pred = best_model.predict(X_test)
-
-# Evaluation
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-# Cross-validation
-cv_scores = cross_val_score(best_model, X_train, y_train, cv=5, scoring='r2')
-
-print(f"Test MSE: {mse:.4f}")
-print(f"Test R²: {r2:.4f}")
-print(f"Cross-Validation R²: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+# 其他損失：迴歸可用 loss="absolute_error"、"quantile"（預測區間）、"poisson"（計數）
 ```
 
-**Critical Notes:**
+乳癌資料（398 筆）CV AUC：Gradient Boosting 0.985、HistGB 0.983，都略低於邏輯斯迴歸 0.992。樣本小、關係近線性時，boosting 沒有優勢。
 
-- Gradient Boosting Regressor can overfit if `n_estimators` and `max_depth` are too large.
-- Use **early stopping** (via `validation_fraction` + `n_iter_no_change`) to prevent [overfitting](../../foundations/overfitting-underfitting.md).
-- Smaller `learning_rate` with larger `n_estimators` often yields better results.
+## 調參順序
 
-## Key Takeaways
+```
+1. 固定 learning_rate = 0.05–0.1，開 early stopping
+2. 調樹的複雜度：max_depth / max_leaf_nodes、min_samples_leaf
+3. 調隨機性：subsample、max_features（或 XGBoost 的 colsample_bytree）
+4. 調正則化：l2_regularization（HistGB）、reg_lambda / reg_alpha（XGBoost）
+5. 最後把 learning_rate 降低、樹數加多做最後提升
+```
 
-- Gradient Boosting builds models sequentially, focusing on previous errors.
-- Requires careful tuning of `n_estimators`, `learning_rate`, and `max_depth`.
-- Subsampling makes the method more robust and reduces [overfitting](../../foundations/overfitting-underfitting.md).
-- Strong [baseline](../../evaluation/baselines-and-error-analysis.md) model for both classification and regression tasks.
+調參方法見 [超參數調整](../../workflow/hyperparameter-tuning.md)。
 
-## Related Concepts
+## 特性
 
-- [Bias–Variance Tradeoff](../../foundations/bias-variance-tradeoff.md)
-- [Hyperparameter Tuning](../../workflow/hyperparameter-tuning.md)
-- [AdaBoosting](adaboost.md)
-- [Random Forest](random-forest.md)
+| 優點 | 缺點 |
+| --- | --- |
+| 表格資料上準確度通常最高 | 參數多、需要調 |
+| 支援各種損失（分位數、Poisson…） | 依序訓練（樹內可平行，樹間不行） |
+| HistGB / XGBoost / LightGBM 原生處理缺失 | 樹數過多會過擬合（不像隨機森林） |
+| — | 對標籤雜訊比隨機森林敏感 |
 
-[Back to Ensemble Methods](README.md)
+| 函式庫 | 特色 |
+| --- | --- |
+| sklearn `HistGradientBoosting*` | 不用額外安裝、與 pipeline 整合最好 |
+| [XGBoost](xgboost.md) | 最成熟、GPU、競賽常用 |
+| LightGBM | leaf-wise 生長，大資料最快 |
+| CatBoost | 類別特徵處理最好（ordered target encoding） |
+
+> Boosting 和 [隨機森林](random-forest.md) 的差別：隨機森林平均許多「各自很強、但變異高」的深樹；boosting 依序累加許多「各自很弱」的淺樹。

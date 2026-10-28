@@ -1,133 +1,54 @@
-# Adaboosting
+[Machine Learning](../../README.md) › [監督式學習](../README.md) › [集成方法](README.md) › AdaBoost
 
-Adaptive Boosting (AdaBoost) is an ensemble method that combines multiple weak learners (often shallow [decision tree](../classification/decision-tree.md)s) sequentially, where each new learner focuses on correcting the mistakes of the previous ones.
+# AdaBoost (Adaptive Boosting)
 
-- **AdaBoostClassifier** for [classification](../classification/README.md) tasks.
-- **AdaBoostRegressor** for [regression](../regression/README.md) tasks.
+最早的實用 boosting 演算法：依序訓練多個弱學習器（通常是只切一刀的決策樹 stump），每一輪**提高上一輪分錯樣本的權重**，讓下一個學習器專注在難的樣本；最後依各學習器的準確度加權投票。
 
-## AdaBoost Classifier
-
-```python
-import numpy as np
-from sklearn.datasets import load_digits
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV, StratifiedKFold
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
-
-# Load dataset
-digits = load_digits()
-X = digits.data
-y = digits.target
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-
-# Base estimator (usually weak, e.g., decision stump)
-base_estimator = DecisionTreeClassifier(max_depth=1)
-
-# AdaBoost classifier
-ada_boost = AdaBoostClassifier(base_estimator=base_estimator, random_state=42)
-
-# Hyperparameter grid
-param_grid = {
-    'n_estimators': [50, 100, 150],  # Number of weak learners
-    'learning_rate': [0.01, 0.1, 1.0]  # Shrinks contribution of each weak learner
-}
-
-# Grid search
-grid_search = GridSearchCV(
-    ada_boost,
-    param_grid,
-    cv=5,
-    scoring='accuracy',
-    n_jobs=-1
-)
-grid_search.fit(X_train, y_train)
-
-best_params_ = grid_search.best_params_
-best_model = grid_search.best_estimator_
-best_score = grid_search.best_score_
-
-# Predictions
-y_pred = best_model.predict(X_test)
-test_accuracy = accuracy_score(y_test, y_pred)
-
-# Cross-validation
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-cv_scores = cross_val_score(best_model, X, y, cv=cv, scoring='accuracy')
-
-print(f"Test Accuracy: {test_accuracy:.4f}")
-print(f"Cross-Validation Accuracy: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+```
+所有樣本權重相同 → 訓練 stump 1 → 分錯的樣本權重 ↑
+                → 訓練 stump 2 → 分錯的樣本權重 ↑
+                → …
+最終預測 = Σ（學習器權重 × 學習器預測）    準的學習器權重大
 ```
 
-**Critical Notes:**
+| | AdaBoost | [Gradient Boosting](gradient-boosting.md) |
+| --- | --- | --- |
+| 如何專注在錯誤 | 調整**樣本權重** | 擬合前一輪的**殘差 / 梯度** |
+| 損失函數 | 指數損失（分類） | 任意可微損失 |
+| 現況 | 概念重要，實務上多被 Gradient Boosting 取代 | 表格資料主流 |
 
-- AdaBoost works best with **weak learners** (e.g., decision stumps).
-- `n_estimators` too large can lead to [overfitting](../../foundations/overfitting-underfitting.md); tune carefully.
-- A smaller `learning_rate` often requires more estimators but may improve [generalization](../../foundations/generalization.md).
-
-## AdaBoost Regressor
+## 用法
 
 ```python
-import numpy as np
-from sklearn.datasets import make_regression
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.ensemble import AdaBoostRegressor
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
-# Generate regression dataset
-X, y = make_regression(n_samples=200, n_features=10, noise=0.3, random_state=42)
+# 承乳癌範例
+ada = AdaBoostClassifier(estimator=DecisionTreeClassifier(max_depth=1),   # stump；舊名 base_estimator 已移除
+                         n_estimators=300, learning_rate=0.5, random_state=0)
+# CV AUC 0.992
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+search = GridSearchCV(ada, {"n_estimators": [100, 300, 500], "learning_rate": [0.1, 0.5, 1.0]},
+                      cv=StratifiedKFold(5, shuffle=True, random_state=0), scoring="roc_auc")
 
-# Base estimator (usually weak)
-base_estimator = DecisionTreeRegressor(max_depth=3)
-
-# AdaBoost Regressor
-ada_reg = AdaBoostRegressor(
-    base_estimator=base_estimator,
-    n_estimators=100,
-    learning_rate=0.1,
-    random_state=42
-)
-
-# Train
-ada_reg.fit(X_train, y_train)
-
-# Predictions
-y_pred = ada_reg.predict(X_test)
-
-# Evaluation
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-cv_scores = cross_val_score(ada_reg, X, y, cv=5, scoring='r2')
-
-print(f"Test MSE: {mse:.4f}")
-print(f"Test R²: {r2:.4f}")
-print(f"Cross-Validation R²: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+# 迴歸（AdaBoost.R2）：loss 決定樣本權重如何依誤差更新
+AdaBoostRegressor(estimator=DecisionTreeRegressor(max_depth=3), n_estimators=100,
+                  learning_rate=0.1, loss="linear")      # "linear"、"square"、"exponential"
 ```
 
-**Critical Notes:**
+> 新版 sklearn 的 `AdaBoostClassifier` 只剩 SAMME 演算法：`algorithm` 參數在 1.6 deprecated、之後移除（舊程式碼的 `algorithm="SAMME.R"` 會報錯）。
 
-- For regression, AdaBoost minimizes **loss functions** like squared error or absolute error.
-- Sensitive to **outliers** since each learner tries to correct errors from previous ones.
-- Tune both `learning_rate` and `n_estimators` together for best results.
+| 參數 | 說明 |
+| --- | --- |
+| `estimator` | 弱學習器；分類常用 `max_depth=1`，迴歸常用 2–4 |
+| `n_estimators` | 輪數；太多可能過擬合（尤其有雜訊時） |
+| `learning_rate` | 縮小每個學習器的貢獻；和 `n_estimators` 互相取捨，一起調 |
 
-## Key Takeaways
+## 特性
 
-- AdaBoost focuses sequentially on misclassified/mispredicted samples.
-- Works best with **simple base estimators**.
-- For classification: commonly use decision stumps (`max_depth=1`).
-- For regression: shallow trees (`max_depth` small) often work well.
-- Careful tuning of `n_estimators` and `learning_rate` is crucial to avoid [overfitting](../../foundations/overfitting-underfitting.md).
-
-## Related Concepts
-
-- [Decision Tree (Classification)](../classification/decision-tree.md)
-- [Hyperparameter Tuning](../../workflow/hyperparameter-tuning.md)
-- [Bias–Variance Tradeoff](../../foundations/bias-variance-tradeoff.md)
-- [Gradient Boosting](gradient-boosting.md)
-
-[Back to Ensemble Methods](README.md)
+| 優點 | 缺點 |
+| --- | --- |
+| 簡單、參數少 | **對標籤雜訊與離群值敏感**：錯標的樣本權重會被不斷放大 |
+| 弱學習器就能組出強模型 | 依序訓練，無法平行 |
+| 理論與直覺清楚，是理解 boosting 的起點 | 通常不如 Gradient Boosting / XGBoost |

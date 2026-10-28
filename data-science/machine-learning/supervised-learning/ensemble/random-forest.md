@@ -1,131 +1,60 @@
-# Random Forest
+[Machine Learning](../../README.md) › [監督式學習](../README.md) › [集成方法](README.md) › 隨機森林
 
-Random Forest is an ensemble learning method that builds multiple [decision tree](../classification/decision-tree.md)s and aggregates their predictions. It combines the ideas of **[bagging](bagging.md)** and **feature randomness**, making it robust and less prone to [overfitting](../../foundations/overfitting-underfitting.md).
+# 隨機森林 (Random Forest)
 
-- **RandomForestClassifier** for [classification](../classification/README.md) tasks.
-- **RandomForestRegressor** for [regression](../regression/README.md) tasks.
+[Bagging](bagging.md) 的決策樹版本，再加上**每次分裂只從隨機挑選的部分特徵中選**（`max_features`）。特徵隨機性讓樹之間的相關降低，平均後變異下降更多。幾乎不需要調參就有不錯的表現，是表格資料的穩健預設。
 
-## Random Forest Classifier
+| 隨機性來源 | 作用 |
+| --- | --- |
+| Bootstrap 樣本 | 每棵樹看到不同資料 |
+| 每次分裂隨機選特徵子集 | 避免所有樹都用同一個最強特徵開頭，降低樹間相關 |
 
-```python
-import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score, StratifiedKFold
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
-
-# Load dataset
-data = load_iris()
-X = data.data
-y = data.target
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-
-# Random Forest Classifier
-rf = RandomForestClassifier(random_state=42, oob_score=True)
-
-# Hyperparameter grid
-param_grid = {
-    'n_estimators': [10, 50, 100],     # Number of trees
-    'max_depth': [None, 10, 20],       # Max tree depth
-    'min_samples_split': [2, 5, 10],   # Min samples to split an internal node
-    'min_samples_leaf': [1, 2, 4],     # Min samples at a leaf node
-    'bootstrap': [True, False]         # Bootstrap sampling
-}
-
-# Grid search
-grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=5, n_jobs=-1)
-grid_search.fit(X_train, y_train)
-
-best_params_ = grid_search.best_params_
-best_model = grid_search.best_estimator_
-best_score = grid_search.best_score_
-
-# Predictions
-y_pred = best_model.predict(X_test)
-
-# Feature importance
-feature_importance = best_model.feature_importances_
-
-# Accuracy and OOB score
-test_accuracy = accuracy_score(y_test, y_pred)
-oob_score = best_model.oob_score_  # OOB score (accuracy for classification)
-
-# Cross-validation
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-cv_scores = cross_val_score(best_model, X, y, cv=cv, scoring='accuracy')
-
-print(f"Test Accuracy: {test_accuracy:.4f}")
-print(f"OOB Score: {oob_score:.4f}")
-print(f"Cross-Validation Accuracy: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
-```
-
-**Critical Notes:**
-
-- Random Forest reduces variance but may still overfit with too many deep trees. Use `max_depth` and `min_samples_leaf` to control complexity.
-- `feature_importances_` can be used to interpret which features contribute most to predictions.
-- OOB (Out-of-Bag) score provides an unbiased estimate of accuracy.
-
-## Random Forest Regressor
+## 用法
 
 ```python
-import numpy as np
-from sklearn.datasets import make_regression
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
-# Generate regression dataset
-X, y = make_regression(n_samples=200, n_features=10, noise=0.2, random_state=42)
+# 承乳癌範例
+rf = RandomForestClassifier(n_estimators=500, oob_score=True, n_jobs=-1, random_state=0)
+rf.fit(X_train, y_train)
+rf.oob_score_                    # 0.955（OOB accuracy）
+rf.score(X_test, y_test)         # 0.959；測試 AUC 0.996
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Random Forest Regressor
-rf_reg = RandomForestRegressor(
-    n_estimators=100,
-    max_depth=None,
-    random_state=42,
-    oob_score=True
-)
-
-# Train
-rf_reg.fit(X_train, y_train)
-
-# Predictions
-y_pred = rf_reg.predict(X_test)
-
-# Evaluation
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-oob_r2 = rf_reg.oob_score_  # OOB R² score for regression
-
-# Cross-validation
-cv_scores = cross_val_score(rf_reg, X, y, cv=5, scoring='r2')
-
-print(f"Test MSE: {mse:.4f}")
-print(f"Test R²: {r2:.4f}")
-print(f"OOB R² Score: {oob_r2:.4f}")
-print(f"Cross-Validation R²: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+# 調參：主要調 max_features 與 min_samples_leaf；n_estimators 夠大即可，不需要調
+search = GridSearchCV(RandomForestClassifier(n_estimators=300, n_jobs=-1, random_state=0),
+                      {"max_features": ["sqrt", 0.3, 0.5], "min_samples_leaf": [1, 3, 5]},
+                      cv=StratifiedKFold(5, shuffle=True, random_state=0), scoring="roc_auc")
+search.fit(X_train, y_train)     # 最佳仍是預設：max_features="sqrt", min_samples_leaf=1
 ```
 
-**Critical Notes:**
+| 參數 | 預設 | 說明 |
+| --- | --- | --- |
+| `n_estimators` | 100 | 越多越穩，不會過擬合；通常 300–1000 |
+| `max_features` | 分類 `"sqrt"`；迴歸 `1.0` | 越小樹越不相關但單棵越弱；**最重要的參數** |
+| `min_samples_leaf` | 1 | 增大可平滑預測、降低記憶雜訊 |
+| `max_depth` | None | 通常不限，用 `min_samples_leaf` 控制 |
+| `class_weight` | None | `"balanced"` / `"balanced_subsample"` 用於不平衡 |
+| `oob_score` | False | 需 `bootstrap=True` |
 
-- Random Forest regression outputs are averages of multiple [decision tree](../classification/decision-tree.md)s, reducing variance.
-- OOB R² provides an internal performance estimate without requiring a validation set.
-- Increasing `n_estimators` improves stability but adds computation time.
+> 迴歸的 `max_features` 預設在 sklearn 1.1 起改為 `1.0`（全部特徵，等於 bagging），舊版是 `"auto"`。迴歸時試試 `"sqrt"` 或 0.3–0.5，常有幫助。
 
-## Key Takeaways
+## 為什麼樹多不會過擬合
 
-- Random Forest combines bagging with feature randomness for robustness.
-- For classification: OOB score ≈ accuracy. For regression: OOB score ≈ R².
-- Useful for feature importance analysis and handling high-dimensional datasets.
-- Always tune hyperparameters (`n_estimators`, `max_depth`, `min_samples_leaf`) for best performance.
+![Ensemble n_estimators](src/ensemble-n-estimators.png)
 
-## Related Concepts
+左圖：樹的數量增加，測試誤差單調下降後持平；增加樹只是讓平均更穩定，不增加模型對單一訓練點的記憶。真正控制過擬合的是每棵樹的複雜度（`min_samples_leaf`、`max_features`）。OOB 誤差在樹少時偏高（每筆只被少數樹評估），約 100 棵以上才和測試誤差一致。
 
-- [Decision Tree (Classification)](../classification/decision-tree.md)
-- [Decision Tree (Regression)](../regression/decision-tree.md)
-- [Model Interpretability](../../interpretability-and-diagnostics/model-interpretability.md)
-- [Bias–Variance Tradeoff](../../foundations/bias-variance-tradeoff.md)
+## 特性
 
-[Back to Ensemble Methods](README.md)
+| 優點 | 缺點 |
+| --- | --- |
+| 預設值就很好用，對超參數不敏感 | 模型大、預測比線性模型慢 |
+| 不需縮放；能處理 NaN（sklearn ≥ 1.4） | 訓練 accuracy 常接近 1，**不能用訓練分數判斷過擬合** |
+| 自動捕捉非線性與交互作用 | 無法外推到訓練範圍之外 |
+| 內建 OOB 評估 | 機率常被拉向中間，需要時檢查 [校準](../../evaluation/classification-thresholds-and-calibration.md#校準-calibration) |
+| 可平行 | `feature_importances_`（MDI）有偏誤 → 用 permutation importance，見 [可解釋性](../../interpretability-and-diagnostics/model-interpretability.md#mdi-的偏誤) |
+
+> 變體 `ExtraTreesClassifier`（Extremely Randomized Trees）連切點也隨機選，更快、變異更低；乳癌資料上 CV AUC 0.991，略高於隨機森林 0.986。
+
+生資常用：表現量 / 甲基化資料的分類、變異致病性預測的特徵模型、微生物組成預測。p ≫ n 時仍需注意 [高維小樣本](../../foundations/high-dimensional-data.md) 的驗證設計。

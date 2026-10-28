@@ -1,69 +1,47 @@
-# Decision Tree (Regression)
+[Machine Learning](../../README.md) › [監督式學習](../README.md) › [迴歸](README.md) › 迴歸樹
 
-[Decision Tree](../classification/decision-tree.md)s 也可以用在回歸問題。和線性回歸不同，回歸樹不是擬合一條平滑直線，而是把特徵空間切成多個區塊，讓每個區塊輸出一個常數預測值。
+# 迴歸樹 (Decision Tree Regression)
 
-This note focuses on **regression trees**: piecewise-constant prediction, regression loss, and how tree depth affects numeric prediction. For the class-prediction variant, see [Decision Tree (Classification)](../classification/decision-tree.md).
+迴歸樹把特徵空間切成很多矩形區塊，每個區塊預測一個常數（該區塊訓練資料 y 的平均）。切分規則、剪枝與可解釋性和 [分類樹](../classification/decision-tree.md) 相同，差別在分裂準則與輸出。
 
-在 [scikit-learn](../../packages/scikit-learn/README.md) 中，對應類別是 `DecisionTreeRegressor`。
+| | 分類樹 | 迴歸樹 |
+| --- | --- | --- |
+| 葉節點輸出 | 類別比例 / 多數類別 | y 的平均（或中位數） |
+| 分裂準則 `criterion` | `gini`、`entropy`、`log_loss` | `squared_error`、`absolute_error`、`friedman_mse`、`poisson` |
+| sklearn | `DecisionTreeClassifier` | `DecisionTreeRegressor` |
 
-## Core Idea
+![Regression tree depth](src/decision-tree-depth.png)
 
-- 反覆選擇切分點，讓每個節點內的目標值更一致。
-- 常見目標是最小化 Mean Squared Error ([MSE](../../evaluation/mse-rmse.md)) 或其他回歸損失。
-- 最終預測通常呈現階梯狀，而不是平滑曲線。
+預測是**階梯狀**：深度 2 只有 4 階，抓到大致形狀；深度 4 較貼近真實曲線，測試 MSE 最低；不限深度時每個訓練點自成一葉，訓練 MSE = 0、測試 MSE 反而最高。
 
-## Key Parameters
-
-- **`max_depth`**: controls tree depth and helps prevent [overfitting](../../foundations/overfitting-underfitting.md)
-- **`min_samples_split`** and **`min_samples_leaf`**: require enough samples before splitting or keeping a leaf
-- **`criterion`**: split quality metric (`squared_error`, `absolute_error`, `friedman_mse`, `poisson`)
-
-## Example: Regression
+## 用法
 
 ```python
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, KFold
 
-# Example dataset
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Train regressor
-regressor = DecisionTreeRegressor(max_depth=5, random_state=42)
-regressor.fit(X_train, y_train)
-
-# Predictions
-y_pred_reg = regressor.predict(X_test)
-
-# Evaluation
-mse = mean_squared_error(y_test, y_pred_reg)
-r2 = r2_score(y_test, y_pred_reg)
-print(f"MSE: {mse}, R2: {r2}")
+# 承 diabetes 切分
+search = GridSearchCV(DecisionTreeRegressor(random_state=0),
+                      {"max_depth": [1, 2, 3, 4, 6, 10, None], "min_samples_leaf": [1, 5, 10, 20]},
+                      cv=KFold(5, shuffle=True, random_state=0), scoring="neg_root_mean_squared_error")
+search.fit(X_train, y_train)
 ```
 
-## How to Interpret Results
+diabetes 上不同深度的 CV RMSE：
 
-- 如果資料中有明顯非線性或交互作用，回歸樹常比單純線性模型更容易抓到結構。
-- 如果預測曲線看起來非常鋸齒或在訓練集超準，通常代表樹太深了。
-- 單棵樹的解釋性高，但預測穩定性通常不如 ensemble。
+| `max_depth` | 1 | 2 | 3 | 4 | 6 | 10 | 不限 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CV RMSE | 69.2 | **64.1** | 66.5 | 68.5 | 72.7 | 80.4 | 78.7 |
 
-## Critical Notes
+最佳的單棵樹 (64.1) 仍明顯輸給線性迴歸 (54.9)：資料以線性關係為主、樣本又少時，單棵樹的階梯近似很吃虧。
 
-- **[Overfitting](../../foundations/overfitting-underfitting.md) risk**: trees can overfit noisy regression data without constraints
-- **Interpretability**: still interpretable, but predictions are step-like rather than smooth
-- **Better alternatives**: ensembles like [Random Forest](../ensemble/random-forest.md) or [Gradient Boosting](../ensemble/gradient-boosting.md) often perform better on tabular data
+## 特性
 
-## Common Pitfalls
+| 優點 | 缺點 |
+| --- | --- |
+| 自動抓非線性與交互作用 | 預測不連續（階梯狀），無法外推到訓練範圍之外 |
+| 不需縮放、可處理 NaN（新版 sklearn） | 單棵樹變異很大，資料稍變結構就改變 |
+| 淺樹可直接讀成規則 | 深樹極易 [過擬合](../../foundations/overfitting-underfitting.md) |
+| `criterion="poisson"` 可處理計數目標 | 通常輸給 [隨機森林](../ensemble/random-forest.md)、[Gradient Boosting](../ensemble/gradient-boosting.md) |
 
-- 沒有限制樹深度或 leaf 大小。
-- 把單棵回歸樹的高訓練分數誤認為泛化能力。
-- 忽略樹模型對資料微小變動可能相當敏感。 
-
-## Related Concepts
-
-- [MSE, RMSE](../../evaluation/mse-rmse.md)
-- [Hyperparameter Tuning](../../workflow/hyperparameter-tuning.md)
-- [Random Forest](../ensemble/random-forest.md)
-- [Generalization](../../foundations/generalization.md)
-
-[Back to Regression](README.md)
+> 實務上很少單獨使用迴歸樹，它主要是集成方法的基本單元。要可解釋的非線性模型，可考慮淺樹、廣義加法模型 (GAM)，或樹模型 + [SHAP](../../interpretability-and-diagnostics/model-interpretability.md)。

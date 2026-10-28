@@ -9,7 +9,7 @@
 | 任務 | 先做的 baseline | 常用模型 | 筆記 |
 | --- | --- | --- | --- |
 | 迴歸（連續 y） | 平均值 / 中位數、線性迴歸 | Ridge / Lasso、隨機森林、Gradient Boosting | [線性](supervised-learning/regression/linear.md)、[Ridge](supervised-learning/regression/ridge.md)、[Lasso](supervised-learning/regression/lasso.md)、[Elastic Net](supervised-learning/regression/elastic-net.md) |
-| 分類（類別 y） | 多數類別、邏輯斯迴歸 | 隨機森林、Gradient Boosting、SVM | [邏輯斯迴歸](supervised-learning/classification/logistic-regression.md)、[SVM](supervised-learning/classification/svm.md)、[KNN](supervised-learning/classification/knn.md)、[決策樹](supervised-learning/classification/decision-tree.md) |
+| 分類（類別 y） | 多數類別、邏輯斯迴歸 | 隨機森林、Gradient Boosting、SVM | [邏輯斯迴歸](supervised-learning/classification/logistic-regression.md)、[SVM](supervised-learning/classification/svm.md)、[KNN](supervised-learning/classification/knn.md)、[決策樹](supervised-learning/classification/decision-tree.md)、[Naive Bayes](supervised-learning/classification/naive-bayes.md) |
 | 表格資料要最高分 | 單一調好的樹模型 | XGBoost / LightGBM、stacking | [Gradient Boosting](supervised-learning/ensemble/gradient-boosting.md)、[XGBoost](supervised-learning/ensemble/xgboost.md)、[Stacking](supervised-learning/ensemble/stacking.md) |
 | 要可解釋的係數 | — | 線性 / 邏輯斯迴歸、淺層決策樹 | [statsmodels](packages/statsmodels/README.md)、[可解釋性](interpretability-and-diagnostics/model-interpretability.md) |
 | 找群組（無標籤） | K-Means | 階層式、DBSCAN、GMM | [分群](unsupervised-learning/clustering/README.md) |
