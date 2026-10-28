@@ -1,107 +1,61 @@
-# Matplotlib: Line Plot
+[視覺化](../README.md) › [Matplotlib](README.md) › 折線圖
 
-Line plots are one of the most common ways to visualize continuous data. They show how a variable changes over time or along a sequence.
+# 折線圖 (Line Plot)
 
-## Import Packages and Example Dataset
+折線圖呈現一個變數沿著有順序的 x（時間、劑量、濃度、訓練 epoch）的變化。x 沒有順序（類別、樣本編號）時連線沒有意義，改用點圖或長條圖。
 
 ```python
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
-# Example dataset: Iris
-iris = sns.load_dataset("iris")
+flights = sns.load_dataset("flights")
+yearly = flights.groupby("year")["passengers"].agg(["mean", "std"])
+
+fig, axes = plt.subplots(1, 3, figsize=(13, 3.5), layout="constrained")
+
+# 1. 多條線 + 圖例：每條線給 label
+for month in ["Jan", "Jul"]:
+    d = flights[flights["month"] == month]
+    axes[0].plot(d["year"], d["passengers"], marker="o", label=month)
+axes[0].legend(title="Month")
+
+# 2. 誤差線：yerr 可以是常數、陣列，或 (下, 上) 兩列
+axes[1].errorbar(yearly.index, yearly["mean"], yerr=yearly["std"], fmt="-o", capsize=4, ecolor="gray")
+axes[1].set_title("Mean ± SD across months")
+
+# 3. 誤差帶 + 參考線 / 參考區間
+axes[2].plot(yearly.index, yearly["mean"], color="steelblue")
+axes[2].fill_between(yearly.index, yearly["mean"] - yearly["std"],
+                     yearly["mean"] + yearly["std"], alpha=0.3, color="steelblue")
+axes[2].axhline(300, color="tomato", linestyle="--", label="target")
+axes[2].axvline(1955, color="gray", linestyle=":")
+axes[2].axvspan(1958, 1960, color="gray", alpha=0.2)
+axes[2].legend()
 ```
 
-## Basic Line Plot
+| 參數 / 方法 | 用途 |
+| --- | --- |
+| `marker` | 點形狀：`"o"`、`"s"`、`"^"`、`"."` |
+| `linestyle` | `"-"`、`"--"`、`":"`、`"-."`、`"none"` |
+| `color` | 名稱（`"steelblue"`）、`"tab:blue"`、`"C0"`（預設色環第 1 色）、hex |
+| `ax.errorbar(x, y, yerr=, fmt=, capsize=)` | 誤差線；`fmt` 同時設定點與線 |
+| `ax.fill_between(x, low, high, alpha=)` | 誤差帶 / 信賴帶 |
+| `ax.axhline` / `ax.axvline` | 水平 / 垂直參考線（門檻、事件日期） |
+| `ax.axhspan` / `ax.axvspan` | 標出一段數值或時間區間 |
+
+> 誤差線一定要在圖說寫明是 SD、SE 還是 95% CI，見 [圖表設計原則](../chart-design-principles.md#常見誤導)。
+
+## 子圖比較
 
 ```python
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["sepal_length"], marker="o", color="r", linestyle="--")
-
-ax.set_xlabel("Index")
-ax.set_ylabel("Sepal Length")
-ax.set_title("Iris Sepal Length (Line Plot)")
-plt.show()
+fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+ax1.plot(yearly.index, yearly["mean"]); ax1.set_ylabel("Mean")
+ax2.plot(yearly.index, yearly["std"]);  ax2.set_ylabel("SD")
 ```
 
-- `marker`: style of points (`'o'`, `'s'`, `'^'`)
-- `color`: line color
-- `linestyle`: `'--'`, `'-'`, `':'`
+兩個變數單位不同時，上下子圖共用 x 軸通常比雙 y 軸更不易誤導；真的需要雙軸見 [進階：雙軸與註解](advanced.md)。
 
-## Multiple Lines
+## 時間序列
 
-```python
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["sepal_length"], label="Sepal Length")
-ax.plot(iris.index, iris["sepal_width"], label="Sepal Width")
-
-ax.set_xlabel("Index")
-ax.set_ylabel("Measurement (cm)")
-ax.set_title("Sepal Length vs Width")
-ax.legend()
-plt.show()
-```
-
-- Use labels to distinguish multiple lines.
-- `ax.legend()` adds a legend.
-
-## Subplots
-
-```python
-fig, ax = plt.subplots(2, 1, sharex=True)
-ax[0].plot(iris.index, iris["petal_length"], color="blue")
-ax[0].set_ylabel("Petal Length")
-
-ax[1].plot(iris.index, iris["petal_width"], color="green")
-ax[1].set_xlabel("Index")
-ax[1].set_ylabel("Petal Width")
-
-plt.suptitle("Iris Petal Measurements")
-plt.show()
-```
-
-- `sharex=True`: share x-axis scale.
-- Useful for comparing multiple variables side-by-side.
-
-## Error Bars
-
-```python
-import numpy as np
-
-x = np.arange(10)
-y = np.sin(x)
-y_err = 0.2
-
-fig, ax = plt.subplots()
-ax.errorbar(x, y, yerr=y_err, fmt='-o', ecolor='gray', capsize=5)
-ax.set_title("Line Plot with Error Bars")
-plt.show()
-```
-
-- `yerr`: vertical error bars.
-- `fmt`: marker and line style.
-- `capsize`: adds caps to error bars.
-
-## Reference Lines
-
-```python
-fig, ax = plt.subplots()
-ax.plot(iris.index, iris["sepal_length"])
-
-ax.axhline(y=6, color="red", linestyle="--", label="Reference Line")
-ax.axvline(x=50, color="blue", linestyle=":", label="Sample Cutoff")
-ax.legend()
-plt.show()
-```
-
-- `axhline`: horizontal reference line.
-- `axvline`: vertical reference line.
-
-## Dual Axes and Annotation
-
-`twinx()` 雙 y 軸與 `annotate()` 箭頭註解見 [Matplotlib: Advanced](advanced.md)。
-
-## Key Takeaways
-
-- **Line plots** are used to show trends over an index or continuous variable.
-- Customization includes markers, colors, styles, subplots, error bars, reference lines, dual axes, and annotations.
+x 為日期時，先把日期轉成 `datetime64` 並排序，Matplotlib 會自動格式化刻度；rolling、resample 等時間序列圖見 [pandas Plotting](../pandas-plotting.md#時間序列)。

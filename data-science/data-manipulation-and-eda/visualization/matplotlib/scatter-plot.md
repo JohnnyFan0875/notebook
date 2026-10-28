@@ -1,153 +1,69 @@
-# Matplotlib: Scatter Plot
+[視覺化](../README.md) › [Matplotlib](README.md) › 散布圖
 
-Scatter plots visualize the relationship between two continuous variables, highlighting correlation, clustering, and outliers.
+# 散布圖 (Scatter Plot)
 
-## Import Packages and Example Dataset
+散布圖呈現兩個連續變數的關係：方向、強度、是否非線性、有無分群與離群值。相關係數只是一個數字，散布圖才看得到形狀（見 [雙變數分析](../../../statistics/descriptive-statistics/bivariate.md)）。
 
 ```python
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
-# Example dataset: Iris
 iris = sns.load_dataset("iris")
+x, y = iris["sepal_length"], iris["petal_length"]
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4), layout="constrained")
+
+# 1. 依類別分組上色：每組各畫一次並給 label
+for species, d in iris.groupby("species"):
+    axes[0].scatter(d["sepal_length"], d["petal_length"], label=species, alpha=0.7)
+axes[0].legend()
+
+# 2. 用顏色 (c) 與大小 (s) 編碼第三、四個變數
+sc = axes[1].scatter(x, y, c=iris["petal_width"], s=iris["sepal_width"] * 15,
+                     cmap="viridis", alpha=0.7)
+fig.colorbar(sc, ax=axes[1], label="Petal width (cm)")
+
+# 3. 線性趨勢線 + 註解單一點
+slope, intercept = np.polyfit(x, y, deg=1)
+xs = np.linspace(x.min(), x.max(), 100)
+axes[2].scatter(x, y, alpha=0.6)
+axes[2].plot(xs, slope * xs + intercept, color="tomato", label=f"y = {slope:.2f}x {intercept:+.2f}")
+i = y.idxmax()
+axes[2].annotate("max petal length", xy=(x[i], y[i]), xytext=(5, 6.5),
+                 arrowprops={"arrowstyle": "->", "color": "gray"})
+axes[2].legend()
+
+for ax in axes:
+    ax.set(xlabel="Sepal length (cm)", ylabel="Petal length (cm)")
 ```
 
-## Basic Scatter Plot
+| 參數 | 用途 |
+| --- | --- |
+| `c=` | 顏色；給數值欄位時依 `cmap` 對應，需加 `colorbar` |
+| `s=` | 點面積（單位 points²），可對應數值欄位 |
+| `alpha=` | 透明度，處理點重疊 |
+| `marker=`、`edgecolor=` | 點形狀與邊框 |
+| `np.polyfit(x, y, deg)` | 多項式最小平方擬合；要 CI 或殘差用 Seaborn `regplot` / statsmodels |
+
+> 趨勢線要畫在排序過的 x 上（如上面的 `xs`），直接用原始 x 畫 `plot` 會來回連線。
+
+## 點太多：Overplotting
+
+基因表現（數萬個基因）、單細胞（數十萬個細胞）、GWAS（數百萬個 SNP）的散布圖，預設設定會把點疊成一整塊：
 
 ```python
-fig, ax = plt.subplots()
-ax.scatter(iris["sepal_length"], iris["sepal_width"], color="blue", label="Iris data")
-
-ax.set_xlabel("Sepal Length (cm)")
-ax.set_ylabel("Sepal Width (cm)")
-ax.set_title("Iris Sepal Length vs Width")
-ax.legend()
-plt.show()
+ax.scatter(x, y, s=2, alpha=0.05, rasterized=True)   # 小點 + 透明；rasterized 讓 PDF 不爆大
+ax.hexbin(x, y, gridsize=60, bins="log", cmap="viridis")   # 六角格計數，log 色階
 ```
 
-- `ax.scatter(x, y)`: plots points with `x` on the x-axis and `y` on the y-axis.
-- Add `label` and `legend` for clarity.
+![Overplotting 的三種畫法](src/scatter-plot-overplotting.png)
 
-## Multiple Groups
+50,000 個點中藏了一個 1,500 點的密集小群。預設畫法只看到一整團；調小點與透明度後密度浮現；hexbin（log 計數）把小群標得最清楚。Seaborn 對應的是 `sns.histplot(x=, y=)`（2D 直方圖）與 `sns.kdeplot(x=, y=)`。
 
-```python
-fig, ax = plt.subplots()
+## 相關
 
-for species, data in iris.groupby("species"):
-    ax.scatter(data["sepal_length"], data["sepal_width"], label=species)
-
-ax.set_xlabel("Sepal Length (cm)")
-ax.set_ylabel("Sepal Width (cm)")
-ax.set_title("Sepal Length vs Width by Species")
-ax.legend()
-plt.show()
-```
-
-- Different species are plotted in different colors.
-- Grouping by categories shows clustering patterns.
-
-## Customization: Marker Size and Color
-
-```python
-fig, ax = plt.subplots()
-scatter = ax.scatter(
-    iris["sepal_length"],
-    iris["sepal_width"],
-    c=iris["petal_length"],      # color scale
-    s=iris["petal_width"] * 20,  # marker size
-    cmap="viridis",
-    alpha=0.7
-)
-
-ax.set_xlabel("Sepal Length (cm)")
-ax.set_ylabel("Sepal Width (cm)")
-ax.set_title("Scatter Plot with Color and Size Encoding")
-
-# Add colorbar for context
-plt.colorbar(scatter, ax=ax, label="Petal Length")
-plt.show()
-```
-
-- `c`: controls marker colors (mapped to a numeric column).
-- `s`: controls marker size (mapped to another column).
-- `alpha`: transparency.
-- `cmap`: colormap.
-
-## Add Reference Lines
-
-```python
-fig, ax = plt.subplots()
-ax.scatter(iris["sepal_length"], iris["sepal_width"], color="green")
-
-# Add horizontal and vertical reference lines
-ax.axhline(y=3, color="red", linestyle="--", label="y=3")
-ax.axvline(x=6, color="blue", linestyle=":", label="x=6")
-
-ax.set_title("Scatter Plot with Reference Lines")
-ax.legend()
-plt.show()
-```
-
-- `axhline` and `axvline` add reference thresholds.
-
-## Subplots
-
-```python
-fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-
-axes[0].scatter(iris["petal_length"], iris["petal_width"], color="purple")
-axes[0].set_title("Petal Scatter")
-
-axes[1].scatter(iris["sepal_length"], iris["petal_length"], color="orange")
-axes[1].set_title("Sepal vs Petal")
-
-plt.suptitle("Iris Scatter Plot Examples")
-plt.show()
-```
-
-- Multiple scatter plots can be shown side-by-side for comparisons.
-
-## Scatter with Trend Line
-
-```python
-import numpy as np
-
-x = iris["sepal_length"]
-y = iris["sepal_width"]
-
-# Fit linear trend line
-m, b = np.polyfit(x, y, 1)
-
-fig, ax = plt.subplots()
-ax.scatter(x, y, alpha=0.6)
-ax.plot(x, m*x + b, color="red", label="Trend Line")
-ax.set_title("Scatter with Linear Fit")
-ax.legend()
-plt.show()
-```
-
-- Use `np.polyfit` to overlay a regression line.
-
-## Annotation
-
-```python
-fig, ax = plt.subplots()
-ax.scatter(iris["sepal_length"], iris["sepal_width"], color="blue")
-
-ax.annotate("Potential Outlier",
-            xy=(iris["sepal_length"][100], iris["sepal_width"][100]),
-            xytext=(7.5, 2.5),
-            arrowprops={"arrowstyle": "->", "color": "gray"})
-
-ax.set_title("Scatter Plot with Annotation")
-plt.show()
-```
-
-- `annotate()`: highlights specific data points.
-
-## Key Takeaways
-
-- Scatter plots reveal **relationships** and **patterns** between two variables.
-- Use **color, size, and transparency** to encode additional dimensions.
-- Reference lines, subplots, and annotations enhance interpretability.
-- Trend lines help show correlation direction and strength.
+| 主題 | 連結 |
+| --- | --- |
+| 依類別上色、facet、迴歸線的高階寫法 | [Seaborn 關係圖](../seaborn/relational.md)、[迴歸圖](../seaborn/regression.md) |
+| 多變數兩兩散布 | [Seaborn 矩陣圖](../seaborn/matrix.md) |

@@ -1,207 +1,128 @@
-# Writing Efficient R Code
+[Data Science](../README.md) › [R Foundations](README.md) › 寫出有效率的 R
 
-R 的強項是讓你快速思考、探索與寫分析流程，不是要你從一開始就像寫 C 一樣手管每一個 CPU cycle。真正的效率工作，通常不是「把所有程式都寫得像系統程式」，而是先找出 bottleneck，再用最划算的方式改善它。
+# 寫出有效率的 R (Writing Efficient R Code)
 
-## The Core Mental Model
+R 是為了「寫得快」而不是「跑得快」設計的。多數分析程式只有少數幾行是瓶頸，所以優化的順序是：**先量測 → 找熱點 → 改成更像 R 的寫法 → 還不夠才平行化或 Rcpp**。Python 的對應內容見 [效能與擴展](../python-foundations/performance-and-scaling/README.md)。
 
-效率優化通常應該照這個順序思考：
+## 優化流程
 
-1. 先確認程式真的慢
-2. 找出哪一段最慢
-3. 先用更符合 R 思維的寫法改善
-4. 只有在值得時，才往更重的工具走
-
-Key point: 不要在沒有 bottleneck 證據時就過早優化。多數 R workflow 的瓶頸只集中在少數幾段程式。
-
-## R vs Lower-Level Languages
-
-R 比較偏向「方便思考與寫分析邏輯」，而不是「手動控制每一步記憶體與執行細節」。
-
-直覺上可以這樣想：
-
-- R: optimized for thinking / writing
-- C / C++: optimized for running
-
-這不代表 R 一定慢，而是：
-
-- 高層寫法通常更快完成分析工作
-- 真正要追求極致執行效率時，才考慮 lower-level route
-
-所以優化 R 時，第一步通常不是直接改寫成 C++，而是先把 R 程式寫得更像 R。
-
-## Prefer Vectorized Operations
-
-最常見也最值得先做的優化，是把可以向量化的 loop 改成向量化表達。
-
-例如建立整數序列：
-
-```r
-x <- 1:n
+```
+程式真的慢嗎？（在實際資料量下）
+  └─ 是 → profvis 找出最慢的幾行
+            └─ 1. 移除重複計算、不必要的中間物件
+               2. 向量化 / 改用專用函式（rowSums、matrixStats、data.table）
+               3. 迴圈內不要讓物件長大：預先配置、結果先放 list 最後合併
+               4. bench::mark 比較改寫前後（結果相同、速度確實變快）
+               5. 仍是瓶頸：獨立任務 → 平行化；單一緊密迴圈 → Rcpp
 ```
 
-通常就比手寫逐格填值更自然，也更有效率：
+> 沒有量測就優化，常常是花一小時把只佔 1% 時間的程式加速 10 倍。
+
+## 量測：計時、benchmark、profiling
 
 ```r
-x <- vector("numeric", n)
-for (i in 1:n) {
-  x[i] <- i
-}
-```
+# 1. 粗略計時
+system.time(fit <- lm(y ~ ., data = df))      # elapsed 是牆鐘時間
 
-向量化通常適合：
+# 2. 比較替代寫法：bench::mark 預設會檢查各寫法結果是否相同
+bench::mark(
+  loop   = { s <- 0; for (v in x) s <- s + v; s },
+  vector = sum(x),
+  iterations = 50
+)                                             # 看 median 與 mem_alloc 欄
 
-- element-wise arithmetic
-- logical filtering
-- summary functions
-- 常見統計計算
-
-如果 base R 已經有直接函式，例如 `rowSums()`、`colMeans()`、`pmin()`、`ifelse()`，通常先用現成函式比手寫 loop 更好。
-
-## Memory Allocation and Preallocation
-
-R 會自動管理記憶體，但這不代表你可以忽略 allocation 成本。最常見的低效率寫法，是在 loop 裡不斷把物件「長大」。
-
-不建議：
-
-```r
-x <- c()
-for (i in 1:n) {
-  x <- c(x, i)
-}
-```
-
-更好的做法是先配置好空間：
-
-```r
-x <- vector("numeric", n)
-for (i in 1:n) {
-  x[i] <- i
-}
-```
-
-Key point: 每次 grow object，R 都可能重新配置記憶體並複製資料。對大迴圈來說，這會很傷。
-
-## Avoid Repeated Copying
-
-除了 `c()` 逐步擴張，另一個常見問題是反覆 `rbind()`、`cbind()` 或在 loop 內一直建立新的大型中間物件。
-
-如果你要累積很多結果，通常更穩的做法是：
-
-- 先存進 list
-- 最後一次再合併
-
-這個習慣對 data frame 組裝尤其重要，因為 row-by-row 擴張通常很慢。
-
-## Choose the Right Built-In Tool
-
-很多效率問題，並不是「R 太慢」，而是用了不適合的函式。
-
-常見直覺：
-
-- 向量摘要：`sum()`, `mean()`, `pmax()`
-- 矩陣列欄摘要：`rowSums()`, `colMeans()`
-- 軸向運算：`apply()` 家族
-
-如果你已經在矩陣或 data frame 上做規律性的軸向操作，先想「有沒有現成的 specialized function」，通常比直接寫一般 loop 更快。
-
-## Profiling Before Optimizing
-
-在優化前，先找到 bottleneck。這就是 profiling 的工作。
-
-R 內建有 `Rprof()`，但通常比較難直接讀；實務上常用 `profvis`：
-
-```r
-Rprof("profile.out")
-# run code
-Rprof(NULL)
-```
-
-或更常見地：
-
-```r
+# 3. 找熱點：逐行顯示時間與記憶體（RStudio / Positron 內顯示火焰圖）
 profvis::profvis({
-  # code to profile
+  df <- read_and_clean("data.csv")
+  res <- run_models(df)
 })
+
+# base R 的 profiler（profvis 底層也是它）
+Rprof("profile.out"); run_models(df); Rprof(NULL)
+summaryRprof("profile.out")$by.self |> head()
 ```
 
-profiling 的核心概念是：
+| 工具 | 回答什麼 | 備註 |
+| --- | --- | --- |
+| `system.time()` | 這段要多久 | 單次測量，有雜訊 |
+| `bench::mark()` | A、B 哪個快、記憶體用多少 | 自動驗證結果一致；`microbenchmark` 是較舊的替代 |
+| `profvis::profvis()` | 時間花在哪幾行 | 抽樣式 profiler，太短的程式抓不到 |
+| `lobstr::obj_size()` | 物件佔多少記憶體 | 比 `object.size()` 正確計算共享部分 |
+| `tracemem(x)` | `x` 何時被複製 | 找出意外的 copy-on-modify |
 
-- 跑程式
-- 每隔一小段時間抽樣當下在執行什麼
-- 找出時間主要花在哪些函式
+## 向量化與專用函式
 
-Key point: 先用 profiling 找熱點，遠比靠直覺猜哪段最慢可靠。
+R 的向量運算在 C 層迴圈，比在 R 層逐元素處理快得多。
 
-## Benchmark Small Alternatives Carefully
+| 慢寫法 | 快寫法 |
+| --- | --- |
+| `for` 逐元素相加 | `x + y` |
+| `apply(m, 1, sum)` / `apply(m, 2, mean)` | `rowSums(m)` / `colMeans(m)` |
+| `apply(m, 1, var)`、`apply(m, 1, median)` | `matrixStats::rowVars(m)`、`rowMedians(m)` |
+| `for` + `if` 逐列判斷 | `ifelse()`、`dplyr::if_else()`、`case_when()` |
+| 逐列取兩欄較大值 | `pmax(a, b)` |
+| `sapply(x, function(v) v %in% set)` | `x %in% set`（內部用 hash） |
+| 對每個基因跑 `t.test()` | `matrixStats` / `genefilter::rowttests()`，或 limma 一次擬合 |
+| 每組用迴圈 subset 再算 | `data.table` 的 `by=`、`dplyr::summarise(.by = )` |
 
-當你已經知道 bottleneck 在哪裡，下一步才是比較替代寫法。
+```r
+# 例：基因 × 樣本矩陣的 CPM 與過濾，全向量化
+lib  <- colSums(counts)
+cpm  <- t(t(counts) / lib) * 1e6        # 每欄除以自己的 library size
+# 或 sweep(counts, 2, lib, "/") * 1e6
+keep <- rowSums(cpm >= 1) >= 3          # 至少 3 個樣本 CPM ≥ 1
+```
 
-這時可以用 microbenchmark-style 工具來比較不同實作：
+> 單細胞計數矩陣 90% 以上是 0，用 `Matrix` 套件的稀疏矩陣（`dgCMatrix`）可省下數十倍記憶體；`as.matrix()` 一個 3 萬基因 × 10 萬細胞的矩陣約需 24 GB（3×10⁹ × 8 bytes）。
 
-- base R vs vectorized version
-- loop vs preallocated loop
-- `apply()` vs specialized function
+## 記憶體：不要讓物件在迴圈中長大
 
-重點不是追求毫秒級排名，而是確認：
+R 的物件是 **copy-on-modify**：每次 `c(x, i)` 或 `rbind(df, row)` 都會配置一塊新記憶體並把舊資料整份複製過去，n 次迴圈的總成本是 O(n²)。
 
-- 差異是否穩定
-- 差異是否值得增加程式複雜度
+```r
+# 差：每次都複製
+x <- c()
+for (i in 1:n) x <- c(x, i^2)
 
-如果改善只有一點點，但可讀性大幅下降，通常不划算。
+# 好：預先配置
+x <- numeric(n)
+for (i in seq_len(n)) x[i] <- i^2       # seq_len(n) 在 n = 0 時不會跑出 1:0
 
-## A Typical Optimization Path
+# 最好：向量化
+x <- (1:n)^2
 
-當分析程式變慢時，常見的優化順序可以是：
+# 累積 data frame：先放 list，最後一次合併
+res <- vector("list", length(files))
+for (i in seq_along(files)) res[[i]] <- process(files[[i]])
+out <- dplyr::bind_rows(res)             # 或 data.table::rbindlist(res)
+```
 
-1. 移除不必要的中間物件與重複計算
-2. 改成向量化或專用函式
-3. 預先配置輸出容器
-4. 用 profiling 確認是否真的改善 bottleneck
-5. 還不夠時，再考慮平行化或 C++ 擴充
+| 陷阱 | 說明 |
+| --- | --- |
+| 迴圈中 `rbind()` / `c()` / `paste0()` 累積 | O(n²) 複製；改預先配置或 list |
+| 修改 data frame 的單一格 `df[i, j] <- v` 在迴圈中 | 每次可能複製整欄；先取出 vector 處理完再放回 |
+| 保留大量中間物件 | 用 `rm()` 後 `gc()`，或把步驟包進函式讓區域變數自然釋放 |
+| `1:length(x)` | `x` 長度 0 時變成 `c(1, 0)`；用 `seq_along(x)` |
 
-這比一開始就跳去 `Rcpp` 或平行處理更穩，因為很多慢點其實在更早就能解掉。
+## 選對資料結構與套件
 
-## Parallelism Is Not the First Step
+| 情境 | 選擇 |
+| --- | --- |
+| 全數值、同型別 | `matrix`（比 data frame 快，可用矩陣代數） |
+| 千萬列以上的分組 / join | [data.table](data-table-joins-and-reshaping.md)（就地修改、多執行緒） |
+| 讀大 CSV | `data.table::fread()`、`vroom`、`arrow::read_csv_arrow()` |
+| 比記憶體大的資料 | `arrow` / `duckdb` 延遲查詢，見 [匯入資料](importing-data.md) |
+| 稀疏計數矩陣 | `Matrix::dgCMatrix`；Bioconductor 的 `DelayedArray` / `HDF5Array` 放在磁碟上 |
+| 大量字串比對 | `stringi` / `stringr`（ICU），見 [正規表示式](regular-expressions.md) |
 
-現代 CPU 常有多核心，但 base R 預設多數程式仍是單核心執行。這代表平行化確實可能有幫助，但不該是第一個反應。
+## 下一步：平行化與 Rcpp
 
-原因包括：
+| 瓶頸型態 | 工具 | 筆記 |
+| --- | --- | --- |
+| 許多彼此獨立的任務（每個樣本、每個 bootstrap、參數格點） | `future` / `furrr` / `parallel` | [平行運算](parallel-programming-in-r.md) |
+| 單一緊密迴圈、每步依賴上一步（MCMC、動態規劃） | Rcpp | [Rcpp](rcpp-for-r-performance.md) |
+| 線性代數密集（大矩陣乘法、SVD） | 換用最佳化的 BLAS（OpenBLAS、MKL、macOS Accelerate） | 不必改程式 |
 
-- 平行化有啟動與資料傳輸成本
-- 小任務常因 overhead 變更慢
-- 除錯與重現性會更複雜
+平行化有啟動與資料傳輸成本，小任務常常反而變慢；先把單核版本寫對、寫快，再平行化。
 
-所以比較好的順序是：
-
-- 先修正明顯低效率寫法
-- 再確認 bottleneck 是否真的適合平行化
-
-如果 bottleneck 是大量獨立任務、模擬或 parameter grid，平行化通常比較值得。
-
-## Readability Still Matters
-
-效率不是唯一目標。尤其在 notebook / analysis code 裡，可讀性與可維護性仍然很重要。
-
-更好的程式通常是：
-
-- 已經夠快
-- 邏輯仍然清楚
-- 方便之後修改與驗證
-
-Warning: 用很難懂的技巧換到極小加速，常常是維護上的虧本交易。
-
-## Practical Workflow
-
-1. 先確認程式慢在哪個實際場景。
-2. 用 profiling 找 bottleneck，而不是靠猜。
-3. 先看能不能向量化、改用專用函式或減少 object growth。
-4. 需要 loop 時先 preallocate。
-5. 只有在 bottleneck 仍然明確存在時，才往平行化或 C++ 擴充走。
-
-## Common Mistakes
-
-- 一開始就過早優化，卻沒有 bottleneck 證據。
-- 在 loop 裡不斷用 `c()`、`rbind()` 讓物件長大。
-- 本來能用向量化或專用函式，卻堅持逐列處理。
-- 沒 profiling 就直接猜哪段最慢。
-- 為了小幅加速把程式寫得太難懂。
+> 效率不是唯一目標。為了 5% 的加速把程式寫得難以閱讀，維護成本通常高於省下的時間。

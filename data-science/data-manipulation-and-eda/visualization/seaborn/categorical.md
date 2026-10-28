@@ -1,143 +1,90 @@
-# Seaborn: Categorical Plots
+[視覺化](../README.md) › [Seaborn](README.md) › 類別圖
 
-This page is about visualizing categorical variables and category-based summaries. If you need to define category order, labels, or encoding in the dataframe first, see [Pandas: Categorical Data & Encoding](../../../python-foundations/pandas/dtypes-categorical-strings.md).
+# 類別圖 (Categorical Plots)
 
-Categorical plots (`catplot`) are used to visualize the distribution of a categorical variable or the relationship between a categorical and a numerical variable. They provide multiple plot types such as **count, bar, box, violin, boxen, and point plots**.
+x（或 y）是類別、另一軸是數值或次數的圖。`catplot(kind=...)` 是 figure-level 入口，各 `kind` 也有對應的 axes-level 函式。類別順序與編碼的資料處理見 [pandas dtype 與類別](../../../python-foundations/pandas/dtypes-categorical-strings.md)。
 
-## Import Packages and Example Dataset
+## 選哪一種
+
+| `kind` / 函式 | 呈現 | 適用 | 注意 |
+| --- | --- | --- | --- |
+| `count` / `countplot` | 每類次數 | 類別分布、不平衡 | 連續變數改用 `histplot`，見 [類別 vs 連續](distribution.md#類別-vs-連續) |
+| `bar` / `barplot` | 平均 + 誤差線 | 摘要報告 | 藏住分布，n 小時不建議單獨使用 |
+| `point` / `pointplot` | 平均 + 誤差線，以線相連 | 交互作用（兩因子的平均如何變化） | 連線只代表同一 `hue` 組 |
+| `box` / `boxplot` | 五數摘要 + 離群值 | 多組分布比較 | 看不到雙峰，見 [箱型圖](../matplotlib/box-plot.md) |
+| `violin` / `violinplot` | 箱型 + KDE | 中大樣本的形狀 | n 小時 KDE 不可靠 |
+| `boxen` / `boxenplot` | 更多分位數的箱型 | 大樣本（數千以上）的尾巴 | — |
+| `strip` / `stripplot` | 每個點（加 jitter） | n 小（< 100 / 組） | 點多會重疊 |
+| `swarm` / `swarmplot` | 每個點，不重疊排列 | n 小 | 點太多時排不下會警告 |
+
+## 寫法
 
 ```python
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Example dataset: Iris
 iris = sns.load_dataset("iris")
+tips = sns.load_dataset("tips")
+fig, axes = plt.subplots(2, 2, figsize=(11, 8), layout="constrained")
+
+# 1. 次數：order 指定順序；改用 y= 變水平
+sns.countplot(data=tips, y="day", order=["Thur", "Fri", "Sat", "Sun"], ax=axes[0, 0])
+
+# 2. 平均 ± SD 的長條圖（errorbar 見下表）
+sns.barplot(data=iris, x="species", y="sepal_length", errorbar="sd", ax=axes[0, 1])
+
+# 3. 箱型 + 原始點：最推薦的組合
+sns.boxplot(data=iris, x="species", y="petal_length", showfliers=False, color="lightgray", ax=axes[1, 0])
+sns.stripplot(data=iris, x="species", y="petal_length", alpha=0.5, ax=axes[1, 0])
+
+# 4. 點圖看交互作用；estimator 改成中位數
+sns.pointplot(data=tips, x="day", y="tip", hue="sex", estimator=np.median,
+              errorbar=("ci", 95), dodge=True, capsize=0.1, ax=axes[1, 1])
+
+# figure-level：facet
+sns.catplot(data=tips, x="day", y="total_bill", hue="sex", col="time", kind="violin", split=True)
 ```
 
-## Count Plot
+## 誤差線 `errorbar`
+
+Seaborn 0.12 起用 `errorbar=` 取代舊的 `ci=`：
+
+| 寫法 | 意義 | 描述的是 |
+| --- | --- | --- |
+| `("ci", 95)`（預設） | bootstrap 95% 信賴區間 | 平均數估得多準（推論） |
+| `("se", 1)` | ± 1 個標準誤 | 同上，較窄 |
+| `("sd", 1)` / `"sd"` | ± 1 個標準差 | 資料本身的分散（描述） |
+| `("pi", 50)` | 中間 50% 的百分位區間 | 資料本身的分散 |
+| `None` | 不畫 | — |
+
+> 預設的 CI 是 bootstrap 抽樣算的，每次執行可能略有不同；需要可重現時加 `seed=`。SD 與 SE 的差別見 [SD vs SE](../../../statistics/descriptive-statistics/univariate-numerical.md#標準差-vs-標準誤-sd-vs-se)。
+
+## 常用參數
+
+| 參數 | 用途 |
+| --- | --- |
+| `order` / `hue_order` | 類別順序（類別型欄位預設依 categories 順序） |
+| `dodge=True` | `hue` 各組並排而非重疊 |
+| `estimator` | 摘要統計（`bar` / `point`），預設 `"mean"` |
+| `whis`、`showfliers` | 箱型圖鬚長、是否畫離群點（傳給 Matplotlib） |
+| `linestyle="none"` | 點圖不連線（0.13 起取代 `join=False`） |
+| `capsize` | 誤差線端帽寬度 |
+| `split=True` | violin 兩個 `hue` 組各畫一半 |
+| `inner=` | violin 內部：`"box"`、`"quart"`、`"point"`、`None` |
+| `native_scale=True` | x 為數值時保留原本間距（0.13+） |
+
+| 舊寫法（會警告或報錯） | 新寫法 |
+| --- | --- |
+| `ci="sd"`、`ci=None` | `errorbar="sd"`、`errorbar=None` |
+| `join=False` | `linestyle="none"` |
+| `sym=""`（Matplotlib `ax.boxplot` 的參數，傳給 Seaborn 會報錯） | `showfliers=False` |
+
+## 先彙總再畫
+
+資料已經在 pandas 彙總好（每組一列）時，`barplot` 只會畫出該值、沒有誤差線：
 
 ```python
-sns.catplot(x="species", data=iris, kind="count")
-plt.show()
+totals = tips.groupby("day", observed=True, as_index=False)["total_bill"].sum()
+sns.barplot(data=totals, x="day", y="total_bill")
 ```
-
-- Shows frequency of each category.
-- Equivalent to `sns.countplot()`.
-
-```python
-sns.catplot(y="species", data=iris, kind="count", order=["setosa","versicolor","virginica"])
-plt.show()
-```
-
-- Switch `x` to `y` for horizontal orientation.
-- `order`: specify custom category order.
-
-## Bar Plot
-
-```python
-sns.catplot(x="species", y="sepal_length", data=iris, kind="bar", ci="sd")
-plt.show()
-```
-
-- Displays mean of a numerical variable per category.
-- Vertical lines show confidence intervals (default = 95%).
-- `ci="sd"`: show standard deviation instead.
-
-如果你的資料已經先在 pandas 裡彙總好，例如每家店的總營收，就可以直接畫成 spreadsheet 風格的總計長條圖：
-
-```python
-totals = sales.groupby("store", as_index=False)["revenue"].sum()
-
-sns.barplot(x="store", y="revenue", data=totals)
-plt.show()
-```
-
-這裡的重點是：
-
-- `groupby(...).sum()` 先決定 summary table
-- `sns.barplot(...)` 再負責視覺化
-- `plt.show()` 在 script / notebook 外也常是明確的「把圖渲染出來」動作
-
-## Box Plot
-
-```python
-sns.catplot(x="species", y="sepal_length", data=iris, kind="box")
-plt.show()
-```
-
-- Summarizes distribution with median, quartiles, whiskers, and outliers.
-- `whis`: control whisker length (e.g., `whis=[5,95]` → show 5th–95th percentiles).
-- `whis`: default = 1.5. Extend to the most extreme data point within 1.5 × IQR of the box. Any points beyond this range are considered `outliers` and plotted individually.
-- `sym=''`: hide outliers.
-
-## Violin Plot
-
-```python
-sns.catplot(x="species", y="petal_length", data=iris, kind="violin")
-plt.show()
-```
-
-- Combines box plot with a kernel density estimate.
-- Useful for showing distribution shape.
-
-## Boxen Plot
-
-```python
-sns.catplot(x="species", y="petal_width", data=iris, kind="boxen")
-plt.show()
-```
-
-- Variation of box plot designed for larger datasets.
-- Provides more granularity in the tails.
-
-## Point Plot
-
-```python
-sns.catplot(x="species", y="sepal_length", data=iris,
-            kind="point", capsize=0.2)
-plt.show()
-```
-
-- Points represent mean values; vertical lines show confidence intervals.
-- Line plot has **quantitative** variable (usually time) on x-axis. Point plot has **categorical** variable on x-axis.
-- `capsize`: adds caps to CI bars.
-- `join=False`: remove connecting lines.
-- `estimator`: change summary statistic (e.g., `estimator=np.median`).
-
-## Faceting with Catplot
-
-```python
-sns.catplot(x="species", y="sepal_length",
-            data=iris, kind="bar",
-            col="species")
-plt.show()
-```
-
-- Combine `catplot` with `col`/`row` to create small multiples.
-- Each facet shows a subset of the data.
-
-## Customization
-
-```python
-sns.set_style("whitegrid")
-sns.set_palette("pastel")
-
-sns.catplot(x="species", y="petal_width", data=iris,
-            kind="violin", hue="species")
-plt.show()
-```
-
-- Style options: `white`, `dark`, `whitegrid`, `darkgrid`, `ticks`.
-- Palette options: predefined (`"pastel"`, `"RdBu"`) or custom lists.
-- Rotate labels with `plt.xticks(rotation=45)`.
-
-## FAQ: Countplot vs Histplot
-
-類別變數用 `countplot`、連續變數用 `histplot`；對照範例見 [Distribution: Countplot vs Histplot](distribution.md#comparison-countplot-vs-histplot)。
-
-## Key Takeaways
-
-- Use `catplot` with `kind` argument for categorical visualizations.
-- `count`, `bar`, `box`, `violin`, `boxen`, and `point` plots cover most needs.
-- Customize with `hue`, `order`, `whis`, `capsize`, and style settings.
-- Faceting with `col`/`row` makes comparisons across subgroups easy.

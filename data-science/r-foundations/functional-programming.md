@@ -1,691 +1,219 @@
-# Functional Programming in R: for, apply and purrr
+[Data Science](../README.md) › [R Foundations](README.md) › 函數式程式設計
 
-重複套用同一邏輯有三種寫法：`for` 迴圈（狀態需要逐步更新時）、base R 的 `apply` 家族（`lapply` / `sapply` / `vapply`）、`purrr` 的 `map()` 系列（回傳型別一致、錯誤容忍、巢狀資料）。本篇依序介紹，最後是 purrr 進階的 predicate、`compose()`、`partial()`。
+# 函數式程式設計 (Functional Programming: for, apply, purrr)
 
-## The apply Family
+「對很多樣本 / 檔案 / 基因 / 參數組合做同一件事」是分析裡最常見的模式。R 有三種寫法：`for` 迴圈、base R 的 `apply` 家族、purrr 的 `map()` 系列。差別不在少打幾行，而在**回傳型別是否明確**與**單一失敗會不會讓整批中止**。Python 的對應寫法（comprehension、generator）見 [控制流程](../python-foundations/control-flow.md) 與 [迭代器與生成器](../python-foundations/iterator.md)。
 
-`apply` 家族用來把同一個函數套到資料結構中的多個元素上。它的核心問題不是「可不可以少寫 loop」，而是「我現在處理的是 matrix、list 還是 data frame，每次套用後希望回傳什麼型別」。
+## 選哪一種
 
-### Mental Model
-
-先想清楚三件事：
-
-1. input structure 是什麼
-2. 每個元素要套什麼函數
-3. output 要保留 list，還是簡化成 vector / matrix
-
-### Quick Reference
-
-| Function | Best For | Return Tendency |
+| 情境 | 用什麼 | 原因 |
 | --- | --- | --- |
-| `apply()` | matrix / array 的列或欄 | usually vector or matrix |
-| `lapply()` | list 或 data frame 欄位 | list |
-| `sapply()` | 想在 `lapply()` 基礎上自動簡化 | vector or matrix when possible |
-| `vapply()` | 需要明確保證回傳型別 | strict, safer simplified output |
-| `tapply()` | 依群組對向量做彙總 | grouped summaries |
-| `mapply()` | 多個輸入一起逐元素套函數 | simplified multi-input output |
+| 每步依賴上一步結果（模擬、累加、收斂） | `for` / `while` | 狀態更新最直觀 |
+| 有副作用（寫檔、畫圖、印訊息） | `for` 或 `purrr::walk()` | 不需要回傳值 |
+| matrix 的列 / 欄摘要 | `apply()`、`rowMeans()` 等 | 軸向運算；能用 `rowSums()` 就別用 `apply()` |
+| list / data frame 欄位逐一處理，只用 base R | `lapply()` / `vapply()` | 無依賴 |
+| list、巢狀 JSON、參數表、需要容錯 | purrr | 型別明確、`safely()`、`pmap()` |
+| 分組摘要 | dplyr `summarise(.by = )` | 比 `tapply()` 好讀，見 [Tidyverse 工作流](tidyverse-workflow.md) |
 
-### lapply
+> 先想清楚三件事：迭代的是什麼結構、每個元素做什麼、最後要 list 還是 vector。想不清楚就硬把 loop 改成 `apply`，通常比原本更難讀。
 
-`lapply()` 會保留 list 結構，適合當每個元素的回傳型別不一定一致時：
+`for` 迴圈本身不慢；慢的是在迴圈裡讓物件逐步長大。預先配置與向量化見 [寫出有效率的 R](writing-efficient-r-code.md)。
+
+## apply 家族 (base R)
+
+| 函式 | 輸入 | 回傳 | 注意 |
+| --- | --- | --- | --- |
+| `apply(X, MARGIN, FUN)` | matrix / array | vector 或 matrix | 對 data frame 使用會先轉成 matrix，混合型別全變字串 |
+| `lapply(X, FUN)` | list / data frame 欄位 | 永遠是 list | 最穩定 |
+| `sapply(X, FUN)` | 同上 | 盡量簡化成 vector / matrix | 結果型別依資料而變，可能悄悄回傳 list |
+| `vapply(X, FUN, FUN.VALUE)` | 同上 | 依 `FUN.VALUE` 契約簡化 | 不符契約就報錯；程式中優先用它取代 `sapply()` |
+| `mapply(FUN, ...)` / `Map()` | 多個平行輸入 | 簡化 / list | 對應 purrr 的 `map2()` / `pmap()` |
+| `tapply(X, INDEX, FUN)` | vector + 分組 | 依組摘要 | |
 
 ```r
-stock_list <- list(
-  stock_name = "Apple",
-  ticker = "AAPL",
-  price = 126.5,
-  good_deal = TRUE
-)
+stock <- list(name = "Apple", ticker = "AAPL", price = 126.5, good_deal = TRUE)
 
-lapply(stock_list, FUN = class)
+lapply(stock, class)                              # list，每個元素一個結果
+sapply(stock, class)                              # 具名 character vector
+vapply(stock, class, FUN.VALUE = character(1))    # 同上，但型別有保證
+
+# 每欄算同一組摘要：每次回傳長度 2 → sapply 簡化成 2 × p matrix
+simple_summary <- function(x) c(mean = mean(x), sd = sd(x))
+sapply(mtcars[, 1:3], simple_summary)
+vapply(mtcars[, 1:3], simple_summary, FUN.VALUE = numeric(2))
+
+# matrix：每個基因（列）的變異數；1 = 列、2 = 欄
+expr <- matrix(rnorm(20), nrow = 5, dimnames = list(paste0("g", 1:5), NULL))
+apply(expr, 1, var)
 ```
 
-如果你只是想先確認每個元素型別，`lapply()` 很穩。
+`sapply()` 的陷阱：輸入為空時回傳 `list()`；某次結果長度不同時回傳 list 而不是 matrix。後續程式若假設是 vector 就會在少數資料上才出錯，`vapply()` 會在當下報錯。
 
-### sapply
+## purrr 基礎
 
-當每個元素的輸出長得很一致時，`sapply()` 會嘗試把結果簡化：
+### `map()` 與 typed variants
 
-```r
-sapply(stock_list, FUN = class)
-```
-
-這通常比 `lapply()` 更方便閱讀，但也因為自動簡化，結果型別有時會比預期更難掌控。
-
-### vapply
-
-`vapply()` 的用途是「我想要簡化結果，但不想把型別交給 R 猜」。
-
-```r
-vapply(stock_list, FUN = class, FUN.VALUE = character(1))
-```
-
-`FUN.VALUE` 是你對每次輸出的型別契約。例如：
-
-- `character(1)` 表示每次都應回傳長度 1 的字串
-- `numeric(1)` 表示每次都應回傳長度 1 的數值
-
-和 `sapply()` 相比，`vapply()` 的好處是：
-
-- 回傳型別更穩定
-- 若某次輸出不符合預期，會提早報錯
-- 在函數化分析流程中更容易除錯
-
-如果這份結果後面還要再接別的分析步驟，`vapply()` 往往比 `sapply()` 更安全。
-
-### apply a Custom Summary
-
-對多欄數值資料做同一份摘要，是 `apply` 類函數的常見用法：
+| 函式 | 回傳 | 用途 |
+| --- | --- | --- |
+| `map()` | list | 每個結果是 data frame、模型、list |
+| `map_chr()` / `map_dbl()` / `map_int()` / `map_lgl()` | 對應型別的 vector | 每個結果長度為 1；型別不符就報錯 |
+| `map2(.x, .y, f)` | list | 兩個平行輸入 |
+| `pmap(.l, f)` | list | 參數表的每一列跑一次 |
+| `imap(.x, f)` | list | 同時用到元素與名稱（`.y` 是名稱或索引） |
+| `walk()` / `walk2()` | 輸入本身（隱形） | 只為副作用：寫檔、存圖 |
+| `list_rbind()` / `list_cbind()` | data frame | 把 list of data frames 綁起來（取代 `map_dfr()`） |
 
 ```r
-simple_summary <- function(x) {
-  c(mean = mean(x), sd = sd(x))
-}
+library(purrr)
 
-sapply(stock_return, FUN = simple_summary)
-```
+# 匿名函式三種寫法：R ≥ 4.1 的 \(x) 是目前建議寫法
+map_dbl(1:3, \(x) x^2)
+map_dbl(1:3, ~ .x^2)                       # purrr 公式簡寫，舊程式常見
+map_dbl(1:3, function(x) x^2)
 
-這種模式很適合：
-
-- 每欄都做相同彙總
-- 每個資產都算同一組風險與報酬指標
-- 每個變數都套相同清理函數
-
-### Choosing Between Loop and apply
-
-- 如果你需要逐步更新狀態，通常還是 `for` / `while` 更自然。
-- 如果你只是把同一個函數套到一批元素上，`apply` 類函數通常更簡潔。
-- 如果回傳型別很重要，優先考慮 `vapply()`，避免 `sapply()` 的自動簡化帶來不確定性。
-
-### Common Mistakes
-
-- 對 data frame 使用 `apply()` 後，資料先被強制轉型成 matrix，造成型別意外改變。
-- 以為 `sapply()` 永遠回傳 vector，結果某些情況回傳 matrix 或 list。
-- 忘記 `vapply()` 的 `FUN.VALUE` 是契約，不符合時其實應該把它當成資料或邏輯錯誤訊號。
-- 把複雜副作用流程硬塞進 `apply`，反而比普通 loop 更難讀。
-- 沒先想清楚 input 與 output 結構，只是機械地把 loop 改寫成 `apply`。
-
-## Functional Programming with purrr
-
-`purrr` 是 R 裡把「對很多元素重複做同一件事」整理得更穩定的一套工具。它的重點不是炫技，而是把 iteration 寫成回傳型別更明確、可組合、也更容易加上錯誤處理的資料流程。
-
-### Why `purrr`
-
-很多分析腳本一開始都像這樣：
-
-```r
-birdfiles <- list.files(pattern = ".csv")
-list_of_birdfiles <- list()
-
-for (i in birdfiles) {
-  list_of_birdfiles[[i]] <- read.csv(i)
-}
-```
-
-這不是錯，但當你開始需要：
-
-- 對每個檔案做同樣轉換
-- 對每個子資料集跑同一個模型
-- 保留輸出型別一致
-- 遇到單一錯誤時不要整個流程中斷
-
-`purrr` 通常會比手寫 `for` loop 更清楚。
-
-### Functional Iteration Mindset
-
-`purrr` 的基本問題是：
-
-1. 我要迭代哪個資料結構
-2. 我要對每個元素做什麼
-3. 我希望最後回傳什麼型別
-
-最常見的情況是 list iteration：
-
-```r
-files <- list.files()
-d <- map(files[1:10], readr::read_csv)
-```
-
-這樣的思路比手動建立空 list 再逐格填值更接近「宣告我要把同一個函數套到每個元素」。
-
-### Pipes Make the Workflow Readable
-
-`purrr` 幾乎總是和 pipe 一起出現：
-
-```r
-output <- function_one() %>%
-  function_two()
-```
-
-pipe 的價值不是少打一個暫存變數，而是讓資料流向更直觀。這在多步 list 操作時特別重要。
-
-### `map()` Returns a List
-
-`map()` 的預設回傳值是 list。當每個元素的結果長度不一定相同，或結果本身還是複雜物件時，這很合理。
-
-例如從巢狀 list 中抽欄位：
-
-```r
-map(livingthings, ~ .x[["species"]])
-map(gh_repos, ~ map(.x, "forks"))
-```
-
-這種寫法適合：
-
-- 每個元素回傳 data frame
-- 每個元素回傳 model object
-- 每個元素回傳另一個 list
-
-### `map_*()` Typed Variants
-
-如果你知道每次迭代都應該回傳單一字串、數值或邏輯值，就不要只用 `map()`，改用 typed variants：
-
-- `map_chr()`
-- `map_dbl()`
-- `map_int()`
-- `map_lgl()`
-
-例如把巢狀資料中的標題抽成字串向量：
-
-```r
+# 用名稱或位置抽巢狀 list 的元素（處理 JSON / API 回傳）
 map_chr(sw_films, "title")
-```
+map(gh_repos, \(repo) map(repo, "forks"))  # 兩層巢狀
 
-這樣的好處是：
-
-- 回傳型別更明確
-- 若某個元素不能轉成預期型別，會更早暴露問題
-- 後續接 `sort()`、`set_names()` 或統計函數更直接
-
-### Setting and Using Names
-
-對 list 來說，名字常常比位置更重要。
-
-課程裡有一個很實用的模式：
-
-```r
-sw_films <- sw_films %>%
-  set_names(map_chr(sw_films, "title"))
-```
-
-這讓後續操作更好讀，因為你不再只看到 `[[3]]`，而是能用語意化名稱存取元素。
-
-另一個常見模式是「先抽值，再同時設名稱」：
-
-```r
-map_chr(sw_films, ~ .x[["episode_id"]]) %>%
-  set_names(map_chr(sw_films, "title")) %>%
+# 先抽值，再用另一個欄位當名稱
+map_int(sw_films, "episode_id") |>
+  set_names(map_chr(sw_films, "title")) |>
   sort()
 ```
 
-這非常適合整理：
-
-- 檔名到物件的對照
-- 標題到摘要值的對照
-- 群組到模型輸出的對照
-
-### Formula Shorthand
-
-`purrr` 很常用公式簡寫：
+### 典型工作流：讀很多樣本檔並合併
 
 ```r
-map(list_of_means, ~ data.frame(a = rnorm(n = 200, mean = .x)))
+files <- list.files("counts", pattern = "\\.tsv$", full.names = TRUE) |>
+  set_names(\(f) tools::file_path_sans_ext(basename(f)))    # 名稱 = 樣本 ID
+
+counts <- files |>
+  map(\(f) readr::read_tsv(f, show_col_types = FALSE), .progress = TRUE) |>
+  list_rbind(names_to = "sample_id")        # 名稱變成一欄，不會丟失樣本來源
 ```
 
-這裡的 `.x` 表示目前迭代到的元素。這種寫法適合短小轉換；如果邏輯變複雜，改成具名函數通常會比較清楚。
+`set_names()` 是關鍵：之後的結果都帶著樣本名稱，不必再靠位置 `[[3]]` 對回去。
 
-### Repeating Analysis Across Many Objects
-
-`purrr` 很適合把同一份分析套到多個子資料集。
-
-例如對多個教育資料集各自擬合線性模型：
+### 對每組資料擬合模型
 
 ```r
-models <- education_data %>%
-  map(~ lm(income ~ education_level, data = .x)) %>%
-  map(summary)
+models <- split(mtcars, ~ cyl) |>              # list of data frames
+  map(\(df) lm(mpg ~ wt, data = df))
+
+map(models, broom::tidy) |> list_rbind(names_to = "cyl")
+map_dbl(models, \(m) summary(m)$r.squared)
 ```
 
-這種模式在 notebook 裡很值得記住，因為它經常出現在：
+tibble 版本是 `nest()` + `mutate(model = map(data, ...))`，見 [tidyr 資料重塑](data-reshaping-with-tidyr.md)；建模解讀見 [解釋型建模](explanatory-modeling-in-r.md)。
 
-- split-apply-model workflows
-- 多組參數模擬
-- 多資料表清理
-- 多 API 回傳結果整理
-
-### `map2()` for Two Parallel Inputs
-
-當每次 iteration 需要兩個平行輸入時，用 `map2()`。
-
-例如平均數和標準差要一起決定模擬資料：
+### 多個輸入：`map2()` 與 `pmap()`
 
 ```r
-simdata <- map2(
-  list_of_means,
-  list_of_sd,
-  ~ data.frame(a = rnorm(n = 200, mean = .x, sd = .y))
-)
+means <- list(0, 5, 10); sds <- list(1, 2, 3)
+sims <- map2(means, sds, \(m, s) rnorm(200, mean = m, sd = s))
+
+# 參數表的每一列 = 一次模擬；欄名對應函式參數名
+params <- tibble::tibble(mean = c(0, 5), sd = c(1, 2), n = c(100, 200))
+sims <- pmap(params, \(mean, sd, n) rnorm(n, mean, sd))
+
+# 只為副作用：每組各存一張圖
+walk2(plots, paste0("fig/", names(plots), ".png"), \(p, f) ggplot2::ggsave(f, p))
 ```
 
-可以把 `map2()` 想成：
+## 容錯：`safely()`、`possibly()`
 
-- 第一個 list 提供 `.x`
-- 第二個 list 提供 `.y`
-- 兩者按位置一起迭代
+批次處理幾百個樣本時，一個壞檔不應讓整批中止，但要知道是誰壞了。
 
-### `pmap()` for Many Inputs
-
-當輸入不只兩組，而是一整個參數表時，`pmap()` 更自然。
+| 函式 | 失敗時回傳 | 適用 |
+| --- | --- | --- |
+| `safely(f)` | `list(result = NULL, error = <condition>)` | 需要知道**為什麼**失敗 |
+| `possibly(f, otherwise = NA)` | `otherwise` 指定的值 | 只需要預設值，不在乎原因 |
+| `quietly(f)` | 結果 + 擷取的 output / warnings / messages | 收集警告 |
+| `insistently()` / `slowly()` | 重試 / 限速 | 呼叫不穩定的 API |
 
 ```r
-simdata <- pmap(
-  inputs_list,
-  function(means, sd, samplesize) {
-    data.frame(a = rnorm(n = samplesize, mean = means, sd = sd))
-  }
-)
+x <- list(1, 10, "a")
+
+res <- map(x, safely(log))
+res <- list_transpose(res)          # 從「每筆一個 result/error」轉成「result 一組、error 一組」
+failed <- !map_lgl(res$error, is.null)
+names(x)[failed]                    # 哪幾筆失敗
+res$error[failed] |> map_chr(conditionMessage)
+
+map(x, possibly(log, otherwise = NULL)) |> compact()   # 失敗回 NULL，最後一次清掉
+map_dbl(x, possibly(log, otherwise = NA_real_))        # 保留位置，失敗為 NA
 ```
 
-`pmap()` 適合：
+> `possibly(..., otherwise = NA)` 會把錯誤藏起來。正式流程中至少記錄失敗的筆數與名稱，否則下游統計會在少了幾個樣本的情況下照常產出。
 
-- 多參數模擬
-- 對每列設定跑同一個函數
-- 把參數表直接轉成一批結果物件
+## 進階：list 篩選與重組
 
-如果你的心智模型已經是「每一列參數代表一次執行」，通常就該想到 `pmap()`。
-
-### Error-Tolerant Mapping with `safely()`
-
-真實資料流程常常不是每個元素都能成功處理。`safely()` 可以讓 mapping 不因單一失敗而整批中斷。
+| 函式 | 作用 | 例子 |
+| --- | --- | --- |
+| `keep(.x, pred)` / `discard()` | 依條件保留 / 移除元素 | `keep(df_list, \(d) nrow(d) > 0)` |
+| `compact()` | 移除 `NULL` 與長度 0 的元素 | 配合 `possibly(otherwise = NULL)` |
+| `detect()` / `detect_index()` | 第一個符合條件的元素 / 位置 | |
+| `every()` / `some()` | 全部 / 任一符合 | `every(files, file.exists)` |
+| `list_flatten()` | 去掉一層巢狀（取代 `flatten()`） | |
+| `list_transpose()` | 內外層互換（取代 `transpose()`） | 整理 `safely()` 結果 |
+| `pluck(x, "a", 1)` / `pluck_depth()` | 安全取深層元素 / 巢狀深度（取代 `vec_depth()`） | 缺少時回 `NULL` 而非報錯 |
+| `reduce(.x, f)` / `accumulate()` | 兩兩累積 | `reduce(df_list, dplyr::left_join, by = "gene_id")` |
 
 ```r
-a <- list("unknown", 10) %>%
-  map(safely(function(x) x * 10, otherwise = NA_real_))
+# 每張表只保留 factor 欄位：外層迭代表、內層篩欄位
+list(iris, airquality) |> map(\(df) keep(df, is.factor))
+
+# 先檢查巢狀結構再決定怎麼抽
+length(tweets); length(tweets[[1]]); pluck_depth(tweets)
+
+# 多個樣本表依 gene_id 依序合併成一張寬表
+reduce(list(cts_a, cts_b, cts_c), dplyr::full_join, by = "gene_id")
 ```
 
-每個元素都會回傳一個 list，裡面至少有：
+## 進階：把函式當成物件
 
-- `$result`
-- `$error`
+R 裡函式和其他物件一樣，可以存進變數、放進 list、當參數傳、當回傳值。purrr 提供幾個「產生新函式」的工具。
 
-這樣的好處是：
-
-- 成功與失敗都被保留下來
-- 可以事後檢查哪幾筆出錯
-- 不需要因一筆髒資料重跑整個流程
-
-### `transpose()` Reorganizes Safe Results
-
-`safely()` 的輸出常常是「每個元素各自帶一個 result/error」，這不一定方便後續整理。課程示範了一個很重要的搭配：
+| 函式 | 作用 | 例子 |
+| --- | --- | --- |
+| `partial(f, ...)` | 預先填入參數 | `mean_na <- partial(mean, na.rm = TRUE)` |
+| `compose(f, g, h)` | 組成管線，**預設由右往左**執行 | `compose(round, mean)` = `round(mean(x))` |
+| `negate(pred)` | 反轉條件 | `discard` ≈ `keep` + `negate` |
+| `as_mapper(~ ...)` | 把公式轉成可命名、可重用的函式 | 現在用 `\(x)` 直接命名即可 |
 
 ```r
-a <- list("unknown", 10) %>%
-  map(safely(function(x) x * 10, otherwise = NA_real_)) %>%
-  transpose()
-```
-
-`transpose()` 之後，資料結構會從：
-
-- 每筆一個 `result/error` pair
-
-變成：
-
-- 一個 `result` list
-- 一個 `error` list
-
-這樣更容易：
-
-- 只抽成功結果
-- 只檢查錯誤訊息
-- 後續轉成向量或 tibble
-
-### `possibly()` for Default Fallbacks
-
-如果你不需要保留完整錯誤物件，只想在失敗時給預設值，用 `possibly()` 會更簡潔。
-
-它的心智模型是：
-
-- 成功就回傳正常結果
-- 失敗就回傳你指定的 fallback value
-
-這適合用在你已經知道「失敗時怎麼補一個安全值」的場景，例如：
-
-- 轉型失敗就回 `NA`
-- 某欄不存在就回空字串
-- 某次抓取失敗就回空 list
-
-### Working with Nested Lists
-
-課程大量用到像 `sw_films`、GitHub API 回傳資料這種巢狀 list。這提醒了一個實務重點：
-
-- `purrr` 很適合處理不規則、非矩形資料
-- 與其急著先 `unnest`，很多時候先 `map()` 抽欄位更穩
-
-例如：
-
-```r
-map_chr(sw_films, "title")
-map(gh_repos, ~ map(.x, "forks"))
-```
-
-這種策略在處理 JSON、API 回傳物件和 web scraping 結果時尤其常見。
-
-### Choosing Between `for`, `apply`, and `purrr`
-
-可以用下面的簡化原則：
-
-- 需要最直接、可逐步更新狀態的流程時，用 `for`
-- 已經是矩陣或 data frame 軸向彙總時，常先想到 `apply` 家族
-- 已經是 list、巢狀資料、參數組合或要加錯誤處理時，優先考慮 `purrr`
-
-`purrr` 不是為了取代所有 loop，而是讓 list-oriented workflows 更一致。
-
-### Practical Workflow
-
-一個很常見的 `purrr` 工作流是：
-
-1. 先把輸入整理成 list 或參數表
-2. 用 `map()` / `map_*()` 做單一輸入 iteration
-3. 用 `map2()` / `pmap()` 做多輸入 iteration
-4. 需要穩定性時加上 `safely()` 或 `possibly()`
-5. 必要時用 `transpose()` 或後續整理函式拆開結果
-6. 再把輸出轉回 vector、tibble、模型摘要或報表
-
-### Takeaways
-
-- `purrr` 的核心不是語法縮寫，而是把 iteration 的輸入、操作與輸出型別說清楚
-- `map()` 家族特別適合 list、巢狀資料與批次分析
-- typed maps 比純 `map()` 更容易提早發現資料問題
-- `map2()` 和 `pmap()` 很適合參數化模擬與批次建模
-- `safely()`、`possibly()` 和 `transpose()` 是讓流程更耐髒資料的關鍵工具
-
-## Functional Programming with purrr Advanced
-
-基礎 `purrr` 重點是把 iteration 寫得穩定；進階 `purrr` 則更像是在組裝一套可重用的資料流程。這一層開始關心的不只是 `map()`，而是如何把 predicate、function operator 與巢狀 list 操作組成更乾淨的工作流。
-
-### A More Functional View of R
-
-這份課程反覆強調兩件事：
-
-- everything that exists is an object
-- everything that happens is a function call
-
-在 R 裡，函數本身也可以被：
-
-- 存進變數
-- 放進 list
-- 當成其他函數的輸入
-- 當成函數回傳值
-
-這就是 `purrr` 進階技巧成立的前提。
-
-### Nested Data Is Normal
-
-`purrr` 很常出現在處理 API 或 JSON 的場景，因為 JSON 在 R 裡通常就是巢狀 list。
-
-像課程中的 `rstudioconf` tweet dataset 就是一個多層 list：
-
-```r
-length(rstudioconf)
-length(rstudioconf[[1]])
-vec_depth(rstudioconf)
-```
-
-這類檢查很實用，因為在真正開始抽欄位前，你需要先知道：
-
-- 最外層有多少元素
-- 每個元素大概長什麼樣
-- 巢狀深度有多深
-
-### `keep()` and `discard()`
-
-當你不是要「轉換」元素，而是要「依條件篩掉或保留」元素時，用 `keep()` / `discard()` 很自然。
-
-```r
-over_30000 <- keep(visits2016, ~ sum(.x) > 30000)
-under_30000 <- discard(visits2016, ~ sum(.x) > 30000)
-```
-
-可以把它們理解成 list 版本的 filter：
-
-- `keep()` 保留符合條件的元素
-- `discard()` 移除符合條件的元素
-
-這在 list of vectors、list of data frames、或巢狀 API 回傳值上都很常用。
-
-### Predicates as Reusable Functions
-
-條件本身也可以先抽出來，變成可重用 predicate：
-
-```r
-limit <- as_mapper(~ sum(.x) > 30000)
-over_mapper <- keep(visits2016, limit)
-```
-
-這個思路很重要。當條件開始變長，與其在每次 `keep()` / `discard()` 裡重寫，不如先命名成一個 predicate，再重複使用。
-
-### Combining `map()` with `keep()`
-
-課程有一個很好用的模式：先 map，再在每個子物件內做條件保留。
-
-```r
-df_list <- list(iris, airquality) %>% map(head)
-map(df_list, ~ keep(.x, is.factor))
-```
-
-這代表：
-
-- 外層 `map()` 迭代資料表
-- 內層 `keep()` 保留每張表中符合條件的欄位
-
-這種雙層 list thinking 很適合欄位探索、批次檢查和 schema 比對。
-
-### `compact()` Removes `NULL`
-
-當 list 中有許多 `NULL` 結果時，`compact()` 很實用：
-
-```r
-list(1, NULL, 3, 4, NULL) %>%
-  compact()
-```
-
-它不是依一般條件篩選，而是專門拿掉 `NULL`。這在下列情境特別常見：
-
-- 某些 API 回傳欄位缺失
-- 某些嘗試失敗後故意回 `NULL`
-- 某些步驟選擇性產出結果
-
-### `possibly()` Plus `compact()`
-
-一個很實務的模式是失敗時回 `NULL`，之後一次清掉：
-
-```r
-l <- list(1, 2, 3, "a")
-possible_log <- possibly(log, otherwise = NULL)
-map(l, possible_log) %>% compact()
-```
-
-這個 pattern 很值得記住，因為它把流程分成兩步：
-
-1. 失敗時不要中斷，先回 `NULL`
-2. 最後再用 `compact()` 清理無效結果
-
-如果你只想保留成功輸出，而不在意完整錯誤資訊，這比 `safely()` 更輕量。
-
-### Cleaning Safe Results with `transpose()`
-
-對 `safely()` 產生的 list，`transpose()` 仍然是整理關鍵：
-
-```r
-map(l, safe_log) %>% transpose()
-```
-
-重點不是語法本身，而是資料結構轉換：
-
-- 原本是每筆一個 `result/error`
-- 轉成一個 results 集合和一個 errors 集合
-
-這樣更方便後續：
-
-- 單獨檢查失敗原因
-- 批次抽取成功值
-- 接著再 `compact()` 或轉成 tibble
-
-### `flatten()` Removes One Nesting Level
-
-當 list 只是多包了一層，不需要保留那一層結構時，可以用 `flatten()`：
-
-```r
-my_list <- list(
-  list(a = 1),
-  list(b = 2)
+# 重複的 lm |> tidy |> filter 改成一個函式，避免第 4 次複製貼上時出現錯字
+tidy_sig_lm <- compose(
+  \(tbl) dplyr::filter(tbl, p.value < 0.05),     # 3. 最後執行
+  broom::tidy,                                   # 2.
+  partial(lm, data = iris, na.action = na.fail)  # 1. 最先執行
 )
 
-flatten(my_list)
+list(Petal.Length ~ Petal.Width,
+     Petal.Width  ~ Sepal.Width,
+     Sepal.Width  ~ Sepal.Length) |>
+  map(tidy_sig_lm)
+
+rounded_mean <- compose(partial(round, digits = 2), partial(mean, na.rm = TRUE))
+rounded_mean(c(1.234, 5.678, NA))                # 3.46
+
+is_small <- \(x) mean(x) < 100
+map_lgl(98:102, negate(is_small))                # FALSE FALSE TRUE TRUE TRUE
 ```
 
-這個操作的重點是：
+`compose(..., .dir = "forward")` 可改成由左往右，順序和 pipe 一致，較不易搞混。
 
-- 降低一層巢狀
-- 保留內部元素
-- 讓後續抽值或命名更直接
+## 舊寫法對照（purrr ≥ 1.0）
 
-它很適合在 API 整理或分批運算結果合併時做第一步結構簡化。
+| 舊 | 新 |
+| --- | --- |
+| `map_dfr(x, f)` / `map_dfc()` | `map(x, f) \|> list_rbind()` / `list_cbind()` |
+| `flatten()` | `list_flatten()` |
+| `transpose()` | `list_transpose()` |
+| `vec_depth()` | `pluck_depth()` |
+| `~ .x + 1` | `\(x) x + 1`（公式仍可用，但官方建議匿名函式） |
+| `%>%` | `\|>`（R ≥ 4.1） |
 
-### `as_mapper()` Creates Reusable Mappers
+## 平行化
 
-公式寫法 `~ .x * 2` 很方便，但如果同一個 transformation 要重複使用，可以先轉成 mapper：
-
-```r
-mult <- as_mapper(~ .x * 2)
-ten_times <- as_mapper(~ .x * 10)
-map(1:5, ten_times)
-```
-
-可以把 `as_mapper()` 想成把匿名函數轉成可命名、可重複套用的 transformation object。
-
-這在以下場景很好用：
-
-- 同一個轉換要套到很多 list
-- 想先把邏輯命名再組合
-- 想把 predicate 或 mapper 傳進別的函數
-
-### `negate()` Inverts a Predicate
-
-當你已經有一個 predicate，只想要它的反面，不需要再重寫一次條件：
-
-```r
-under_hundred <- as_mapper(~ mean(.x) < 100)
-not_under_hundred <- negate(under_hundred)
-map_lgl(98:102, under_hundred)
-```
-
-`negate()` 的價值在於避免條件邏輯分散。你先寫出一個清楚的「正向條件」，再需要時反轉它。
-
-### `partial()` Prefills Arguments
-
-`partial()` 可以先把某些參數綁定起來，產生一個新的函數：
-
-```r
-mean_na_rm <- partial(mean, na.rm = TRUE)
-lm_iris <- partial(lm, data = iris)
-```
-
-這很適合：
-
-- 固定常用選項
-- 減少重複參數
-- 在 `map()` 裡傳入已配置好的函數
-
-例如不再每次都重寫 `na.rm = TRUE`，而是先建立一個一致版本的平均函數。
-
-### `compose()` Builds Pipelines of Functions
-
-當你想把多個小函數組成一個可重複套用的大函數時，用 `compose()`。
-
-課程中的模式很值得保留：
-
-```r
-tidy_iris_lm <- compose(
-  as_mapper(~ dplyr::filter(.x, p.value < 0.05)),
-  broom::tidy,
-  partial(stats::lm, data = iris, na.action = na.fail)
-)
-```
-
-這表示一個輸入公式會依序經過：
-
-1. `lm(...)`
-2. `tidy()`
-3. `filter(...)`
-
-之後就能直接：
-
-```r
-list(
-  Petal.Length ~ Petal.Width,
-  Petal.Width ~ Sepal.Width,
-  Sepal.Width ~ Sepal.Length
-) %>% map(tidy_iris_lm)
-```
-
-這是進階 `purrr` 很重要的觀念: 與其反覆貼上同一段 pipeline，不如把 pipeline 本身做成函數。
-
-### `partial()` Plus `compose()`
-
-這兩者常常一起用：
-
-```r
-rounded_mean <- compose(
-  partial(round, digits = 2),
-  partial(mean, na.rm = TRUE)
-)
-```
-
-或：
-
-```r
-rounded_mean <- compose(
-  partial(round, digits = 1),
-  partial(mean, trim = 2, na.rm = TRUE)
-)
-```
-
-好處是你可以把一個常用分析習慣變成可重複使用的單一函數，例如：
-
-- 先算平均
-- 自動忽略缺失值
-- 再固定四捨五入位數
-
-### Cleaner Code Through Reusable Components
-
-課程中用一連串重複 `lm(...) %>% tidy() %>% filter(...)` 的例子說明，重複貼上最容易藏 typo，也最難維護。
-
-`purrr` 的進階價值不只是少寫幾行，而是把程式拆成：
-
-- 小而清楚的 predicate
-- 可重用的 mapper
-- 已經預填參數的函數
-- 已經組好的函數管線
-
-這會讓批次分析更容易檢查，也比較不會在第 4 次複製貼上時出現隱性錯字。
-
-### Practical Workflow
-
-進階 `purrr` 常見工作流可以整理成：
-
-1. 先理解巢狀資料的深度與結構
-2. 用 `map()` / `map_*()` 抽值或轉換
-3. 用 `keep()` / `discard()` 做 predicate-based filtering
-4. 用 `possibly()` / `safely()` 讓流程容錯
-5. 用 `compact()` / `transpose()` / `flatten()` 清理結果結構
-6. 用 `partial()`、`compose()`、`as_mapper()` 產生可重用函數
-
-### Takeaways
-
-- 進階 `purrr` 的核心是把 function 當成可操作物件
-- `keep()`、`discard()`、`compact()` 很適合 list 清理與條件篩選
-- `partial()` 能把常見參數習慣封裝起來
-- `compose()` 讓整段分析 pipeline 變成單一可重用函數
-- `as_mapper()` 與 `negate()` 有助於建立可命名、可重用的條件與 transformation
-- 處理 JSON 或 API 回傳資料時，先理解巢狀結構，再決定何時抽值、何時降維、何時清掉失敗結果
+`map()` 系列換成 furrr 的 `future_map()` 即可平行執行，設定方式見 [平行運算](parallel-programming-in-r.md)。purrr ≥ 1.1 也提供 `in_parallel()` 搭配 mirai。

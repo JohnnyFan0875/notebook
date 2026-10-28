@@ -1,190 +1,76 @@
-# Geospatial Data in Python
+[Data Science](../README.md) › [資料處理與 EDA](README.md) › 地理空間資料
 
-地理空間資料和一般表格資料最大的差別，不是多了一個欄位，而是多了「位置」這個結構。你不只要問某筆資料是什麼，還要問它在哪裡、和其他幾何物件有什麼空間關係。
+# 地理空間資料 (Geospatial Data in Python)
 
-## What Makes Data Geospatial
+地理空間資料 (geospatial data) 和一般表格的差別不只多一個欄位，而是多了「位置」這個結構：除了值是什麼，還要問它在哪裡、和其他幾何物件有什麼空間關係。流行病學的病例分布、環境暴露、醫療資源可近性都會用到。
 
-最簡單的說法是：geospatial data 是帶有 location information 的資料。
+## 核心概念
 
-常見形式包括：
+| 概念 | 說明 | 常見錯誤 |
+| --- | --- | --- |
+| 幾何 (geometry) | 點 `Point`（城市、病例）、線 `LineString`（道路、河流）、面 `Polygon`（行政區、湖泊） | 把 geometry 當字串處理 |
+| 座標參考系統 (CRS) | 把座標數字對應到地球上的位置；`POINT (2.2945 48.8584)` 沒有 CRS 就無法確定在哪 | 不知道 CRS 就開始畫圖或算距離 |
+| 座標順序 | GeoPandas / Shapely / GeoJSON 一律 `(lon, lat)` = `(x, y)`；經度 [-180, 180]、緯度 [-90, 90] | 寫成 `(lat, lon)`，數字看似合法但位置完全跑掉 |
+| 地理座標 vs 投影座標 | 地理 (geographic，如 EPSG:4326) 單位是度，適合記錄位置；投影 (projected，如 UTM) 單位是公尺，適合算距離、面積、緩衝區 | 在經緯度上直接算面積或 buffer，結果沒有物理意義 |
 
-- 一個點的位置，例如城市、事故、商店
-- 一條線，例如道路、河流、軌跡
-- 一個面，例如行政區、地塊、湖泊
+## Python 工具
 
-對資料分析來說，這代表你除了欄位值，還要理解 geometry。
+| 套件 | 用途 |
+| --- | --- |
+| `geopandas` | `GeoDataFrame` = DataFrame + 一個 `geometry` 欄；讀寫檔案、CRS 轉換、空間 join |
+| `shapely` | 幾何物件與空間運算（GeoPandas 底層） |
+| `pyproj` | CRS 定義與轉換 |
+| `folium` / `geopandas.explore()` | 互動地圖 |
 
-## Core Python Stack
-
-Python geospatial 工作流最常見的組合是：
-
-- `GeoPandas`: 類似 pandas，但多了 geometry-aware column
-- `Shapely`: 幾何物件與空間關係運算
-- `matplotlib` 或其他地圖套件：繪圖
-
-典型起手式：
+## 常見任務
 
 ```python
 import geopandas as gpd
 
+# 1. 讀檔：Shapefile、GeoJSON、GeoPackage 都用 read_file
 cities = gpd.read_file("ne_110m_populated_places.shp")
-print(cities.head())
+cities.geometry.iloc[0]              # POINT (lon lat)：Shapely 物件，不是字串
+cities.crs                           # EPSG:4326
+
+# 2. 從經緯度欄位建立（注意 x=經度、y=緯度）
+pts = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs="EPSG:4326")
+
+# 3. CRS：set_crs 是「宣告」原本的 CRS；to_crs 才是「轉換」座標
+gdf = gdf.set_crs("EPSG:4326")              # 檔案缺 .prj 時補上
+gdf_m = gdf.to_crs(gdf.estimate_utm_crs())  # 轉成當地 UTM（單位公尺）
+
+# 4. 距離、面積、緩衝區：先轉投影座標
+gdf_m.area                                  # m²
+gdf_m.buffer(5000)                          # 5 km 緩衝區
+
+# 5. 空間關係與空間 join
+districts.contains(point)                   # 也有 within / intersects / touches / distance
+cases_in = gpd.sjoin(cases, districts, predicate="within")   # 每個病例屬於哪個區
+cases_in.groupby("district_name").size()
 ```
 
-`GeoDataFrame` 可以先把它想成：
+| `set_crs` | `to_crs` |
+| --- | --- |
+| 不改座標數字，只標註「這些數字是什麼 CRS」 | 重新計算座標數字到另一個 CRS |
+| 資料讀進來 `crs` 是 `None` 時用 | 要算距離 / 面積或兩圖層 CRS 不同時用 |
 
-- 普通 DataFrame
-- 再加上一個特殊的 `geometry` 欄位
+> EPSG:3857 (Web Mercator) 是網路地圖的顯示用投影，距離與面積在高緯度嚴重失真，不要拿來量測；量測用當地 UTM 或等積投影。
 
-## Geometry Objects
+## 檔案格式
 
-`geometry` 欄位裡放的不是普通字串，而是 Shapely 幾何物件。
+| 格式 | 特性 |
+| --- | --- |
+| Shapefile | 其實是一組檔案（`.shp`、`.shx`、`.dbf`、`.prj`…），複製時要一起搬；欄名限 10 字元 |
+| GeoJSON | 單一文字檔，規範要求 WGS84 (EPSG:4326) 經緯度 |
+| GeoPackage (`.gpkg`) | 單一 SQLite 檔，可放多個圖層；建議的預設格式 |
+| GeoParquet | 欄式儲存，大資料量讀寫快（`gdf.to_parquet()`） |
+| PostGIS | PostgreSQL 的空間擴充，資料在資料庫時用 |
 
-```python
-brussels = cities.loc[170, "geometry"]
-print(brussels)
-# POINT (4.33137074969045 50.83526293533032)
-```
-
-常見幾何類型：
-
-- `Point`
-- `LineString`
-- `Polygon`
-
-這些型別的重要性在於：它們不只是資料格式，也決定你能做哪些空間運算。
-
-## Spatial Relationships
-
-Shapely / GeoPandas 真正好用的地方，是你可以直接問幾何之間的關係。
-
-例如這類問題：
-
-- 一個點是否落在某個 polygon 內
-- 兩個區域是否相交
-- 某條線是否穿越某個區域
-- 兩個點相距多遠
-
-這類運算不像普通 `==` 或 `>`，而是空間 predicate，例如：
-
-- `contains`
-- `within`
-- `intersects`
-- `touches`
-- `distance`
-
-## CRS: Coordinate Reference System
-
-CRS 是 geospatial 初學最容易忽略、但代價也最高的概念之一。
-
-CRS 的角色是：把座標值對應到地球上的實際位置。
-
-例如：
+## 分析流程
 
 ```text
-POINT (2.2945 48.8584)
+read_file → 檢查 geometry 型態與 crs → 必要時 set_crs / to_crs（兩圖層統一 CRS）
+         → 空間 join / 關係運算 → 彙總統計 → 繪圖（gdf.plot(column=...)）
 ```
 
-如果不知道 CRS，這組數字本身其實不夠表達「它到底在哪」。
-
-## Longitude Comes First
-
-在 Python geospatial 生態裡，最常見的習慣是：
-
-- `(lon, lat)`
-- 不是 `(lat, lon)`
-
-也就是：
-
-- longitude 範圍通常是 `[-180, 180]`
-- latitude 範圍通常是 `[-90, 90]`
-
-這個順序錯掉時，資料看起來還是像合法數字，但地圖位置會完全跑掉。
-
-## Geographic vs Projected Coordinates
-
-很多資料一開始用的是 geographic coordinates，也就是經緯度。
-
-特徵：
-
-- 單位是 degree
-- 常見於 GPS、web mapping、GeoJSON
-
-但地圖是 2D，而地球表面不是，所以很多分析工作最後需要 projected CRS。
-
-直覺上可以這樣想：
-
-- geographic CRS: 比較適合記錄位置
-- projected CRS: 比較適合做平面距離、面積、緩衝區等分析
-
-如果你直接拿經緯度去算距離或面積，結果常常沒有物理意義。
-
-## Inspecting and Reprojecting CRS
-
-GeoPandas 裡最常見的兩個動作是：
-
-- 查看目前 CRS
-- 轉換 CRS
-
-```python
-print(gdf.crs)
-
-gdf = gdf.to_crs("EPSG:3857")
-```
-
-心智模型上要分清楚：
-
-- `set_crs(...)`: 指定資料本來就是什麼 CRS
-- `to_crs(...)`: 真正把座標轉換到另一個 CRS
-
-兩者混用是很常見的錯誤。
-
-## File Formats You Will Meet Often
-
-GeoPandas 常用 `read_file()` 讀取多種地理空間格式：
-
-```python
-gdf = gpd.read_file("path/to/file.geojson")
-```
-
-常見格式包括：
-
-- ESRI Shapefile
-- GeoJSON
-- GeoPackage (`.gpkg`)
-- PostGIS table
-
-其中一個很容易踩坑的點是：
-
-- shapefile 看起來像一個檔案格式
-- 但實際上通常由多個檔案共同組成，例如 `.shp`, `.dbf`, `.shx`, `.prj`
-
-所以搬移或複製 shapefile 時，不能只拿單一 `.shp` 檔。
-
-## Typical Workflow
-
-一個常見的 geospatial 分析節奏是：
-
-1. 用 `read_file()` 載入資料
-2. 檢查 `geometry` 與 `crs`
-3. 必要時轉成合適投影
-4. 做空間關係或 join
-5. 再進入統計摘要或視覺化
-
-這裡和一般 pandas 很像，但 geometry / CRS 檢查不能省。
-
-## Common Failure Modes
-
-- 把 `(lat, lon)` 和 `(lon, lat)` 搞反
-- 不知道資料的 CRS，就直接開始畫圖或算距離
-- 在 geographic CRS 上直接算面積或 buffer
-- shapefile 缺少伴隨檔案，導致資料不完整
-- 把 geometry 當一般字串看待，忽略它其實是可運算物件
-
-## Takeaway
-
-geospatial analysis 的核心不是先學很多地圖 API，而是先建立三個觀念：
-
-1. geometry 是一級資料型別
-2. CRS 決定座標的真實意義
-3. 空間分析前，先確認座標順序、投影與資料格式都正確
+> 空間資料的觀測彼此不獨立（相鄰區域相似，空間自相關），一般迴歸的標準誤會低估；需要時改用空間統計模型（如 `pysal`）。

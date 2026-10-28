@@ -1,201 +1,113 @@
-# String Distance and Fuzzy Matching in R
+[Data Science](../README.md) › [R Foundations](README.md) › 字串距離與模糊比對
 
-regex 很適合描述明確規則，但真實世界常有另一類問題：字串不是「符不符合規則」，而是「有多接近」。這時候就會進到 string distance 與 fuzzy matching。
+# 字串距離與模糊比對 (String Distance and Fuzzy Matching)
 
-常見場景：
+regex 回答「符不符合某個模式」；字串距離回答「兩個字串**有多接近**」。用在人工輸入的拼錯、同一實體的多種寫法（醫院名、組織部位、藥名）、兩份樣本表的 ID 不完全一致等情境。工具是 `stringdist`（計算距離）與 `fuzzyjoin`（近似 join）。Python 版（rapidfuzz）見 [文字清理與正規表示式](../python-foundations/text-cleaning-and-regex.md#模糊比對-fuzzy-matching)。
 
-- 使用者拼錯名稱
-- 公司、城市、藥物名有多種寫法
-- 兩份資料表要做近似 join
-- OCR、人工輸入或 legacy 系統帶來小錯字
+> **生物 ID 不要用模糊比對**：`CD4` 與 `CD8`、`IL6` 與 `IL6R` 的編輯距離只有 1，卻是完全不同的基因。基因別名要用對照表：`HGNChelper::checkGeneSymbols()`、`AnnotationDbi::mapIds(org.Hs.eg.db, keys, "SYMBOL", "ALIAS")`，見 [匯入資料](importing-data.md)。
 
-## What a String Distance Means
+## 距離方法
 
-string distance 是把兩個字串差異量化成一個數值。
+| 方法 | `method =` | 計算什麼 | 適合 |
+| --- | --- | --- | --- |
+| Levenshtein | `"lv"` | 插入、刪除、替換的最少次數 | 一般打字錯誤 |
+| Optimal String Alignment | `"osa"`（預設） | 同上 + 相鄰字元交換，每段子字串只能編輯一次 | 打字時常見的 `teh` → `the` |
+| Damerau-Levenshtein | `"dl"` | 同上，無限制 | 同上，數學上正確的距離 |
+| Hamming | `"hamming"` | 等長字串中不同位置的數目 | 等長條碼、UMI、index 序列 |
+| q-gram | `"qgram"` | 長度 q 片段的出現次數差異總和 | 較長字串、詞序變動 |
+| Jaccard | `"jaccard"` | 1 − 片段集合交集 / 聯集 | 同上，結果在 0–1 |
+| Cosine | `"cosine"` | 片段次數向量的 1 − cosine 相似度 | 同上 |
+| Jaro-Winkler | `"jw"`（`p = 0.1`） | 共同字元與順序，前綴相同加分 | 人名、短字串；結果在 0–1 |
 
 ```r
-stringdist::stringdist("saturday", "sunday", method = "lv")
+library(stringdist)
+
+stringdist("saturday", "sunday", method = "lv")    # 3
+stringdist("ab", "ba", method = c("lv"))            # 2：兩次替換
+stringdist("ab", "ba", method = "osa")              # 1：一次交換
+stringdist("ca", "abc", method = "osa")             # 3
+stringdist("ca", "abc", method = "dl")              # 2：dl 允許交換後再插入
+
+qgrams("Honolulu", "Hanolulu", q = 2)               # 列出每個 bigram 的次數
+stringdist("Honolulu", "Hanolulu", method = "qgram", q = 2)    # 4
+stringdist("Honolulu", "Hanolulu", method = "jaccard", q = 2)  # 0.5：交集 4 / 聯集 8
+
+stringdistmatrix(c("liver", "livr"), c("liver", "lung"))       # 全部兩兩距離矩陣
+stringsim("liver", "livr", method = "jw")           # 相似度（1 − 正規化距離），0–1
 ```
 
-距離越小，通常代表越相似。  
-距離為 0，代表完全相同。
+| 選擇原則 | |
+| --- | --- |
+| 短字串、單字母錯字 | `osa` / `dl` |
+| 長字串、片段相似、詞序可能不同 | `qgram` / `jaccard` / `cosine` |
+| 人名 | `jw` |
+| 不同長度的字串要比較 | 用 `stringsim()` 或除以長度，絕對距離對長字串不公平 |
 
-重要性不在於公式本身，而在於你要先決定：
+> 沒有「最好」的距離：選方法等於定義「什麼叫相似」，先看資料裡實際出現的是哪種錯誤。
 
-- 什麼類型的錯字最常出現
-- 你需要的是嚴格比對還是近似比對
-
-## Levenshtein Family
-
-課程先介紹編輯距離類方法：
-
-- `lv`：regular Levenshtein
-- `dl`：Damerau-Levenshtein
-- `osa`：Optimal String Alignment
+## 找最接近的候選：`amatch()`
 
 ```r
-stringdist::stringdist(a, b, method = "lv")
-stringdist::stringdist(a, b, method = "dl")
-stringdist::stringdist(a, b, method = "osa")
+canonical <- c("liver", "lung", "kidney", "heart")
+
+amatch("livr", canonical)                       # NA！預設 maxDist = 0.1，任何錯字都不接受
+amatch("livr", canonical, maxDist = 1)          # 1：對應到 "liver"
+canonical[amatch(c("Lung ", "kidny", "brain"), canonical, maxDist = 1)]
+# NA "kidney" NA：大小寫與空白也算差異 → 先標準化；brain 沒有候選 → 保持 NA
 ```
 
-這些方法大致都在問：
+**對唯一值比對**而不是每一列：先 `unique(x)` 建出「原值 → 標準值」對照表，人工檢查後再 join 回去。
 
-- 需要幾次插入
-- 幾次刪除
-- 幾次替換
-- 某些方法也考慮字元交換
-
-如果資料中常見的是簡單 typo，這一類方法通常很有用。
-
-## Finding the Closest Match with `amatch()`
-
-當你有一個輸入值，想找它最像哪個候選字串時，可以用 `amatch()`：
+## 模糊 join：fuzzyjoin
 
 ```r
-stringdist::amatch(
-  x = "Sonday",
-  table = c("Friday", "Saturday", "Sunday")
-)
-```
+library(fuzzyjoin)
 
-它的重點不是回傳所有距離，而是幫你選最接近的候選值。這很適合：
+# 單欄字串距離
+stringdist_left_join(lab_samples, registry, by = "sample_name",
+                     method = "osa", max_dist = 1, distance_col = "dist")
 
-- 使用者輸入修正
-- 類別標籤標準化
-- 小型字典比對
-
-## Q-grams and Token-Style Similarity
-
-課程也介紹了 q-gram family，先把字串拆成固定長度片段，再比較重疊程度。
-
-```r
-stringdist::qgrams("Honolulu", "Hanolulu", q = 2)
-```
-
-相關方法包括：
-
-- `qgram`
-- `jaccard`
-- `cosine`
-
-```r
-stringdist::stringdist(a, b, method = "qgram")
-stringdist::stringdist(a, b, method = "jaccard")
-stringdist::stringdist(a, b, method = "cosine")
-```
-
-這類方法比較不像「編輯幾步」，而是比較像「兩個字串由哪些片段組成、重疊多少」。
-
-當字串較長，或你更在意局部片段相似性時，q-gram 類方法往往更合理。
-
-## Choosing a Distance Is a Modeling Choice
-
-不同方法反映不同假設：
-
-- 若常見單字母 typo，先想 Levenshtein family
-- 若在意局部片段重疊，先想 q-gram / cosine / jaccard
-- 若資料很短，距離閾值通常要更保守
-
-Key point: 沒有 universally best string distance。方法選擇其實是在選你認為「相似」應該如何被定義。
-
-## Fuzzy Joins
-
-當兩張表不能用完全相同的 key 直接 join 時，可以用 fuzzy join：
-
-```r
-fuzzyjoin::stringdist_join(
-  user_input,
-  database,
-  by = "name"
-)
-```
-
-這種 join 適合：
-
-- 兩份來源對同一實體有不同拼法
-- 名單清理與主檔對應
-- 把人工輸入對回標準資料表
-
-但要很小心：fuzzy join 很方便，也很容易把錯的東西 join 在一起。
-
-## Custom Matching Rules
-
-課程後面示範了把 string distance 和其他條件一起組合。
-
-例如先定義一個可接受的小距離：
-
-```r
-small_str_distance <- function(left, right) {
-  stringdist::stringdist(left, right) <= 5
-}
-```
-
-然後再和其他數值條件一起放進 fuzzy join 邏輯。
-
-這提醒一個很重要的實務觀念：
-
-- 真正的 matching 很少只看一個欄位
-- 名稱近似只是 evidence 之一
-- 若能再加日期、數值、地區等條件，匹配會可靠很多
-
-## `fuzzy_left_join()`
-
-如果你要自己定義多欄匹配邏輯，可以考慮：
-
-```r
-fuzzyjoin::fuzzy_left_join(
-  a, b,
-  by = c(
-    "name" = "name",
-    "amount" = "amount"
+# 多條件：名稱相近 且 日期差 ≤ 3 天
+fuzzy_left_join(
+  visits, records,
+  by = c("patient" = "patient", "date" = "date"),
+  match_fun = list(
+    \(a, b) stringdist(a, b, method = "jw") < 0.1,
+    \(a, b) abs(as.numeric(a - b)) <= 3
   )
 )
 ```
 
-這類做法適合：
+| fuzzyjoin 函式 | 比對方式 |
+| --- | --- |
+| `stringdist_*_join()` | 字串距離 |
+| `regex_*_join()` | 一邊是 regex pattern |
+| `difference_*_join()` | 數值差 ≤ `max_dist` |
+| `interval_*_join()` | 區間重疊（基因組座標通常改用 `GenomicRanges::findOverlaps()`） |
+| `fuzzy_*_join()` | 每欄自訂 `match_fun` |
 
-- 一欄用字串距離
-- 一欄用數值容忍範圍
-- 多欄共同決定同一筆 match
+> fuzzy join 會產生**一對多**：一筆可能同時符合多個候選。join 後檢查列數，對每筆只保留距離最小者，並人工審核距離 > 0 的配對。
 
-它通常比「單欄 stringdist 就直接 join」更接近真實資料整併需求。
+## 工作流程
 
-## Regex vs Fuzzy Matching
+```
+原始字串
+  └─ 1. 標準化：str_to_lower()、str_squish()、移除標點與固定前後綴（regex）
+     2. 完全相符的直接配對
+     3. 剩下的唯一值 → 算距離、取最近候選、設定閾值
+     4. 輸出「原值 → 建議值 → 距離」表，人工確認高風險配對
+     5. 把確認後的對照表存檔，之後的資料直接 join（可重現、可審查）
+```
 
-兩者常一起出現在文字清理流程，但用途不同：
+標準化步驟見 [正規表示式](regular-expressions.md)。
 
-- regex：規則明確，回答「符合哪個模式」
-- string distance：資料有誤差，回答「最接近哪個值」
+## 常見錯誤
 
-實務上常見順序是：
-
-1. 先用 regex / string cleaning 正規化格式
-2. 再對剩下的不一致值做 fuzzy matching
-
-如果原始字串中有多餘空白、標點、前後綴，先清理再算距離，通常會準很多。
-
-## Practical Workflow
-
-一個穩健的近似比對流程通常是：
-
-1. 先把大小寫、空白、標點做基本標準化
-2. 用 regex 或字串函數拆掉明顯噪音
-3. 選定合適的 string distance method
-4. 定義合理閾值，不要一開始就全自動接受 match
-5. 對高風險結果保留人工審核或額外欄位驗證
-
-## Common Mistakes
-
-- 把 fuzzy matching 當成萬能清理工具，跳過前面的標準化。
-- 距離閾值設太寬，導致錯誤 join。
-- 只看名稱相似，不看其他欄位。
-- 對不同長度、不同語言、不同資料來源的字串，卻用同一個閾值。
-
-## Takeaways
-
-- string distance 是量化「相似度」的一種方式，不是單純 pattern matching
-- `stringdist()` 適合算距離，`amatch()` 適合找最近候選
-- q-gram / jaccard / cosine 類方法更偏片段相似
-- fuzzy join 很實用，但最好搭配多欄條件與人工 sanity check
-- regex 與 fuzzy matching 常是前後相接的兩個步驟，不是互斥選項
+| 錯誤 | 後果 / 修正 |
+| --- | --- |
+| 跳過標準化直接算距離 | `"Liver "` 和 `"liver"` 距離 2；先清理 |
+| `amatch()` 沒設 `maxDist` | 預設 0.1 → 幾乎全部 `NA` |
+| 閾值太寬 | 錯誤配對（`lung` ↔ `lungs`？`CD4` ↔ `CD8`！） |
+| 長短字串用同一個絕對閾值 | 用正規化相似度或依長度調整 |
+| 只靠名稱相似 | 加上日期、數值、地區等條件共同判斷 |
+| 每次分析都重新模糊比對 | 結果可能隨候選清單改變；把確認過的對照表存下來 |

@@ -1,191 +1,149 @@
-# Explanatory Modeling in R
+[Data Science](../README.md) › [R Foundations](README.md) › 解釋型建模
 
-當你在 R 裡做 regression，真正重要的通常不是 `lm()` 這個函式本身，而是你怎麼把視覺化、模型公式、係數整理與模型比較串成一條清楚的分析流程。
+# 解釋型建模 (Explanatory Modeling in R)
 
-這類 workflow 比較接近 explanatory modeling: 重點不是只求最低預測誤差，而是想理解 outcome 和 predictors 之間的關係。
+解釋型建模的目標是理解 outcome 與 predictors 的關係（方向、大小、不確定性），而不是追求最低預測誤差。本篇聚焦 **R 的操作**：formula 語法、`lm()` / `glm()`、類別變數編碼、broom 整理輸出、模型比較。迴歸理論、假設與診斷見 [迴歸分析](../statistics/regression-analysis/README.md)；以預測為目標的流程見 [tidymodels](../machine-learning/packages/tidymodels/README.md)。
 
-## A Simple Mental Model
+## 流程
 
-很多迴歸分析都可以先用這個框架理解：
-
-\[
-y = f(x) + \epsilon
-\]
-
-- `y`: outcome variable
-- `x`: explanatory / predictor variables
-- `f(x)`: 系統性的訊號
-- `\epsilon`: 沒有被模型解釋掉的 noise
-
-Key point: explanatory modeling 的重點是把資料中的結構講清楚，不是把所有殘差都消滅。
-
-## Start with Visualization
-
-在線性模型之前，先用圖看關係方向與形狀：
-
-```r
-library(ggplot2)
-
-ggplot(evals, aes(x = age, y = score)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE)
+```
+1. 畫圖：散點圖 + 平滑線，看方向、形狀、離群、變異是否隨 x 改變
+2. 決定轉換：右偏的正值變數 → log
+3. 擬合：lm()（連續）/ glm()（二元、計數）
+4. 診斷：殘差圖、影響點
+5. 整理：broom::tidy() / glance() / augment()
+6. 比較候選模型：anova()、AIC；解讀效應量與信賴區間，不只看 p 值
 ```
 
-- `geom_point()` 先看資料雲的分布。
-- `geom_smooth(method = "lm")` 幫你把線性趨勢畫出來。
-- `se = FALSE` 讓圖先聚焦在 fitted line 本身。
-
-如果散點圖看起來明顯彎曲、分群或變異隨 `x` 改變，再直接套簡單線性模型通常就不夠。
-
-## Fitting a Simple Regression
-
 ```r
-model_score <- lm(score ~ age, data = evals)
-summary(model_score)
-```
-
-- 左邊是 outcome
-- 右邊是 predictor
-- `summary()` 先看係數、標準誤、`R^2` 與殘差尺度
-
-這一步的核心不是把輸出全部背下來，而是先回答：
-
-- 方向是正還是負
-- 關係大不大
-- 線性模型是否至少大致合理
-
-## Multiple Regression Changes the Question
-
-當你加進更多 predictors，係數的意思就變成：
-
-- 在其他變數固定時，某個 predictor 和 outcome 的關係
-
-```r
-model_price <- lm(log10_price ~ log10_size + yr_built, data = house_prices)
-summary(model_price)
-```
-
-這讓你從「單純相關」往「控制其他因素後的關係」前進。
-
-如果你再把類別變數加進來：
-
-```r
-model_price_cat <- lm(log10_price ~ log10_size + condition, data = house_prices)
-```
-
-R 會透過 formula interface 自動做 dummy coding，所以你通常不需要手動建立 indicator columns。
-
-## Log Transforms Often Help Interpretation
-
-在價格、面積、人口這種右偏變數上，直接建模常會讓殘差很不穩定。常見做法是先轉成 log scale：
-
-```r
-house_prices <- house_prices %>%
-  mutate(
-    log10_price = log10(price),
-    log10_size = log10(sqft_living)
-  )
-```
-
-這麼做常見的目的有三個：
-
-- 壓縮極端值影響
-- 讓關係更接近線性
-- 讓比例變化比絕對差更容易解讀
-
-Key point: transform 不是為了讓圖更好看，而是讓模型關係與誤差結構更合理。
-
-## Tidy Output with `broom`
-
-如果你要把模型結果接到後續整理、比較或視覺化，`broom` 會比一直看 `summary()` 更順手：
-
-```r
+library(tidyverse)
 library(broom)
 
-tidy(model_price)
-glance(model_price)
-augment(model_price)
+ggplot(evals, aes(age, score)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE) +              # 線性趨勢
+  geom_smooth(method = "loess", se = FALSE, color = "tomato")   # 對照：是否彎曲
 ```
 
-- `tidy()`: 係數層級結果
-- `glance()`: 模型層級摘要，例如 `r.squared`、`adj.r.squared`、`sigma`
-- `augment()`: 每筆資料的 fitted value、residual 與診斷欄位
+## Formula 語法
 
-這種分層很有用，因為你不會再把「係數表」和「逐列 residuals」混在同一個輸出裡找。
-
-## Teaching-Friendly Helpers from `moderndive`
-
-如果你想更直接地把 regression 結果整理成易讀表格，`moderndive` 很方便：
+| 寫法 | 意義 | 例子 |
+| --- | --- | --- |
+| `y ~ x` | 簡單迴歸 | `score ~ age` |
+| `y ~ x1 + x2` | 多個主效應 | `expr ~ condition + batch` |
+| `y ~ x1:x2` | 只有交互作用項 | |
+| `y ~ x1 * x2` | 主效應 + 交互作用（= `x1 + x2 + x1:x2`） | `expr ~ genotype * treatment` |
+| `y ~ . ` | 資料中其他所有欄位 | |
+| `y ~ . - id` | 排除某欄 | |
+| `y ~ x - 1` 或 `y ~ 0 + x` | 不要截距（類別變數時每組一個係數） | limma 的 `~ 0 + group` |
+| `y ~ log(x)` | 公式內轉換 | |
+| `y ~ I(x^2)` | 算術運算要用 `I()` 包住 | `^` 在 formula 中另有意義 |
+| `y ~ poly(x, 2)`、`splines::ns(x, df = 3)` | 多項式、自然樣條 | 非線性關係 |
+| `y ~ offset(log(libsize)) + x` | 係數固定為 1 的項 | 計數模型的定序深度 |
 
 ```r
-library(moderndive)
-
-get_regression_table(model_price)
-get_regression_points(model_price)
+model.matrix(~ condition + batch, data = coldata)   # 看 formula 實際產生的設計矩陣
 ```
 
-- `get_regression_table()` 適合快速看 estimate、standard error、statistic、p-value。
-- `get_regression_points()` 適合把 observed、fitted 與 residual 接回 row-level workflow。
+`model.matrix()` 就是 DESeq2 / limma 的 `design` 背後的東西，見 [limma](../../biology/genomics/sequencing-and-analysis/workflows/limma-differential-expression.md)。
 
-這對教學、筆記整理或想快速檢查 residual pattern 時特別實用。
-
-## Sum of Squared Residuals
-
-很多 regression fitting 的核心都圍繞在 residuals：
+## 線性模型 `lm()`
 
 ```r
-get_regression_points(model_price) %>%
-  mutate(sq_residuals = residual^2) %>%
-  summarize(sum_sq_residuals = sum(sq_residuals))
+house <- house_prices |>
+  mutate(log10_price = log10(price), log10_size = log10(sqft_living))
+
+fit <- lm(log10_price ~ log10_size + yr_built + condition, data = house)
+
+summary(fit)              # 係數、SE、t、p、R²、殘差標準誤
+confint(fit)              # 係數的 95% CI
+tidy(fit, conf.int = TRUE)  # 係數表 → tibble
+glance(fit)               # 模型層級：r.squared、adj.r.squared、sigma、AIC、BIC
+augment(fit)              # 每列：.fitted、.resid、.hat、.cooksd
+
+predict(fit, newdata = new_houses, interval = "confidence")   # 平均值的 CI
+predict(fit, newdata = new_houses, interval = "prediction")   # 單一新觀測的 PI（較寬）
+
+par(mfrow = c(2, 2)); plot(fit)   # 4 張診斷圖：殘差 vs fitted、Q-Q、scale-location、leverage
 ```
 
-這個量對應的是模型沒有解釋好的部分。平方後再加總，有兩個效果：
+| 輸出 | 怎麼讀 |
+| --- | --- |
+| 多元迴歸的係數 | **其他變數固定時**，該變數增加一單位，y 的平均變化；不能當成單變數相關來讀 |
+| log10–log10 模型的係數 | 彈性：x 增加 1%，y 約增加 β% |
+| 只對 y 取 log | x 增加一單位，y 乘以 10^β（自然 log 則為 e^β） |
+| R² vs adjusted R² | 加變數 R² 必增；比較不同變數數的模型用 adjusted R² 或 AIC |
+| `sigma` | 殘差標準差，與 y 同單位，代表典型的預測誤差 |
 
-- 正負 residual 不會互相抵消
-- 大誤差會被更重地懲罰
+殘差圖的判讀見 [模型假設與診斷](../statistics/multivariate-analysis/assumptions-diagnostics.md)；解釋與預測目標的差異見 [多元線性迴歸](../statistics/regression-analysis/multiple-linear-regression.md)。
 
-這也是最小平方法背後的重要直覺。
+## 類別變數
 
-## Comparing Models
-
-在 explanatory modeling 裡，常常不是只有一個模型，而是要比較多個合理版本：
+R 會自動把 factor 轉成 dummy 變數，**第一個 level 是參考組**，其他係數都是「與參考組的差」。
 
 ```r
-model_1 <- lm(log10_price ~ log10_size + yr_built, data = house_prices)
-model_2 <- lm(log10_price ~ log10_size + condition, data = house_prices)
+coldata$condition <- factor(coldata$condition, levels = c("control", "treated"))
+coldata$condition <- relevel(coldata$condition, ref = "control")   # 同樣效果
 
-glance(model_1)
-glance(model_2)
+fit <- lm(expr ~ condition + batch, data = coldata)
+# conditiontreated 的係數 = treated − control（在 batch 固定下）
 ```
 
-比較時可以先看：
+| 想要 | 做法 |
+| --- | --- |
+| 改參考組 | `relevel()` 或 `factor(levels = )`，見 [類別資料](categorical-data.md) |
+| 所有組兩兩比較 | `emmeans::emmeans(fit, pairwise ~ group)`（含多重比較校正） |
+| 各組的調整後平均（marginal means） | `emmeans::emmeans(fit, ~ group)` |
+| 整個類別變數是否有效應 | `anova(fit)` 或 `car::Anova(fit, type = 2)` |
 
-- `adj.r.squared`
-- `sigma`
-- AIC / BIC
-- residual pattern 是否更穩定
+> 交互作用模型 `y ~ genotype * treatment` 中，`treatment` 的主效應係數是「在 genotype **參考組**下」的處理效應，不是整體平均效應。這是解讀 DESeq2 交互作用設計時最常見的誤解。
 
-不要只因為某個模型 `R^2` 較高就直接選它。變數越多，表面 fit 通常越好，但解釋價值不一定更高。
+## 廣義線性模型 `glm()`
 
-## A Practical Workflow
+| outcome | family | 係數解讀 | 筆記 |
+| --- | --- | --- | --- |
+| 二元（有病 / 沒病） | `binomial` | exp(β) = odds ratio | [邏輯斯迴歸](../statistics/regression-analysis/logistic-regression.md) |
+| 計數 | `poisson` | exp(β) = rate ratio | [計數資料 GLM](../statistics/regression-analysis/glm-count-models.md) |
+| 過度離散計數（RNA-seq reads） | `MASS::glm.nb()` | exp(β) = rate ratio | 同上 |
+| 正值、右偏（濃度） | `Gamma(link = "log")` | exp(β) = 平均值的倍數 | |
 
-一個很穩定的分析節奏通常長這樣：
+```r
+fit_lr <- glm(disease ~ age + sex + smoking, family = binomial, data = cohort)
+tidy(fit_lr, exponentiate = TRUE, conf.int = TRUE)   # 直接得到 OR 與 95% CI
 
-1. 先用圖看 relationship 與可能的 transformation。
-2. 用 `lm()` 建立簡單模型。
-3. 必要時加入其他 numerical 或 categorical predictors。
-4. 用 `broom` 或 `moderndive` 把輸出整理成 tibble。
-5. 比較多個模型，不只看 fit，也看可解釋性與 residual behavior。
+fit_nb <- MASS::glm.nb(count ~ condition + offset(log(libsize)), data = df)
+```
 
-## Common Mistakes
+重複測量、同一病人多個樣本時要用混合模型（`lme4::lmer()`），見 [混合效應模型](../statistics/regression-analysis/mixed-effects-models.md)。
 
-- 一看到連續 outcome 就直接 `lm()`，沒有先畫散點圖。
-- 只看 p-value，不看 effect size、residual pattern 與模型假設。
-- 用 raw scale 建模明顯右偏的資料，卻忽略 log transform。
-- 把多變數模型的係數當成單變數相關來讀。
-- 比較模型時只看 `R^2`，忽略 adjusted `R^2`、`sigma` 與模型複雜度。
+## 模型比較
 
-## Where to Go Next
+```r
+m1 <- lm(log10_price ~ log10_size, data = house)
+m2 <- lm(log10_price ~ log10_size + yr_built + condition, data = house)
 
-- 如果你想把模型、前處理與評估包成更完整 pipeline，接著看 [Modeling with tidymodels](../machine-learning/packages/tidymodels/README.md)。
-- 如果你想補 regression 理論與假設診斷，接著看 statistics 模組裡的 simple / multiple regression 筆記。
+anova(m1, m2)                 # 巢狀模型的 F 檢定：多加的變數整體是否有幫助
+AIC(m1, m2); BIC(m1, m2)      # 越小越好；不需巢狀，但資料必須相同（注意 NA 造成的列數差異）
+map(list(m1 = m1, m2 = m2), glance) |> list_rbind(names_to = "model")
+```
+
+| 指標 | 用途 |
+| --- | --- |
+| `anova()` | 巢狀模型；glm 用 `anova(m1, m2, test = "LRT")` |
+| AIC / BIC | 兼顧配適與複雜度；BIC 懲罰較重 |
+| adjusted R² | 只限線性模型 |
+| 殘差圖 | 新模型是否修正了系統性型態 |
+
+> 解釋型建模中，變數的選擇應由研究問題與因果假設決定（要控制哪些混淆因子），而不是逐步迴歸挑出 p 值最小的組合。見 [混淆與偏誤](../statistics/experimental-design/confounding-bias.md)。
+
+## 常見錯誤
+
+| 錯誤 | 修正 |
+| --- | --- |
+| 沒畫圖就 `lm()` | 先看散點圖：彎曲、分群、變異不等 |
+| 只看 p 值 | 報告效應量與 CI（`tidy(conf.int = TRUE)`） |
+| 右偏的價格、濃度直接建模 | 取 log，或用 Gamma / log-link GLM |
+| 數值編碼的類別（批次 1、2、3）沒轉 factor | 被當成連續變數，只估一個斜率；先 `factor()` |
+| 參考組不是預期的組 | fold change 方向相反；明確設定 levels |
+| 比較 AIC 時兩個模型用的列數不同 | 有 NA 的欄位會讓 `lm()` 自動刪列；先 `drop_na()` 統一資料 |
+| `I()` 漏寫：`y ~ x^2` | formula 中 `^` 是交互作用展開，結果只有 `x`；寫 `I(x^2)` 或 `poly()` |

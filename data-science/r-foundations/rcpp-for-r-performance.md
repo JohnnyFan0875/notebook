@@ -1,303 +1,156 @@
-# Rcpp for R Performance
+[Data Science](../README.md) › [R Foundations](README.md) › Rcpp
 
-當 R 端的向量化、preallocation、專用函式與 profiling 都做過之後，仍然有明確 bottleneck，`Rcpp` 就是把那一小段熱點改寫成 C++ 的常見入口。
+# Rcpp：用 C++ 加速熱點 (Rcpp for R Performance)
 
-重點不是把整個分析專案都改寫成 C++，而是只把最值得的那幾個函式降到較低層。
+向量化、預先配置、專用函式都做過，profiling 仍指向同一個迴圈時，Rcpp 讓你只把那一小段改寫成 C++，主流程留在 R。典型對象是**每一步依賴上一步**、無法向量化的迴圈：MCMC、動態規劃（序列比對）、遞迴濾波、rejection sampling。許多 Bioconductor 套件（DESeq2、scran）的核心也是這樣寫的。
 
-## When Rcpp Is Worth Considering
+## 何時值得用
 
-`Rcpp` 最適合這類情境：
+| 適合 | 不適合 |
+| --- | --- |
+| profiling 證明瓶頸集中在少數函式 | 瓶頸在 I/O、資料庫、網路 |
+| 逐元素迴圈、每步依賴前一步 | 能向量化或已有專用函式（`rowSums`、`cumsum`、matrixStats） |
+| 大量模擬、迭代演算法 | 一般分組摘要、join（用 data.table / dplyr） |
+| 需要 C++ 函式庫（Armadillo、Eigen、Boost） | 小幅加速卻大幅增加維護成本 |
 
-- 有明確 profiling 證據顯示 bottleneck 在少數函式
-- 該函式包含大量逐元素 loop、累積計算或模擬
-- 單靠 R 端向量化不容易再改善
-- 你想保留 R 作為主流程，但把核心運算換成 compiled code
+前置步驟見 [寫出有效率的 R](writing-efficient-r-code.md)。
 
-Key point: `Rcpp` 是後段優化工具，不是 R workflow 的起點。
+## 環境準備
 
-## The Basic Tradeoff
+Rcpp 需要 C++ 編譯器：
 
-可以先用很粗略的方式理解：
-
-- R: 寫分析流程快、互動高、彈性強
-- C++: 寫起來比較重，但單次執行常更快
-
-因此比較合理的策略通常是：
-
-1. 用 R 把問題與資料流程講清楚
-2. 找出真正慢的局部
-3. 只把那一小塊搬到 `Rcpp`
-
-## Three Common Entry Points
-
-### `evalCpp()`
-
-`evalCpp()` 適合快速試小型 C++ 表達式：
+| 平台 | 安裝 |
+| --- | --- |
+| Windows | 對應 R 版本的 [Rtools](https://cran.r-project.org/bin/windows/Rtools/) |
+| macOS | `xcode-select --install`（Command Line Tools） |
+| Linux | `build-essential`（Debian / Ubuntu）或 `gcc-c++` |
 
 ```r
-library(Rcpp)
-
-evalCpp("40 + 2")
-evalCpp("sqrt(4.0)")
+pkgbuild::has_build_tools(debug = TRUE)       # 檢查編譯器是否可用
+Rcpp::evalCpp("40 + 2")                       # 42：能編譯就代表環境 OK
 ```
 
-它比較像 sandbox，不適合真正封裝工作函式。
+## 三種寫法
 
-### `cppFunction()`
-
-`cppFunction()` 適合直接在 R session 裡定義小型 C++ 函式：
+| 寫法 | 用途 |
+| --- | --- |
+| `evalCpp("expr")` | 測試單一 C++ 運算式 |
+| `cppFunction("...")` | 在 R session 內定義小函式，原型與比較用 |
+| `sourceCpp("file.cpp")` | 獨立 `.cpp` 檔，編譯後把 `// [[Rcpp::export]]` 的函式載入 R |
+| 放進套件的 `src/` | 正式使用；`usethis::use_rcpp()` 自動設定，見 [套件開發](package-development.md) |
 
 ```r
 library(Rcpp)
 
 cppFunction("
-int timesTwo(int x) {
-  return 2 * x;
-}
-")
-
-timesTwo(21)
-```
-
-這最適合：
-
-- 嘗試小想法
-- 寫教學範例
-- 快速比較 R 與 C++ 版本
-
-### `sourceCpp()`
-
-當函式開始變長或需要獨立檔案管理時，通常改用 `sourceCpp()`：
-
-```cpp
-#include <Rcpp.h>
-using namespace Rcpp;
-
-// [[Rcpp::export]]
-int timesTwo(int x) {
-  return 2 * x;
-}
-```
-
-```r
-library(Rcpp)
-sourceCpp("code.cpp")
-timesTwo(21)
-```
-
-`sourceCpp()` 會負責 compile 並把匯出的函式載入 R。
-
-## Minimal Rcpp File Structure
-
-最小可用的 `Rcpp` 檔通常包含三個元素：
-
-```cpp
-#include <Rcpp.h>
-using namespace Rcpp;
-
-// [[Rcpp::export]]
-double add_one(double x) {
-  return x + 1.0;
-}
-```
-
-- `#include <Rcpp.h>`: 載入 Rcpp 的主要 header
-- `using namespace Rcpp;`: 讓你可以直接寫 `NumericVector` 而不是 `Rcpp::NumericVector`
-- `// [[Rcpp::export]]`: 告訴 Rcpp 這個函式要暴露給 R
-
-如果少了 export attribute，函式通常不會自動變成可在 R 端直接呼叫的介面。
-
-## Control Flow in C++
-
-一個常見使用 Rcpp 的理由，是某段邏輯天生就比較適合 loop：
-
-- `if / else if / else`
-- `for`
-- `while`
-- `do ... while`
-
-對 R 而言，逐元素 loop 在大資料上常有成本；對 C++ 而言，這反而是自然寫法。
-
-例如：
-
-```cpp
-// [[Rcpp::export]]
-int sign_code(int x) {
-  if (x < 0) {
-    return -1;
-  } else if (x == 0) {
-    return 0;
-  } else {
-    return 1;
-  }
-}
-```
-
-如果 bottleneck 本來就是大量條件判斷加迭代，這類局部改寫很常有價值。
-
-## Working with R Vectors in C++
-
-`Rcpp` 最重要的一組抽象，是能直接對應 R 物件的 vector classes：
-
-- `NumericVector`
-- `IntegerVector`
-- `LogicalVector`
-- `CharacterVector`
-- `List`
-
-例如：
-
-```cpp
-// [[Rcpp::export]]
-double first_value(NumericVector x) {
-  return x[0];
-}
-```
-
-這些 class 讓你不用手刻 R 的底層 `SEXP` 介面，就能直接讀寫 R 向量。
-
-## Two API Habits to Memorize
-
-最常用的操作通常就兩個：
-
-- `x.size()`: 向量長度
-- `x[i]`: 第 `i` 個元素
-
-```cpp
-// [[Rcpp::export]]
 double sum_cpp(NumericVector x) {
-  double total = 0.0;
-  for (int i = 0; i < x.size(); i++) {
-    total += x[i];
-  }
+  double total = 0;
+  for (R_xlen_t i = 0; i < x.size(); i++) total += x[i];
   return total;
-}
+}")
+sum_cpp(c(1, 2, 3.5))                         # 6.5
 ```
 
-Key point: C++ indexing 從 `0` 開始，不是從 `1` 開始。
+`.cpp` 檔的最小結構：
 
-## The Biggest R-to-C++ Footgun: Indexing
+```cpp
+#include <Rcpp.h>
+using namespace Rcpp;           // 可直接寫 NumericVector 而非 Rcpp::NumericVector
 
-R:
+// [[Rcpp::export]]             // 少了這行，R 端看不到這個函式
+NumericVector ema(NumericVector x, double alpha) {
+  // 指數移動平均：每一步依賴上一步，無法向量化
+  R_xlen_t n = x.size();
+  NumericVector out(n);
+  out[0] = x[0];
+  for (R_xlen_t i = 1; i < n; i++) {
+    out[i] = alpha * x[i] + (1 - alpha) * out[i - 1];
+  }
+  return out;
+}
+```
 
 ```r
-x[1]
-x[length(x)]
+sourceCpp("ema.cpp")
+ema(c(1, 2, 3), alpha = 0.5)                  # 1.00 1.50 2.25
+
+# 一定要和 R 版本比對結果，再比速度
+ema_r <- function(x, a) { out <- x; for (i in 2:length(x)) out[i] <- a * x[i] + (1 - a) * out[i - 1]; out }
+bench::mark(ema_r(x, 0.1), ema(x, 0.1))       # check = TRUE 會驗證兩者相同
 ```
 
-C++:
+## R 型別與 C++ 型別對照
 
-```cpp
-x[0]
-x[x.size() - 1]
-```
+| R | Rcpp 類別 | 單一值 |
+| --- | --- | --- |
+| numeric vector | `NumericVector` | `double` |
+| integer vector | `IntegerVector` | `int` |
+| logical vector | `LogicalVector` | `bool` |
+| character vector | `CharacterVector` | `String` / `std::string` |
+| matrix | `NumericMatrix`（`m(i, j)`、`m.nrow()`） | |
+| list / data frame | `List` / `DataFrame` | |
 
-這是最容易出錯的一點。很多 R 使用者第一次寫 Rcpp 時，不是邏輯錯，而是把 R 的 1-based indexing 直覺帶進了 C++。
+| 操作 | R | C++ |
+| --- | --- | --- |
+| 長度 | `length(x)` | `x.size()` |
+| 第一個元素 | `x[1]` | `x[0]` |
+| 最後一個元素 | `x[length(x)]` | `x[x.size() - 1]` |
+| 建立長度 n 的零向量 | `numeric(n)` | `NumericVector x(n);` |
+| 缺值判斷 | `is.na(x[i])` | `NumericVector::is_na(x[i])` |
+| 拋出錯誤 | `stop("...")` | `stop("...")`（會變成 R 的 error） |
 
-## Random Number Generation
+> **最常見錯誤**：C++ 從 0 開始索引。把 R 的 `for (i in 1:n)` 直接翻成 `for (i = 1; i <= n; i++)` 會越界讀取記憶體，結果可能是錯誤數字而不是報錯。
 
-`Rcpp` 也能直接呼叫 R 的亂數機制。
-
-單一數值：
-
-```cpp
-double x = R::rnorm(0, 1);
-double y = R::runif(-2, 2);
-```
-
-向量版本：
-
-```cpp
-NumericVector x = rnorm(10, 0, 2);
-```
-
-也可以手動在 loop 裡逐個產生：
-
-```cpp
-NumericVector x(10);
-for (int i = 0; i < 10; i++) {
-  x[i] = R::rnorm(0, 2);
-}
-```
-
-當你的 bottleneck 是大量模擬時，這個能力特別實用。
-
-## Rejection Sampling Example
-
-Rcpp 很適合包裝「反覆抽樣直到條件成立」這種流程，例如 rejection sampling：
+## 亂數與輸入檢查
 
 ```cpp
 // [[Rcpp::export]]
-NumericVector positive_draws(int n) {
+NumericVector positive_draws(int n, double mu, double sd) {
+  if (n < 0) stop("n must be non-negative");
   NumericVector x(n);
-
   for (int i = 0; i < n; i++) {
     double d;
-    do {
-      d = R::rnorm(2, 2);
-    } while (d < 0);
-
+    do { d = R::rnorm(mu, sd); } while (d < 0);   // rejection sampling：抽到正值為止
     x[i] = d;
   }
-
   return x;
 }
 ```
 
-這類邏輯在純 R 中也能寫，但如果抽樣次數大、條件判斷頻繁，C++ loop 往往更合適。
+- `R::rnorm()`、`R::runif()` 用的是 R 的亂數產生器，所以 R 端 `set.seed()` 一樣有效、結果可重現；不要改用 C++ 的 `std::rand()`。
+- 向量版 sugar：`Rcpp::rnorm(n, mu, sd)` 一次產生整個向量。
+- Rcpp sugar 還提供 `sum()`、`mean()`、`ifelse()`、`is_na()` 等向量化函式，寫法接近 R。
 
-## Error Handling
+## 進階：線性代數
 
-就算是為了速度改寫，也不代表可以放棄輸入檢查：
+| 套件 | 用途 |
+| --- | --- |
+| RcppArmadillo | 矩陣運算語法接近 MATLAB（`arma::mat`、`solve()`、`inv()`） |
+| RcppEigen | Eigen 函式庫，含稀疏矩陣 |
+| RcppParallel | 多執行緒迴圈（thread-safe 的資料結構） |
 
 ```cpp
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
+
 // [[Rcpp::export]]
-int safe_square(int x) {
-  if (x < 0) {
-    stop("x must be non-negative");
-  }
-  return x * x;
+arma::vec ols(const arma::mat& X, const arma::vec& y) {
+  return arma::solve(X, y);                     // 最小平方解
 }
 ```
 
-`stop()` 能把錯誤往 R 端拋回來，所以使用者仍然能得到熟悉的 error message。
+## 工作流程與常見錯誤
 
-## Practical Workflow
+1. 先用 R 寫出正確版本並保留，作為對照與測試。
+2. profiling 確認瓶頸。
+3. `cppFunction()` 寫最小版本，`bench::mark()` 確認結果相同且確實較快。
+4. 穩定後搬到 `.cpp` 檔；長期使用就放進套件並寫 testthat 測試。
 
-一條穩定的 Rcpp 使用流程通常是：
-
-1. 先用 R 寫出正確版本。
-2. 用 profiling 確認真的慢在那裡。
-3. 先用 `cppFunction()` 寫最小可行 C++ 版本。
-4. 確認結果與 R 版本一致。
-5. 函式成熟後，再搬到 `.cpp` 檔並用 `sourceCpp()` 管理。
-
-這樣可以避免一開始就把除錯與編譯複雜度拉太高。
-
-## When Not to Use Rcpp
-
-- 只是一般資料整理或 grouped summary，通常 tidyverse / data.table 就夠了
-- 慢點來自 I/O、資料庫或網路，不是 CPU 計算
-- bottleneck 還沒被 profiling 證明
-- 小幅提速換來大量維護成本時
-
-如果你只是想加速一個本來就能向量化的 base R 操作，通常應該先修 R 寫法，而不是急著開 C++。
-
-## Common Mistakes
-
-- 還沒確認 bottleneck 就先寫 Rcpp
-- 把整個專案都往 C++ 搬，而不是只搬熱點函式
-- 忘記 C++ 是 0-based indexing
-- 沒有 `// [[Rcpp::export]]` 就期待函式能直接在 R 端呼叫
-- 在 session 裡原型還沒穩定就過早拆成複雜 `.cpp` 結構
-
-## Where It Fits in the Bigger Picture
-
-`Rcpp` 最適合放在這個優化順序的後段：
-
-1. 向量化
-2. 減少重複計算與 object growth
-3. profiling / benchmarking
-4. 平行化或 `Rcpp`
-
-也就是說，`Rcpp` 不是「讓 R 變快的唯一方法」，而是當 R 層已經合理後，用來處理剩餘計算熱點的工具。
+| 錯誤 | 後果 / 做法 |
+| --- | --- |
+| 1-based 索引直覺 | 越界讀寫，結果錯誤或 R 當掉 |
+| 忘了 `// [[Rcpp::export]]` | R 端找不到函式 |
+| 用 `int` 存長度或大的計數 | 超過 2³¹−1 溢位；長度用 `R_xlen_t`，累加用 `double` |
+| 沒處理 `NA` | C++ 不會自動傳遞 `NA`；`NA_INTEGER` 是一個很大的負數，會被當成普通值計算 |
+| 修改傳入的 `NumericVector` | Rcpp 傳的是 reference，會**直接改到 R 端的原物件**；需要時先 `clone(x)` |
+| 還沒 profiling 就整段搬到 C++ | 除錯與編譯成本高，加速卻集中在別處 |
