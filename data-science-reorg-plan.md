@@ -169,32 +169,32 @@
 ## Phase 5：上層整併（statistics / ML / DL / applied-domains / network-analysis）
 
 **statistics / machine-learning**（已改寫，只做小幅合併）
-- [ ] `machine-learning/workflow/data-splitting-and-leakage.md` 拆入 `foundations/data-leakage.md`（概念）與 `preprocessing/train-test-split.md`（操作）後刪除
-- [ ] `machine-learning/foundations/evaluation-mindset.md` 併入 `evaluation/README.md`
-- [ ] `statistics/multivariate-analysis/multiple-regression.md`（prediction + Ridge / Lasso / p>n）併入 `machine-learning/foundations/high-dimensional-data.md` / `regularization.md`
-- [ ] `statistics/multivariate-analysis/logistic-lda.md` 刪掉重複的 logistic 段，改名 `lda.md`
-- [ ] `statistics/multivariate-analysis/clustering.md` 精簡成概觀 + validation / profiling，方法細節連到 ML clustering
-- [ ] `machine-learning/workflow/kaggle-competition-workflow.md`：blending 段刪掉（連 `ensemble/stacking.md`），README 標「選讀」
-- [ ] README 標「選讀」：`recommender-systems/`、`association-rules/`、`evaluation/gains-and-lift-curves.md`、`structural-equation-modeling-with-lavaan.md`
-- [ ] 補交叉連結：`statsmodels/diagnostics` ↔ `assumptions-diagnostics`；`imputation` ↔ EDA missing-data；`descriptive-statistics/data-quality` ↔ `eda-workflow`；`sampling-estimation` ↔ `survey-sampling`；`regression-analysis` → `r-foundations/explanatory-modeling-in-r.md`；`workflow/pipeline-basic` → `packages/tidymodels`；production README → `dvc.md`
+- [x] `machine-learning/workflow/data-splitting-and-leakage.md` 拆入 `foundations/data-leakage.md`（概念）與 `preprocessing/train-test-split.md`（操作）後刪除
+- [x] `machine-learning/foundations/evaluation-mindset.md` 併入 `evaluation/README.md`
+- [x] `statistics/multivariate-analysis/multiple-regression.md`（prediction + Ridge / Lasso / p>n）併入 `machine-learning/foundations/high-dimensional-data.md` / `regularization.md`（解釋 vs 預測段移到 `regression-analysis/multiple-linear-regression.md`）
+- [x] `statistics/multivariate-analysis/logistic-lda.md` 刪掉重複的 logistic 段，改名 `lda.md`
+- [x] `statistics/multivariate-analysis/clustering.md` 精簡成概觀 + validation / profiling，方法細節連到 ML clustering
+- [x] `machine-learning/workflow/kaggle-competition-workflow.md`：blending 段刪掉（連 `ensemble/stacking.md`），README 標「選讀」
+- [x] README 標「選讀」：`recommender-systems/`、`association-rules/`、`evaluation/gains-and-lift-curves.md`、`structural-equation-modeling-with-lavaan.md`
+- [x] 補交叉連結：`statsmodels/diagnostics` ↔ `assumptions-diagnostics`；`imputation` ↔ EDA missing-data；`descriptive-statistics/data-quality` ↔ `eda-workflow`；`sampling-estimation` ↔ `survey-sampling`；`regression-analysis` → `r-foundations/explanatory-modeling-in-r.md`；`workflow/pipeline-basic` → `packages/tidymodels`；production README → `dvc.md`
 
 **deep-learning**（結構調整；內容補強留到改寫）
-- [ ] `computer-vision/image-classification-workflow.md` 併入 `convolutional-neural-networks.md`
-- [ ] `nlp-and-transformers/sequence-models-for-text.md` + `text-representations-and-embeddings.md` → `text-and-sequence-models.md`；連 `llm/rag/embeddings-and-semantic-search.md`、`r-foundations/text-analysis.md`
-- [ ] `fundamentals/tensorflow-and-keras-basics.md` 標記改寫時縮成「Keras 對照」表
-- [ ] 記下改寫時要新增：PyTorch 訓練迴圈（Dataset / DataLoader、optimizer、scheduler、early stopping、dropout / batchnorm）、attention 深入（Q/K/V、multi-head、positional encoding）、autoencoder / VAE、GNN、生資序列與蛋白模型（one-hot CNN、ESM、DNABERT / Enformer、AlphaFold 概念）、單細胞 DL（scVI）、U-Net 分割
-- [ ] 記下待修：`torch.cuda.amp` → `torch.amp`；`backpropagation.md` code block 內 `#` 被當標題；`##Kaiming` 標題格式；殘留課程來源字樣與 emoji
+- [x] `computer-vision/image-classification-workflow.md` 併入 `convolutional-neural-networks.md`
+- [x] `nlp-and-transformers/sequence-models-for-text.md` + `text-representations-and-embeddings.md` → `text-and-sequence-models.md`；連 `llm/rag/embeddings-and-semantic-search.md`、`r-foundations/text-analysis.md`
+- [x] `fundamentals/tensorflow-and-keras-basics.md` 標記改寫時縮成「Keras 對照」表（已加檔頭註記）
+- [x] 記下改寫時要新增：PyTorch 訓練迴圈（Dataset / DataLoader、optimizer、scheduler、early stopping、dropout / batchnorm）、attention 深入（Q/K/V、multi-head、positional encoding）、autoencoder / VAE、GNN、生資序列與蛋白模型（one-hot CNN、ESM、DNABERT / Enformer、AlphaFold 概念）、單細胞 DL（scVI）、U-Net 分割（清單即本項，Phase 7 批次 7 依此補）
+- [x] 記下待修：`torch.cuda.amp` → `torch.amp`；`backpropagation.md` code block 內 `#` 被當標題；`##Kaiming` 標題格式；殘留課程來源字樣與 emoji（已在各檔頭加「待修」註記；`backpropagation.md` 檢查後 code fence 正常，`#` 只是註解，不需修）
 
 **applied-domains**
-- [ ] `finance/`：`portfolio-analysis.md` + `quantitative-risk-management.md` + `stock-price-simulation-and-volatility.md` → `portfolio-and-risk.md`；`trading-strategies-and-backtesting.md`、`credit-risk-modeling.md` 保留；`insurance-and-annuity-valuation.md` 保留（連 survival analysis）；`fundamental-financial-concepts.md` + `bond-valuation-and-interest-rate-risk.md` → `financial-concepts.md`；`financial-data-ingestion-and-cleaning.md` 只留金融特有段併入 `financial-concepts.md`；`autocorrelation.md` 併入 `statistics/time-series-analysis/autocorrelation.md` 的金融小節
-- [ ] `marketing-analytics/` 3 篇 → `applied-domains/marketing-response-and-choice-models.md`（保留與 `ab-testing.md` 互連）
-- [ ] `operations-research/` 2 篇 → `applied-domains/optimization.md`
-- [ ] `process-analytics/` → `applied-domains/process-mining.md`（強調醫療流程 event log）
-- [ ] `applied-domains/README.md` 寫成精簡索引
+- [x] `finance/`：`portfolio-analysis.md` + `quantitative-risk-management.md` + `stock-price-simulation-and-volatility.md` → `portfolio-and-risk.md`；`trading-strategies-and-backtesting.md`、`credit-risk-modeling.md` 保留；`insurance-and-annuity-valuation.md` 保留（連 survival analysis）；`fundamental-financial-concepts.md` + `bond-valuation-and-interest-rate-risk.md` → `financial-concepts.md`；`financial-data-ingestion-and-cleaning.md` 只留金融特有段併入 `financial-concepts.md`；`autocorrelation.md` 併入 `statistics/time-series-analysis/autocorrelation.md` 的金融小節
+- [x] `marketing-analytics/` 3 篇 → `applied-domains/marketing-response-and-choice-models.md`（保留與 `ab-testing.md` 互連）
+- [x] `operations-research/` 2 篇 → `applied-domains/optimization.md`
+- [x] `process-analytics/` → `applied-domains/process-mining.md`（強調醫療流程 event log）
+- [x] `applied-domains/README.md` 寫成精簡索引
 
 **network-analysis**
-- [ ] 保留 4 篇；`network-analysis-case-studies.md` 刪掉重複的指標說明；記下改寫時補 PPI / 共表現網路範例
-- [ ] 連結檢查（data-science + 全 notebook）→ commit
+- [x] 保留 4 篇；`network-analysis-case-studies.md` 刪掉重複的指標說明；記下改寫時補 PPI / 共表現網路範例（已加檔頭註記）
+- [x] 連結檢查（data-science + 全 notebook）→ commit
 
 ## Phase 6：頂層 README 與入口
 

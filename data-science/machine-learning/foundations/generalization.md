@@ -12,7 +12,7 @@
 | 驗證誤差 (validation error) | 用於選模型、調參的資料 | 模型選擇；因為被拿來挑選，也會略偏樂觀 |
 | 測試誤差 (test error) | 最後才碰、只用一次的資料 | 回報最終效能 |
 
-樣本內 (in-sample) 表現指在看過的資料上；樣本外 (out-of-sample) 表現指在沒看過的資料上。統計上的對應是訓練 R² vs 測試 R²，見 [多元迴歸](../../statistics/multivariate-analysis/multiple-regression.md)。
+樣本內 (in-sample) 表現指在看過的資料上；樣本外 (out-of-sample) 表現指在沒看過的資料上。統計上的對應是訓練 R² vs 測試 R²，見 [多元線性迴歸：解釋 vs 預測](../../statistics/regression-analysis/multiple-linear-regression.md#解釋-vs-預測)。
 
 ## 判讀
 

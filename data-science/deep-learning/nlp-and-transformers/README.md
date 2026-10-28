@@ -4,8 +4,7 @@
 
 ## Topics
 
-- [Text Representations and Embeddings](text-representations-and-embeddings.md)
-- [Sequence Models for Text](sequence-models-for-text.md)
+- [Text and Sequence Models](text-and-sequence-models.md)：tokenize、embedding、RNN / LSTM / GRU
 - [Transformers and Attention](transformers-and-attention.md)
 - LLM fine-tuning（prompt vs RAG vs fine-tune、LoRA / PEFT）已移到 [LLM: Fine-Tuning](../../llm/integration/fine-tuning.md)
 

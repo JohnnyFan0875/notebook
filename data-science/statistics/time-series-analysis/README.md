@@ -33,4 +33,4 @@
 | `pmdarima` | 自動選擇 ARIMA 階數 |
 | `prophet` | 趨勢 + 季節性自動建模 |
 
-> 相關應用：[Finance: Autocorrelation](../../applied-domains/finance/autocorrelation.md)、[時間序列異常偵測](../../machine-learning/unsupervised-learning/anomaly-detection/time-series-anomalies.md)。
+> 相關應用：[Finance: Autocorrelation](autocorrelation.md#金融情境動能與均值回歸)、[時間序列異常偵測](../../machine-learning/unsupervised-learning/anomaly-detection/time-series-anomalies.md)。

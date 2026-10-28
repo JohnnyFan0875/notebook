@@ -143,3 +143,5 @@ aᵢ = 與同群其他點的平均距離；bᵢ = 與最近其他群的平均距
 | | 群數 | 手肘 + 輪廓 | 兩者一致 |
 
 > **模型行為怪異時的檢查順序**：(1) 前處理 / 資料洩漏 → (2) 量尺與編碼 → (3) 影響點 → (4) 假設違反 → (5) 門檻或校準。很多看似進階的診斷問題，起點都是基本的資料流程錯誤。
+
+statsmodels 的診斷 API（殘差圖、VIF、Breusch-Pagan、Cook's distance）見 [statsmodels：診斷](../../machine-learning/packages/statsmodels/diagnostics.md)。

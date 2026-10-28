@@ -4,6 +4,8 @@ insurance products 和一般債券或專案估值最大的不同，不在於折�
 
 Key point: 保險與年金估值可以先想成「狀態依賴的折現現金流」。折現率處理時間價值，survival / mortality probabilities 決定哪些 cash flows 真的有機會發生。
 
+> life table 的 $p_x$、$q_x$、${}_k p_x$ 就是離散時間的存活函數與風險函數 (hazard)，見 [存活與風險函數](../../statistics/survival-analysis/survival-hazard-functions.md)；從資料估計存活曲線見 [Kaplan-Meier](../../statistics/survival-analysis/kaplan-meier.md)。
+
 ## Start With Cash-Flow Vectors
 
 這類產品最適合用 cash-flow vector 來想。

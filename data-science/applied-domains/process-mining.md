@@ -1,8 +1,49 @@
-# Event Logs and Process Analytics in R
+[Data Science](../README.md) › [應用領域](README.md) › 流程探勘
+
+# Process Mining
+
+流程探勘 (process mining) 分析的是 **event log**：每一列是「某個 case 在某個時間做了某個 activity（由某個 resource 執行）」。問題不是單筆資料的值，而是一個 case 從開始到結束實際經過哪些步驟、花多久、在哪裡出現變異。
+
+醫療是最典型的應用：EHR 本身就是 event log。
+
+| 概念 | 醫療流程中的對應 |
+| --- | --- |
+| case | 一次就診 / 住院（encounter），或一位病人 |
+| activity | 掛號、檢傷、抽血、影像、會診、入院、出院 |
+| timestamp | EHR 醫令、報告、護理紀錄的時間戳 |
+| resource | 科別、醫師、護理站、檢驗室 |
+| trace / variant | 病人路徑 (patient pathway)；與臨床指引比對 |
+| throughput time | 急診滯留時間、door-to-needle time、住院天數 |
+
+> 醫療 event log 的時間戳常是「紀錄時間」而非「發生時間」，同一時刻大量批次寫入很常見；分析等待時間前先確認時間戳語意。等待時間多半右偏，用中位數與分位數描述，必要時以 [存活分析](../statistics/survival-analysis/README.md) 處理尚未結束的 case（設限）。工具：R `bupaR`（本篇）、Python `pm4py`。
+
+## 概觀
+
+### 這個模組回答什麼問題
+
+- 一個 business process 在真實資料裡實際長什麼樣子？
+- 最常見的 trace 是什麼？流程變異有多大？
+- 哪些 case 花最久？哪些活動最常重工？
+- 工作是如何在不同 resource 之間交接的？
+
+### 與其他章節的關係
+
+- [Data Engineering](../data-engineering/README.md): 決定 event log 是否有穩定的 case id、activity、timestamp 與 resource 欄位。
+- [Statistics](../statistics/README.md): 幫助你判讀等待時間、分布偏態、異常 case 與不確定性。
+- [Operations Research](optimization.md): 當你要把流程觀察轉成排程、容量或配置決策時，這兩章會接起來。
+- [Network Analysis](../network-analysis/README.md): 若流程被轉成 handoff network 或 activity transition graph，兩章的視角會互補。
+
+### 實務提醒
+
+- 沒有一致的 case 定義時，後面的 trace、throughput 與 bottleneck 分析都會不可靠。
+- 很多流程問題不是演算法抓不到，而是事件資料缺欄、時間戳不準或 resource naming 不一致。
+- process analytics 通常先回答「發生了什麼」，再進一步問「該怎麼改善」。
+
+## Event Logs in R (bupaR)
 
 process analytics 的核心資料結構不是一般寬表，而是 event log。每一列代表某個 case 在某個時間點發生了一個 activity，當很多列依時間串起來後，才形成一條完整流程。
 
-## What Makes Process Data Different
+### What Makes Process Data Different
 
 一般分析常把每列資料看成獨立觀測；process data 則更關心：
 
@@ -14,7 +55,7 @@ process analytics 的核心資料結構不是一般寬表，而是 event log。�
 
 Key point: 單看 activity frequency 不夠，因為流程分析真正關心的是順序、持續時間、變體與交接。
 
-## First Glimpse of an Event Log
+### First Glimpse of an Event Log
 
 開始分析前，先做最基本的 scope check：
 
@@ -35,7 +76,7 @@ n_activities(learning)
 
 這一步很像 EDA，只是 focus 從欄位分布轉成流程規模與流程粒度。
 
-## Creating an Event Log Object
+### Creating an Event Log Object
 
 原始 event data 通常先是一張表，之後要明確指定哪些欄位扮演流程角色：
 
@@ -62,7 +103,7 @@ event_data %>%
 
 如果這一步定義錯，後面的 trace、throughput 與 resource analysis 都會一起偏掉。
 
-## Activities and Their Frequencies
+### Activities and Their Frequencies
 
 一個很實用的起點是先看有哪些活動：
 
@@ -84,7 +125,7 @@ activities(learning)
 
 但 activity 頻率只回答「常不常出現」，還沒有回答「如何組成流程」。
 
-## Traces Describe Process Variants
+### Traces Describe Process Variants
 
 每個 case 都會形成一條 trace，也就是活動序列。這是流程分析最有代表性的物件之一。
 
@@ -101,7 +142,7 @@ trace analysis 幫你回答：
 
 如果 trace 分布非常分散，通常表示流程變異高，後續要更小心地做 aggregation。
 
-## Resource and Organizational Analysis
+### Resource and Organizational Analysis
 
 process analytics 不只看 control flow，也很常看工作怎麼在人之間流動。
 
@@ -137,7 +178,7 @@ resource_map(log_hospital)
 
 這會把焦點從「誰做了什麼」轉成「工作從誰交到誰」，比較接近 handover network。
 
-## Granularity Levels Matter
+### Granularity Levels Matter
 
 課程裡很值得保留的一個概念，是很多 process metric 都可以在不同粒度計算：
 
@@ -157,7 +198,7 @@ resource_map(log_hospital)
 
 Key point: process metric 不只是函式名，還包含「在哪個 level 看」這個分析決定。
 
-## Filtering Cases and Variants
+### Filtering Cases and Variants
 
 process analytics 常常不是直接分析整個 log，而是先把案例過濾出來。
 
@@ -188,7 +229,7 @@ filter_resource_frequency(log, percentage = 0.6)
 
 這對大型流程圖很重要，因為不先過濾，畫出來的流程常常只剩噪音。
 
-## Appending Process Metrics Back to Data
+### Appending Process Metrics Back to Data
 
 一個很實用的 workflow 是把流程指標直接加回原始事件資料：
 
@@ -214,11 +255,11 @@ log %>%
 - activity frequency
 - resource specialization
 
-## Useful Process Views
+### Useful Process Views
 
 除了傳統表格摘要，幾種圖特別適合 process data：
 
-### Activity Presence
+#### Activity Presence
 
 ```r
 activity_presence(otc) %>% plot()
@@ -226,7 +267,7 @@ activity_presence(otc) %>% plot()
 
 用來看哪些活動在流程中經常出現、哪些只出現在部分變體。
 
-### Trace Length
+#### Trace Length
 
 ```r
 trace_length(otc) %>% plot()
@@ -234,7 +275,7 @@ trace_length(otc) %>% plot()
 
 適合快速看流程長短是否集中，還是存在很多 unusually long cases。
 
-### Start and End Activities
+#### Start and End Activities
 
 ```r
 start_activities(otc, "activity") %>% plot()
@@ -243,7 +284,7 @@ end_activities(otc, "activity") %>% plot()
 
 這對檢查流程入口與出口是否一致很有幫助。若 start / end activities 很分散，可能代表流程定義鬆散或資料記錄不完整。
 
-### Dotted Chart
+#### Dotted Chart
 
 ```r
 otc %>% dotted_chart(x = "relative", sort = "duration")
@@ -257,7 +298,7 @@ dotted chart 很適合看：
 
 它不像單一 KPI 那樣壓縮資訊，而是保留 case-level 時間結構。
 
-## A Practical Workflow
+### A Practical Workflow
 
 如果你拿到 hospital flow、order-to-cash、support tickets 或 claims log，可以照這個順序做：
 
@@ -270,7 +311,7 @@ dotted chart 很適合看：
 7. 視需要用 filtering 聚焦在慢案、少見變體或高風險案例。
 8. 把 case-level metric append 回資料，再接一般分析與報表流程。
 
-## Common Mistakes
+### Common Mistakes
 
 - 把 event log 當普通 transaction table，忽略順序與 case 結構。
 - `case_id`、`activity_id`、`timestamp` 定義不清，導致 trace 錯誤。

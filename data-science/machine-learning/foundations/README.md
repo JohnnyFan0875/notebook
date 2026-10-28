@@ -24,9 +24,8 @@
 | [Bias-Variance 權衡](bias-variance-tradeoff.md) | 誤差分解、模型複雜度 | 誤差從哪裡來？ |
 | [過擬合與欠擬合](overfitting-underfitting.md) | 症狀、學習曲線、對策 | 模型太複雜還是太簡單？ |
 | [正則化](regularization.md) | L1 / L2 / Elastic Net、其他限制複雜度的方法 | 怎麼控制模型複雜度？ |
-| [資料洩漏](data-leakage.md) | 洩漏型態、檢查清單 | 分數是不是作弊來的？ |
+| [資料洩漏](data-leakage.md) | 洩漏型態、預防做法、檢查清單 | 分數是不是作弊來的？ |
 | [高維小樣本](high-dimensional-data.md) | p ≫ n、維度詛咒、nested CV、生資情境 | 基因數遠多於樣本數時怎麼建模？ |
 | [抽樣與代表性](sampling-and-representativeness.md) | 抽樣 / 選擇偏誤、分布偏移、問卷 | 訓練資料能代表上線後的資料嗎？ |
-| [評估思維](evaluation-mindset.md) | 指標、切分、baseline、子群體 | 評估設計是否反映真實決策？ |
 | [特徵工程原則](feature-engineering-principles.md) | 資料理解、刪除、轉換、缺失、時間 | 什麼是好特徵？ |
 | [Basetable 與時間感知特徵](basetable-and-time-aware-feature-engineering.md) | reference date、時間窗、多快照、predictor insight | 事件資料怎麼整理成一張安全的建模表？ |

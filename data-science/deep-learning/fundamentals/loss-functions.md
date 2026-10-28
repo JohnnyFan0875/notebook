@@ -1,5 +1,7 @@
 # Loss Functions
 
+> **待修（改寫階段）**：移除標題與內文中的 emoji。
+
 A **loss function** (or cost function) measures how well the model’s predictions match the true labels.
 It provides feedback to update model weights via **gradient descent** and **backpropagation**.
 

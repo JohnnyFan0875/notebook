@@ -2,7 +2,7 @@
 
 # 分群 (Clustering)
 
-沒有標籤時，依相似度把觀測分組。不同演算法對「群」的定義完全不同，所以**沒有一個方法到處都最好**。統計觀點的完整說明（評估指標、連結方法、群的描述）見 [統計：分群](../../../statistics/multivariate-analysis/clustering.md)；這裡著重 ML 實作與方法選擇。
+沒有標籤時，依相似度把觀測分組。不同演算法對「群」的定義完全不同，所以**沒有一個方法到處都最好**。統計觀點（選群數、描述各群、分群是假設不是結論）見 [統計：分群](../../../statistics/multivariate-analysis/clustering.md)；這裡著重 ML 實作與方法選擇。
 
 ![Clustering method comparison](src/clustering-method-comparison.png)
 

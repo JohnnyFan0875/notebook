@@ -55,6 +55,20 @@ cross_val_score(pipe, X, y, cv=5).mean()                                        
 
 重複 50 次模擬：錯誤流程平均「準確率」0.96，正確流程 0.52（就是猜）。p 越大、n 越小，洩漏造成的假訊號越強，見 [高維小樣本](high-dimensional-data.md)。
 
+## 預防做法
+
+| 做法 | 防止的洩漏 |
+| --- | --- |
+| 前處理放進 [`Pipeline`](../workflow/pipeline-basic.md) / `ColumnTransformer` | 補值、縮放、編碼、特徵選擇在全資料上 fit |
+| Target encoding 在 fold 內計算 | 用到驗證資料的目標值 |
+| 測試集只用一次 | 對測試集過度調參 |
+| 逐欄確認預測時點可得性 | 目標洩漏、時間洩漏 |
+| 分組資料依實體切 | 同一實體跨 train / test |
+| 時間資料用過去訓練、未來驗證 | 用未來預測過去 |
+| 多快照資料避免同一實體的相鄰快照跨 train / validation | 驗證列只是訓練列的「下個月版本」 |
+
+切分的操作（正確順序、分組 / 時間 / 快照切分的程式碼）見 [Train-Test Split](../preprocessing/train-test-split.md)。
+
 ## 檢查清單
 
 對每個特徵與每個步驟問：
@@ -65,4 +79,8 @@ cross_val_score(pipe, X, y, cv=5).mean()                                        
 4. 特徵是從時間點正確的快照算的，還是從整段歷史？
 5. 分數是否好得不合理？（單一特徵就有 AUC 0.99 → 先懷疑洩漏）
 
-> 表格資料的洩漏常不是出在模型，而是 basetable 的建法：用目標期間內的交易算「最近一年總金額」、join 最新狀態表、用全歷史算類別頻率或違約率。細節見 [Basetable 與時間感知特徵](basetable-and-time-aware-feature-engineering.md)；實作見 [資料切分與洩漏](../workflow/data-splitting-and-leakage.md)。
+> 表格資料的洩漏常不是出在模型，而是 basetable 的建法：用目標期間內的交易算「最近一年總金額」、join 最新狀態表、用全歷史算類別頻率或違約率。細節見 [Basetable 與時間感知特徵](basetable-and-time-aware-feature-engineering.md)。
+
+> 每個特徵都問：**預測當下我真的知道這個值嗎？**
+>
+> 多快照問題再多問一句：**這筆驗證資料，是不是只是某筆訓練資料的隔月版本？** 如果是，分數仍可能過度樂觀。

@@ -36,6 +36,25 @@ model.rsquared, model.rsquared_adj, model.aic, model.bic
 
 **輸出要一起讀**：係數（方向與大小）、95% CI（精確度）、p 值、R² / 調整 R²、殘差圖。
 
+## 解釋 vs 預測
+
+| 目的 | 工具 | 重視 |
+| --- | --- | --- |
+| 解釋 / 推論 | `statsmodels` | 係數、SE、p 值、CI |
+| 預測 | `sklearn` | 測試集誤差、交叉驗證、pipeline |
+
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+import statsmodels.api as sm
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+res = sm.OLS(y_train, sm.add_constant(X_train)).fit()   # 推論：只看訓練資料
+r2_score(y_test, res.predict(sm.add_constant(X_test)))  # 預測：一定要在測試集評估
+```
+
+> 訓練 R² 永遠偏樂觀（模型越複雜越高）；測試 R² 才代表泛化能力，見 [ML：泛化](../../machine-learning/foundations/generalization.md)。預測變數很多（p > n）時改用 [正則化](../../machine-learning/foundations/regularization.md)，見 [高維小樣本](../../machine-learning/foundations/high-dimensional-data.md)。
+
 ## R² vs 調整後 R² (Adjusted R²)
 
 加任何變數（即使無意義）R² 都**只會上升**。調整後 R² 會懲罰沒貢獻的變數：

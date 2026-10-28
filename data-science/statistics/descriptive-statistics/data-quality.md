@@ -2,7 +2,7 @@
 
 # 資料品質 (Data Quality)
 
-在算任何摘要統計、做檢定或建模之前，先確認資料是「可分析的」(analysis-ready)。缺失值、重複列、錯誤單位都可能嚴重扭曲平均數、p 值與迴歸係數。
+在算任何摘要統計、做檢定或建模之前，先確認資料是「可分析的」(analysis-ready)。缺失值、重複列、錯誤單位都可能嚴重扭曲平均數、p 值與迴歸係數。實作上的 profiling 流程（pandas 檢查清單、風險訊號）見 [EDA Workflow](../../data-manipulation-and-eda/eda-workflow.md)。
 
 > 組織層級的資料品質治理（責任歸屬、監控）見 [Data Engineering: Data Quality Checks](../../data-engineering/data-quality-checks.md)。
 

@@ -2,7 +2,7 @@
 
 # 補值 (Imputation)
 
-補值是用估計值填入缺失值。重點不是「把空格補滿」，而是補值方式**符合資料生成機制**、**不扭曲分布與關係**，且**只在訓練資料上 fit**。pandas 端的缺失偵測、缺失機制 (MCAR / MAR / MNAR) 與 `missingno` 視覺化見 [pandas: Handling Missing Data](../../python-foundations/pandas/missing-data.md)。
+補值是用估計值填入缺失值。重點不是「把空格補滿」，而是補值方式**符合資料生成機制**、**不扭曲分布與關係**，且**只在訓練資料上 fit**。pandas 端的缺失偵測、缺失機制 (MCAR / MAR / MNAR) 與 `missingno` 視覺化見 [pandas: Handling Missing Data](../../python-foundations/pandas/missing-data.md)；缺失機制的判斷與 EDA 見 [Missing Data](../../data-manipulation-and-eda/missing-data.md)。
 
 ## 決策順序
 

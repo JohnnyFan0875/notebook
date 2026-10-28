@@ -26,7 +26,7 @@
 | SVD | $X = U \Sigma V^\top$；PCA 實務上用 SVD 計算，數值更穩定 |
 | [多元迴歸](../regression-analysis/multiple-linear-regression.md) | OLS 解 $\hat\beta = (X^\top X)^{-1} X^\top y$；配適值是 y 在 X 欄空間上的**投影** |
 | 多重共線性 | $X^\top X$ 接近奇異（不可逆）→ 係數變異爆炸；Ridge 加上 λI 讓它可逆 |
-| [LDA](logistic-lda.md) | 找讓組間 / 組內變異比最大的投影方向（廣義特徵值問題） |
+| [LDA](lda.md) | 找讓組間 / 組內變異比最大的投影方向（廣義特徵值問題） |
 | Embedding | 把物件（字、基因、細胞）映射到向量空間 |
 
 ```python

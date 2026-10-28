@@ -29,7 +29,7 @@
 | --- | --- |
 | 初學 | 敘述統計 → 機率與分配 → 推論統計 → 迴歸分析 → 實驗設計 |
 | **生物資訊** | 資料品質 → [多重檢定校正](inferential-statistics/multiple-testing.md) → [GLM 與計數模型](regression-analysis/glm-count-models.md) → [混合效應模型](regression-analysis/mixed-effects-models.md) → [PCA](multivariate-analysis/pca.md) / [分群](multivariate-analysis/clustering.md) → [干擾與批次效應](experimental-design/confounding-bias.md) → [存活分析](survival-analysis/README.md) |
-| **機器學習** | [MLE 與損失函數](probability-and-distributions/maximum-likelihood.md) → [偏誤與變異](inferential-statistics/sampling-estimation.md) → [迴歸分析](regression-analysis/README.md) → [正則化](multivariate-analysis/multiple-regression.md) → [Bootstrap / 置換檢定](probability-and-distributions/monte-carlo-simulation.md) → [貝氏統計](bayesian-statistics/README.md) |
+| **機器學習** | [MLE 與損失函數](probability-and-distributions/maximum-likelihood.md) → [偏誤與變異](inferential-statistics/sampling-estimation.md) → [迴歸分析](regression-analysis/README.md) → [正則化](../machine-learning/foundations/regularization.md) → [Bootstrap / 置換檢定](probability-and-distributions/monte-carlo-simulation.md) → [貝氏統計](bayesian-statistics/README.md) |
 
 ## 三個貫穿全程的習慣
 

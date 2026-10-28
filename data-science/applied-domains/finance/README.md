@@ -1,50 +1,22 @@
+[Data Science](../../README.md) › [應用領域](../README.md) › Finance
+
 # Finance
 
-這個章節用金融資料作為統計與時間序列概念的應用場景。閱讀時請特別注意：金融資料往往高度噪音、非平穩，而且不同頻率下的結論可能完全不同。
+用金融資料作為統計、時間序列與分類模型的應用場景。金融資料高度噪音、非平穩，不同頻率下的結論可能完全不同。
 
-## Topics
-
-- [Autocorrelation](autocorrelation.md)
-- [Bond Valuation and Interest Rate Risk](bond-valuation-and-interest-rate-risk.md)
-- [Credit Risk Modeling](credit-risk-modeling.md)
-- [Financial Data Ingestion and Cleaning](financial-data-ingestion-and-cleaning.md)
-- [Fundamental Financial Concepts](fundamental-financial-concepts.md)
-- [Insurance and Annuity Valuation](insurance-and-annuity-valuation.md)
-- [Portfolio Analysis](portfolio-analysis.md)
-- [Quantitative Risk Management](quantitative-risk-management.md)
-- [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md)
-- [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md)
-
-## Submodules
-
-| Module | Focus | Main Questions |
+| 筆記 | 內容 | 可遷移的方法 |
 | --- | --- | --- |
-| [Bond Valuation and Interest Rate Risk](bond-valuation-and-interest-rate-risk.md) | present value、zero coupon、coupon bonds、yield、duration、DV01、convexity | 債券價格怎麼來？利率變動時，債券和 fixed-income portfolio 會怎麼動？ |
-| [Credit Risk Modeling](credit-risk-modeling.md) | PD、default labeling、logistic regression、XGBoost、calibration、acceptance threshold | 我們該放款給誰？模型機率如何轉成核貸、拒貸與預期損失控制？ |
-| [Financial Data Ingestion and Cleaning](financial-data-ingestion-and-cleaning.md) | CSV cleaning、dtype、datetime index、market data sources、descriptive checks、grouped summaries | 金融資料要從哪裡來？匯入後先檢查什麼？怎麼避免把髒資料直接帶進報酬或風險模型？ |
-| [Fundamental Financial Concepts](fundamental-financial-concepts.md) | time value of money、compounding、discounting、ROI、mortgage cash flow、WACC intuition、wealth accumulation | 一筆錢跨時間怎麼比較？利率、折現與現金流之間的基本邏輯是什麼？ |
-| [Insurance and Annuity Valuation](insurance-and-annuity-valuation.md) | life table、survival probability、mortality probability、EPV、annuity、term insurance、premium equivalence | 當現金流是否發生取決於生存或死亡時，該怎麼把折現與機率結合起來做產品估值？ |
-| [Portfolio Analysis](portfolio-analysis.md) | weights、diversification、benchmark、rebalancing、portfolio return、portfolio volatility | 同一批資產換不同權重後，整體風險、報酬與分散效果會怎麼變？ |
-| [Quantitative Risk Management](quantitative-risk-management.md) | loss distribution、volatility、risk factors、VaR / ES、stress thinking、risk appetite | 如果要把不確定性轉成可監控、可比較、可決策的風險量，該怎麼做？ |
-| [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md) | trading vs. investing、technical indicators、signals、benchmarking、strategy optimization、drawdown review | 一個交易規則要怎麼從技術指標走到可評估的歷史回測？回測結果又該怎麼避免只看報酬？ |
-| [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md) | volatility、log returns、lognormal prices、simple simulation、probability ranges | 股票價格的不確定性要怎麼建模？為什麼要看區間和分布，而不是單一路徑？ |
+| [Financial Concepts](financial-concepts.md) | 貨幣時間價值、折現、債券、duration / convexity、金融資料清理 | 現金流折現、敏感度分析 |
+| [Portfolio and Risk](portfolio-and-risk.md) | 報酬與波動、分散、Sharpe、factor model、efficient frontier、VaR / CVaR、EVT、股價模擬 | 共變異矩陣、蒙地卡羅模擬、厚尾分布 |
+| [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md) | 指標、訊號、benchmark、drawdown | 回測紀律、過擬合 |
+| [Credit Risk Modeling](credit-risk-modeling.md) | PD、logistic / XGBoost、校準、核貸門檻 | 分類模型評估、閾值與成本 |
+| [Insurance and Annuity Valuation](insurance-and-annuity-valuation.md) | life table、EPV、年金、壽險 | 存活分析 |
+
+金融報酬率的自相關（動能、均值回歸、波動聚集）見 [時間序列：自相關](../../statistics/time-series-analysis/autocorrelation.md#金融情境動能與均值回歸)。
 
 ## 閱讀提醒
 
 - 價格序列與報酬率序列的性質不同，不要混著判讀。
-- 在金融情境中，統計顯著不一定代表可交易，也要考慮交易成本與穩定性。
-- 如果在研究交易規則，請先和最簡單的 buy-and-hold benchmark 比，再談策略是否有價值。
-- 如果現金流會受到存活、死亡或違約狀態影響，請把 timing 與 state probability 分開建模。
-
-## 建議閱讀順序
-
-1. 再看 [Fundamental Financial Concepts](fundamental-financial-concepts.md)，先把 time value of money、compounding 與現金流折現的語言打穩。
-2. 再看 [Financial Data Ingestion and Cleaning](financial-data-ingestion-and-cleaning.md)，先把市場資料的來源、欄位型別與清理流程釐清。
-3. 再看 [Portfolio Analysis](portfolio-analysis.md)，把報酬、波動、分散與權重配置串成組合層級視角。
-4. 再看 [Quantitative Risk Management](quantitative-risk-management.md)，把 volatility、loss distribution、risk factors 與管理框架接起來。
-5. 再看 [Credit Risk Modeling](credit-risk-modeling.md)，理解機率模型如何接到核貸 threshold、錯誤成本與 portfolio 風險。
-6. 再看 [Autocorrelation](autocorrelation.md)，理解金融時間序列和市場資料的統計特性。
-7. 再看 [Bond Valuation and Interest Rate Risk](bond-valuation-and-interest-rate-risk.md)，建立 fixed-income 的 discounting 與利率風險直覺。
-8. 再看 [Insurance and Annuity Valuation](insurance-and-annuity-valuation.md)，把折現現金流的想法延伸到 survival- and death-contingent products。
-9. 接著看 [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md)，把 volatility、price path 與機率區間連回實際建模。
-10. 再看 [Trading Strategies and Backtesting](trading-strategies-and-backtesting.md)，把 indicators、signals、benchmark 與 drawdown review 串成完整交易研究流程。
+- 統計顯著不一定代表可交易，也要考慮交易成本與穩定性。
+- 研究交易規則時，先和最簡單的 buy-and-hold benchmark 比。
+- 現金流受存活、死亡或違約影響時，把 timing 與 state probability 分開建模。

@@ -7,6 +7,8 @@
 
 Data profiling 是 EDA 的第一層，重點在於快速辨識欄位品質與資料結構。它不像完整分析那麼深入，但非常適合當成每份新資料集的固定檢查清單。
 
+各類品質問題的統計影響（缺失、重複、單位、離群值、生資特有的陷阱）見 [Statistics：資料品質](../statistics/descriptive-statistics/data-quality.md)。
+
 ### 檢查哪些面向
 
 | 面向 | 你要問的問題 |

@@ -29,7 +29,7 @@ Key point: network analysis 的核心不是畫出一張很酷的圖，而是先�
 
 - [Data Manipulation and EDA](../data-manipulation-and-eda/README.md): graph 幾乎總是由表格資料轉換而來，前處理仍然是基本功。
 - [Machine Learning](../machine-learning/README.md): 某些 graph feature 會被拿來做節點分類、風險預測或推薦排序。
-- [Process Analytics](../applied-domains/process-analytics/README.md): 如果事件資料被轉成 transition graph 或 handoff network，兩章的分析語言會交會。
+- [流程探勘](../applied-domains/process-mining.md): 如果事件資料被轉成 transition graph 或 handoff network，兩章的分析語言會交會。
 
 ## 實務提醒
 

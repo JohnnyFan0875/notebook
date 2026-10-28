@@ -314,6 +314,6 @@ summary metrics 很重要，但第一輪 review 常常還是先看圖最有效�
 
 如果你是從這個 finance 模組一路往下讀，這一頁最適合放在:
 
-1. [Financial Data Ingestion and Cleaning](financial-data-ingestion-and-cleaning.md) 之後，因為回測前一定要先處理市場資料。
-2. [Stock Price Simulation and Volatility](stock-price-simulation-and-volatility.md) 附近，因為交易訊號和 volatility、price path 直覺高度相關。
-3. [Portfolio Analysis](portfolio-analysis.md) 之前或之後都可以，取決於你想先看單策略規則，還是先看多資產配置。
+1. [Financial Data Ingestion and Cleaning](financial-concepts.md) 之後，因為回測前一定要先處理市場資料。
+2. [Stock Price Simulation and Volatility](portfolio-and-risk.md) 附近，因為交易訊號和 volatility、price path 直覺高度相關。
+3. [Portfolio Analysis](portfolio-and-risk.md) 之前或之後都可以，取決於你想先看單策略規則，還是先看多資產配置。

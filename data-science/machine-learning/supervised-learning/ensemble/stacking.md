@@ -48,7 +48,7 @@ stack.fit(X_train, y_train)  # 承乳癌範例；CV AUC 0.993（RF 0.986、SVM 0
 | 洩漏風險 | 低 | OOF 流程錯就洩漏 |
 | 建議 | 單模型與驗證流程還不穩時先用 | 單模型都穩定、仍想再擠分數時 |
 
-Kaggle 情境的用法見 [Kaggle 競賽流程](../../workflow/kaggle-competition-workflow.md#6-ensembleblending-vs-stacking)。
+Kaggle 情境的用法見 [Kaggle 競賽流程](../../workflow/kaggle-competition-workflow.md#6-ensemble)。
 
 ## 注意事項
 

@@ -1,5 +1,7 @@
 # Efficient Training and Scaling
 
+> **待修（改寫階段）**：`torch.cuda.amp.GradScaler` / `autocast` 已 deprecated，改成 `torch.amp.GradScaler("cuda")`、`torch.amp.autocast("cuda")`；刪掉開頭的課程來源字樣。
+
 `notebook_temp/output` 裡的 `Efficient AI Model Training with PyTorch`、`Scalable AI Models with PyTorch Lightning` 等內容，核心其實都在回答同一件事：模型變大之後，怎麼在不破壞訓練正確性的前提下，把速度、記憶體與可維護性顧好。
 
 ## 先從最有感的優化開始

@@ -1,5 +1,7 @@
 # Linear Layer in PyTorch
 
+> **待修（改寫階段）**：移除標題與內文中的 emoji。
+
 ## Overview
 
 A **linear layer** (also called a fully connected or dense layer) performs a simple linear transformation:
