@@ -157,7 +157,7 @@ tbl(con, "samples") |> filter(age > 60) |> count(tissue) |> show_query()
 tbl(con, "samples") |> filter(age > 60) |> collect()   # collect() 才把資料拉回 R
 ```
 
-本地分析大檔不需要資料庫伺服器：`duckdb` 可以直接用 SQL 查 CSV / Parquet。
+本地分析大檔不需要資料庫伺服器：`duckdb` 可以直接用 SQL 查 CSV / Parquet（完整用法見 [DuckDB 與 Parquet](../databases/duckdb-and-parquet.md)）。
 
 ```r
 con <- dbConnect(duckdb::duckdb())

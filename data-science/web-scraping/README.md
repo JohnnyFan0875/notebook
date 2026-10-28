@@ -1,24 +1,34 @@
-# Web Scraping
+[Data Science](../README.md) › Web Scraping
 
-這個章節整理如何從網頁收集資料。重點不只是抓到內容，更包括如何判斷網站結構、選擇適合的工具，以及避免把一次性腳本寫成脆弱且難維護的流程。
+# 網頁擷取 (Web Scraping)
 
-## 建議閱讀順序
+從 HTML 網頁抽出結構化資料。抓到內容只是第一步，真正的工作在於判斷資料在哪一層（HTML、JavaScript 還是背後的 API）、寫出改版也不易壞的 selector，並守住請求頻率與使用條款。
 
-1. 先確認是否真的需要 scraping：若網站已有 API，通常應優先讀 [API HTTP](../python-foundations/api-http.md) 或相關資料擷取說明，而不是直接抓 HTML。
-2. 讀 [Scrapy and Selectors](scrapy-and-selectors.md)，掌握 CSS / XPath selector 與從 HTML 抽出欄位的基本功。
-3. 再讀 [BeautifulSoup and Selenium](beautifulsoup-selenium.md)，理解靜態頁面、動態頁面、登入流程與等待機制的差異。
-4. 主要用 R 的話，讀 [rvest](rvest.md)。
-5. 若要把抓回來的資料接到清理與分析，回頭搭配 [Data Manipulation and EDA](../data-manipulation-and-eda/README.md) 與 [Data Engineering](../data-engineering/README.md)。
+## 先決定要不要 scraping
 
-## Topics
+```
+有官方 API / 下載檔？ ──是──→ 用 API（見 API 與 HTTP），不要抓 HTML
+        │否
+DevTools → Network 看得到 XHR / fetch 回傳的 JSON？ ──是──→ 直接呼叫那個 JSON 端點
+        │否
+「檢視原始碼」裡有目標資料？ ──是──→ 靜態頁：requests + BeautifulSoup / parsel，R 用 rvest
+        │否（資料由 JavaScript 產生、需要登入或點擊）
+動態頁：Selenium / Playwright；R 用 rvest::read_html_live()
+```
 
-- [Scrapy and Selectors](scrapy-and-selectors.md)
-- [BeautifulSoup and Selenium](beautifulsoup-selenium.md)
-- [Web Scraping in R (rvest)](rvest.md)
+> 生資常見資料來源幾乎都有 API 或批次下載：NCBI E-utilities、Ensembl REST、UniProt REST、GEO / SRA 的 FTP。先查文件再考慮 scraping，用法見 [API 與 HTTP](../python-foundations/api-http.md)。
+
+## 筆記
+
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [BeautifulSoup 與 Selenium](beautifulsoup-selenium.md) | `requests` + BeautifulSoup 解析靜態頁；Selenium 4 操作動態頁、等待、headless | 靜態頁怎麼抓？要點擊或等 JS 載入怎麼辦？ |
+| [Scrapy 與 Selector](scrapy-and-selectors.md) | CSS / XPath 抽文字與屬性、`.get()` / `.getall()`、spider 跟隨連結、輸出與節流設定 | 怎麼精準選到元素？多頁爬取怎麼組織？ |
+| [rvest（R）](rvest.md) | `read_html` → `html_elements` → `html_text2` / `html_table`；httr2 請求與節流、`polite` | 在 R 裡怎麼做同樣的事？ |
 
 ## 共用觀念
 
-三篇工具筆記（Scrapy、BeautifulSoup / Selenium、rvest）共用以下觀念，各篇只講工具用法。
+三篇工具筆記共用以下觀念，各篇只講工具用法。
 
 ### HTML 是一棵樹
 
@@ -33,50 +43,57 @@
 </html>
 ```
 
-- tag 定義結構，attribute 加上 metadata；文字常藏在巢狀子節點裡，不在你第一眼看到的元素上。
-- `id` 理應唯一、`class` 可重複出現、`href` 是 `<a>` 的連結目標。
-- 先在瀏覽器 DevTools 看懂父子關係（`div > p`、`table td.role`），selector 才不會越寫越脆弱；局部抓取（先選區塊再往下找）比全域抓取穩。
+| 概念 | 說明 |
+| --- | --- |
+| tag / attribute | tag 定義結構，attribute 加上 metadata（`id`、`class`、`href`、`data-*`） |
+| `id` / `class` | `id` 理應唯一；`class` 可重複，一個元素可有多個 class（`class="a b"`） |
+| 文字位置 | 常藏在巢狀子節點裡（`<p>Hello <a>world</a></p>`），不在第一眼看到的元素上 |
+| 局部抓取 | 先選重複的區塊（卡片、表格列），再在區塊內找欄位；比對整頁寫一條長 selector 穩，缺欄位時也容易定位 |
+
+先在瀏覽器 DevTools（Elements 面板）看懂父子關係，右鍵 → Copy selector 只當起點，產生的路徑通常太長太脆弱。
 
 ### CSS selector vs XPath
 
-| | CSS selector | XPath |
+| 目的 | CSS selector | XPath |
 | --- | --- | --- |
-| 適合 | class / id / 子節點等常見選取 | 依位置、文字內容、子節點條件過濾父節點 |
-| 例 | `div.course-block > a` | `//div[@id='content']/a[1]`、`//p[contains(text(), 'Hello')]` |
-| 語法重點 | `.class`、`#id`、`a b`（後代）、`a > b`（子） | `//` 任意後代、`/` 下一層、`[...]` 條件、`@attr` 屬性 |
+| 依標籤 | `p` | `//p` |
+| 依 class / id | `.alert`、`#uid`、`div#uid` | `//*[@class="alert"]`、`//*[@id="uid"]` |
+| class 含某個 token | `.alert`（自動處理多 class） | `//*[contains(@class, "alert")]` |
+| 同時有兩個 class | `.alert.emph` | `//*[contains(@class,"alert") and contains(@class,"emph")]` |
+| 後代 / 直接子節點 | `div p` / `div > p` | `//div//p` / `//div/p` |
+| 第 n 個 | `li:nth-of-type(2)` | `//li[2]`、`//li[position() < 3]` |
+| 屬性值 | `a::attr(href)`（parsel） | `//a/@href` |
+| 依文字內容 | 無標準寫法 | `//p[contains(text(), "Hello")]` |
+| 依子節點條件選父節點 | `div:has(> a)`（CSS4，支援度不一） | `//div[a]`、`//ol[count(li) > 2]` |
+| 往上找父節點 | 無 | `..`、`ancestor::div` |
 
-哪個讓 selector 最好讀就用哪個，不需要堅持單一風格。
+哪個讓 selector 最好讀就用哪個；需要依文字、往上找父節點或計數條件時改用 XPath。
 
 ### 禮貌與合法性
 
 | 項目 | 做法 |
 | --- | --- |
-| 先找 API | 有官方 API 就不要抓 HTML（見 [API HTTP](../python-foundations/api-http.md)） |
-| robots.txt / 使用條款 | 抓取前先確認；條款與請求頻率控制是流程的一部分，不是事後補充 |
-| User-Agent | 明確表明身分與聯絡方式，不要沿用預設 UA |
-| 節流 | 請求間加延遲（Python `time.sleep(random.uniform(1, 3))`、R `purrr::slowly()`）；失敗重試也要有上限 |
-| 個資 | 抓到含個人資料的內容時，儲存與使用受隱私法規約束（見 [Responsible AI](../responsible-ai/README.md)） |
+| 先找 API | 有官方 API 或下載檔就不要抓 HTML |
+| robots.txt / 使用條款 | 抓取前確認；Python 可用 `urllib.robotparser`，R 用 `polite::bow()` |
+| User-Agent | 表明身分與聯絡方式（`mylab-scraper/0.1 (me@uni.edu)`），不要偽裝成瀏覽器或輪換 UA 規避封鎖 |
+| 節流 | 每次請求間隔至少 1 秒；Python `time.sleep(random.uniform(1, 3))`、Scrapy `DOWNLOAD_DELAY`、R `req_throttle()` |
+| 重試 | 只對 429 / 5xx 重試，指數退避並設上限；遵守 `Retry-After`（見 [API 與 HTTP](../python-foundations/api-http.md#session重試與限速)） |
+| 快取 | 原始 HTML 存檔再解析：selector 寫錯時不必重抓，也讓結果可重現 |
+| 個資與版權 | 含個人資料的內容受隱私法規約束（見 [Responsible AI](../responsible-ai/README.md)）；抓得到不等於可以再散布 |
 
-## 這一章要解決什麼
+### 常見失敗與除錯順序
 
-- 我怎麼判斷網站是靜態 HTML、動態 JavaScript 頁面，還是其實已經有 API？
-- 什麼時候只需要 `requests` + BeautifulSoup，什麼時候才需要 Selenium？
-- 如果 scraping 腳本要重跑、排程或交給別人維護，哪些步驟該先結構化？
+| 症狀 | 常見原因 | 檢查 |
+| --- | --- | --- |
+| 回傳空結果 | 資料由 JavaScript 載入；HTML 只有骨架 | 「檢視原始碼」搜尋目標文字；找 Network 裡的 JSON |
+| 403 / 429 | 沒有 UA、請求太快、被判定為機器人 | 狀態碼、`Retry-After`；放慢速度 |
+| 文字缺一截 | 只取了直接文字節點，內容在子標籤裡 | 改用後代文字（`//text()`、`::text` 前加空白、`get_text()`） |
+| 昨天能跑今天壞 | 網站改版、class 名稱是動態產生的（`css-1x2y3z`） | 改用穩定屬性（`id`、`data-*`、語意結構） |
+| 欄位錯位 | 某些區塊缺欄位，全域抓取把不同列的值串在一起 | 改成先選區塊再抓欄位，缺值補 `None` / `NA` |
 
-## 工具選擇
+除錯順序：HTTP 狀態碼 → 原始 HTML 裡是否真的有資料 → 最後才調 selector。原始 HTML 沒有資料時，調 selector 只是浪費時間。
 
-- 靜態 HTML 頁面：優先用 `requests` + BeautifulSoup。
-- 需要登入、點擊、等待 JavaScript 載入：再考慮 Selenium。
-- 若網站已有 API，通常優先使用 API，而不是 scraping。
+## 抓完之後
 
-## 與其他章節的關係
-
-- [Python Foundations](../python-foundations/README.md): 放程式語法、HTTP、例外處理與腳本結構。
-- [R Foundations](../r-foundations/README.md): R 的語法與資料結構；scraping 本身見 [rvest](rvest.md)。
-- [Data Engineering](../data-engineering/README.md): 當 scraping 不再是一次性行為，而是資料管線的一部分時，要回到 ingestion、governance 與可重跑設計。
-- [Data Manipulation and EDA](../data-manipulation-and-eda/README.md): 抓到資料後，真正的工作通常才開始。
-
-## 實務提醒
-
-- scraping 成功不代表資料可用，還要檢查欄位型別、重複值、時間戳與缺值模式。
-- 若網站結構常變，應先把 selector、等待條件與錯誤處理抽成可維護的模組，而不是散落在 notebook。
+- 抓到的都是字串：數字、日期要轉型，並檢查重複列、缺值、單位與編碼（見 [資料處理與 EDA](../data-manipulation-and-eda/README.md)）。
+- 要定期重跑時，把 selector、等待條件、錯誤處理抽成模組，記錄抓取時間與來源 URL，並把它當成資料管線的一環（見 [Data Engineering](../data-engineering/README.md)）。

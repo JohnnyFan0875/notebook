@@ -1,282 +1,87 @@
-# SQL Transactions and Error Handling
+[Data Science](../README.md) › [Databases](README.md) › 交易與錯誤處理
 
+# 交易與錯誤處理 (Transactions and Error Handling)
 
-Transaction 讓多個語句**全部成功或全部撤銷**（atomicity）。概念在各資料庫相同，差異在語法與錯誤處理機制。
+交易 (transaction) 讓多個語句**全部成功或全部撤銷**，中途失敗不會留下半套資料（例如扣了庫存卻沒建出貨單、刪了舊樣本表卻沒寫入新表）。概念在各資料庫相同，差異在語法與錯誤處理機制。
+
+## ACID
+
+| 性質 | 意義 | 沒有它會怎樣 |
+| --- | --- | --- |
+| Atomicity 原子性 | 全部成功或全部撤銷 | 中途失敗留下半套更新 |
+| Consistency 一致性 | 交易前後都滿足 constraint（外鍵、`CHECK`、`UNIQUE`） | 出現孤兒列、不合法的值 |
+| Isolation 隔離性 | 並行交易互不干擾到什麼程度，由隔離層級決定 | 讀到別人未提交或中途改變的資料 |
+| Durability 持久性 | `COMMIT` 後即使當機也不會遺失 | 已回報成功的寫入消失 |
 
 ## PostgreSQL vs SQL Server 對照
 
 | 概念 | PostgreSQL | SQL Server (T-SQL) |
 | --- | --- | --- |
-| 開始 / 提交 / 回滾 | `BEGIN;` / `COMMIT;` / `ROLLBACK;` | `BEGIN TRANSACTION;` / `COMMIT TRANSACTION;` / `ROLLBACK TRANSACTION;` |
-| 部分回滾 | `SAVEPOINT s;` / `ROLLBACK TO SAVEPOINT s;` | `SAVE TRANSACTION s;` / `ROLLBACK TRANSACTION s;` |
+| 開始 / 提交 / 回滾 | `BEGIN;` / `COMMIT;` / `ROLLBACK;` | `BEGIN TRAN;` / `COMMIT TRAN;` / `ROLLBACK TRAN;` |
+| 部分回滾 | `SAVEPOINT s;` / `ROLLBACK TO SAVEPOINT s;` | `SAVE TRAN s;` / `ROLLBACK TRAN s;` |
 | 捕捉錯誤 | PL/pgSQL `BEGIN ... EXCEPTION WHEN ... THEN ... END` | `BEGIN TRY ... END TRY BEGIN CATCH ... END CATCH` |
 | 拋出錯誤 | `RAISE EXCEPTION '...'` | `THROW`（建議）/ `RAISERROR` |
-| 錯誤資訊 | `SQLSTATE`、`SQLERRM`、`GET STACKED DIAGNOSTICS` | `ERROR_NUMBER()`、`ERROR_MESSAGE()`、`ERROR_LINE()` 等 |
-| 交易狀態 | 出錯後交易進入 aborted 狀態，只能 `ROLLBACK` | `@@TRANCOUNT`、`XACT_STATE()` |
-| 出錯自動回滾 | 預設（aborted transaction） | `SET XACT_ABORT ON` |
-| 隔離層級 | `SET TRANSACTION ISOLATION LEVEL ...`（預設 `READ COMMITTED`） | 同語法（預設 `READ COMMITTED`） |
+| 錯誤資訊 | `SQLSTATE`、`SQLERRM`、`GET STACKED DIAGNOSTICS` | `ERROR_NUMBER()`、`ERROR_MESSAGE()`、`ERROR_LINE()` |
+| 出錯後的交易狀態 | 進入 aborted：之後的語句都失敗，只能 `ROLLBACK`（或回到 savepoint） | 多數錯誤只讓該語句失敗、交易繼續；`SET XACT_ABORT ON` 改成整筆回滾 |
+| 檢查交易狀態 | — | `@@TRANCOUNT`、`XACT_STATE()` |
+| 預設隔離層級 | `READ COMMITTED` | `READ COMMITTED` |
+| 沒寫 `BEGIN` 時 | autocommit：每個語句自成一筆交易 | 同左 |
 
-## PostgreSQL: Transactions and PL/pgSQL Exceptions
-
-這篇整理 PostgreSQL 裡 transaction 與例外處理的基本心智模型。  
-重點不是背所有語法，而是理解什麼時候要把多個 statement 綁在一起、怎麼局部回滾、以及出錯時怎麼保留足夠的診斷資訊。
-
-### Why Transactions Matter
-
-transaction 的核心價值是把多個資料變更當成一個原子單位處理。
-
-典型情境：
-
-- 同一個業務動作需要更新多張表
-- 兩個 `UPDATE` 必須同時成功或同時失敗
-- 修正資料時不想讓中間狀態被提交
-
-如果少了 transaction，流程中間一旦失敗，就可能留下半套資料。
-
-### Basic Transaction Block
+## 基本操作
 
 ```sql
 BEGIN;
 
-UPDATE patient_intake
-SET priority = 1
-WHERE name = 'Prisha Ahmed';
+UPDATE inventory SET quantity = quantity - 5 WHERE item_id = 10;
 
-UPDATE patient_intake
-SET priority = 2
-WHERE name = 'Oscar Parker';
+SAVEPOINT after_inventory;                -- 交易內可退回的位置
 
+UPDATE shipping_queue SET status = 'queued' WHERE item_id = 10;
+
+ROLLBACK TO SAVEPOINT after_inventory;    -- 只撤銷 savepoint 之後的更新
+
+COMMIT;                                   -- inventory 的更新被提交
+```
+
+| 指令 | 作用 |
+| --- | --- |
+| `ROLLBACK` | 撤銷整筆交易 |
+| `ROLLBACK TO SAVEPOINT s` | 撤銷 `s` 之後的變更，交易繼續；`s` 不存在會報錯 |
+| `RELEASE SAVEPOINT s` | 移除 savepoint（不撤銷變更） |
+| 同名 savepoint | 新的遮蔽舊的；釋放新的之後舊的又可用 |
+
+> 手動修資料時的保險：`BEGIN;` → `UPDATE ...` → 用 `SELECT` 檢查結果與影響列數 → 確定才 `COMMIT;`，不對就 `ROLLBACK;`。
+
+## 隔離層級
+
+並行交易可能產生的異常，以及各層級能防止哪些：
+
+| 異常 | 情境 |
+| --- | --- |
+| dirty read | 讀到別人**尚未提交**的變更（對方之後可能回滾） |
+| non-repeatable read | 同一交易內讀同一列兩次，中間被別人改掉而值不同 |
+| phantom read | 同一條件查兩次，中間別人插入新列而列數不同 |
+| serialization anomaly | 每筆交易單獨看都合理，並行結果卻不等於任何一種依序執行的結果 |
+
+| 隔離層級 | dirty | non-repeatable | phantom | serialization |
+| --- | --- | --- | --- | --- |
+| `READ UNCOMMITTED` | 可能（PostgreSQL 視同 `READ COMMITTED`） | 可能 | 可能 | 可能 |
+| `READ COMMITTED`（預設） | 防止 | 可能 | 可能 | 可能 |
+| `REPEATABLE READ` | 防止 | 防止 | 標準允許；PostgreSQL 防止 | 可能 |
+| `SERIALIZABLE` | 防止 | 防止 | 防止 | 防止 |
+
+```sql
+BEGIN ISOLATION LEVEL SERIALIZABLE;      -- PostgreSQL；也可 BEGIN; SET TRANSACTION ISOLATION LEVEL ...
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
 COMMIT;
 ```
 
-可以先這樣理解：
+越嚴格越安全，但衝突越多：`SERIALIZABLE` 下衝突的交易會以 serialization failure（SQLSTATE `40001`）失敗，**應用程式必須準備重試**。分析查詢多半只讀，預設的 `READ COMMITTED` 即可；需要多個查詢看到同一個快照時用 `REPEATABLE READ`。
 
-- `BEGIN`：開始一個 transaction
-- `COMMIT`：把 transaction 內的變更正式提交
-- `ROLLBACK`：放棄 transaction 內尚未提交的變更
+## PostgreSQL：PL/pgSQL 例外處理
 
-`BEGIN TRANSACTION;` 與 `BEGIN;` 在日常使用上可視為同義。
-
-### Rollback for Mistakes
-
-如果 transaction 還沒 `COMMIT`，就可以直接回滾：
-
-```sql
-BEGIN TRANSACTION;
-
-UPDATE cookies
-SET quantity = 13
-WHERE name = 'Biscuits';
-
-ROLLBACK;
-```
-
-這很適合：
-
-- 手動修資料時發現更新錯了
-- 多步驟腳本中途驗證失敗
-- 想先試跑修改再決定是否提交
-
-### One Transaction, Multiple Statements
-
-transaction 很重要的一個特性是可以把多個 statement 一起回滾。
-
-```sql
-BEGIN TRANSACTION;
-
-UPDATE cookies
-SET deliciousness = 11
-WHERE name = 'Cats Tongue';
-
-UPDATE cookies
-SET deliciousness = 8
-WHERE name = 'Gingerbread';
-
-ROLLBACK;
-```
-
-如果最後回滾，前面所有尚未提交的更新都會一起取消。
-
-### Partial Undo with Savepoints
-
-有時候你不想整個 transaction 都回滾，只想退回其中一段。這時候就用 `SAVEPOINT`。
-
-```sql
-BEGIN TRANSACTION;
-
-UPDATE inventory
-SET quantity = quantity - 5
-WHERE item_id = 10;
-
-SAVEPOINT inventory_step;
-
-UPDATE shipping_queue
-SET status = 'queued'
-WHERE item_id = 10;
-
-ROLLBACK TO inventory_step;
-
-COMMIT;
-```
-
-心智模型：
-
-- `SAVEPOINT name`：在 transaction 內設一個可退回的位置
-- `ROLLBACK TO name`：只回到該 savepoint 之後的狀態
-- `RELEASE SAVEPOINT name`：釋放 savepoint
-
-#### Savepoint Reminders
-
-- `ROLLBACK` 沒有 `TO` 會回滾整個 transaction。
-- `ROLLBACK TO` 指到不存在的 savepoint 會報錯。
-- 同一個 transaction 裡，新的同名 savepoint 會遮蔽較早的同名 savepoint。
-
-### Isolation Levels and Concurrency
-
-transaction 不只處理「自己寫錯」的問題，也處理多個 session 同時操作時的可預期性。
-
-PostgreSQL 會透過 isolation level 幫你約束可見性與併發效果。
-
-```sql
-START TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-
-UPDATE accounts
-SET balance = balance - 100
-WHERE account_id = 1;
-
-COMMIT;
-```
-
-課程裡特別提到兩個概念：
-
-- isolation level 是幫助你推理結果的規則
-- 越嚴格的 isolation 通常意味著越保守的併發行為
-
-實務上先記住：
-
-- `READ COMMITTED` 是很多日常工作負載的常見預設
-- `SERIALIZABLE` 追求最強的一致性推理，但衝突與重試成本可能更高
-
-### PL/pgSQL Exception Basics
-
-當你進入 `DO $$ ... $$` block、function 或更程序化的邏輯時，就可以用 `EXCEPTION`。
-
-```sql
-DO $$
-BEGIN
-    PERFORM SQRT('a');
-EXCEPTION
-    WHEN others THEN
-        RAISE INFO 'Boom!';
-END;
-$$ LANGUAGE plpgsql;
-```
-
-這裡的心智模型很像其他語言的 `try ... except`：
-
-- `BEGIN ... END`：主邏輯
-- `EXCEPTION`：錯誤處理區
-- `WHEN others THEN`：generic catch-all handler
-
-### Catch Specific Errors When Possible
-
-雖然 `WHEN others` 很方便，但實務上更穩的是針對你預期的錯誤分開處理。
-
-例如：
-
-```sql
-DO $$
-BEGIN
-    INSERT INTO sales (name, quantity, cost)
-    VALUES ('cookie', -1, NULL);
-EXCEPTION
-    WHEN check_violation THEN
-        RAISE INFO 'Quantity can not be less than 0.';
-    WHEN not_null_violation THEN
-        RAISE INFO 'Cost can not be null.';
-END;
-$$ LANGUAGE plpgsql;
-```
-
-課程裡明確提到的例子包含：
-
-- `unique_violation`
-- `not_null_violation`
-
-這種寫法比全部都用 `WHEN others` 更容易維護，也更容易讓錯誤訊息精準對應業務問題。
-
-### Exception Handlers Have Overhead
-
-一個很實用的提醒是：`EXCEPTION` clause 不是免費的。
-
-- 它會增加執行成本
-- 不應把 exception handling 當成一般流程控制的第一選擇
-
-比較好的習慣通常是：
-
-- 能先用 constraint、validation、`WHERE` 條件避免的錯誤，先避免
-- 真正需要攔截失敗並記錄時，再加 `EXCEPTION`
-
-### Logging Errors Inside PostgreSQL
-
-有時候只 `RAISE INFO` 還不夠，還想把錯誤寫進表裡。
-
-```sql
-DO $$
-BEGIN
-    UPDATE inventory SET cost = 35.0 WHERE name = 'Macaron';
-    UPDATE inventory SET cost = 3.50 WHERE name = 'Panellets';
-EXCEPTION
-    WHEN others THEN
-        INSERT INTO errors (msg) VALUES ('Max cost is 10!');
-        RAISE INFO 'Max cost is 10!';
-END;
-$$ LANGUAGE plpgsql;
-```
-
-這種模式適合：
-
-- 保留錯誤歷史
-- 讓後續流程或報表可查錯誤記錄
-- 在批次工作中留下最小可用診斷資料
-
-### `GET STACKED DIAGNOSTICS`
-
-如果想拿到更完整的錯誤內容，可以在 `EXCEPTION` 裡使用 `GET STACKED DIAGNOSTICS`。
-
-```sql
-DO $$
-DECLARE
-    exc_message TEXT;
-    exc_detail  TEXT;
-BEGIN
-    UPDATE inventory SET cost = 35.0 WHERE name = 'Macaron';
-    UPDATE inventory SET cost = 3.50 WHERE name = 'Panellets';
-EXCEPTION
-    WHEN others THEN
-        GET STACKED DIAGNOSTICS
-            exc_message = MESSAGE_TEXT,
-            exc_detail  = PG_EXCEPTION_DETAIL;
-
-        INSERT INTO errors (msg, detail)
-        VALUES (exc_message, exc_detail);
-END;
-$$ LANGUAGE plpgsql;
-```
-
-這通常比手寫固定字串更有用，因為你能保留 PostgreSQL 原生錯誤上下文。
-
-### Useful Diagnostic Fields
-
-這份課程整理了幾個特別值得記的 diagnostics 欄位：
-
-- `RETURNED_SQLSTATE`：錯誤代碼
-- `MESSAGE_TEXT`：主要錯誤訊息
-- `PG_EXCEPTION_DETAIL`：更細的 detail
-- `PG_EXCEPTION_HINT`：可能的 hint
-- `PG_EXCEPTION_CONTEXT`：發生錯誤時的呼叫堆疊 / context
-
-如果你要建 `errors` logging table，這幾個欄位通常就很夠用。
+`EXCEPTION` 只能用在 PL/pgSQL 區塊（`DO $$ ... $$` 或 function）裡，行為類似 `try ... except`：出錯時區塊內的變更**自動回滾**到區塊開始時（隱含 savepoint），再執行 handler。
 
 ```sql
 DO $$
@@ -286,256 +91,98 @@ DECLARE
     v_detail  TEXT;
     v_context TEXT;
 BEGIN
-    -- some risky work
-EXCEPTION WHEN others THEN
-    GET STACKED DIAGNOSTICS
-        v_state   = RETURNED_SQLSTATE,
-        v_msg     = MESSAGE_TEXT,
-        v_detail  = PG_EXCEPTION_DETAIL,
-        v_context = PG_EXCEPTION_CONTEXT;
-
-    INSERT INTO errors (msg, state, detail, context)
-    VALUES (v_msg, v_state, v_detail, v_context);
+    INSERT INTO sales (name, quantity, cost) VALUES ('cookie', -1, NULL);
+EXCEPTION
+    WHEN check_violation THEN                  -- 1. 先處理預期的特定錯誤
+        RAISE NOTICE 'Quantity can not be less than 0.';
+    WHEN not_null_violation THEN
+        RAISE NOTICE 'Cost can not be null.';
+    WHEN others THEN                           -- 2. 其他錯誤：保留完整診斷資訊再記錄
+        GET STACKED DIAGNOSTICS
+            v_state   = RETURNED_SQLSTATE,
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        INSERT INTO errors (state, msg, detail, context)
+        VALUES (v_state, v_msg, v_detail, v_context);
+        RAISE;                                 -- 3. 記錄後重新拋出，不要吞掉錯誤
 END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Practical Reminders
+| 常用條件名 | SQLSTATE | 何時 |
+| --- | --- | --- |
+| `unique_violation` | `23505` | 違反 `UNIQUE` / 主鍵 |
+| `foreign_key_violation` | `23503` | 外鍵找不到 |
+| `not_null_violation` | `23502` | `NOT NULL` 欄為空 |
+| `check_violation` | `23514` | 違反 `CHECK` |
+| `division_by_zero` | `22012` | 除以零 |
+| `serialization_failure` | `40001` | 隔離衝突，應重試 |
 
-- 多個 statement 必須一起成功時，就應該主動想 transaction。
-- 想局部回滾時，用 `SAVEPOINT`，不要急著整筆 `ROLLBACK`。
-- 例外處理優先針對具體錯誤型別，而不是永遠 `WHEN others`。
-- `EXCEPTION` 有成本，避免把它當成一般邏輯分支。
-- 如果錯誤值得追蹤，優先記 `SQLSTATE`、message、detail、context，而不只是自訂一句文字。
+| 診斷欄位 | 內容 |
+| --- | --- |
+| `RETURNED_SQLSTATE` | 錯誤代碼 |
+| `MESSAGE_TEXT` | 主要訊息 |
+| `PG_EXCEPTION_DETAIL` / `PG_EXCEPTION_HINT` | 細節 / 提示 |
+| `PG_EXCEPTION_CONTEXT` | 發生位置的呼叫堆疊 |
 
-[Back to Databases](README.md)
+> `EXCEPTION` 區塊有成本（每次進入都建立 savepoint）。能用 constraint、`WHERE` 條件或 `ON CONFLICT` 事先避免的錯誤，不要靠例外處理當流程控制。另外，若 handler 把錯誤寫進 `errors` 表後沒有重新拋出，外層交易仍會提交，呼叫端以為成功了。
 
-## SQL Server: T-SQL Transactions and `TRY...CATCH`
-
-這篇整理 SQL Server 裡 transaction 與錯誤處理的基本心智模型，重點放在 `TRY...CATCH`、`THROW`、`RAISERROR`、`@@TRANCOUNT`、`XACT_STATE()` 與 `XACT_ABORT`。
-
-### Basic Transaction Pattern
-
-```sql
-BEGIN TRAN;
-
-UPDATE accounts
-SET balance = balance - 100
-WHERE account_id = 1;
-
-UPDATE accounts
-SET balance = balance + 100
-WHERE account_id = 2;
-
-COMMIT TRAN;
-```
-
-先記住：
-
-- `BEGIN TRAN`：開始 transaction
-- `COMMIT TRAN`：提交
-- `ROLLBACK TRAN`：回滾
-
-### `TRY...CATCH`
-
-SQL Server 最常見的錯誤處理骨架是：
+## SQL Server：`TRY...CATCH`
 
 ```sql
-BEGIN TRY
-    -- risky work
-END TRY
-BEGIN CATCH
-    -- error handling
-END CATCH;
-```
+SET XACT_ABORT ON;                     -- 任何執行期錯誤都讓整筆交易變成 doomed，避免部分提交
 
-心智模型：
-
-- `TRY` 裡出錯才會跳進 `CATCH`
-- 沒出錯就直接略過 `CATCH`
-- `CATCH` 裡可以回滾、記錄錯誤、或重新丟錯
-
-### Transaction + `TRY...CATCH`
-
-實務上通常會一起寫：
-
-```sql
 BEGIN TRY
     BEGIN TRAN;
 
-    -- multiple statements
+    UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+    UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
 
     COMMIT TRAN;
 END TRY
 BEGIN CATCH
-    IF @@TRANCOUNT > 0
-        ROLLBACK TRAN;
-END CATCH;
-```
-
-這是 SQL Server 最常見的安全模板之一。
-
-### `@@TRANCOUNT`
-
-`@@TRANCOUNT` 代表目前 session 的 transaction 層數。
-
-- `BEGIN TRAN`：`@@TRANCOUNT + 1`
-- `COMMIT TRAN`：`@@TRANCOUNT - 1`
-- `ROLLBACK TRAN`：通常直接回到 `0`
-
-所以在 `CATCH` 裡常看到：
-
-```sql
-IF @@TRANCOUNT > 0
-    ROLLBACK TRAN;
-```
-
-它的重點不是知道精確數字，而是先確認現在是否仍有開著的 transaction。
-
-### `XACT_STATE()`
-
-比 `@@TRANCOUNT` 更關鍵的是 `XACT_STATE()`，因為它會告訴你 transaction 目前還能不能提交。
-
-- `1`：transaction 還開著，而且可提交
-- `-1`：transaction 還開著，但已經 doomed，只能回滾
-- `0`：目前沒有 active transaction
-
-常見模板：
-
-```sql
-BEGIN TRY
-    BEGIN TRAN;
-
-    -- risky work
-
-    COMMIT TRAN;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() = -1
+    IF XACT_STATE() <> 0               -- 1. 先清理交易狀態
         ROLLBACK TRAN;
 
-    IF XACT_STATE() = 1
-        ROLLBACK TRAN;
+    INSERT INTO error_log (number, message, line, proc_name)   -- 2. 記錄（在回滾之後，才不會一起被撤銷）
+    VALUES (ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE(), ERROR_PROCEDURE());
 
-    SELECT ERROR_MESSAGE() AS error_message;
+    THROW;                             -- 3. 重新拋出原始錯誤給呼叫端
 END CATCH;
 ```
 
-實務上可以簡化成「只要 `XACT_STATE() <> 0` 就回滾」，但理解 `1` 與 `-1` 的差別很重要。
+| 函式 / 設定 | 值 | 意義 |
+| --- | --- | --- |
+| `@@TRANCOUNT` | `BEGIN TRAN` +1、`COMMIT` −1、`ROLLBACK` 歸 0 | 有沒有開著的交易（巢狀時看層數） |
+| `XACT_STATE()` | `1` | 有交易且可提交 |
+| | `-1` | 有交易但已 doomed，只能回滾 |
+| | `0` | 沒有交易 |
+| `SET XACT_ABORT ON` | | 執行期錯誤時自動回滾整筆交易；遠端 / 分散式交易時必要 |
 
-### `RAISERROR` vs `THROW`
+| | `THROW` | `RAISERROR` |
+| --- | --- | --- |
+| 建議 | 新程式使用 | 舊程式碼常見 |
+| 語法 | `THROW 52000, 'No staff member with such id.', 1;`（錯誤號 ≥ 50000） | `RAISERROR('No %s with id %d.', 16, 1, 'staff', 15);` |
+| 在 `CATCH` 重拋原錯誤 | `THROW;` | 無法原樣重拋 |
+| 格式化字串 | 先用 `FORMATMESSAGE()` 組好 | 內建 `%s`、`%d` |
+| 中斷批次 | 是 | 依嚴重度，severity 16 不會中斷 |
 
-課程裡很明確提到：Microsoft 現在更推薦 `THROW`。
+> 巢狀 `BEGIN TRAN` 不是真正的巢狀交易：內層 `COMMIT` 只把 `@@TRANCOUNT` 減 1，真正提交要等最外層；任何一層 `ROLLBACK`（不帶 savepoint 名稱）都會撤銷全部。需要局部回滾時用 `SAVE TRAN`。
 
-#### `RAISERROR`
+## 從 Python 控制交易
 
-```sql
-RAISERROR('No staff member with such id.', 16, 1);
-RAISERROR('No %s with id %d.', 16, 1, 'staff member', 15);
+```python
+from sqlalchemy import create_engine, text
+
+engine = create_engine("postgresql+psycopg://user:pw@host/db")
+
+# engine.begin()：區塊正常結束自動 COMMIT，拋出例外自動 ROLLBACK
+with engine.begin() as conn:
+    conn.execute(text("UPDATE inventory SET quantity = quantity - :n WHERE item_id = :id"),
+                 {"n": 5, "id": 10})
+    conn.execute(text("INSERT INTO shipping_queue (item_id, status) VALUES (:id, 'queued')"),
+                 {"id": 10})
 ```
 
-特點：
-
-- 支援格式化 placeholder
-- 舊式 codebase 很常見
-
-#### `THROW`
-
-```sql
-THROW 52000, 'This is an example', 1;
-```
-
-或在 `CATCH` 裡直接重拋：
-
-```sql
-BEGIN CATCH
-    THROW;
-END CATCH;
-```
-
-`THROW` 的好處是語意更直接，也更符合新式 SQL Server 寫法。
-
-### Choosing Between `RAISERROR` and `THROW`
-
-- 新程式優先想 `THROW`
-- 舊系統若大量用格式化錯誤字串，仍可能看到 `RAISERROR`
-- 想保留原始錯誤時，在 `CATCH` 裡直接 `THROW;` 很實用
-
-### Error Info Functions
-
-在 `CATCH` 裡常用的 error functions 包括：
-
-- `ERROR_MESSAGE()`
-- `ERROR_NUMBER()`
-- `ERROR_LINE()`
-- `ERROR_PROCEDURE()`
-
-例如：
-
-```sql
-BEGIN CATCH
-    SELECT
-        ERROR_NUMBER() AS error_number,
-        ERROR_MESSAGE() AS error_message,
-        ERROR_LINE() AS error_line,
-        ERROR_PROCEDURE() AS error_procedure;
-END CATCH;
-```
-
-這很適合記錄到 audit / error table。
-
-### Nested `TRY...CATCH`
-
-課程裡也展示了 nested `TRY...CATCH`。  
-實務上重點不是把層數寫多，而是理解：
-
-- 內層可以處理自己的錯誤
-- 外層可再補 fallback 邏輯
-- 錯誤資訊要盡量在最靠近出錯點的地方先保留
-
-### `XACT_ABORT`
-
-`SET XACT_ABORT ON` 會影響錯誤發生時 transaction 的行為。
-
-一個很重要的實務提醒是：它和 `RAISERROR` / `THROW` 的互動不完全一樣，所以不要只背其中一邊的範例就套到所有錯誤來源。
-
-如果你在 transaction 裡高度重視「一旦出錯就快速失敗並回滾」，`XACT_ABORT` 值得特別了解。
-
-### Practical Safe Template
-
-```sql
-BEGIN TRY
-    BEGIN TRAN;
-
-    -- business statements
-
-    COMMIT TRAN;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-        ROLLBACK TRAN;
-
-    SELECT
-        ERROR_NUMBER() AS error_number,
-        ERROR_MESSAGE() AS error_message,
-        ERROR_LINE() AS error_line;
-
-    THROW;
-END CATCH;
-```
-
-這個模板的價值是：
-
-- 保證 transaction 不會懸掛
-- 先清理 transaction 狀態
-- 保留足夠診斷資訊
-- 最後把錯誤往外拋給呼叫端
-
-### Practical Reminders
-
-- `@@TRANCOUNT` 告訴你有沒有 transaction，但 `XACT_STATE()` 才告訴你還能不能提交。
-- 新 code 優先考慮 `THROW`。
-- `CATCH` 裡先處理 transaction 狀態，再談記錄或重拋。
-- 不要只靠巢狀 transaction 名稱推理 commit 行為，先確認 `@@TRANCOUNT` 的實際效果。
-
-[Back to Databases](README.md)
+SQLAlchemy 2.x 的 `engine.connect()` 不會自動提交，寫入後要呼叫 `conn.commit()`；詳見 [Python 與 SQLAlchemy](python-sqlalchemy.md#交易與寫入)。R 用 `DBI::dbWithTransaction(con, { ... })`。

@@ -110,7 +110,7 @@ import duckdb
 duckdb.sql("SELECT gene, avg(tpm) FROM 'expr_by_chrom/**/*.parquet' WHERE chrom = 'chr17' GROUP BY gene").df()
 ```
 
-另見 [Polars](../performance-and-scaling/polars.md) 的 `scan_parquet`。
+DuckDB 完整用法見 [DuckDB 與 Parquet](../../databases/duckdb-and-parquet.md)；另見 [Polars](../performance-and-scaling/polars.md) 的 `scan_parquet`。
 
 ### HDF5
 

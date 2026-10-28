@@ -1,349 +1,161 @@
-# Database Design Principles
+[Data Science](../README.md) › [Databases](README.md) › 資料庫設計原則
 
-database design 的核心問題不是「這個系統用哪一種 SQL 語法」，而是先回答：資料到底要拿來做什麼。  
-同樣一份資料，如果主要用途是支援交易、支援分析、支援共享查詢，設計重點會很不一樣。
+# 資料庫設計原則 (Database Design Principles)
 
-## Start With Intended Use
-
-設計資料庫前，先問幾個問題：
-
-- 這套資料主要服務交易，還是分析
-- 使用者最常做的是寫入更新，還是聚合查詢
-- 查詢結果是給應用程式、分析師，還是報表使用者
-- 權限是不是需要分層
-- 之後最常被重複使用的 join / filter pattern 是什麼
-
-同一份資料如果 intended use 不同，schema、normalization、view、access control 甚至 DBMS 選擇都會跟著變。
+設計資料庫的第一個問題不是用哪個 DBMS，而是「資料要拿來做什麼」：支援日常寫入（交易）還是支援分析，決定了 schema 的形狀、正規化程度、要不要 view、權限怎麼分。
 
 ## OLTP vs OLAP
 
-最基本的資料設計分野之一，是分清楚 OLTP 與 OLAP。
-
-| Aspect | OLTP | OLAP |
+| 面向 | OLTP（交易處理） | OLAP（分析處理） |
 | --- | --- | --- |
-| Purpose | support daily transactions | report and analyze data |
-| Design | application-oriented | subject-oriented |
-| Data | up-to-date, operational | consolidated, historical |
-| Query pattern | simple, frequent reads/writes | complex, aggregate-heavy queries |
-| Typical users | many operational users | fewer analytical users |
+| 目的 | 支援日常作業：下單、登錄檢體、更新狀態 | 報表與分析：趨勢、彙總、跨主題比較 |
+| 查詢 | 簡單、頻繁、讀寫少量列 | 複雜、聚合大量列、以讀為主 |
+| 資料 | 最新狀態 | 整合後的歷史資料 |
+| 設計 | 以應用程式為中心、正規化 | 以主題為中心、dimensional model（星狀） |
+| 重視 | 寫入一致性、交易、低延遲 | 掃描與聚合效率 |
+| 典型系統 | PostgreSQL、MySQL、SQL Server | Snowflake、BigQuery、Redshift、DuckDB |
 
-### OLTP
+例：LIMS / EHR 是 OLTP（每次檢驗結果即時寫入）；研究用的資料倉儲把多個來源整合成歷史資料，是 OLAP。直接在 OLTP 系統上跑大量分析查詢，會拖慢日常作業；常見做法是定期 ETL 到分析用的資料庫（見 [Processing and Pipelines](../data-engineering/processing-and-pipelines.md)）。
 
-OLTP 適合：
+## 設計的層次
 
-- 查單筆訂單
-- 更新最新交易
-- 寫入應用程式互動資料
-- 維持業務流程當下狀態
+| 層次 | 回答 | 產出 |
+| --- | --- | --- |
+| 概念模型 (conceptual) | 有哪些實體、彼此怎麼關聯？ | ER diagram：病人、檢體、定序批次、檢驗 |
+| 邏輯模型 (logical) | 有哪些表、欄位、key、關係？ | 正規化的關聯模型或星狀模型 |
+| 實體模型 (physical) | 用什麼型別、index、分區、儲存？ | `CREATE TABLE`、`CREATE INDEX` |
 
-它通常重視：
+## Schema 與欄位型別
 
-- 寫入一致性
-- transaction safety
-- 正規化設計
-- 低延遲的單筆或小範圍操作
+schema 是資料庫的藍圖：表、欄位、關係、index、view、constraint。關聯式資料庫是 **schema-on-write**：寫入前就要符合結構；資料湖與 NoSQL 偏 **schema-on-read**：讀取時才解析結構。
 
-### OLAP
-
-OLAP 適合：
-
-- 找最忠誠客戶
-- 計算最佳利潤商品
-- 做跨時間、跨主題的彙總分析
-- 支援報表與 BI
-
-它通常重視：
-
-- 聚合查詢效率
-- 歷史資料保留
-- subject-oriented organization
-- 更適合分析的資料形狀，例如 dimensional model
-
-## Schema As Blueprint
-
-schema 可以視為 database 的 blueprint。  
-它定義的不只是 table，還包括：
-
-- fields / columns
-- relationships
-- indexes
-- views
-- constraints
-
-在 relational database 裡，schema 通常是 schema-on-write：資料寫入前就要符合預先定義的結構。  
-這和某些更彈性的系統形成對比，後者更接近 schema-on-read。
-
-### Columns Have Domains
-
-欄位型別不只是儲存格式，也是在定義欄位的 domain，也就是：
-
-- 這個欄位可以接受什麼值
-- 可以對它做哪些運算
-- 系統要如何一致地儲存它
-
-例如：
+欄位型別定義了欄位的 domain（可以放什麼值、能做哪些運算）：
 
 ```sql
-CREATE TABLE students (
-  ssn           INTEGER,
-  name          VARCHAR(64),
-  dob           DATE,
-  average_grade NUMERIC(3, 2),
-  tuition_paid  BOOLEAN
+CREATE TABLE samples (
+  sample_id     TEXT PRIMARY KEY,          -- "S001" 保留前導 0，不用 INTEGER
+  patient_id    TEXT NOT NULL REFERENCES patients (patient_id),
+  collected_on  DATE NOT NULL,             -- 不存成 '3/1/2024' 字串
+  rin           NUMERIC(3, 1) CHECK (rin BETWEEN 0 AND 10),
+  is_tumor      BOOLEAN NOT NULL
 );
 ```
 
-這類 attribute constraint 的價值是：
+| Constraint | 防止 |
+| --- | --- |
+| `PRIMARY KEY` | 重複與缺 ID |
+| `NOT NULL` | 必填欄位留空 |
+| `UNIQUE` | 重複值（如 barcode） |
+| `CHECK` | 不合理的值（負的數量、RIN > 10） |
+| `FOREIGN KEY` | 指向不存在的父資料（孤兒列） |
 
-- 避免把日期、文字、數值混用
-- 讓資料庫能正確套用比較、排序、聚合與驗證
-- 讓 foreign key 與 join 欄位更容易維持一致
+> 在資料庫層設 constraint，錯誤資料進不來；只在分析時檢查，錯誤已經擴散到下游。
 
-如果外鍵和它參照的主鍵型別不一致，通常就是 schema 設計已經開始偏掉的訊號。
+## Key
 
-## Conceptual vs Logical Modeling
+| 名詞 | 意義 | 例子 |
+| --- | --- | --- |
+| superkey | 能唯一識別一列的欄位集合（可含多餘欄位） | `(sample_id, collected_on)` |
+| candidate key | 最小的 superkey，少一欄就不唯一 | `sample_id`、`barcode` |
+| primary key | 選定的 candidate key | `sample_id` |
+| composite key | 多欄組成的 key | `(patient_id, visit_date)` |
+| natural key | 業務上本來就有的識別碼 | 病歷號、條碼 |
+| surrogate key | 系統產生、沒有業務意義的 ID | `GENERATED AS IDENTITY`、UUID |
 
-資料設計不是直接跳到 `CREATE TABLE`。  
-可以把它拆成至少兩層：
+natural key 可能改變（重新編號、格式調整）或含個資（病歷號），主鍵常改用 surrogate key，natural key 另加 `UNIQUE`。外鍵與被參照的主鍵型別必須一致；型別不同是 schema 開始偏掉的訊號。
 
-### Conceptual Model
-
-conceptual model 比較接近 business understanding。
-
-重點是：
-
-- 有哪些 entities
-- 它們怎麼互相關聯
-- 哪些業務概念需要被區分
-
-常見表達方式是 ER diagram。
-
-### Logical Model
-
-logical model 開始把概念翻成結構。
-
-重點是：
-
-- tables
-- columns
-- relationships
-- keys
-- schema shape
-
-這一層才會開始落到 relational model、normalized model 或 star schema 等具體資料形狀。
-
-## Relationships and Referential Integrity
-
-關聯式資料庫不是只有把資料拆成很多 table，更重要的是把 table 之間的關係說清楚。
-
-foreign key 的核心意義是：
-
-- 某欄位的值必須對應到另一張表中已存在的 key
-- 這個欄位通常應該和被參照欄位有相容的 domain / type
-- 它負責保護 referential integrity
-
-例如：
+## 外鍵與參照完整性
 
 ```sql
 ALTER TABLE order_items
 ADD CONSTRAINT order_items_order_id_fkey
-FOREIGN KEY (order_id) REFERENCES orders(id);
+FOREIGN KEY (order_id) REFERENCES orders (id)
+ON DELETE CASCADE;
 ```
 
-referential integrity 的重點是：
+| 刪除父資料時（`ON DELETE`） | 行為 | 適合 |
+| --- | --- | --- |
+| `NO ACTION` / `RESTRICT`（預設） | 擋下刪除 | 歷史紀錄不能消失（檢驗結果） |
+| `CASCADE` | 子資料一起刪 | 子資料沒有父資料就無意義（訂單明細） |
+| `SET NULL` | 子資料外鍵改為 `NULL` | 保留子資料、解除關聯 |
+| `SET DEFAULT` | 改為預設值 | 歸到「未分類」 |
 
-- 不能插入指向不存在 parent record 的 child record
-- 不能隨便刪除仍被 child records 參照的 parent record，除非你明確定義後續行為
+這是資料生命週期的業務決定，不只是語法：明細該不該跟著主資料消失、歷史資料要不要保留。
 
-### ON DELETE Actions
+## 正規化 vs 維度模型
 
-foreign key 不只是「有沒有關聯」，還包含 parent row 被刪掉時要怎麼辦。
+| | 正規化設計 | 維度設計 (dimensional) |
+| --- | --- | --- |
+| 適合 | OLTP、主資料管理 | OLAP、BI 報表 |
+| 目標 | 減少冗餘、避免更新異常 | 查詢直觀、聚合快 |
+| 形狀 | 很多小表、多層 join | fact table + dimension tables |
+| 細節 | [正規化](database-normalization.md) | [Dimensional Modeling and Star Schema](../data-engineering/dimensional-modeling-and-star-schema.md) |
 
-常見選項：
+星狀 (star) 與雪花 (snowflake) schema：
 
-- `NO ACTION` / `RESTRICT`：直接擋下刪除
-- `CASCADE`：連 child rows 一起刪
-- `SET NULL`：把 child foreign key 設成 `NULL`
-- `SET DEFAULT`：把 child foreign key 改成預設值
+| | Star | Snowflake |
+| --- | --- | --- |
+| dimension | 一張寬表（反正規化） | 再拆成多層（正規化） |
+| 查詢 | join 少、直觀，BI 工具友善 | join 多 |
+| 冗餘 | 較多 | 較少 |
+| 選擇 | 分析與報表的預設 | dimension 很大且需要獨立維護時 |
 
-這些不是單純語法問題，而是業務語意：
+## View
 
-- 明細資料是否應跟著主資料一起消失
-- 歷史資料是否需要保留但解除關聯
-- 系統是否允許 orphan-like 狀態
-
-如果這些問題沒先想清楚，資料庫雖然能建立 relation，但不一定能保住正確的資料生命週期。
-
-## Normalized vs Dimensional Thinking
-
-資料設計常見的兩種方向：
-
-- normalized relational design
-- dimensional design
-
-### Normalized Design
-
-比較適合：
-
-- OLTP
-- 上游主資料管理
-- 一致性高於查詢便利性
-
-它重視：
-
-- 降低 redundancy
-- 降低 update anomaly
-- 讓資料關係更精確
-
-### Dimensional Design
-
-比較適合：
-
-- OLAP
-- BI / reporting
-- 穩定的 slicing, dicing, aggregation
-
-它重視：
-
-- fact / dimension 分工
-- 查詢容易理解
-- 報表與分析消費效率
-
-如果分析是主要用途，常會看到 denormalized schema 與 dimensional modeling。
-
-## Star vs Snowflake
-
-當進入分析模型時，常見兩種形態：
-
-- `star schema`
-- `snowflake schema`
-
-### Star Schema
-
-特點：
-
-- fact table 記事件或度量
-- dimension table 記描述性欄位
-- 查詢較直觀
-- 比較容易被 BI 工具與分析師理解
-
-### Snowflake Schema
-
-特點：
-
-- dimension 進一步正規化
-- 冗餘較少
-- 結構更細
-- 查詢與理解成本通常較高
-
-實務上若主要用途是分析與報表，star schema 往往比較自然；若維度本身需要高度去重與結構化維護，snowflake 才比較可能有吸引力。
-
-## Views As Reusable Query Surfaces
-
-view 可以理解成 stored query 所暴露出的 virtual table。
+view 是存起來的查詢，查它就像查一張表，但不另存資料。
 
 ```sql
-CREATE VIEW scifi_books AS
-SELECT title, author, genre
-FROM dim_book_sf
-JOIN dim_genre_sf
-  ON dim_genre_sf.genre_id = dim_book_sf.genre_id
-JOIN dim_author_sf
-  ON dim_author_sf.author_id = dim_book_sf.author_id
-WHERE dim_genre_sf.genre = 'science fiction';
+CREATE VIEW tumor_samples AS
+SELECT s.sample_id, s.collected_on, p.sex, p.age_at_diagnosis
+FROM samples AS s
+JOIN patients AS p USING (patient_id)
+WHERE s.is_tumor;
+
+SELECT * FROM tumor_samples WHERE collected_on >= '2024-01-01';
 ```
 
-之後可以像查普通 table 一樣查它：
+| 用途 | 注意 |
+| --- | --- |
+| 封裝常用的 join 與過濾，避免各處重寫 | 每次查詢都重新執行底層查詢，不是效能優化 |
+| 提供穩定介面：底層表改名、拆表時 view 不變 | 層層疊的 view 很難除錯與調校 |
+| 權限邊界：只開放 view，不開放含個資的原表 | 下游大量依賴很重的 view 時，改成 materialized view 或正式的分析表 |
+
+materialized view（PostgreSQL、Oracle、Snowflake）把結果實際存下來，查詢快，但要定期 `REFRESH MATERIALIZED VIEW` 才會更新。
+
+## 權限是設計的一部分
 
 ```sql
-SELECT *
-FROM scifi_books;
+CREATE ROLE analyst_role;
+GRANT SELECT ON tumor_samples TO analyst_role;     -- 透過 view 開放去識別化後的欄位
+REVOKE ALL ON patients FROM analyst_role;          -- 原表不開放
+GRANT analyst_role TO alice, bob;                  -- 權限給角色，使用者掛到角色
 ```
 
-### Why Views Help
+| 原則 | 原因 |
+| --- | --- |
+| 權限給 role，不直接給個人 | 人員異動時只改成員關係 |
+| 最小權限 | 分析人員只需要讀；寫入留給 ETL 帳號 |
+| 敏感欄位用 view 或 column-level 權限隔開 | 病歷號、姓名、出生日期等直接識別資訊不外流（見 [Privacy and Regulation](../responsible-ai/privacy-and-regulation.md)） |
 
-- 把常用 join 邏輯包起來
-- 避免重複撰寫相同查詢
-- 對使用者提供較友善的資料介面
-- 不需要改 physical schema 就能提供新的資料視角
+PostgreSQL 的實際語法見 [PostgreSQL：psql 與 COPY](postgresql-psql-and-copy.md#角色權限與-schema)。
 
-對資料設計來說，view 常是 physical tables 和 end users 之間的緩衝層。
+## 選擇 DBMS
 
-### What Views Are Not
+| 工作負載 | 選擇 |
+| --- | --- |
+| 多人即時寫入、需要交易與 constraint | PostgreSQL、MySQL、SQL Server |
+| 單機分析大型檔案、不想架伺服器 | DuckDB（見 [DuckDB 與 Parquet](duckdb-and-parquet.md)） |
+| 嵌入應用程式或工具的小型資料庫 | SQLite |
+| 大規模歷史資料分析、多人共用 | 雲端資料倉儲（Snowflake、BigQuery） |
+| 原始、異質、尚未定義結構的大量資料 | 資料湖（物件儲存 + Parquet） |
+| 巢狀文件、key 查詢、關係網路 | NoSQL（見 [NoSQL 基礎](nosql-foundations.md)） |
 
-- 不是把資料複製一份
-- 不是萬能的效能優化工具
-- 不是 schema 設計不良時的永久補丁
+## 常見錯誤
 
-如果下游反覆依賴某個很重的 view，可能表示：
-
-- 應該建立更明確的 semantic layer
-- 或者該把那段邏輯 materialize 成更正式的分析表
-
-## Access Control Is Part of Design
-
-權限設計不是收尾工作，而是 schema design 的一部分。
-
-需要先想：
-
-- 所有人是否該看同樣資料
-- 誰只能讀
-- 誰能寫
-- 哪些資料應透過 view 暴露而不是直接開放原表
-
-常見語法形式會是：
-
-```sql
-GRANT SELECT ON some_view TO analyst_role;
-REVOKE INSERT ON raw_table FROM analyst_role;
-```
-
-這種做法讓 access model 跟資料責任邊界一致，而不是所有人都直接連到最底層資料表。
-
-## Roles
-
-role 的設計重點不只是建立 user，而是建立權限集合。
-
-一個 role 可能代表：
-
-- 某類使用者
-- 某個職能群組
-- 某種可操作範圍
-
-好的做法通常是先想角色，再把 user 掛上角色，而不是針對每個 user 單獨散發權限。
-
-## Choosing a DBMS
-
-資料庫選型通常也應該回到 intended use：
-
-- real-time relational structured data 常偏 OLTP
-- historical analytical workloads 常偏 OLAP
-- raw / heterogeneous / large-scale log data 可能更適合 data lake 或其他 schema-on-read 型態
-
-沒有單一 DBMS 對所有場景都最佳。  
-重點不是找「最強資料庫」，而是找最適合目前 workload 和 governance 需求的系統。
-
-## Practical Design Questions
-
-- 這份資料主要是拿來更新，還是拿來分析
-- query pattern 是單筆交易，還是跨表聚合
-- 需要 normalized model 還是 dimensional model
-- 哪些邏輯適合落在 table，哪些適合落在 view
-- 哪些使用者應該直接看 raw tables，哪些只該看 curated view
-- 權限應該綁在 user，還是 role
-- 這個系統需要 schema-on-write 還是 schema-on-read 的彈性
-
-## Common Mistakes
-
-- 還沒定義使用情境，就急著決定 schema 形狀
-- 用 OLTP 結構直接承擔大量分析查詢
-- 把 view 當成所有設計問題的補丁
-- 權限直接發給 individual users，沒有角色層
-- 想同時優化所有 workload，結果每一種都不夠好
-
-## Related Topics
-
-- [Database Normalization](./database-normalization.md)
-- [PostgreSQL](postgresql-psql-and-copy.md)
-- [Data Modeling Foundations](../data-engineering/data-modeling-foundations.md)
-- [Dimensional Modeling and Star Schema](../data-engineering/dimensional-modeling-and-star-schema.md)
+| 錯誤 | 後果 |
+| --- | --- |
+| 還沒釐清用途就決定 schema | 寫入與分析兩頭都不好用 |
+| 用 OLTP 結構直接承擔大量分析查詢 | 拖慢日常作業，分析也慢 |
+| 沒有 constraint，靠應用程式檢查 | 繞過應用程式的匯入（腳本、手動修正）帶進錯誤資料 |
+| 把 view 當成設計問題的補丁 | 層層疊加後無法維護 |
+| 權限直接發給個人 | 人員異動後殘留權限 |

@@ -1,328 +1,197 @@
-# Python Database Access with SQLAlchemy Core
+[Data Science](../README.md) › [Databases](README.md) › Python 與 SQLAlchemy
 
-這篇整理 Python 連接 relational database 的實務起點，重點放在 SQLAlchemy Core。  
-它適合資料科學工作裡常見的需求：連線、讀 schema、組 query、做 aggregate，以及必要時執行基本 CRUD。
+# Python 與 SQLAlchemy
 
-## Why Use SQLAlchemy Core
+SQLAlchemy 是 Python 連接關聯式資料庫的標準介面：同一套程式碼可以接 SQLite、PostgreSQL、MySQL、SQL Server，pandas 的 `read_sql` / `to_sql` 也建立在它上面。分析工作主要用兩種方式：直接寫 SQL 字串（`text()`）或用 Core 的 Python 運算式組查詢。本篇以 SQLAlchemy 2.x 為準。
 
-SQLAlchemy 大致可以分成兩層：
+| 層 | 用途 | 本篇 |
+| --- | --- | --- |
+| Engine / Connection | 連線池、執行 SQL、交易 | 是 |
+| Core | 用 Python 物件組 SQL（`select`、`insert`），不同資料庫自動轉成對應方言 | 是 |
+| ORM | 把資料表對應到 Python class，適合應用程式開發 | 否 |
 
-- `Core`: 比較貼近 relational model，適合直接組 SQL-style query
-- `ORM`: 比較貼近 application 的 object model
-
-如果你的工作偏分析、資料處理或腳本化查詢，通常先掌握 Core 會更直接。
-
-## Connection Model
-
-最基本的兩個物件是：
-
-- `engine`: SQLAlchemy 提供的資料庫介面入口
-- `connection`: 真的拿來執行 query 的連線
+## 連線
 
 ```python
 from sqlalchemy import create_engine
 
-engine = create_engine("sqlite:///census_nyc.sqlite")
-connection = engine.connect()
+engine = create_engine("sqlite:///census.sqlite")                       # 檔案不存在會自動建立
+engine = create_engine("sqlite://")                                      # 記憶體資料庫，測試用
+engine = create_engine("postgresql+psycopg://user:pw@localhost:5432/db") # 需要 pip install psycopg
+engine = create_engine("mysql+pymysql://user:pw@host/db")
+engine = create_engine("duckdb:///analysis.duckdb")                      # 需要 duckdb-engine
 ```
 
-## Connection String
+URL 格式：`dialect+driver://user:password@host:port/database`。
 
-connection string 的角色，是告訴 SQLAlchemy：
+| 原則 | 做法 |
+| --- | --- |
+| 密碼不寫進程式碼與 notebook | 從環境變數讀：`os.environ["DB_URL"]`；或 `sqlalchemy.URL.create(...)` 組合 |
+| 密碼含 `@`、`/` 等特殊字元 | 用 `URL.create(drivername=..., password=...)`，不必手動跳脫 |
+| engine 只建立一次 | 它管理連線池，整個程式共用 |
+| 連線用完就還 | 一律寫在 `with` 區塊內 |
 
-- database dialect 是什麼
-- driver 是什麼
-- database 在哪裡
-- 是否需要帳號密碼或其他連線資訊
-
-SQLite 常見長這樣：
-
-```python
-engine = create_engine("sqlite:///census_nyc.sqlite")
-```
-
-對 SQLite 來說，如果檔案不存在，建立 engine 時通常也可能順便建立資料庫檔案。  
-但像 PostgreSQL、MySQL 這類資料庫，database 初始化常常要用外部工具或管理指令先完成。
-
-## Inspecting Existing Databases
-
-在開始 query 前，先知道資料庫裡有什麼通常比急著寫查詢更重要。
-
-### List Tables
+## 查看資料庫
 
 ```python
-print(engine.table_names())
-```
+from sqlalchemy import inspect, MetaData, Table
 
-這一步的目的不是背 API，而是先確認：
+insp = inspect(engine)
+insp.get_table_names()                  # ['census', 'employees']（舊版 engine.table_names() 已移除）
+insp.get_columns("census")              # 欄位名稱、型別、nullable
+insp.get_schema_names()                 # PostgreSQL 的 schema
 
-- 有哪些 tables
-- table naming 是否符合預期
-- 你連到的是不是正確資料庫
-
-### Reflection
-
-reflection 會從既有 database schema 建立 SQLAlchemy `Table` object。
-
-```python
-from sqlalchemy import MetaData, Table
-
+# reflection：從既有資料表建立 Table 物件，供 Core 查詢使用
 metadata = MetaData()
-census = Table("census", metadata, autoload=True, autoload_with=engine)
+census = Table("census", metadata, autoload_with=engine)    # 舊版的 autoload=True 已移除
+[c.name for c in census.columns]        # ['state', 'sex', 'age', 'pop2000', 'pop2008']
 ```
 
-這很適合：
-
-- 你不是 schema 的建立者
-- 已有資料庫存在
-- 想先讀現況再查詢
-
-## Building Tables
-
-如果是自己建立表，可以直接宣告 `Table` 與 `Column`，再用 `metadata.create_all(engine)` 寫入資料庫。
+## 執行 SQL：`text()` 與參數
 
 ```python
-from sqlalchemy import Table, Column, String, Integer, Decimal, Boolean, MetaData
+from sqlalchemy import text
 
-metadata = MetaData()
+with engine.connect() as conn:
+    result = conn.execute(
+        text("SELECT state, SUM(pop2008) AS pop FROM census WHERE age > :min_age GROUP BY state"),
+        {"min_age": 65},                                     # 參數化：值由 driver 安全地帶入
+    )
+    rows = result.all()                                      # list of Row（像 tuple，也可用 row.state）
+    # result.mappings().all()  → list of dict-like
+    # result.scalar()          → 第一列第一欄（COUNT、SUM）
+    # for row in result: ...   → 逐列讀，不必全部載入
+```
 
-employees = Table(
-    "employees",
-    metadata,
-    Column("id", Integer()),
-    Column("name", String(255)),
-    Column("salary", Decimal()),
-    Column("active", Boolean()),
+> **永遠用參數，不要用 f-string 拼 SQL。** `f"WHERE name = '{name}'"` 遇到 `O'Brien` 會語法錯誤，遇到惡意輸入就是 SQL injection。參數化查詢也讓資料庫可以重用執行計畫。表名、欄名不能當參數，只能從白名單中選。
+
+## Core：用 Python 組查詢
+
+```python
+from sqlalchemy import select, func, case, cast, Float, and_, or_
+
+c = census.c                                                 # census.columns 的簡寫
+
+stmt = (
+    select(c.state, func.sum(c.pop2008).label("population"))   # 2.x：select(欄位, ...)，不再傳 list
+    .where(or_(c.state.startswith("New"), c.state == "California"))
+    .group_by(c.state)
+    .order_by(func.sum(c.pop2008).desc())
 )
+print(stmt)                                                  # 檢查產生的 SQL
 
-metadata.create_all(engine)
+with engine.connect() as conn:
+    conn.execute(stmt).all()                                 # [('California', 250), ('New York', 95)]
+    conn.execute(select(func.sum(c.pop2008))).scalar()       # 345
+
+# 條件式聚合與比例：女性人口百分比
+pct_female = select(
+    (func.sum(case((c.sex == "F", c.pop2008), else_=0)) * 100.0
+     / func.sum(c.pop2008)).label("pct_female")              # 乘 100.0 避免整數除法
+)
 ```
 
-常見欄位選項包括：
+| SQL | Core |
+| --- | --- |
+| `WHERE a = 1 AND b > 2` | `.where(c.a == 1, c.b > 2)` 或 `and_(...)` |
+| `OR` / `NOT` | `or_(...)` / `~cond` 或 `not_(...)` |
+| `IN` / `BETWEEN` / `LIKE` | `c.x.in_([...])` / `c.x.between(a, b)` / `c.x.like("A%")`、`.ilike()` |
+| `IS NULL` | `c.x.is_(None)` / `c.x.is_not(None)` |
+| `AS` | `.label("name")` |
+| `CASE` | `case((cond, value), else_=...)` |
+| `CAST` | `cast(c.x, Float)` |
+| `JOIN` | `select(...).join(other, c.id == other.c.id)`、`isouter=True` 為 LEFT JOIN |
+| 聚合 | `func.count()`、`func.sum()`、`func.avg()`；`func.xxx` 會直接變成 SQL 的 `xxx()` |
 
-- `unique`
-- `nullable`
-- `default`
+## 交易與寫入
 
-注意：`create_all()` 適合初始化，不適合拿來處理成熟專案的 schema migration。  
-當 table 結構開始演進時，通常要改用 migration tool，例如 Alembic。
-
-## Query Construction Mental Model
-
-可以把 SQLAlchemy Core 想成：
-
-1. 先建立 statement
-2. 再逐步加上 where / group_by / order_by / functions
-3. 最後用 connection 執行
+2.x 的 `engine.connect()` 不會自動提交：寫入後沒有 `commit()`，離開 `with` 時變更會被回滾。
 
 ```python
-stmt = select([census])
-results = connection.execute(stmt).fetchall()
+from sqlalchemy import insert, update, delete
+
+# 寫法 1：engine.begin()，正常結束自動 COMMIT、發生例外自動 ROLLBACK（建議）
+with engine.begin() as conn:
+    conn.execute(insert(employees), [                         # 傳 list of dict = 批次插入 (executemany)
+        {"id": 1, "name": "Jason", "salary": 1.00},
+        {"id": 2, "name": "Rebecca", "salary": 2.00},
+    ])
+    conn.execute(update(employees).where(employees.c.id == 2).values(active=False))
+    conn.execute(delete(employees).where(employees.c.id == 3))
+
+# 寫法 2：connect() + 手動 commit
+with engine.connect() as conn:
+    result = conn.execute(text("UPDATE employees SET active = true WHERE id = :id"), {"id": 2})
+    result.rowcount                                          # 受影響列數
+    conn.commit()
 ```
 
-常見的結果提取方式：
+交易的概念見 [交易與錯誤處理](sql-transactions.md)。
 
-- `fetchall()`: 抓全部列
-- `scalar()`: 抓單一值，例如 `COUNT` 或 `SUM`
-
-## Filtering Rows
-
-### Simple `where()`
+### 建表
 
 ```python
-stmt = select([census])
-stmt = stmt.where(census.columns.state == "California")
-results = connection.execute(stmt).fetchall()
-```
-
-`where()` 本質上就是把 Boolean 條件推進 database，而不是先把整張表拉回 Python 再過濾。
-
-常見比較包括：
-
-- `==`
-- `!=`
-- `>=`
-- `<=`
-
-### Expression Helpers
-
-當條件不只是簡單比較時，可以用 column methods：
-
-- `in_()`
-- `like()`
-- `between()`
-- `startswith()`
-
-```python
-stmt = select([census])
-stmt = stmt.where(census.columns.state.startswith("New"))
-```
-
-### Multiple Conditions
-
-多條件時常見的是：
-
-- `and_()`
-- `or_()`
-- `not_()`
-
-重點不是語法本身，而是把條件邏輯保留在 query layer，而不是用 Python 迴圈事後補救。
-
-## Aggregation and Grouping
-
-分析工作裡，很多需求其實不是「拿列」，而是「拿 summary」。
-
-### SQL Functions
-
-SQLAlchemy 用 `func` 來呼叫常見 SQL aggregate functions。
-
-```python
-from sqlalchemy import func
-
-stmt = select([func.sum(census.columns.pop2008)])
-total_pop = connection.execute(stmt).scalar()
-```
-
-常見用途：
-
-- `func.count(...)`
-- `func.sum(...)`
-- `func.avg(...)`
-- `func.min(...)`
-- `func.max(...)`
-
-這通常比把原始資料全抓回 Python 再處理更有效率。
-
-### `group_by()`
-
-```python
-stmt = select([
-    census.columns.sex,
-    func.sum(census.columns.pop2008),
-])
-stmt = stmt.group_by(census.columns.sex)
-results = connection.execute(stmt).fetchall()
-```
-
-幾個重要心智模型：
-
-- selected columns 如果不是 aggregate，通常就要出現在 `group_by()`
-- `group_by()` 可以同時放多個欄位
-- 這是在 database 端做 summary，不是在 Python 端手動 regroup
-
-## Labels, Case, and Type Casting
-
-當 query 開始像分析問題，而不只是簡單 select 時，這幾個工具很重要：
-
-- `label()`: 幫計算欄位命名
-- `case()`: 做 conditional logic
-- `cast(..., Float)`: 控制型別，避免整數除法或不預期轉型
-
-```python
-from sqlalchemy import case, cast, Float
-```
-
-這些組件很適合做：
-
-- 比例或百分比計算
-- 條件式彙總
-- weighted average
-- 後續更好讀的輸出欄名
-
-## CRUD Basics
-
-雖然分析工作以讀取為主，但有時還是需要初始化資料或修正少量資料。
-
-### Insert One Row
-
-```python
-from sqlalchemy import insert
-
-stmt = insert(employees).values(id=1, name="Jason", salary=1.00, active=True)
-result = connection.execute(stmt)
-print(result.rowcount)
-```
-
-### Insert Multiple Rows
-
-```python
-stmt = insert(employees)
-values_list = [
-    {"id": 2, "name": "Rebecca", "salary": 2.00, "active": True},
-    {"id": 3, "name": "Bob", "salary": 0.00, "active": False},
-]
-result = connection.execute(stmt, values_list)
-```
-
-如果來源是 CSV，常見流程就是：
-
-1. 讀檔
-2. 轉成 list of dicts
-3. 一次送進 `execute()`
-
-### Update
-
-```python
-from sqlalchemy import update
-
-stmt = update(employees)
-stmt = stmt.where(employees.columns.id == 3)
-stmt = stmt.values(active=True)
-result = connection.execute(stmt)
-```
-
-### Delete
-
-```python
-from sqlalchemy import delete
-
-stmt = delete(employees).where(employees.columns.id == 3)
-result = connection.execute(stmt)
-```
-
-刪除特別需要保守，因為它通常最難回復。
-
-## Analytical Pattern: Ask the Database First
-
-這門課最有價值的地方，不是 CRUD 本身，而是它提醒一件事：
-
-- 先想能不能在 database 端把問題縮小
-- 再決定哪些結果真的要進 Python
-
-例如：
-
-- 先 `where()` 篩選州別或日期
-- 先 `group_by()` 算 summary
-- 先用 `case()` 與 `cast()` 算比例
-- 最後只把分析所需的結果集帶回 Python
-
-這比無差別把整張表讀進記憶體更穩，也更像真實資料工作流。
-
-## Practical Boundaries
-
-- SQLAlchemy Core 很適合 analysis scripts、ETL steps、資料探索與中小型工具。
-- 若你需要複雜 schema migration，交給 Alembic 比手動改 `create_all()` 安全。
-- 若你主要是 tabular analytics，也可以視情況搭配 pandas `read_sql()`；但先理解底層 query model 仍然很有用。
-- 若資料量很大，能在 database 做完的過濾、聚合與 join，通常不要後移到 Python。
-
-## Minimal Workflow
-
-```python
-from sqlalchemy import create_engine, MetaData, Table, select, func
-
-engine = create_engine("sqlite:///census_nyc.sqlite")
-connection = engine.connect()
+from sqlalchemy import Table, Column, Integer, String, Numeric, Boolean, MetaData
 
 metadata = MetaData()
-census = Table("census", metadata, autoload=True, autoload_with=engine)
-
-stmt = select([
-    census.columns.state,
-    func.sum(census.columns.pop2008).label("population"),
-])
-stmt = stmt.group_by(census.columns.state)
-
-results = connection.execute(stmt).fetchall()
+employees = Table(
+    "employees", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("salary", Numeric(10, 2)),                        # 精確小數；SQLAlchemy 沒有 Decimal 型別
+    Column("active", Boolean, default=True),
+)
+metadata.create_all(engine)                                   # 只建立不存在的表；不會修改既有的表
 ```
 
-如果你能自然讀懂這段，通常就已經具備把 Python 接上 relational database 做基本分析的核心能力了。
+`create_all()` 適合初始化；表結構需要演進時用 migration 工具（Alembic）。
+
+## pandas 讀寫
+
+```python
+import pandas as pd
+
+# 讀：SQL 字串要用 text() 包起來才能帶參數
+df = pd.read_sql(text("SELECT * FROM census WHERE age > :a"), engine, params={"a": 35})
+df = pd.read_sql(stmt, engine)                                # 也可以直接給 Core 查詢
+df = pd.read_sql_table("census", engine)                      # 整張表
+
+# 大結果：分批讀，每批是一個 DataFrame
+for chunk in pd.read_sql(text("SELECT * FROM big_table"), engine, chunksize=100_000):
+    process(chunk)
+
+# 寫
+df.to_sql("census_copy", engine, if_exists="replace", index=False,
+          chunksize=10_000, method="multi")                   # multi：一個 INSERT 帶多列，較快
+```
+
+| `if_exists` | 行為 |
+| --- | --- |
+| `"fail"`（預設） | 表已存在就報錯 |
+| `"replace"` | 刪表重建：原有的型別、index、constraint、權限都會消失 |
+| `"append"` | 附加到既有的表 |
+
+> `to_sql` 依 DataFrame 推斷型別建表，常不理想（文字變 `TEXT`、ID 變 `BIGINT`）。正式資料表先用 SQL 建好結構，再 `if_exists="append"`。大量匯入 PostgreSQL 時，`COPY` 比 `INSERT` 快一到兩個數量級（見 [PostgreSQL：psql 與 COPY](postgresql-psql-and-copy.md#csv-匯入匯出)）。
+
+## 先在資料庫端縮小
+
+| 做法 | 不要 |
+| --- | --- |
+| `WHERE` 在 SQL 裡過濾 | `pd.read_sql("SELECT * FROM t")` 再在 pandas 篩選 |
+| `GROUP BY` 在 SQL 裡聚合，只取摘要 | 拉回全部明細再 `groupby` |
+| 只選需要的欄位 | `SELECT *` |
+| 大結果用 `chunksize` 或串流 | 一次載入超過記憶體的結果 |
+
+資料是本機的 CSV / Parquet 而不是資料庫時，DuckDB 可以直接用 SQL 查檔案，不必先匯入（見 [DuckDB 與 Parquet](duckdb-and-parquet.md)）。R 的對應工具是 `DBI` + `dbplyr`（見 [匯入資料（R）](../r-foundations/importing-data.md#資料庫dbi)）。
+
+## 舊版 (1.x) → 2.x
+
+| 1.x 寫法 | 2.x |
+| --- | --- |
+| `select([census])`、`select([c.a, c.b])` | `select(census)`、`select(c.a, c.b)` |
+| `Table(..., autoload=True, autoload_with=engine)` | `Table(..., autoload_with=engine)` |
+| `engine.table_names()` | `inspect(engine).get_table_names()` |
+| `engine.execute(...)` | `with engine.connect() as conn: conn.execute(...)` |
+| 寫入自動提交 (autocommit) | `engine.begin()` 或 `conn.commit()` |
+| `conn.execute("SELECT ...")`（純字串） | `conn.execute(text("SELECT ..."))` |
+| `result.fetchall()` | `result.all()`（`fetchall()` 仍可用） |
