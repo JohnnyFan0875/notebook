@@ -1,423 +1,237 @@
-# Importing Data in R
+[Data Science](../README.md) › [R Foundations](README.md) › 匯入資料
 
-R 不只拿來分析本地 `csv`。在實際工作裡，常見來源還包括：
+# 匯入資料 (Importing Data)
 
-這篇偏重 **R 工作流**：`DBI`、HTTP / JSON、其他統計軟體格式，以及 R 在匯入後常見的型別與 label 問題。若你主要使用 Python，可對照 [Python: Importing Data from Common File Formats](../python-foundations/importing-data.md)。
+先分辨來源型態，再挑工具：文字檔要處理分隔符與型別，Excel 要處理工作表結構，API 回傳巢狀 JSON，資料庫要管理連線，其他統計軟體的檔案帶有 label 與缺值語意。Python 對應見 [匯入資料（Python）](../python-foundations/importing-data.md)；正式的資料擷取管線見 [Ingestion](../data-engineering/ingestion.md)。
 
-- relational databases
-- HTTP 資源
-- Web APIs
-- JSON
-- 其他統計軟體格式，例如 Stata / SPSS
+| 來源 | 首選 | 備選 / 說明 |
+| --- | --- | --- |
+| CSV / TSV | `readr::read_csv()` / `read_tsv()` | `data.table::fread()`（大檔最快）、base `read.csv()` |
+| Excel | `readxl::read_excel()` | 寫檔：`writexl`、`openxlsx` |
+| JSON / API | `jsonlite::fromJSON()`、`httr2` | |
+| 關聯式資料庫 | `DBI` + 驅動（`RPostgres`、`RMariaDB`、`RSQLite`、`duckdb`） | `dbplyr` 把 dplyr 翻成 SQL |
+| Stata / SPSS / SAS | `haven` | |
+| Parquet / Arrow / Feather | `arrow` | 大於記憶體的資料：`open_dataset()` |
+| R 物件 | `readRDS()` / `saveRDS()` | `qs` 套件更快 |
+| 生資格式 | Bioconductor 專用讀取器 | 見 [生資檔案格式](#生資檔案格式) |
 
-這篇整理的是 R 裡比較進階、但又常見的讀取入口。
-
-## Mental Model
-
-匯入資料時，先不要只想「用哪個函式打開檔案」，而要先分辨來源型態：
-
-- table in a database
-- file on the web
-- API response
-- serialized file from another stats tool
-
-來源型態不同，後續的風險也不同：
-
-- database 會有 connection lifecycle
-- web data 會有 HTTP 與格式問題
-- JSON 會有 nested structure
-- foreign statistical files 會有 labels 與 type conversion 問題
-
-## Databases with `DBI`
-
-R 連關聯式資料庫時，常見入口是 `DBI` 搭配具體驅動套件。
+## 分隔文字檔
 
 ```r
-con <- DBI::dbConnect(
-  RMySQL::MySQL(),
-  dbname = "company",
-  host = "localhost",
-  username = "user",
-  password = "password"
+library(readr)
+
+df <- read_csv("samples.csv")                         # 印出推論的欄型別，務必看一眼
+df <- read_tsv("counts.tsv.gz")                       # 自動解壓 .gz / .bz2 / .zip
+read_delim("states2.txt", delim = "/")
+
+# 明確指定型別：ID 保持字串（避免 "001" → 1）、日期指定格式
+df <- read_csv("samples.csv",
+  col_types = cols(
+    sample_id = col_character(),
+    age       = col_integer(),
+    date      = col_date("%Y-%m-%d"),
+    .default  = col_guess()
+  ),
+  na = c("", "NA", "N/A", "-"),                       # 哪些字串視為缺值
+  skip = 2, comment = "#"                             # 跳過說明列、註解
 )
+problems(df)                                          # 解析失敗的列與原因
+
+read_csv(c("a.csv", "b.csv"), id = "file")            # 多檔一次讀，記錄來源
+
+# 大檔：data.table::fread 多執行緒，自動偵測分隔符
+dt <- data.table::fread("variants.tsv.gz", select = c("chrom", "pos", "qual"))
 ```
 
-建立連線後，最常用的幾個動作是：
-
-- 看有哪些 tables
-- 直接讀一張表
-- 執行 SQL query
-
-## Listing and Reading Tables
-
-```r
-DBI::dbListTables(con)
-employees <- DBI::dbReadTable(con, "employees")
-```
-
-`dbReadTable()` 適合直接把整張表讀進 R。
-
-但如果資料量大，通常不要把整張表無條件拉下來。
-
-## Querying with SQL
-
-如果只需要部分欄位或部分列，通常改用 SQL 更合理。
-
-```r
-DBI::dbGetQuery(con, "SELECT name FROM employees")
-DBI::dbGetQuery(con, "SELECT * FROM products WHERE price > 100")
-```
-
-這樣的好處是：
-
-- 把篩選推到資料庫端
-- 降低資料搬運量
-- 讓 R 端只接收分析需要的子集
-
-## `dbGetQuery()` vs `dbSendQuery()`
-
-`dbGetQuery()` 是高階、一步到位的讀法。
-
-如果你需要更手動的流程，可以用：
-
-```r
-res <- DBI::dbSendQuery(con, "SELECT * FROM products")
-data <- DBI::fetch(res)
-DBI::dbClearResult(res)
-```
-
-這個模式在你要控制 result lifecycle 或逐步 fetch 時比較有用。
-
-## Always Disconnect
-
-資料庫連線是需要明確收尾的資源。
-
-```r
-DBI::dbDisconnect(con)
-```
-
-如果 notebook 或 script 反覆開連線卻不關，後面常會遇到資源占用與 session 殘留問題。
-
-## Delimited Text with Base R
-
-最基本的文字檔匯入通常還是從 base R 開始：
-
-```r
-read.csv("states.csv")
-read.delim("states.txt")
-```
-
-可以把它們理解成 `read.table()` 的方便 wrapper：
-
-- `read.csv()`: comma-separated
-- `read.delim()`: tab-delimited
-- `read.csv2()`: 常見於 decimal comma 的 locale
-- `read.delim2()`: tab-delimited 且常配合 decimal comma
-
-這個 mental model 很重要，因為很多匯入問題最後都會回到 `read.table()` 那組參數，例如：
-
-- `sep`
-- `header`
-- `dec`
-- `comment.char`
-- `fill`
-
-如果你已經知道資料是規則分隔的 text file，先分清楚是 delimiter 問題、header 問題，還是 decimal mark 問題，通常會比盲調參數快很多。
-
-## `readr` for More Predictable Parsing
-
-如果想要更一致的型別推論與更 tidyverse 風格的介面，常見選擇是 `readr`。
-
-```r
-readr::read_csv("states.csv")
-readr::read_delim("states2.txt", delim = "/")
-```
-
-幾個常用控制點：
-
-- `col_names = FALSE`: 沒有 header 時讓 R 自動命名
-- `col_names = c(...)`: 手動指定欄名
-- `col_types = "ccdd"`: 明確指定每欄型別
-
-```r
-readr::read_delim("states3.txt", delim = "/", col_names = FALSE)
-readr::read_delim("states2.txt", delim = "/", col_types = "ccdd")
-```
-
-關鍵點不是背字串格式，而是知道匯入資料時可以把「欄名是否可信」與「型別是否可信」分開控制。
-
-## Reading Files Directly from URLs
-
-不少函式其實可以直接讀遠端檔案，而不一定要先手動下載。
-
-```r
-read.csv("http://assets.datacamp.com/course/importing_data_into_r/states.csv")
-readxl::read_excel("http://assets.datacamp.com/course/importing_data_into_r/cities.xlsx")
-```
-
-這在探索型工作很方便，但正式流程通常仍要考慮：
-
-- 網址是否穩定
-- 是否需要驗證下載版本
-- 網路失敗時怎麼處理
-
-## HTTP Basics
-
-HTTP 是 web 上資料交換的基礎協定。
-
-重點不是背全名，而是知道：
-
-- client 送 request
-- server 回 response
-- response 內容可能是 table、HTML、JSON 或其他格式
-
-在 R 端，這常透過像 `httr` 這類套件處理。
-
-## Why `httr` Matters
-
-課程把 `httr` 當成進入 web data 的工具箱。
-
-它特別重要的原因是：很多資料不再是公開檔案，而是要經過 API request 才能取得。
-
-這和單純 `read.csv(url)` 不同，因為你可能還要處理：
-
-- request method
-- headers
-- query parameters
-- authentication
-
-## JSON
-
-JSON 是 web API 最常見的資料格式之一。
-
-它的特性是：
-
-- 結構清楚
-- human-readable
-- 很適合機器生成與解析
-- 容易表達 nested objects
-
-對 R 來說，最常見的入口是 `jsonlite`。
-
-## Parsing JSON with `jsonlite`
-
-```r
-library(jsonlite)
-
-fromJSON("http://www.omdbapi.com/?i=tt0095953&r=json")
-```
-
-`fromJSON()` 可以讀：
-
-- URL
-- JSON 字串
-- 本地 JSON 檔案內容
-
-## JSON Can Map to Different R Structures
-
-例如：
-
-```r
-fromJSON('[4, 7, 4, 6, 4, 5, 10]')
-fromJSON('[4, "a", 4, 6, false, null]')
-fromJSON('{"id":1,"name":"Frank","age":23}')
-```
-
-解析後可能變成：
-
-- vector
-- list
-- data frame-like structure
-
-所以讀 JSON 時，重點不是只會 `fromJSON()`，而是知道結果物件接下來應該怎麼檢查。
-
-## Serializing Back to JSON
-
-`jsonlite` 也能把 R 物件轉回 JSON：
-
-```r
-toJSON(list(id = 1, name = "Frank"))
-```
-
-這在你要和 API 溝通、送出 payload 時很有用。
-
-## APIs
-
-API 可以理解成一套讓程式彼此交換資料的介面。
-
-對資料分析工作來說，Web API 最常見的角色是：
-
-- 提供查詢入口
-- 回傳 JSON
-- 透過 HTTP verbs 互動，例如 `GET`
-
-很多時候，你並不是在「讀檔」，而是在「向服務要資料」。
-
-## Practical API Workflow in R
-
-典型流程通常像這樣：
-
-1. 找到 API endpoint
-2. 組 request URL 或參數
-3. 取得 response
-4. 把 response parse 成 R 物件
-5. 整理成分析用的 tibble / data frame
-
-一個常見簡化版是直接用 `fromJSON(url)` 讀 API response。
-
-## Excel with `readxl`
-
-Excel 常常不是單一表格，而是一個 workbook 裡面有多個 sheets。用 `readxl` 時，實務上常分兩步：
-
-1. 先列出有哪些 sheets
-2. 再精準讀入需要的那一張
+| | base `read.csv()` | `readr::read_csv()` | `data.table::fread()` |
+| --- | --- | --- | --- |
+| 速度 | 慢 | 快 | 最快 |
+| 回傳 | data.frame | tibble | data.table |
+| 欄名 | `make.names()` 改寫（`my col` → `my.col`） | 保留原樣 | 保留原樣 |
+| 型別推論 | 前幾列 | 前 1000 列，並回報 | 抽樣整檔 |
+| 逗號作小數點 | `read.csv2()` | `read_csv2()` / `locale(decimal_mark = ",")` | `dec = ","` |
+
+> base R 的 `read.table()` 家族（`read.csv`、`read.delim`、`read.csv2`、`read.delim2`）共用 `sep`、`header`、`dec`、`comment.char`、`fill` 等參數；匯入出錯時先判斷是分隔符、表頭還是小數點的問題。
+
+讀遠端檔案：`read_csv("https://...")` 可直接讀，但正式流程應先下載、記錄版本與 checksum，避免網址失效或內容悄悄改變。
+
+## Excel
 
 ```r
 library(readxl)
 
-excel_sheets("cities.xlsx")
-read_excel("cities.xlsx")
-read_excel("cities.xlsx", sheet = 2)
-read_excel("cities.xlsx", sheet = "year_2000")
+excel_sheets("cities.xlsx")                           # 先列出工作表
+read_excel("cities.xlsx", sheet = "year_2000")        # 依名稱或位置
+read_excel("cities.xlsx", sheet = 2,
+           range = "B3:D50",                          # 只讀一個區塊
+           skip = 2, col_names = c("capital", "pop"),
+           col_types = c("text", "numeric"),          # "skip" 可略過欄
+           na = c("", "NA"))
+
+# 所有工作表讀成 list
+path <- "cities.xlsx"
+sheets <- purrr::map(setNames(excel_sheets(path), excel_sheets(path)),
+                     \(s) read_excel(path, sheet = s))
+
+writexl::write_xlsx(list(summary = res, raw = df), "report.xlsx")   # 寫多個工作表
 ```
 
-常用參數包括：
+> 需要格式、公式、修改既有活頁簿時用 `openxlsx`；舊筆記常見的 `XLConnect` 依賴 Java（`rJava`），安裝麻煩，已少用。Excel 會把基因名轉成日期，見 [日期與時間](datetime.md#excel-帶來的日期問題)。
 
-- `col_names`
-- `col_types`
-- `skip`
+## JSON
 
 ```r
-read_excel(
-  "cities.xlsx",
-  col_names = c("Capital", "Population"),
-  skip = 2
-)
+library(jsonlite)
 
-read_excel("cities.xlsx", col_types = c("text", "text"))
-read_excel("cities.xlsx", col_types = c("text", "blank"))
+fromJSON('[4, 7, 4, 6]')                       # integer vector
+fromJSON('[4, "a", false, null]')              # 混合型別 → 強制轉成 character vector
+fromJSON('{"id":1,"name":"Frank"}')            # named list
+fromJSON('[{"id":1,"x":2},{"id":2,"x":5}]')    # data.frame（物件陣列自動簡化）
+fromJSON("data.json", simplifyVector = FALSE)  # 保留原始巢狀 list
+
+toJSON(list(id = 1, name = "Frank"), auto_unbox = TRUE)   # {"id":1,"name":"Frank"}
 ```
 
-這些控制項背後的意思很直白：
+巢狀結構讀進來常變成 list-column，用 `tidyr::unnest_wider()` / `unnest_longer()` 展開，見 [tidyr 資料重塑](data-reshaping-with-tidyr.md#巢狀資料展開-rectangling)。
 
-- `col_names`: header 要不要信、要不要自己指定
-- `col_types`: 型別推論要不要手動接管
-- `skip`: 前面是不是有說明列、空白列、報表裝飾列
+## HTTP 與 API
 
-Excel 匯入的核心不是「把檔案打開」，而是先判斷 sheet 結構是不是已經足夠表格化。
-
-## When `XLConnect` Still Matters
-
-如果需求不只是讀取，而是要操作 workbook 本身，`XLConnect` 提供更完整的 Excel 介面：
+`httr2` 是 `httr` 的後繼版本，以 pipe 組裝 request。
 
 ```r
-library(XLConnect)
+library(httr2)
 
-book <- loadWorkbook("cities.xlsx")
-getSheets(book)
-readWorksheet(book, sheet = "year_2000")
-writeWorksheet(book, pop_2010, sheet = "year_2010")
-removeSheet(book, sheet = "Y2010")
+resp <- request("https://rest.ensembl.org") |>
+  req_url_path_append("lookup/symbol/homo_sapiens/BRCA2") |>
+  req_url_query(expand = 1) |>
+  req_headers(Accept = "application/json") |>
+  req_retry(max_tries = 3) |>                  # 失敗自動重試（含 429 / 503）
+  req_throttle(rate = 10 / 1) |>               # 每秒最多 10 次，遵守 API 限制
+  req_perform()
+
+resp_status(resp)                              # 200
+gene <- resp_body_json(resp)                   # 解析成 list
+gene$id                                        # "ENSG00000139618"
+
+# 認證：token 放環境變數，不要寫進程式
+request(url) |> req_auth_bearer_token(Sys.getenv("API_TOKEN"))
 ```
 
-它的強項是 workbook-level 操作，例如：
+| 步驟 | 注意 |
+| --- | --- |
+| 找 endpoint 與參數 | 讀 API 文件；先用瀏覽器或 `curl` 試 |
+| 限速與重試 | NCBI E-utilities 無 API key 時每秒 3 次 |
+| 分頁 | 迴圈抓到沒有下一頁為止；`req_perform_iterative()` |
+| 解析 | JSON → list → tibble；檢查欄位缺失 |
+| 快取 | 結果存檔，避免重複請求 |
 
-- 讀指定工作表的一部分
-- 寫回新的工作表
-- 刪除工作表
+常用生資 API 多半已有 R 包裝（`biomaRt`、`rentrez`、`KEGGREST`），先找套件再自己寫 request。HTTP 觀念見 [API 與 HTTP（Python）](../python-foundations/api-http.md)。
+
+## 資料庫：DBI
 
 ```r
-readWorksheet(
-  book,
-  sheet = "year_2000",
-  startRow = 3,
-  endRow = 4,
-  header = FALSE
-)
+library(DBI)
+
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = "lab", host = "localhost",
+                 user = Sys.getenv("DB_USER"),
+                 password = Sys.getenv("DB_PASS"))     # 帳密不寫死；或用 keyring 套件
+on.exit(dbDisconnect(con), add = TRUE)                 # 在函式內：離開時一定關連線
+
+dbListTables(con)
+dbReadTable(con, "samples")                            # 整張表（小表才用）
+dbGetQuery(con, "SELECT sample_id, tissue FROM samples WHERE age > 60")   # 篩選推到資料庫端
+
+# 參數化查詢：避免 SQL injection 與引號問題
+dbGetQuery(con, "SELECT * FROM samples WHERE tissue = $1", params = list("liver"))
+
+# 大結果分批讀
+res <- dbSendQuery(con, "SELECT * FROM variants")
+while (!dbHasCompleted(res)) chunk <- dbFetch(res, n = 1e5)   # 每次 10 萬列
+dbClearResult(res)
+
+dbWriteTable(con, "results", results_df, overwrite = TRUE)
+
+# dbplyr：寫 dplyr，在資料庫執行
+tbl(con, "samples") |> filter(age > 60) |> count(tissue) |> show_query()
+tbl(con, "samples") |> filter(age > 60) |> collect()   # collect() 才把資料拉回 R
 ```
 
-但它也比較重，因為常伴隨 `rJava` / Java 依賴。實務上通常可以這樣分：
+本地分析大檔不需要資料庫伺服器：`duckdb` 可以直接用 SQL 查 CSV / Parquet。
 
-- 純讀取 Excel: 優先考慮 `readxl`
-- 要修改 workbook 結構: 再考慮 `XLConnect`
+```r
+con <- dbConnect(duckdb::duckdb())
+dbGetQuery(con, "SELECT chrom, count(*) FROM 'variants.parquet' GROUP BY chrom")
+```
 
-## `haven` for Statistical Software Files
+SQL 本身見 [Databases](../databases/README.md)。
 
-當資料來自其他統計軟體時，`haven` 是很常見的橋接工具。
+## Stata / SPSS / SAS：haven
 
 ```r
 library(haven)
+
+d <- read_dta("ontime.dta")            # Stata
+d <- read_sav("survey.sav")            # SPSS；read_por() 讀 portable 檔
+d <- read_sas("trial.sas7bdat")        # SAS
+
+# 帶 value label 的欄位是 haven_labelled 型別
+d$sex                                  # 1 [Male], 2 [Female]
+d <- as_factor(d)                      # 依 label 轉成 factor（整個 data frame）
+zap_labels(d$sex)                      # 只留數值
+d <- zap_missing(d)                    # SPSS 使用者定義缺值（-9、999）轉 NA
 ```
 
-常見讀取函式包括：
+> SPSS / Stata 常用 `-9`、`999` 表示缺值。沒處理就計算平均會嚴重失真；匯入後先 `summary()` 看極端值。
 
-- `read_dta()` for Stata
-- `read_sav()` for SPSS
-- `read_por()` for SPSS portable files
-
-## Reading Stata Files
+## Parquet 與大於記憶體的資料
 
 ```r
-ontime <- read_dta("ontime.dta")
+library(arrow)
+
+write_parquet(df, "samples.parquet")           # 欄式、壓縮、保留型別
+df <- read_parquet("samples.parquet", col_select = c(sample_id, tissue))
+
+# 多檔資料集：延遲計算，只讀需要的欄與列
+ds <- open_dataset("variants/", format = "parquet")   # 可依 chrom= 分割資料夾
+ds |> filter(chrom == "chr17", qual > 30) |> select(pos, ref, alt) |> collect()
 ```
 
-Stata 匯入時常要特別注意 labelled values 的表現方式。
+| 格式 | 跨語言 | 保留型別 | 適用 |
+| --- | --- | --- | --- |
+| CSV | 是 | 否 | 交換、人工檢查 |
+| `.rds` | 否（只有 R） | 是，含任何 R 物件 | 存中間結果、模型 |
+| Parquet | 是（Python / Spark / DuckDB） | 是 | 大型表格、跨語言共用 |
 
-## Reading SPSS Files
+## 生資檔案格式
+
+| 格式 | R 讀取 | 回傳 |
+| --- | --- | --- |
+| BED / GTF / GFF | `rtracklayer::import()` | `GRanges` |
+| VCF | `VariantAnnotation::readVcf()`；表格化用 `vcfR` | `VCF` 物件 |
+| BAM | `Rsamtools`、`GenomicAlignments::readGAlignments()` | 比對結果 |
+| FASTA / FASTQ | `Biostrings::readDNAStringSet()`、`ShortRead` | 序列集合 |
+| salmon / kallisto 定量 | `tximport`、`tximeta` | 基因層級 counts |
+| 10x（`matrix.mtx`、`.h5`） | `Seurat::Read10X()`、`DropletUtils::read10xCounts()` | 稀疏矩陣 / `SingleCellExperiment` |
+| AnnData `.h5ad` | `zellkonverter::readH5AD()` | `SingleCellExperiment` |
+| HDF5 | `rhdf5`、`HDF5Array` | 陣列（可不載入記憶體） |
+
+這些套件多數來自 Bioconductor，安裝用 `BiocManager::install()`；見 [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md)。
+
+## 匯入後的檢查
 
 ```r
-ontime <- read_sav(file.path("~", "datasets", "ontime.sav"))
+dim(df); glimpse(df)                           # 列數、欄數、型別
+problems(df)                                   # readr 解析問題
+colSums(is.na(df))                             # 每欄缺值
+summary(df)                                    # 極端值、編碼成數字的缺值
+anyDuplicated(df$sample_id)                    # ID 唯一？
 ```
 
-SPSS 匯入時，常見的關心點包括：
-
-- value labels 是否保留
-- 是否轉成 factor
-- 缺失值標記如何表現
-
-## Labels and Type Conversion
-
-這類跨軟體匯入最常踩雷的地方，不是函式本身，而是語意轉換。
-
-像課程特別提到：
-
-- `convert.factors`
-- `use.value.labels`
-- `"labelled"`
-
-心智模型可以記成：
-
-- 原檔不只是「資料值」
-- 還帶有 metadata、labels、甚至缺值語意
-
-所以匯入後應該立刻檢查欄位型別，而不是假設它們已經是理想的 tidy format。
-
-## Practical Checks After Import
-
-不管來源是 DB、API、JSON 還是 foreign stats file，讀進 R 後都建議立刻檢查：
-
-- `str(obj)`
-- `class(obj)`
-- `names(obj)`
-- `head(obj)`
-
-如果是 tabular data，再補看：
-
-- 是否有怪異欄位型別
-- labels 是否被保留成你能接受的形式
-- 缺值是否正常變成 `NA`
-
-## Common Traps
-
-- 用 `dbReadTable()` 直接拉整張大表，而不是先在 SQL 端過濾
-- 建立 DB connection 後忘了 `dbDisconnect()`
-- 把 API 當成穩定檔案來源，卻沒處理 response 結構變化
-- 讀 JSON 後直接假設它一定是 data frame
-- 從 Stata / SPSS 匯入後忽略 labelled values 與型別轉換
-- 看到能直接讀 URL 就跳過下載與版本管理的考量
-
-## Related Notes
-
-- [Functions in R](functions.md)
-- [Missing Data in R](missing-data.md)
-- [Ingestion](../data-engineering/ingestion.md)
+| 症狀 | 可能原因 |
+| --- | --- |
+| 數值欄變 character | 混入 `"<0.01"`、`"N/A"`、千分位逗號 |
+| ID 前導 0 消失 | 被推論成數值；指定 `col_character()` |
+| 列數比預期少 | 引號未閉合、`comment` 字元出現在資料中 |
+| 中文亂碼 | 編碼不是 UTF-8：`locale(encoding = "Big5")` |
+| 欄名有空白、特殊字元 | `janitor::clean_names()` |

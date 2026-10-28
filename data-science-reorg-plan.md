@@ -207,8 +207,8 @@
 每批 10–30 篇、一個子資料夾；每批完成跑連結檢查、commit 再做下一批。依「被引用越多越先做」排序：
 
 - [X] 批次 1：`python-foundations/`（不含 numpy / pandas）（補 pyproject + uv、`default_rng`、scipy.stats 對照）（已新增 `scipy-stats.md`；`python-packages.md` 改為 pyproject + uv；補回 phase 3 合併時被截斷的 `datetime.md` pandas 段）
-- [ ] 批次 2：`python-foundations/numpy/` + `pandas/`（view vs copy、dtype、Parquet / HDF5）
-- [ ] 批次 3：`r-foundations/` 前半：資料結構、tidyverse、dplyr、tidyr、data.table、importing、datetime、missing（連 Bioconductor 筆記）
+- [X] 批次 2：`python-foundations/numpy/` + `pandas/`（view vs copy、dtype、Parquet / HDF5）（已新增 `pandas/memory-and-storage.md`；NumPy view vs copy、dtype 溢位；pandas 3 Copy-on-Write / `str` dtype；更新 `applymap`、`resample("M")`、`stack(dropna=)`、`np.random.seed`；補回被截斷的 `creating-data.md` / `modifying.md` 結尾）
+- [X] 批次 3：`r-foundations/` 前半：資料結構、tidyverse、dplyr、tidyr、data.table、importing、datetime、missing（連 Bioconductor 筆記）（另含 categorical、control-flow、functions、defensive-programming、statistical-functions、README；補 matrix / `SummarizedExperiment`、`join_by()` 區間 join、`relationship`、data.table rolling / `foverlaps`、httr2、DBI 參數化查詢、arrow / duckdb、生資檔案格式表、Excel 基因名轉日期；修 `&&` 長度 > 1 在 R ≥ 4.3 報錯、`separate()` → `separate_wider_*()`、`across(..., na.rm=)` 棄用、`XLConnect` → `openxlsx`；`bioconductor-introduction.md` 加回連）
 - [ ] 批次 4：`r-foundations/` 後半：functional、OOP、效能、Rcpp、parallel、package、R Markdown、regex、text（補 renv、Quarto）
 - [ ] 批次 5：`data-manipulation-and-eda/`（含 visualization/）
 - [ ] 批次 6：`databases/` + `web-scraping/`（修 web-scraping bug；考慮補 DuckDB / Parquet）

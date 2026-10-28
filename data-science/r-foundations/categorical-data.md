@@ -1,232 +1,123 @@
-# Categorical Data in R
+[Data Science](../README.md) › [R Foundations](README.md) › 類別資料
 
-R 用 factor 來表示類別資料。它看起來像字串標籤，但底層其實是整數編碼加上 levels 對照表，所以理解 factor 的結構很重要。實務上如果搭配 tidyverse，常見工作不只是建立 factor，還包括重排順序、合併稀少類別、整理多欄問卷題目，以及讓圖表順序更符合閱讀邏輯。
+# 類別資料 (Categorical Data: factor 與 forcats)
 
-## Creating a Factor
+R 用 **factor** 表示類別：看起來像字串，底層是**整數碼 + levels 對照表**。levels 的順序決定了圖表排列、模型的參考組 (reference level) 與摘要順序，所以處理類別資料的重點多半是「把 levels 整理對」。Python 對應是 `pd.Categorical`（見 [pandas dtype 與類別](../python-foundations/pandas/dtypes-categorical-strings.md)）；量尺理論見 [資料型態與量尺](../statistics/descriptive-statistics/data-types.md)。
+
+| 類型 | 例子 | R 表示 |
+| --- | --- | --- |
+| 名目 (nominal) | 組織類型、細胞類型、批次 | `factor()` |
+| 順序 (ordinal) | 腫瘤分級、Likert 量表、劑量組 | `factor(..., ordered = TRUE)` 或手動排 levels |
+| 區間化的連續值 | 年齡帶、表現量高 / 中 / 低 | `cut()` 產生 |
+
+## 建立與檢查
 
 ```r
-answers <- c("stock", "bond", "bond", "stock")
-investment <- factor(answers)
+group <- factor(c("trt", "ctrl", "ctrl", "trt"))
+levels(group)          # "ctrl" "trt"   預設依字母排序
+as.integer(group)      # 2 1 1 2        是 level 編碼，不是原始值
+table(group, useNA = "ifany")
+nlevels(group)
 
-investment
-levels(investment)
-class(investment)
+# 指定順序；ctrl 放第一個 = 模型的參考組
+group <- factor(group, levels = c("ctrl", "trt"))
+relevel(group, ref = "trt")
+
+grade <- factor(c("G2", "G1", "G3"), levels = c("G1", "G2", "G3"), ordered = TRUE)
+grade < "G3"           # TRUE TRUE FALSE   ordered factor 才能比大小
 ```
 
-factor 很適合表示：
+> 參考組決定 `lm()` / `glm()` 係數的意義：`grouptrt` 的係數是「trt 相對 ctrl」。DESeq2 的 `design = ~ condition` 也一樣，忘了 relevel 會讓 log2FC 正負號顛倒。見 [類別變數編碼](../machine-learning/preprocessing/categorical-encoding.md)。
 
-- 類別標籤
-- 問卷選項
-- 分組欄位
-- 有固定集合的狀態值
-
-若類別本身有明確順序，例如 `Rarely < Sometimes < Often < Most of the time`，就不應該完全依賴字母排序，而要主動定義 levels。
-
-## Levels and Integer Codes
-
-factor 底層不是直接存字串，而是存整數代碼對應到 level：
+### 常見陷阱
 
 ```r
-as.integer(investment)
-levels(investment)
+f <- factor(c("10", "5", "20"))
+as.numeric(f)                  # 1 3 2   ← level 編碼，錯！
+as.numeric(as.character(f))    # 10 5 20 ← 正確
+
+sub <- droplevels(subset(df, tissue != "liver"))   # 過濾後移除空的 level
+forcats::fct_na_value_to_level(f, level = "(Missing)")   # NA 變成可見類別（舊名 fct_explicit_na 已棄用）
+
+c(factor("a"), factor("b"))    # R ≥ 4.1.0 會合併成 factor；舊版回傳整數碼
 ```
 
-Key point: `as.integer(factor_x)` 取到的是 level 編碼，不是你以為的原始商業意義數值。
-
-檢查類別資料時，通常至少要看這幾件事：
-
-- `levels(x)`：目前有哪些類別與排序
-- `table(x)` 或 `count(df, x)`：各類別出現次數
-- `is.na(x)`：缺值是否很多
-- 是否有本質上的順序，還是只是名目型類別
-
-## Nominal vs Ordinal
-
-類別資料至少可以先分成兩種：
-
-- nominal：只有分類、沒有先後，例如職稱、城市、產品類型
-- ordinal：有自然順序，例如滿意度、頻率、教育程度
-
-這個區分很重要，因為 ordinal 資料如果維持預設字母順序，圖表和摘要都可能誤導。問卷題目尤其常見這個問題。
-
-## Binning with cut()
-
-連續數值常需要切成區間，這時 `cut()` 很實用：
+## 連續變數分組：`cut()`
 
 ```r
-buckets <- c(0, 10, 20, 30, 40, 50)
-ranking_grouped <- cut(ranking, breaks = buckets)
+age <- c(23, 37, 45, 61, 70)
+cut(age, breaks = c(0, 40, 60, Inf))                 # (0,40] (0,40] (40,60] (60,Inf] (60,Inf]
+cut(age, breaks = c(0, 40, 60, Inf), right = FALSE,  # [0,40) 左閉右開
+    labels = c("<40", "40-59", "60+"))
+cut(age, breaks = quantile(age, 0:4 / 4), include.lowest = TRUE)  # 四分位分組
+dplyr::ntile(age, 4)                                 # 等數量分 4 組，回傳整數
 ```
 
-這能把連續變數轉成可分組分析的區間類別，例如：
+> 把連續變數切組會損失資訊與檢定力，分析時優先保留連續值；切組適合報表與視覺化。
 
-- 分數區間
-- 年齡帶
-- 風險等級
-- 金額級距
+## forcats 速查
 
-這種做法本質上是把連續變數轉成 ordinal 類別，方便後續做計數、交叉表、分組圖表或規則式分析。
+tidyverse 的 `forcats` 函式都以 `fct_` 開頭。
 
-## Reordering with forcats
-
-`forcats` 是 tidyverse 裡處理類別資料最順手的工具。最常用的不是重新編碼，而是先把順序整理對。
-
-### fct_relevel()
-
-當你已經知道想要的人工順序時，用 `fct_relevel()` 最直接：
+| 想做 | 函式 | 例子 |
+| --- | --- | --- |
+| 手動指定順序 | `fct_relevel()` | Likert：`fct_relevel(x, "Rarely", "Sometimes", "Often")` |
+| 依另一個數值排序 | `fct_reorder()` | 依平均表現量排基因 |
+| 依出現次數排序 | `fct_infreq()` | 長條圖由多到少 |
+| 依出現順序 | `fct_inorder()` | 保留檔案中的原始順序 |
+| 反轉順序 | `fct_rev()` | 水平長條圖最大值放上面 |
+| 合併成指定群組 | `fct_collapse()` | 把多個亞型併成大類 |
+| 只留前 n 大 / 佔比門檻 | `fct_lump_n()` / `fct_lump_prop()` | 其他歸 `"Other"` |
+| 指定保留哪些、其餘歸 Other | `fct_other(keep = ...)` | |
+| 重新命名 | `fct_recode()` | `fct_recode(x, Control = "ctrl")` |
+| NA 變成 level | `fct_na_value_to_level()` | 讓缺值出現在圖表 |
+| 移除未使用 level | `fct_drop()` | 同 `droplevels()` |
 
 ```r
-survey %>%
+library(tidyverse)
+
+survey <- survey |>
   mutate(
-    response = fct_relevel(
-      response,
-      "Rarely", "Sometimes", "Often", "Most of the time"
-    )
+    response = fct_relevel(response, "Rarely", "Sometimes", "Often", "Most of the time"),
+    job      = fct_lump_n(job, n = 8),                      # 只留前 8 大職稱
+    tissue   = fct_collapse(tissue, gut = c("colon", "ileum", "jejunum"))
   )
+
+job_titles |>
+  ggplot(aes(x = perc, y = fct_reorder(job, perc))) +      # y 軸依 perc 排序
+  geom_point() +
+  scale_x_continuous(labels = scales::percent_format())
 ```
 
-這很適合：
+> 合併稀少類別前先想清楚分析問題：稀少的亞型或少數族群可能正是重點。
 
-- Likert 題目
-- 頻率題目
-- 狀態流程
-- 報表想固定顯示順序的欄位
+## 問卷 / 多欄類別：先轉 long
 
-### fct_reorder()
-
-若順序要跟某個數值摘要一起變動，使用 `fct_reorder()`：
+同一主題的題目攤成很多欄（`WorkChallengeFrequencyPolitics`、`...Clarity`、`...DirtyData`）時，先轉 long format 再用同一套摘要邏輯。
 
 ```r
-job_titles_by_perc %>%
-  ggplot(aes(
-    x = fct_reorder(CurrentJobTitleSelect, perc_w_title),
-    y = perc_w_title
-  )) +
-  geom_point()
+work_challenges <- responses |>
+  select(contains("WorkChallengeFrequency")) |>
+  pivot_longer(everything(), names_to = "challenge", values_to = "frequency",
+               names_prefix = "WorkChallengeFrequency") |>
+  filter(!is.na(frequency))
+
+# ordinal → 二元比例：先定義規則（Often 以上算「常發生」）
+work_challenges |>
+  mutate(problem = frequency %in% c("Often", "Most of the time")) |>
+  group_by(challenge) |>
+  summarize(perc_problem = mean(problem))
 ```
 
-這樣類別會依 `perc_w_title` 排序，圖表更容易閱讀。常見用途是：
+字串欄全部轉 factor 可用 `mutate(across(where(is.character), as.factor))`，但只適合類別集合已經固定時；還要大量清理的欄位先保留 character。reshape 細節見 [tidyr 資料重塑](data-reshaping-with-tidyr.md)。
 
-- 依計數排序長條圖
-- 依比例排序 dot plot
-- 依平均值排序群組比較圖
+## 常見錯誤
 
-### fct_rev()
-
-有時候排序方向正確，但視覺上想把最大值放最上面或最左邊，可以再包一層 `fct_rev()`：
-
-```r
-fct_rev(fct_reorder(CurrentJobTitleSelect, perc_w_title))
-```
-
-## Collapsing and Recoding Levels
-
-類別太多時，分析通常會先簡化。這門課總結的做法很實用：
-
-- `fct_collapse()`：把多個 levels 合併成少數幾組
-- `fct_other()`：把不重要的類別統一收進 `"Other"`
-- `fct_lump_n()`：只保留前 `n` 大類別，其餘合併
-- `fct_lump_prop()`：保留佔比超過門檻的類別
-- `fct_recode()`：直接重新命名類別
-
-原則是先想清楚分析問題，再決定哪些細節需要保留。不要只是因為類別太多就任意 lump，否則容易把有意義的少數群體一起消掉。
-
-## Tidy Survey Workflow
-
-問卷資料常把同類題目攤成很多欄，例如：
-
-- `WorkChallengeFrequencyPolitics`
-- `WorkChallengeFrequencyClarity`
-- `WorkChallengeFrequencyDirtyData`
-
-分析這類資料前，通常要先轉 long format：
-
-```r
-work_challenges <- multipleChoiceResponses %>%
-  select(contains("WorkChallengeFrequency")) %>%
-  pivot_longer(
-    everything(),
-    names_to = "work_challenge",
-    values_to = "frequency"
-  ) %>%
-  mutate(work_challenge = str_remove(
-    work_challenge,
-    "WorkChallengeFrequency"
-  ))
-```
-
-這個流程有三個好處：
-
-- 同主題欄位可用同一套摘要邏輯
-- 類別欄位與答案欄位分離後，較容易畫圖
-- 後續 `group_by()` / `summarize()` 比寬表自然
-
-若原始資料是字串欄位，也可以先用：
-
-```r
-df %>%
-  mutate(across(where(is.character), as.factor))
-```
-
-但這只適合類別集合相對穩定的情況。若欄位還要大量清理與改寫，保留 `character` 往往更安全。
-
-## Turning Ordered Categories into Summaries
-
-ordinal 題目常需要轉成二元或比例摘要。例如把 `Often` 與 `Most of the time` 視為「常發生」：
-
-```r
-work_challenges %>%
-  filter(!is.na(frequency)) %>%
-  mutate(
-    frequency = if_else(
-      frequency %in% c("Most of the time", "Often"),
-      1,
-      0
-    )
-  ) %>%
-  group_by(work_challenge) %>%
-  summarize(perc_problem = mean(frequency))
-```
-
-這種整理方式的重點不是把 ordinal 資料硬轉數值，而是先定義明確的商業規則，再計算可解釋的比例。
-
-## Visualization Patterns
-
-類別圖表最常見的問題不是資料錯，而是順序和標示讓人難讀。幾個很實用的做法：
-
-- 對 ordinal 選項先用 `fct_relevel()` 指定順序
-- 對摘要後的類別用 `fct_reorder()` 依數值排序
-- 類別名稱很多時，旋轉軸標籤：
-
-```r
-theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-- 比例圖表把 y 軸改成百分比：
-
-```r
-scale_y_continuous(labels = scales::percent_format())
-```
-
-- 用 `labs()` 把軸標籤改成人看得懂的文字
-
-如果類別很多，dot plot 往往比長條圖更乾淨；如果是問卷比例，比起顯示小數 `0.176`，直接顯示 `17.6%` 可讀性高很多。
-
-## When to Use Factors Carefully
-
-factor 很方便，但也容易踩坑：
-
-- 若資料只是文字標籤且還會頻繁改寫，先保留 `character` 可能更單純。
-- 若有明確順序，應進一步思考是否要用 ordered factor。
-- 匯入資料時若自動變 factor，要先確認這是不是你要的行為。
-- 先轉 factor 再做大量字串清理，通常會讓流程變麻煩。
-- 合併類別前要先確認稀少類別是否剛好是分析重點。
-
-## Common Mistakes
-
-- 把 factor 當成普通數字做運算。
-- 看到 `as.integer()` 的輸出，就誤以為那是原始類別值。
-- 沒看 `levels()` 就直接建模或排序，導致順序解讀錯誤。
-- 用字母排序呈現本來有順序的問卷答案。
-- 在寬表上硬做摘要，結果同主題題目無法一致比較。
-- 類別太多時直接畫圖，卻沒先重排、合併或轉成比例。
+| 錯誤 | 後果 | 對策 |
+| --- | --- | --- |
+| `as.numeric(factor)` | 拿到編碼而非數值 | 先 `as.character()` |
+| ordinal 用字母排序 | 圖表與摘要順序錯 | `fct_relevel()` 或 `levels =` |
+| 沒設參考組 | 係數 / fold change 方向與預期相反 | `relevel()` / `fct_relevel()` |
+| 過濾後殘留空 level | 圖例、`table()` 出現 0 的類別；模型報錯 | `droplevels()` |
+| 先轉 factor 再做字串清理 | `str_replace` 等要反覆轉型 | 清理完再轉 factor |
+| 訓練與測試 levels 不一致 | 預測時出現 new level 錯誤 | 用訓練集的 levels 建 factor |

@@ -75,7 +75,7 @@ df.index.is_unique                # ID 有沒有重複
 | 大整數 ID 變成浮點數 | 欄位有缺值，int 被升格成 float | `dtype="Int64"`（可為 NA 的整數） |
 | 基因名變成日期（`SEPT2`、`MARCH1` → 日期） | 檔案曾被 Excel 開過存檔 | 回原始來源取檔；HGNC 已改名為 `SEPTIN2`、`MARCHF1` |
 | 只有一欄 | 分隔符錯了 | 用 `sep="\t"` 或先用 `head` 看檔案 |
-| 記憶體爆掉 | 整檔一次讀入 | `usecols`、`dtype`、`chunksize`、改用 Parquet 或 [Polars](performance-and-scaling/polars.md) |
+| 記憶體爆掉 | 整檔一次讀入 | `usecols`、`dtype`、`chunksize`、改用 Parquet 或 [Polars](performance-and-scaling/polars.md)；見 [pandas 記憶體與儲存格式](pandas/memory-and-storage.md) |
 
 ### 大檔與多檔
 

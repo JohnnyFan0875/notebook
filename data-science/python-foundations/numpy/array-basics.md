@@ -1,338 +1,156 @@
-# NumPy Array Basics: Properties, Creation and Indexing
+[Python Foundations](../README.md) › [NumPy](README.md) › Array 基礎
 
-## NumPy Array Properties
+# Array 基礎 (Array Basics)
 
-在 NumPy 裡，理解 array 的「形狀」比記函式名稱更重要。很多運算錯誤不是因為公式錯，而是因為你沒有先確認資料到底是一維、二維，還是更高維。
+`ndarray` 是「同一種 `dtype`、固定 `shape` 的多維數值陣列」。拿到任何 array，先看 `shape`、`ndim`、`dtype`，通常比印出內容更快判斷下一步。
 
-### Example Array
+## 屬性 (Properties)
 
 ```python
 import numpy as np
 
 arr = np.array([[1, 2, 3], [4, 5, 6]])
-print(arr)
-# [[1 2 3]
-#  [4 5 6]]
+
+arr.shape, arr.ndim, arr.size, arr.dtype   # ((2, 3), 2, 6, dtype('int64'))
+arr.itemsize, arr.nbytes                   # (8, 48)：每個元素 8 bytes，共 48 bytes
+type(arr)                                  # numpy.ndarray
 ```
 
-### Number of Dimensions
+| 屬性 | 意義 | 例 |
+| --- | --- | --- |
+| `shape` | 各軸 (axis) 長度的 tuple | `(2, 3)` = 2 列 × 3 欄 |
+| `ndim` | 軸數 | `2` |
+| `size` | 元素總數 = `shape` 的乘積 | `6` |
+| `dtype` | 元素型別 | `int64`、`float32`、`bool` |
+| `nbytes` | 資料佔用的記憶體 | `size × itemsize` |
+
+## dtype
+
+`dtype` 決定記憶體用量、數值精度，以及下游套件能不能直接吃（PyTorch 預設 `float32`、sklearn 多半轉成 `float64`）。
+
+| 類別 | 常見 dtype | 注意 |
+| --- | --- | --- |
+| 整數 | `int8` / `int32` / `int64`、`uint8` | **溢位不報錯，直接繞回** |
+| 浮點 | `float32` / `float64` | `float32` 只有約 7 位有效數字 |
+| 布林 | `bool` | 加總 = 計數、平均 = 比例 |
+| 字串 / 物件 | `<U10`、`object` | `object` array 失去向量化速度，表格字串改用 pandas |
 
 ```python
-arr.ndim
-# 2
+np.array([1, 2]).dtype                          # int64（NumPy 2 起 Windows 也是 int64；1.x 在 Windows 是 int32）
+np.array([1, 2.5]).dtype                        # float64：混合時向上轉型 (upcasting)
+np.array([1, 2], dtype=np.float32)
+
+# 1. 整數溢位：影像 (uint8) 相加最常踩到
+np.array([200], dtype=np.uint8) + np.uint8(100)   # [44]  不是 300
+np.array([127], dtype=np.int8) + 1                # [-128]
+img.astype(np.int16) + 100                        # 先轉大型別再算
+
+# 2. 浮點誤差：比較用 isclose，不要用 ==
+0.1 + 0.2 == 0.3                                  # False
+np.isclose(0.1 + 0.2, 0.3)                        # True
+np.float32(16_777_217)                            # 16777216.0：float32 存不下所有 > 2**24 的整數
+
+# 3. 轉型會產生新 array
+arr.astype(np.float32)
 ```
 
-- `ndim` gives the number of dimensions (axes). Here, the array is 2D (rows and columns).
+> 計數資料（reads、UMI）用 `int64` 或 `float64` 存，不要為了省記憶體用 `int16`：深度大的樣本會溢位且沒有任何警告。
 
-### Shape of Array
-
-```python
-arr.shape
-# (2, 3)
-```
-
-- `shape` returns a tuple representing the size of each dimension.
-  Here, 2 rows × 3 columns.
-
-### Total Number of Elements
+## 建立 Array
 
 ```python
-arr.size
-# 6
-```
+np.array([[2, 3], [9, 0], [1, 4]])     # list of lists → 2D，shape (3, 2)
 
-- `size` gives the total number of elements across all dimensions.
+# 1. 等差 / 等比序列
+np.arange(0, 10, 2)                    # [0 2 4 6 8]：不含終點，同 range()
+np.linspace(0, 1, 5)                   # [0.   0.25 0.5  0.75 1.  ]：含終點，指定「個數」
+np.logspace(0.1, 1, 5)                 # [ 1.26  2.11  3.55  5.96 10.  ]：10**linspace(0.1, 1, 5)
+np.arange(0, 2 * np.pi, 0.01)          # 畫連續函數的 x 軸
 
-### Data Type of Elements
+# 2. 初始化
+np.zeros((2, 3))                       # 全 0（float64）
+np.ones((3,)) * 7                      # [7. 7. 7.]
+np.full((2, 2), np.nan)                # 指定值
+np.eye(3)                              # 單位矩陣
+np.zeros_like(arr)                     # 與 arr 同 shape、同 dtype
+np.empty((1000, 1000))                 # 不初始化（內容是垃圾值），之後一定會全部覆寫時才用
 
-```python
-arr.dtype
-# dtype('int64')
-```
-
-- `dtype` shows the data type of array elements. Can be `int32`, `int64`, `float32`, etc.
-
-#### Why `dtype` Matters
-
-- 它會影響記憶體用量。
-- 它會影響數值精度。
-- 有些演算法或套件預期特定型別，例如 `float32` 或 `float64`。
-
-### Type of Object
-
-```python
-type(arr)
-# <class 'numpy.ndarray'>
-```
-
-- Confirms that the object is a NumPy array (`ndarray`).
-
-### Summary
-
-- **`ndim`** → number of dimensions (axes).
-- **`shape`** → size along each axis.
-- **`size`** → total number of elements.
-- **`dtype`** → element type.
-- **`type`** → confirms it’s a NumPy array.
-
-### Practical Habit
-
-每次拿到新 array 時，先看：
-
-```python
-arr.shape, arr.ndim, arr.dtype
-```
-
-這通常比直接印全部內容更能幫你快速判斷下一步怎麼操作。
-
-## NumPy Array Creation
-
-### Example Array
-
-```python
-import numpy as np
-
-# Create a simple 2x3 array
-arr = np.array([[1, 2, 3], [4, 5, 6]])
-print(arr)
-# Output:
-# [[1 2 3]
-#  [4 5 6]]
-```
-
-### Create from List
-
-```python
-arr_from_list = np.array([1, 2, 3])
-print(arr_from_list)  # [1 2 3]
-```
-
-如果輸入是 list of lists，NumPy 會把它轉成 2D array：
-
-```python
-list_of_lists = [[2, 3], [9, 0], [1, 4]]
-arr = np.array(list_of_lists)
-
-print(arr)
-# [[2 3]
-#  [9 0]
-#  [1 4]]
-
-print(arr.shape)
-# (3, 2)
-```
-
-這是從一般 Python 容器進入「矩陣式思考」的常見起點。
-
-### Ranges
-
-```python
-# Using arange
-np.arange(0, 10, 2)
-# Output: [0 2 4 6 8]
-
-# Using linspace
-np.linspace(0, 1, 5)
-# Output: [0.   0.25 0.5  0.75 1.  ]
-
-# Using logspace
-np.logspace(0.1, 1, 5)
-# Output: [1.25892541 2.11348904 3.54813389 5.95662144 10.        ]
-```
-
-`np.arange(start, stop, step)` 的停止規則和 Python slice / `range()` 一樣，也是「包含起點、不包含終點」。
-
-```python
-np.arange(0, 2 * np.pi, 0.01)
-```
-
-這種寫法很常用在建立連續函數的 x 軸資料，例如畫 sine / cosine 曲線。
-
-### Zeros, Ones, Identity
-
-```python
-np.zeros((2, 3))
-# Output:
-# [[0. 0. 0.]
-#  [0. 0. 0.]]
-
-np.ones((3, 3))
-# Output:
-# [[1. 1. 1.]
-#  [1. 1. 1.]
-#  [1. 1. 1.]]
-
-np.ones((3,)) * 7
-# Output: [7. 7. 7.]
-
-np.eye(3)
-# Output:
-# [[1. 0. 0.]
-#  [0. 1. 0.]
-#  [0. 0. 1.]]
-```
-
-### Random Arrays
-
-| Code Example                       | Reference                                                                                     |
-| ---------------------------------- | --------------------------------------------------------------------------------------------- |
-| `np.random.randint(0, 10, (2, 3))` | See [Random Integers](random-and-statistics.md#random-integers)                                     |
-| `np.random.rand(3, 2)`             | See [Uniform Random Numbers](random-and-statistics.md#uniform-random-numbers)                       |
-| `np.random.normal(3, 2)`           | See [Random Numbers from Distributions](random-and-statistics.md#random-numbers-from-distributions) |
-| `np.random.choice([1, 2, 3], 5)`   | See [Random Choice](random-and-statistics.md#random-choice)                                         |
-
-### Unique Elements from Array
-
-```python
+# 3. 唯一值與次數
 sample = np.array([1, 2, 2, 3, 4, 4, 5, 6])
-unique, counts = np.unique(sample, return_counts=True)
-print(unique)   # [1 2 3 4 5 6]
-print(counts)   # [1 2 1 2 1 1]
-
-# Convert to dictionary
-count_dict = dict(zip(unique, counts))
-print(count_dict)  # {1: 1, 2: 2, 3: 1, 4: 2, 5: 1, 6: 1}
+values, counts = np.unique(sample, return_counts=True)
+values, counts                         # [1 2 3 4 5 6], [1 2 1 2 1 1]
+dict(zip(values.tolist(), counts.tolist()))   # {1: 1, 2: 2, 3: 1, 4: 2, 5: 1, 6: 1}
 ```
 
-### Summary
+`linspace` 給「點數」、`arange` 給「步長」；浮點步長的 `arange` 可能因誤差多或少一個點，需要精確點數時用 `linspace`。隨機 array 見 [隨機與統計](random-and-statistics.md#用-default_rng-抽樣)。
 
-- Arrays can be created from lists, ranges, or random distributions.
-- Utility functions like `zeros`, `ones`, and `eye` are useful for initializing.
-- `unique` helps in extracting distinct elements with their frequencies.
+## 索引與切片 (Indexing & Slicing)
 
-## NumPy Indexing and Slicing
-
-This page covers array-style indexing in NumPy, where shape and axis position matter directly. If you need label-aware selection and dataframe-oriented access patterns, use [Pandas: Indexing and Slicing](../pandas/selection.md).
-
-This section covers indexing and slicing in NumPy arrays. 這是最常用、也最容易因 shape 搞混的地方。
-
-### Example Arrays
+依位置與軸存取；需要依欄名、標籤選取時改用 [pandas 選取](../pandas/selection.md)。
 
 ```python
-import numpy as np
+arr = np.arange(10)                    # [0 1 2 3 4 5 6 7 8 9]
+arr[2:7]                               # [2 3 4 5 6]：start 包含、stop 不包含
+arr[:5], arr[-1], arr[::2], arr[::-1]  # 前 5 個、最後一個、每隔一個、反轉
 
-# Example 1D array
-arr = np.arange(10)
-print(arr)
-# [0 1 2 3 4 5 6 7 8 9]
+m = np.array([[1, 2, 3], [4, 5, 6]])
+m[0, 1]                                # 2：列 0、欄 1
+m[:, 1]                                # [2 5]：整欄 → shape (2,)
+m[:, [1]]                              # [[2] [5]]：用 list 保留維度 → shape (2, 1)
+m[1, 1:3]                              # [5 6]
+m[0][2]                                # 3：可行，但先產生中間 array，慢且在賦值時易出錯；用 m[0, 2]
 
-# Example 2D array (matrix)
-matrix = np.array([[1, 2, 3], [4, 5, 6]])
-print(matrix)
-# [[1 2 3]
-#  [4 5 6]]
+# 布林索引：篩選與條件賦值
+arr[arr % 2 == 0]                      # [0 2 4 6 8]
+m[m > 4] = 0                           # 符合條件的位置整批改值
+
+# Fancy indexing：用整數 array 指定位置
+m[[0, 1], [2, 0]]                      # [3 4]：取 (0,2) 與 (1,0)
 ```
 
-### Basic Slicing
+| MATLAB / R | NumPy | 差異 |
+| --- | --- | --- |
+| `v(5:end)` / `v[5:length(v)]` | `v[4:]` | 0-based |
+| `A(2:4, 1:2)` | `A[1:4, 0:2]` | 右邊界不包含 |
+| `A(:, 2)` 保持欄向量 | `A[:, 1]` 變 1D | 要保留維度用 `A[:, [1]]` 或 `A[:, 1:2]` |
+| `v[-1]`（R：刪掉第 1 個） | `v[-1]`（最後一個） | 負索引語意完全不同 |
+
+## View vs Copy
+
+切片 (slicing) 回傳的是 **view**：與原 array 共用同一塊記憶體，改 view 會改到原資料。這能省記憶體，但也是最常見的「我沒改它，它怎麼變了」來源。
+
+| 操作 | 結果 | 改它會影響原 array？ |
+| --- | --- | --- |
+| 基本切片 `a[1:4]`、`a[:, 0]`、`a[::2]` | view | **會** |
+| `reshape`、`.T`、`ravel()`（可行時） | view | **會** |
+| 布林索引 `a[a > 0]`、fancy indexing `a[[0, 2]]` | copy | 不會 |
+| `astype()`、`flatten()`、算術結果 `a + 1` | copy | 不會 |
+| `.copy()` | copy | 不會 |
 
 ```python
-arr[2:7]
-# [2 3 4 5 6]
+a = np.arange(6)
+v = a[1:4]
+v[0] = 99
+a                                      # [ 0 99  2  3  4  5]  原 array 被改到
 
-arr[:5]
-# [0 1 2 3 4]
+np.shares_memory(a, v)                 # True
+np.shares_memory(a, a[[1, 2]])         # False：fancy indexing 是 copy
+a.reshape(2, 3).base is a              # True：.base 不是 None 代表是 view
 
-arr[-1]
-# 9 (last element)
+sub = a[1:4].copy()                    # 要獨立修改就明確 copy
 
-arr[::2]
-# [0 2 4 6 8] (every second element)
+# 大 array 取一小段後想釋放原本的記憶體，也要 copy（view 會讓整塊原資料留在記憶體）
+small = big[:100].copy(); del big
 ```
 
-#### MATLAB-to-Python Indexing Mental Model
+> 布林遮罩在等號**左邊**（`a[mask] = 0`）是直接寫回原 array；在右邊（`b = a[mask]`）是產生 copy。pandas 的對應問題見 [pandas 修改資料](../pandas/modifying.md#view-vs-copy-與-copy-on-write)。
 
-如果你有 MATLAB 背景，最容易出錯的不是語法，而是 indexing 規則：
+## 常見錯誤
 
-- Python / NumPy 是 `0-based indexing`
-- slicing 的右邊界不包含在結果內
-- `:` 仍然保留「整段範圍」的感覺，但語意和 MATLAB 不完全一樣
-
-```python
-arr = np.array([16, 5, 9, 4, 2, 11, 7, 14])
-
-arr[4:]
-# [ 2 11  7 14]
-```
-
-這段如果用 MATLAB 心智模型來看，很容易誤以為 `arr[4:]` 是「從第 4 個元素開始」；但在 Python 裡，它其實是「從 index 4 開始」，也就是第 5 個元素。
-
-Key point:
-
-- MATLAB `v(5:end)` 常對應 Python `arr[4:]`
-- Python `arr[a:b]` 讀成「從 a 開始，走到 b 之前」
-
-### Indexing 2D Arrays (Matrix)
-
-```python
-matrix[0, 1]
-# 2 (row 0, column 1)
-
-matrix[:, 1]
-# [2 5] (all rows, column 1)
-
-matrix[1, :]
-# [4 5 6] (row 1, all columns)
-
-matrix[1, 1:3]
-# [5 6] (row 1, columns 1 to 2)
-
-matrix[0][2]
-# 3 (row 0, column 2)
-
-matrix[0, 2]
-# 3 (same as above, preferred)
-```
-
-- Use `matrix[row, col]` format for clarity and performance.
-
-如果你腦中還留著 MATLAB 的 `A(2:4, 1:2)`，Python / NumPy 對應會是：
-
-```python
-matrix[1:4, 0:2]
-```
-
-也就是 row / column 的位置概念還在，但索引起點從 1 改成 0，右邊界同樣不包含在切片內。
-
-### Boolean Indexing
-
-```python
-arr[arr % 2 == 0]
-# [0 2 4 6 8]
-```
-
-布林索引在資料清理與條件篩選時非常常用，但要注意條件陣列的 shape 必須對得上。
-
-它不只可以拿來篩選，也可以直接做條件賦值：
-
-```python
-matrix = np.array([[16, 2], [3, 14]])
-matrix[matrix > 12] = 10
-
-print(matrix)
-# [[10  2]
-#  [ 3 10]]
-```
-
-這種寫法在從 MATLAB 過來時通常很快能上手，因為「符合條件的位置整批改值」的思路幾乎一樣。
-
-### Shape Property
-
-```python
-matrix.shape
-# (2, 3)
-```
-
-- Shape gives the dimensions (rows, columns).
-
-### Common Pitfalls
-
-- 忘記切片上限不包含結尾索引。
-- 把 `matrix[0][2]` 和 `matrix[0, 2]` 混用而不理解差異。
-- 布林條件 shape 不一致，導致 indexing error。
-
-### Summary
-
-- **1D slicing**: Similar to Python lists (`arr[start:end:step]`).
-- **2D indexing**: Use `matrix[row, col]` to access elements.
-- **Colon (`:`)**: Selects entire row/column.
-- **Negative index**: Access from the end.
+| 症狀 | 原因 | 解法 |
+| --- | --- | --- |
+| 切片少一個元素 | stop 不包含 | `a[i:j]` 讀成「從 i 到 j 之前」 |
+| 取一欄後 shape 從 `(n, 1)` 變 `(n,)` | 整數索引會移除該軸 | `a[:, [k]]` 或 `a[:, k:k+1]` |
+| 修改切片後原資料也變了 | 切片是 view | `.copy()` |
+| `IndexError: boolean index did not match` | 遮罩 shape 與 array 不同 | 確認遮罩來自同一個 array 的同一軸 |
+| 影像相加後顏色怪異 | `uint8` 溢位 | 先 `astype(np.int16)` 或 `float32` |

@@ -56,7 +56,7 @@ c = copy.deepcopy(a)    # 完全獨立
 grid = [[0] * 3] * 2    # 陷阱：兩列是同一個 list；改用 [[0] * 3 for _ in range(2)]
 ```
 
-這和 pandas 的 view vs copy 是同一類問題，見 [pandas](pandas/README.md)。
+NumPy 切片與 pandas 也有類似的共用記憶體問題，見 [NumPy view vs copy](numpy/array-basics.md#view-vs-copy) 與 [pandas Copy-on-Write](pandas/modifying.md#view-vs-copy-與-copy-on-write)。
 
 ## Tuple
 

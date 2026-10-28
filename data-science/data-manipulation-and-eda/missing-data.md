@@ -86,7 +86,7 @@ When handling missing data without imputation, deletion strategies are commonly 
 
 ## Related Notes
 
-- [Pandas: Handling Missing Data](../python-foundations/pandas/missing-data.md): pandas-based detection, fill, interpolation, and imputation workflow
+- [Pandas: Handling Missing Data](../python-foundations/pandas/missing-data.md): pandas 的缺值偵測、missingno、填補與插值
 - [Missing Data in R](../r-foundations/missing-data.md): R and `naniar` oriented missingness workflow
 - [Imputation](../machine-learning/preprocessing/imputation.md): 插補方法（SimpleImputer、KNN、MICE、缺失指標）與補值造成的扭曲
 - [Data Quality](../statistics/descriptive-statistics/data-quality.md): broader pre-model checks beyond missingness alone

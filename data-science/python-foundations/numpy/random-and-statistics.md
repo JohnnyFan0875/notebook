@@ -1,268 +1,130 @@
-# NumPy Random Sampling and Statistics
+[Python Foundations](../README.md) › [NumPy](README.md) › 隨機與統計
 
-## NumPy Random Sampling
+# 隨機抽樣與統計 (Random Sampling & Statistics)
 
-### Example Setup
+模擬、bootstrap、隨機切分資料都靠亂數；可重現性取決於 seed 怎麼管理。統計部分是 array 層級的摘要；DataFrame 的分組統計見 [pandas 統計](../pandas/statistics.md)，機率分配與檢定見 [scipy.stats 速查](../scipy-stats.md)。
 
-```python
-import numpy as np
+## 用 `default_rng` 抽樣
 
-np.random.seed(42)  # Set seed for reproducibility
-```
-
-- Setting a seed ensures the same random numbers are generated each time.
-
-### Random Numbers from Distributions
-
-```python
-np.random.normal(0, 1, 10)
-# Example Output: [ 0.4967 -0.1383  0.6477  1.5230 -0.2341 -0.2341  1.5792  0.7674 -0.4695  0.5426]
-```
-
-- Normal distribution with mean `0` and standard deviation `1`, 10 samples.
-
-```python
-np.random.normal(loc=10, scale=2, size=(3, 5))
-# 3x5 matrix, mean=10, std=2
-# Example Output:
-# [[10.99  8.72 11.30 13.05  9.53]
-#  [ 8.53  9.54  8.54 11.54  9.54]
-#  [ 9.35 11.91  8.75 10.75  9.75]]
-```
-
-### Uniform Random Numbers
-
-```python
-np.random.rand(3, 2)
-# Example Output:
-# [[0.42 0.72]
-#  [0.  0.3 ]
-#  [0.15 0.9 ]]
-```
-
-- Generates samples from uniform distribution over \[0,1).
-
-### Random Integers
-
-```python
-np.random.randint(0, 10, size=5)
-# Example Output: [6 3 7 4 6]
-```
-
-- Random integers between 0 (inclusive) and 10 (exclusive).
-
-```python
-np.random.randint(0, 10, (2, 3))
-# Example Output:
-# [[2 9 4]
-#  [1 7 6]]
-```
-
-- 2x3 matrix of random integers.
-
-### Random Choice
-
-```python
-np.random.choice(10, 5, replace=False)
-# Example Output: [2 8 4 9 1]
-```
-
-- Randomly choose 5 unique numbers from range(0,10).
-
-```python
-weather = ['windy','cloudy','sunny','rainy']
-weather_pick = np.random.choice(weather, size=(4,7), replace=True, p=[0.2,0.5,0.2,0.1])
-print(weather_pick)
-# Example Output (4x7 matrix of weather):
-# [['cloudy' 'cloudy' 'rainy' 'cloudy' 'sunny' 'windy' 'cloudy']
-#  ['cloudy' 'windy' 'sunny' 'rainy' 'cloudy' 'cloudy' 'cloudy']
-#  ['windy'  'cloudy' 'sunny' 'cloudy' 'cloudy' 'cloudy' 'rainy']
-#  ['cloudy' 'cloudy' 'windy' 'rainy' 'sunny'  'cloudy' 'cloudy']]
-```
-
-- Sampling with replacement, with specified probabilities `p` for each outcome.
-
-```python
-dice_random_choice = np.random.choice(list(range(1,7)), size=10, replace=True)
-```
-
-#### Random Steps and Simple Simulation
-
-`np.random.choice()` 很常被拿來建立簡單 simulation，例如 random walk：
-
-```python
-np.random.seed(123)
-steps = np.random.choice([-1, 1], size=100, replace=True)
-walk = steps.cumsum()
-```
-
-這裡的直覺是：
-
-- 每一步不是 `-1` 就是 `+1`
-- `cumsum()` 把局部隨機步伐累積成整條路徑
-
-這種 pattern 常是 Monte Carlo、toy simulation 與 stochastic process 入門的第一步。
-
-### Shuffle
-
-```python
-sample = np.arange(10)
-np.random.shuffle(sample)
-print(sample)
-# Example Output: [8 1 5 0 7 2 9 4 3 6]
-```
-
-- `np.random.shuffle` randomly permutes the elements of an array in place along the first axis.
-
-### Repeated Seeds for Same Output
-
-```python
-np.random.seed(1)
-print(np.random.rand()) # 0.417022004702574
-print(np.random.rand()) # 0.7203244934421581
-
-np.random.seed(1)
-print(np.random.rand()) # 0.417022004702574
-print(np.random.rand()) # 0.7203244934421581
-```
-
-- Resetting the seed produces identical results — useful for reproducibility.
-
-### Summary
-
-- **`rand`**: uniform distribution over \[0,1).
-- **`randn` / `normal`**: samples from normal distribution.
-- **`randint`**: random integers in specified range.
-- **`choice`**: sample elements with or without replacement.
-- **`shuffle`**: randomly permute elements along the first axis.
-- **Seed (`np.random.seed`)**: ensures reproducibility of results.
-
-## NumPy Statistics
-
-This note focuses on **array-level numerical summaries**: mean, quantiles, z-scores, dispersion, and transformations on NumPy arrays. For DataFrame-oriented summaries, correlations, and rolling calculations, see [Pandas: Statistics & Correlation](../pandas/statistics.md).
-
-### Example Array
+新程式一律用 `Generator`（`np.random.default_rng(seed)`）；`np.random.seed()` + `np.random.xxx()` 是共用全域狀態的舊 API。
 
 ```python
 import numpy as np
 
+rng = np.random.default_rng(42)          # 每次執行結果相同
+
+rng.normal(0, 1, 5)                      # [ 0.305 -1.04   0.75   0.941 -1.951]
+rng.normal(loc=10, scale=2, size=(2, 3)) # 2×3，mean=10、sd=2
+rng.random((2, 2))                       # Uniform[0, 1)
+rng.integers(0, 10, size=5)              # [4 2 0 5 8]：0 ≤ x < 10
+rng.choice(10, 5, replace=False)         # 不重複抽 5 個
+rng.choice(["windy", "cloudy", "sunny", "rainy"], size=7, p=[0.2, 0.5, 0.2, 0.1])  # 指定機率
+rng.permutation(10)                      # 回傳打亂後的新 array
+rng.shuffle(x)                           # 就地 (in place) 打亂第 0 軸，回傳 None
+rng.binomial(n=10, p=0.3, size=5)        # 其他分配：poisson、negative_binomial、gamma…
+
+# 重設 seed → 同樣的序列
+np.random.default_rng(1).random(2)       # [0.512 0.950]
+np.random.default_rng(1).random(2)       # [0.512 0.950]
+
+# 簡單模擬：random walk
+steps = np.random.default_rng(123).choice([-1, 1], size=100)
+walk = steps.cumsum()                    # 每步 ±1，累加成路徑
+```
+
+| 舊 API（`np.random.`） | 新 API（`rng.`） | 差異 |
+| --- | --- | --- |
+| `seed(42)` | `default_rng(42)` | 不再有全域狀態 |
+| `rand(3, 2)` | `random((3, 2))` | shape 用 tuple |
+| `randn(n)` | `standard_normal(n)` | |
+| `randint(0, 10, n)` | `integers(0, 10, n)` | 可加 `endpoint=True` 包含上限 |
+| `normal` / `choice` / `binomial` | 同名 | |
+| `shuffle(x)` | `shuffle(x)` / `permutation(x)` | |
+
+> 把 `rng` 當參數傳進函式，而不是在函式裡各自 `default_rng()`：結果可重現，平行運算時也不會讓每個 worker 拿到相同序列（用 `rng.spawn(n)` 產生獨立子 generator，見 [平行運算](../performance-and-scaling/parallel.md#常見陷阱)）。sklearn 的 `random_state`、pandas 的 `.sample(random_state=)` 也都接受 `Generator`。
+
+## 描述統計
+
+```python
 arr = np.array([1, 2, 3, 4, 5, 100])
-print(arr)
-# [  1   2   3   4   5 100]
+
+np.mean(arr), np.median(arr)             # 19.17, 3.5：一個極端值就把平均拉走
+arr.sum(), arr.min(), arr.max()          # 115, 1, 100
+arr.argmin(), arr.argmax()               # 0, 5：極值的位置
+arr.std(), arr.std(ddof=1)               # 36.17（母體）, 39.62（樣本）
+arr.var(ddof=1)
+
+np.quantile(arr, [0, 0.25, 0.5, 0.75, 1])   # [  1.    2.25  3.5   4.75 100.  ]
+np.percentile(arr, 90)                      # 52.5（預設線性內插）
+
+# 2D：指定 axis
+X = np.array([[1, 2], [3, 4], [5, 6]])
+X.mean(axis=0)                           # [3. 4.]：每欄
+X.mean(axis=1)                           # [1.5 3.5 5.5]：每列
+
+# 有缺值：nan 版本
+y = np.array([1.0, np.nan, 3.0])
+np.mean(y), np.nanmean(y)                # nan, 2.0
+np.nanmedian(y), np.nanstd(y), np.isnan(y).sum()
 ```
 
-### Basic Statistics
+| 注意 | 說明 |
+| --- | --- |
+| `ddof` | NumPy `std` / `var` 預設 `ddof=0`（除以 n）；pandas、R 預設 `ddof=1`（除以 n−1）。小樣本差很多 |
+| NaN | 一般函式遇到 NaN 回傳 NaN；用 `np.nanmean` 等，或先處理缺值 |
+| 分位數 | 預設 `method="linear"`，與 R 預設 type 7 相同；不同軟體結果略有差異是正常的 |
+
+## 離散程度與離群值
 
 ```python
-np.mean(arr)    # 19.166666666666668  → average value of elements
-np.median(arr)  # 3.5                 → middle value when the array is sorted
-```
+from scipy import stats
 
-### Aggregations
-
-```python
-arr.sum()   # 115 → total sum of all elements
-arr.min()   # 1   → smallest value
-arr.max()   # 100 → largest value
-arr.std()   # 36.1 (approx) → standard deviation, measure of spread
-arr.var()
-```
-
-- These are **descriptive statistics** that summarize the dataset.
-
-### Quantiles and Percentiles
-
-```python
-np.quantile(arr, 0.25)                     # 2.25
-np.quantile(arr, 0.75)                     # 4.75
-np.percentile(arr, 90)                     # 55.0
-np.quantile(arr, [0, 0.25, 0.5, 0.75, 1])  # [  1.    2.25  3.5   4.75 100.  ]
-```
-
-- **Quantiles** divide data into intervals. For example, 0.25 is the first quartile (25%).
-- **Percentiles** are specific points in the data (e.g., 90th percentile).
-
-### Interquartile Range (IQR)
-
-```python
 q1, q3 = np.percentile(arr, [25, 75])
-iqr = q3 - q1                         # 2.5
+q3 - q1                                  # 2.5：IQR
+stats.iqr(arr)                           # 2.5
+lower, upper = q1 - 1.5 * (q3 - q1), q3 + 1.5 * (q3 - q1)
+arr[(arr < lower) | (arr > upper)]       # [100]：Tukey fences
+
+np.mean(np.abs(arr - arr.mean()))        # 26.94：平均絕對離差（受極端值影響）
+stats.median_abs_deviation(arr)          # 1.5：中位數絕對離差 (MAD)，穩健
+
+z = (arr - arr.mean()) / arr.std()
+z.round(2)                               # [-0.5  -0.47 -0.45 -0.42 -0.39  2.23]
+arr[np.abs(z) > 2]                       # [100]
+
+robust_z = (arr - np.median(arr)) / (1.4826 * stats.median_abs_deviation(arr))
+robust_z.round(1)                        # [ -1.1  -0.7  -0.2   0.2   0.7  43.4]
 ```
 
-- **IQR** = Q3 − Q1, measures spread of the middle 50% of data.
+| 指標 | 對極端值 | 用途 |
+| --- | --- | --- |
+| 標準差 / z-score | 敏感：極端值會撐大 SD，反而讓自己的 z 變小（masking） | 近似常態的資料 |
+| IQR / Tukey fences | 穩健 | 盒鬚圖、偏態資料 |
+| 中位數絕對離差 (MAD) / robust z | 最穩健 | 小樣本、多個離群值 |
+
+> 上例 100 的 z 只有 2.23：n 個點時，用母體 SD 算的 |z| 最大只能到 √(n−1)（n=6 時 2.24；用樣本 SD 則是 (n−1)/√n = 2.04）。小樣本用「|z| > 3」根本不可能抓到任何點，改用 robust z（43.4）或 IQR。離群值處理策略見 [Outlier Handling](../../machine-learning/preprocessing/outlier-handling.md)。
+
+## 捨入與轉換
 
 ```python
-from scipy.stats import iqr
-iqr(arr)  # 2.5
-```
+num = np.array([-1.67, -1.01, 0.97, 1.63])
+np.round(num, 1)                         # [-1.7 -1.   1.   1.6]
+np.floor(num), np.ceil(num), np.trunc(num)   # 往下 / 往上 / 往 0
+np.round(2.5), np.round(3.5)             # 2.0, 4.0：銀行家捨入（四捨六入五成雙），同 Python round()
 
-- SciPy also provides an IQR function.
-
-### Z-score Outlier Detection
-
-```python
-z_scores = (arr - arr.mean()) / arr.std()
-print(z_scores)
-# [-0.58 -0.54 -0.51 -0.47 -0.44  2.54]
-
-arr[np.abs(z_scores) > 2]
-# [100]
-```
-
-- **Z-scores** standardize data. Values with |z| > 2 are often considered outliers.
-
-### Rounding & Dispersion
-
-```python
-num1 = np.array([-1.67, -1.01, 0.97, 1.63])
-
-np.round(num1, decimals=1)  # [-1.7 -1.0  1.0  1.6]
-np.floor(num1)              # [-2. -2.  0.  1.]
-np.ceil(num1)               # [-1. -1.  1.  2.]
-```
-
-- Rounding functions help with numerical presentation and approximations.
-
-### Mean Absolute Deviation (MAD)
-
-```python
-dists = arr - np.mean(arr)
-abs_dists = np.abs(dists)
-mean_abs_dists = np.mean(abs_dists)
-print(mean_abs_dists)
-# 15.833333333333334
-```
-
-- **MAD** is another measure of spread, less sensitive to extreme outliers than standard deviation.
-
-### Transformations
-
-```python
-np.log(arr)
+np.log(arr), np.log2(arr), np.log10(arr)
+np.log1p(np.array([0, 9, 99]))           # [0.    2.303 4.605]：log(1 + x)，計數資料有 0 時用
 np.sqrt(arr)
-```
 
-- Log and square root transformations stabilize variance and reduce skewness.
-
-```python
 from scipy.stats import boxcox
-transformed, lambda_val = boxcox(arr[arr > 0])
+transformed, lam = boxcox(arr)           # λ ≈ -0.45；要求全部 > 0
 ```
 
-- **Box-Cox Transformation** makes data closer to normal distribution; requires positive values.
+| 轉換 | 適用 | 注意 |
+| --- | --- | --- |
+| `log` / `log2` | 右偏、倍數變化（表達量、濃度） | 不能有 0 或負值 |
+| `log1p` / `log2(x + 1)` | 計數資料（含 0） | pseudocount 的大小會影響低表達結果 |
+| `sqrt` | 計數資料，較溫和 | |
+| Box-Cox | 自動找 λ 讓分布接近常態 | 只接受正值；含 0 / 負值用 Yeo-Johnson（`scipy.stats.yeojohnson`） |
 
-- **Log Transformation**: stabilizes variance, useful for positively skewed data.
-- **Square Root / Cube Root Transformation**: useful for count or skewed data.
-- **Box-Cox Transformation**: general method to normalize variance, requires strictly positive data.
-
-### Summary
-
-- **Mean** and **Median** summarize central tendency.
-- **Aggregations** (`sum`, `min`, `max`, `std`) provide descriptive summaries.
-- **Quantiles/Percentiles** divide data into meaningful cut points.
-- **IQR** measures spread and variability.
-- **Z-scores** help detect outliers.
-- **Rounding** is useful for presentation and approximations.
-- **MAD** gives a robust alternative spread measure.
-- **Transformations** (log, sqrt, Box-Cox) help normalize or stabilize data.
-- These tools are essential for exploratory data analysis and preprocessing.
+轉換的統計意義見 [單變數數值描述](../../statistics/descriptive-statistics/univariate-numerical.md)；建模前的縮放見 [Feature Scaling](../../machine-learning/preprocessing/feature-scaling.md)。

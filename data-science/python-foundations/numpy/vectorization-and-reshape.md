@@ -1,439 +1,192 @@
-# NumPy Vectorization, Broadcasting and Reshape
+[Python Foundations](../README.md) › [NumPy](README.md) › 向量化與 Reshape
 
-## NumPy Operations
+# 向量化與 Reshape (Vectorization, Broadcasting & Reshape)
 
-### Example Arrays
+向量化 (vectorization) 是把「對每個元素做一次」寫成「對整個 array 做一次」，迴圈交給 NumPy 的 C 實作。broadcasting 決定不同 shape 的 array 怎麼配對，reshape 系列則把資料整理成函式或模型要的形狀。
+
+## list vs ndarray
+
+| | Python `list` | NumPy `ndarray` |
+| --- | --- | --- |
+| 定位 | 通用容器，可放不同型別 | 同一 `dtype` 的數值陣列 |
+| `+` / `*` | 串接 / 重複 | element-wise 運算 |
+| 多維索引 | `x[i][j]` | `x[i, j]` |
+| 大量數值運算 | 慢（每個元素都是 Python 物件） | 快（連續記憶體 + C 迴圈） |
 
 ```python
 import numpy as np
 
-A = np.array([[1, 2], [3, 4]])
-B = np.array([[5, 6], [7, 8]])
-
-C = np.array([1, 2, 3])
-D = np.array([4, 5, 6])
-
-a = np.array([1, 2, 3])
-b = np.array([4, 5, 6])
-```
-
-### Element-wise Arithmetic
-
-```python
-a + b    # [5 7 9]
-a - b    # [-3 -3 -3]
-a * b    # [4 10 18]
-a / b    # [0.25 0.4 0.5]
-```
-
-```python
-np_li_m = np.array([1, 2, 3]) * 2  # [2 4 6] → Multiplying by a scalar scales every element
-```
-
-#### Why NumPy Feels Different from Python Lists
-
-很多人第一次學 NumPy，真正的轉折點不是語法，而是發現 array 的算術語意和 list 不一樣。
-
-```python
 height = [1.73, 1.68, 1.71]
 weight = [65.4, 59.2, 63.6]
-
-# weight / height  # TypeError
+# weight / height                      # TypeError：list 不支援 element-wise 運算
+bmi = np.array(weight) / np.array(height) ** 2   # [21.85 20.98 21.75]
+[1, 2] * 2                             # [1, 2, 1, 2]
+np.array([1, 2]) * 2                   # [2 4]
 ```
 
-普通 Python `list` 不支援這種 element-wise 數值運算；但 NumPy array 可以：
+## Element-wise 運算
 
 ```python
-np_height = np.array(height)
-np_weight = np.array(weight)
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
 
-bmi = np_weight / np_height ** 2
+a + b, a - b, a * b, a / b             # [5 7 9] [-3 -3 -3] [ 4 10 18] [0.25 0.4  0.5 ]
+a ** 2, b // a, b % a                  # [1 4 9] [4 2 2] [0 1 0]
+np.add(a, b), np.multiply(a, b)        # 運算子的函式版（可用 out=、where= 參數）
+np.remainder(a, b)                     # [1 2 3]：同 a % b
+np.sqrt(a), np.exp(a), np.log(a)       # ufunc：逐元素數學函式
+np.array([True, 1, 2]) + np.array([3, 4, False])   # [4 5 2]：True=1、False=0
 ```
 
-Key point: Python `list` 是通用容器，NumPy `ndarray` 是數值陣列。當你需要整批數值一起算，array 才是自然抽象。
+## Broadcasting
 
-### Interview Fast Comparison: `list` vs `ndarray`
+shape 不同的 array 運算時，NumPy 從**最後一軸往前**逐軸比對：
 
-如果面試官直接問 list 和 NumPy array 的差別，最值得先講的是：
+```text
+規則：兩軸長度相等，或其中一個是 1（或不存在）→ 可以配對；長度 1 的軸會被「拉伸」
 
-- `list` 是 general-purpose container
-- `ndarray` 是 numerical array
-
-然後再補三個高頻差異：
-
-- array 通常要求較一致、較具體的 `dtype`
-- array 支援 element-wise numeric operations
-- array 在大量數值運算時通常更有效率
-
-也可以補一句容易拿分的對照：
-
-- 如果你要裝 heterogeneous Python objects，`list` 比較自然
-- 如果你要做向量化計算，`ndarray` 比較自然
-
-### Negative, Add, Subtract, Multiply, Divide
+X:        (3, 2)          X:        (3, 2)          x[:, None]: (3, 1)
+mean:        (2,)         v:           (3,)         x[None, :]: (1, 3)
+結果:     (3, 2) ✓        比對 2 vs 3 → 錯誤 ✗       結果:       (3, 3) ✓ 外積式
+```
 
 ```python
-np.negative(A)
-# [[-1 -2]
-#  [-3 -4]]
+X = np.arange(6).reshape(3, 2)         # 3 個樣本 × 2 個特徵
+X - X.mean(axis=0)                     # 每欄減欄平均：(3, 2) - (2,) → 中心化
+(X - X.mean(axis=0)) / X.std(axis=0)   # 標準化 (z-score)
 
-np.add(A, B)
-# [[ 6  8]
-#  [10 12]]
+# 每列減列平均：要把 (3,) 變成 (3, 1)
+X - X.mean(axis=1, keepdims=True)      # keepdims=True 保留被彙總的軸
+X - X.mean(axis=1)[:, None]            # 等價：None / np.newaxis 插入長度 1 的軸
 
-np.subtract(A, B)
-# [[-4 -4]
-#  [-4 -4]]
+x = np.arange(3)
+x[:, None] + x[None, :]                # [[0 1 2] [1 2 3] [2 3 4]]：所有配對
 
-np.multiply(C, D)
-# [ 4 10 18]
-
-np.divide(C, D)
-# [0.25 0.4  0.5 ]
+np.ones((3, 2)) + np.ones(3)           # ValueError: operands could not be broadcast together with shapes (3,2) (3,)
 ```
 
-- These functions are the functional form equivalents of standard operators (`+`, `-`, `*`, `/`).
+| `axis` | 方向 | `X` 為 (樣本 × 特徵) 時的意義 |
+| --- | --- | --- |
+| `axis=0` | 沿列往下彙總 → 每**欄**一個值 | 每個特徵的平均 |
+| `axis=1` | 沿欄往右彙總 → 每**列**一個值 | 每個樣本的平均 |
 
-### Mixed Types
+> 生資表達矩陣常是「基因 × 樣本」，sklearn 預期「樣本 × 特徵」。先確認方向再選 `axis`，必要時 `.T`；做錯通常不會報錯，只是算出錯的東西。
 
-```python
-np.array([True, 1, 2]) + np.array([3, 4, False])
-# [4 5 2]
-```
-
-- Boolean values are treated as integers (`True=1`, `False=0`).
-
-### Iteration over Arrays
-
-```python
-arr = np.arange(6).reshape(2, 3)
-for x in np.nditer(arr):
-    print(x)
-# 0 1 2 3 4 5
-```
-
-- `np.nditer` provides an efficient way to iterate over every element of an array.
-
-```python
-b = np.array([[[1,2],[3,4]], [[5,6],[7,8]]])
-
-for i in b:
-    for j in i:
-        for k in j:
-            print(k, end=' ')
-# 1 2 3 4 5 6 7 8
-
-for i in np.nditer(b):
-    print(i, end=' ')
-# 1 2 3 4 5 6 7 8
-```
-
-- Multi-dimensional arrays can be iterated manually with nested loops or flattened using `nditer`.
-
-#### Another Interview Angle: Indexing Style
-
-list 和 array 還有一個很常被追問的差異是多維索引方式：
-
-- nested list 常寫成 `x[i][j]`
-- NumPy array 常直接寫成 `x[i, j]`
-
-這不只是語法差異，也反映 NumPy 把多維資料當成單一陣列物件來處理，而不是「list 裡面再放 list」。
-
-### Boolean Operations
+## 布林運算與遮罩
 
 ```python
 arr = np.array([1, 2, 3, 4, 5])
+arr > 2                                # [False False  True  True  True]
+arr[arr > 2]                           # [3 4 5]
+(arr > 2).sum(), (arr > 2).mean()      # 3, 0.6：計數與比例
+np.any(arr > 4), np.all(arr > 0)       # True, True
 
-arr > 2
-# [False False  True  True  True]
-
-arr[arr > 2]
-# [3 4 5]
-
-np.any(arr > 4)  # True
-np.all(arr > 0)  # True
-
-(arr > 2).sum()
-# 3 → number of elements greater than 2
-```
-
-- Boolean indexing is powerful for filtering arrays.
-
-### Boolean Operators with Multiple Conditions
-
-```python
 my_house = np.array([18.0, 20.0, 10.75, 9.50])
 your_house = np.array([14.0, 24.0, 14.25, 9.0])
+my_house[(my_house > 18.5) | (my_house < 10)]       # [20.   9.5]：| & ~，每個條件加括號
+np.logical_and(my_house < 11, your_house < 11)      # [False False False  True]
 
-# my_house greater than 18.5 or smaller than 10
-my_house[np.logical_or(my_house > 18.5, my_house < 10)]
-# [20.   9.5]
-
-# Both my_house and your_house smaller than 11
-np.logical_and(my_house < 11, your_house < 11)
-# [False False False  True]
+# 條件賦值
+np.where(arr > 2, "high", "low")                    # 二選一
+np.select([arr < 2, arr < 4], ["s", "m"], default="l")   # 多條件，依序取第一個成立的
+np.clip(arr, 2, 4)                                  # [2 2 3 4 4]：截斷到範圍內
 ```
 
-- `np.logical_or` and `np.logical_and` combine boolean conditions element-wise.
+`and` / `or` / `not` 只能用在單一布林值，用在 array 會出現 `ValueError: The truth value of an array ... is ambiguous`。
 
-### Summary
+## 迭代
 
-- **Element-wise arithmetic**: add, subtract, multiply, divide.
-- **Negative/Add/Subtract/Multiply/Divide**: functional equivalents of operators.
-- **Mixed types**: booleans treated as integers.
-- **Iteration**: loop through array elements efficiently with `nditer`.
-- **Boolean operations**: filtering and condition checking.
-- **Logical operators**: `logical_or`, `logical_and` for combining conditions.
-- 面試若問 `list` vs `ndarray`，先講 `dtype`、vectorization、efficiency，再講 indexing style。
-
-## NumPy Reshape and Concatenate
-
-`reshape` 與 `concatenate` 是把陣列重新整理成模型或函式需要格式的基本功。遇到維度錯誤時，先回頭看 shape，通常就能找到原因。
-
-### Example Arrays
+真的需要逐元素處理時，先想能不能向量化；不行再考慮 [Numba](../performance-and-scaling/efficient-python.md#迴圈無法避免時numba)。
 
 ```python
-import numpy as np
+b = np.arange(8).reshape(2, 2, 2)
+for row in b:                          # 只沿第 0 軸迭代，每次拿到 (2, 2)
+    ...
+for x in np.nditer(b):                 # 逐元素：0 1 2 ... 7
+    ...
+for x in b.ravel():                    # 同上，較常用
+    ...
+for idx, x in np.ndenumerate(b):       # 同時拿到索引 (i, j, k)
+    ...
+```
 
-# Example 1D arrays
-a = np.array([1, 2, 3])
-b = np.array([4, 5, 6])
+## Reshape 與轉置
 
-# Example 2D array
+```python
 arr = np.array([[1, 2, 3], [4, 5, 6]])
-print(arr)
-# [[1 2 3]
-#  [4 5 6]]
+
+arr.reshape(3, 2)                      # [[1 2] [3 4] [5 6]]：元素總數必須相同
+arr.reshape(2, -1)                     # -1 由 NumPy 推算
+arr.reshape(-1)                        # [1 2 3 4 5 6]：攤平（盡量回傳 view）
+arr.ravel(), arr.flatten()             # 攤平：ravel 盡量 view，flatten 一定 copy
+arr.T                                  # 轉置 → (3, 2)
+
+img = np.zeros((100, 200, 3))          # (height, width, channels)
+np.transpose(img, axes=(2, 0, 1)).shape   # (3, 100, 200)：channels-last → channels-first（PyTorch 慣例）
+np.moveaxis(img, -1, 0).shape             # 同上，較易讀
+
+x = np.zeros((5, 1, 3))
+np.squeeze(x).shape                    # (5, 3)：移除長度 1 的軸
+np.expand_dims(np.zeros(3), 0).shape   # (1, 3)：插入新軸（同 x[None, :]）
+
+np.flip(arr, axis=0)                   # [[4 5 6] [1 2 3]]：上下翻
+np.flip(arr, axis=1)                   # [[3 2 1] [6 5 4]]：左右翻
 ```
 
-### Reshape
+`reshape` 預設按列 (C order) 讀寫元素；從 R / MATLAB（按欄，Fortran order）轉過來的資料若排列錯亂，試 `order="F"`。
+
+高維資料先寫下每個 axis 的意義再操作：
+
+| 資料 | 常見 shape |
+| --- | --- |
+| RGB 影像 | `(height, width, channels)` |
+| 影像 batch（PyTorch） | `(batch, channels, height, width)` |
+| 序列 batch | `(batch, seq_len, features)` |
+| one-hot DNA 序列 | `(n_seqs, length, 4)` |
+
+## 合併與分割 (Concatenate, Stack, Split)
 
 ```python
-arr.reshape(-1)
-# [1 2 3 4 5 6]
+a = np.array([1, 2, 3]); b = np.array([4, 5, 6])
+arr = np.array([[1, 2, 3], [4, 5, 6]])
+
+# 1. concatenate：沿「既有」的軸接起來，其他軸長度要一致
+np.concatenate([a, b])                       # [1 2 3 4 5 6]
+np.concatenate([arr, arr], axis=0)           # (4, 3)：上下接
+np.concatenate([arr, arr], axis=1)           # (2, 6)：左右接
+np.concatenate([arr, np.array([[7, 8]])])    # ValueError：axis 1 長度 3 vs 2
+
+# 2. stack：沿「新」的軸疊起來，所有 array shape 必須相同
+np.stack([a, b])                             # (2, 3)
+np.stack([a, b], axis=1)                     # (3, 2)
+np.vstack([a, b])                            # (2, 3)：1D 當列
+np.hstack([a, b])                            # (6,)：1D 時等同 concatenate
+np.column_stack([a, b])                      # (3, 2)：1D 當欄
+
+# 3. split：沿某軸切開（預設要能整除）
+rgb = np.zeros((2, 2, 3))
+r, g, bl = np.split(rgb, 3, axis=2)          # 各 (2, 2, 1)：保留被切的軸
+r.squeeze(axis=2).shape                      # (2, 2)
+np.stack([r[..., 0], g[..., 0], bl[..., 0]], axis=2).shape   # (2, 2, 3)：重組
+np.split(rgb, 5, axis=2)                     # ValueError：無法平均切
+np.array_split(np.arange(7), 3)              # [0 1 2] [3 4] [5 6]：允許不整除
 ```
 
-- Flattens the matrix into a 1D array.
+| 想做的事 | 函式 |
+| --- | --- |
+| 沿既有軸接 | `concatenate`（`vstack` / `hstack` 是捷徑） |
+| 多個同 shape array → 多一維 | `stack` |
+| 切開 | `split`（整除）/ `array_split`（不必整除） |
+| 迴圈中累積結果 | 先收進 list，最後一次 `np.concatenate` / `np.stack`；不要每圈都 concatenate（每次都複製整個 array） |
 
-```python
-arr.reshape(3, 2)
-# [[1 2]
-#  [3 4]
-#  [5 6]]
-```
+## 常見錯誤
 
-- Changes shape into 3 rows and 2 columns. The total number of elements must remain the same.
+| 錯誤訊息 / 症狀 | 原因 | 解法 |
+| --- | --- | --- |
+| `operands could not be broadcast together` | 尾端軸長度不同且都不是 1 | 印 `a.shape, b.shape`；用 `[:, None]` 或 `keepdims=True` 對齊 |
+| 結果 shape 是 (n, n) 而不是 (n,) | `(n,)` 與 `(n, 1)` 意外 broadcast | 統一成 1D 或 2D 再算 |
+| `all the input array dimensions except for the concatenation axis must match` | concatenate 的其他軸長度不同 | 先 reshape / 轉置 |
+| `cannot reshape array of size 6 into shape (4,)` | 元素數不符 | 檢查 `size` |
+| 轉置後資料順序怪異 | 用 `reshape` 代替 `transpose` | reshape 不交換軸，換軸要用 `transpose` / `moveaxis` |
 
-```python
-arr.reshape(2, -1)
-# [[1 2 3]
-#  [4 5 6]]
-```
-
-- `-1` lets NumPy infer one dimension automatically.
-
-### Transpose
-
-```python
-arr.T
-# [[1 4]
-#  [2 5]
-#  [3 6]]
-```
-
-- Swaps rows and columns.
-
-```python
-img = np.zeros((100, 200, 3))
-np.transpose(img, axes=(1, 0, 2)).shape
-# (200, 100, 3)
-```
-
-- On higher-dimensional arrays, `transpose` can reorder axes explicitly.
-- This is especially common for image or tensor-like data where height, width, and channels have different roles.
-
-### Concatenate
-
-```python
-np.concatenate([a, b])
-# [1 2 3 4 5 6]
-```
-
-- Joins 1D arrays end-to-end.
-
-```python
-np.concatenate((arr, arr), axis=0)
-# [[1 2 3]
-#  [4 5 6]
-#  [1 2 3]
-#  [4 5 6]]
-```
-
-- Concatenates along rows (axis=0).
-
-```python
-np.concatenate((arr, arr), axis=1)
-# [[1 2 3 1 2 3]
-#  [4 5 6 4 5 6]]
-```
-
-- Concatenates along columns (axis=1).
-
-### Stack Vertically and Horizontally
-
-```python
-np.vstack([a, b])
-# [[1 2 3]
-#  [4 5 6]]
-```
-
-- Stacks 1D arrays as rows.
-
-```python
-np.hstack([a, b])
-# [1 2 3 4 5 6]
-```
-
-- Stacks 1D arrays horizontally (similar to concatenate for 1D).
-
-### Flip Along an Axis
-
-```python
-matrix = np.array([[1, 2, 3], [4, 5, 6]])
-
-np.flip(matrix, axis=0)
-# [[4 5 6]
-#  [1 2 3]]
-
-np.flip(matrix, axis=1)
-# [[3 2 1]
-#  [6 5 4]]
-```
-
-- `axis=0` flips rows.
-- `axis=1` flips columns.
-- For higher-dimensional arrays, you can also flip multiple axes at once.
-
-```python
-rgb = np.zeros((3, 3, 3), dtype=np.int32)
-np.flip(rgb, axis=(0, 1)).shape
-# (3, 3, 3)
-```
-
-這類操作在影像資料很常見，因為不同 axis 代表的通常不是同一種東西。
-
-### High-Dimensional Axis Thinking
-
-當 array 超過 2D 時，先不要急著操作，先問：
-
-- `axis=0` 是什麼
-- `axis=1` 是什麼
-- `axis=2` 是什麼
-
-例如 RGB 圖像常見 shape 是：
-
-```python
-rgb.shape
-# (height, width, channels)
-```
-
-在這種情況下：
-
-- `axis=0`: row / height
-- `axis=1`: column / width
-- `axis=2`: color channel
-
-理解 axis 的語意，比死記函式更重要。
-
-### Split and Stack
-
-`split` 和 `stack` 很適合處理多通道資料。
-
-#### Split
-
-```python
-rgb = np.array([
-    [[255, 0, 0], [255, 255, 0]],
-    [[0, 255, 0], [0, 0, 255]],
-])
-
-red, green, blue = np.split(rgb, 3, axis=2)
-red.shape
-# (2, 2, 1)
-```
-
-- `np.split(..., axis=2)` 這裡是在 channel 維度切開。
-- 切完後保留 trailing dimension，所以 shape 會是 `(h, w, 1)`，不是 `(h, w)`。
-
-如果你真的要 2D channel，可以再 reshape 或 squeeze：
-
-```python
-red_2d = red.reshape((2, 2))
-red_2d.shape
-# (2, 2)
-```
-
-#### Equal Division Rule
-
-```python
-np.split(rgb, 5, axis=2)
-# ValueError
-```
-
-- `split` 必須能在指定 axis 上平均切開，否則會報錯。
-
-#### Stack
-
-```python
-red_2d = np.array([[255, 255], [0, 0]])
-green_2d = np.array([[0, 255], [255, 0]])
-blue_2d = np.array([[0, 0], [0, 255]])
-
-stacked_rgb = np.stack([red_2d, green_2d, blue_2d], axis=2)
-stacked_rgb.shape
-# (2, 2, 3)
-```
-
-- `stack` 是把多個同 shape arrays 沿新 axis 疊起來。
-- 這在重建多 channel image 或組 tensor 時很常見。
-
-### Reshape Before Concatenate
-
-```python
-Z = [7, 8]
-np.concatenate((arr, np.array(Z).reshape(1, 2)), axis=0)
-# Error: dimension mismatch because arr is 2x3 and reshaped Z is 1x2
-```
-
-- Shapes must align on the concatenation axis. Reshaping is often needed to make them compatible.
-
-### Summary
-
-- **`reshape`**: change the structure while preserving data size.
-- **`T` (transpose)**: flip rows and columns.
-- **`transpose(..., axes=...)`**: reorder axes in higher-dimensional arrays.
-- **`concatenate`**: join arrays along rows or columns.
-- **`vstack` / `hstack`**: shortcuts for stacking vertically or horizontally.
-- **`flip`**: reverse an array along one or more axes.
-- **`split` / `stack`**: separate or rebuild arrays across a chosen axis.
-- Be careful with dimension alignment.
-
-### Practical Habit
-
-在串接前先檢查：
-
-```python
-print(a.shape)
-print(b.shape)
-```
-
-很多 `ValueError` 都只是因為你以為兩個陣列對得上，但實際上 axis 長度不同。
-
-如果是 3D 以上資料，再多檢查一次：
-
-```python
-print(arr.shape)
-print("axis meanings:", "0=?", "1=?", "2=?")
-```
-
-這個習慣對影像、embedding、sequence batch 或任何 tensor-like 資料都很有幫助。
+效能比較（迴圈 vs 向量化）見 [Efficient Python](../performance-and-scaling/efficient-python.md#向量化-vectorization)。

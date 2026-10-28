@@ -1,31 +1,33 @@
-# pandas Foundations
+[Data Science](../../README.md) › [Python Foundations](../README.md) › pandas
 
-pandas 是資料科學最常用的表格資料工具，建立在 NumPy 之上，擅長處理欄位清理、篩選、彙總、轉換與時間序列欄位。這一章的重點是把資料操作拆成可預期的小步驟，避免寫出難以除錯的鏈式處理。
+# pandas
 
-## 建議閱讀順序
+pandas 是 Python 處理表格資料的主力：建立在 NumPy 之上，多了欄名、index 對齊、缺值、分組與合併。本章以 pandas 3.x 為準（Copy-on-Write 與 `str` dtype 已是預設）。
 
-| 順序 | 筆記 | 內容 |
+```text
+建立 / 讀入 → 選取 → 型別 → 缺值 → 修改 → 排序 / 分箱 / 去重 → 分組與統計 → reshape / merge → 效能與儲存
+```
+
+| 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
-| 1 | [Creating Data](creating-data.md) | 由 dict / list 建立 Series、DataFrame；設定 index 與欄名（檔案讀取見 [Importing Data](../importing-data.md)） |
-| 2 | [Selection](selection.md) | `loc` / `iloc`、boolean filtering、`query` |
-| 3 | [Dtypes, Categorical and Strings](dtypes-categorical-strings.md) | `astype`、`category`、`.str` |
-| 4 | [Missing Data](missing-data.md) | pandas / missingno 缺值 API |
-| 5 | [Modifying](modifying.md) | 更新值、新增 / 刪除欄列 |
-| 6 | [Ordering, Binning and Sampling](ordering-binning-sampling.md) | 排序、`cut` / `qcut`、抽樣、去重 |
-| 7 | [Groupby](groupby.md)、[Statistics](statistics.md) | 分組彙總與描述統計 |
-| 8 | [Reshape and Merge](reshape-merge.md)、[Index and MultiIndex](index-multiindex.md) | pivot / melt、merge / concat、階層索引 |
-| 9 | [Performance](performance.md) | 向量化、`apply` vs 迴圈、row-wise 操作 |
+| [建立資料](creating-data.md) | Series / DataFrame 的建構方式、index 與欄名 | 手上的 dict / list / array 怎麼變成表格？ |
+| [選取與篩選](selection.md) | `[]`、`loc` / `iloc`、布林遮罩、`query`、`isin` | 怎麼取出要的列與欄？ |
+| [dtype、類別與字串](dtypes-categorical-strings.md) | `astype`、nullable dtype、`category`、`.str`、編碼 | 欄位型別對嗎？類別與文字怎麼處理？ |
+| [缺值](missing-data.md) | 缺值標記、偵測、`missingno`、`fillna` / `dropna` / `interpolate` | 缺值在哪裡？怎麼刪、怎麼補？ |
+| [修改資料](modifying.md) | view vs copy、Copy-on-Write、更新 / 新增 / 刪除欄列、`map` / `apply` | 為什麼改了沒反應（或改到原表）？ |
+| [排序、分箱、抽樣與去重](ordering-binning-sampling.md) | `sort_values`、`cut` / `qcut`、`sample`、`drop_duplicates` | 怎麼排序、分組成區間、抽樣、去重？ |
+| [分組彙總](groupby.md) | `groupby` + `agg` / `transform` / `filter` | 每組的統計量怎麼算、怎麼貼回原表？ |
+| [描述統計](statistics.md) | `describe`、`value_counts`、相關、rolling | 資料的整體樣貌與欄位關係？ |
+| [Reshape 與 Merge](reshape-merge.md) | `pivot` / `melt`、`concat`、`merge` / `join`、`merge_asof`、`explode` | 寬長表怎麼轉？多張表怎麼安全地合併？ |
+| [Index 與 MultiIndex](index-multiindex.md) | `set_index`、階層索引、`stack` / `unstack` | 多層索引怎麼選取與重排？ |
+| [效能](performance.md) | 向量化、`apply` vs 迴圈、group-wise 運算 | 為什麼這麼慢？怎麼改寫？ |
+| [記憶體與儲存格式](memory-and-storage.md) | `memory_usage`、dtype 縮減、pyarrow、Parquet、HDF5 | 資料塞不進記憶體、讀寫太慢怎麼辦？ |
 
-時間欄位見 [Datetime](../datetime.md)；快速作圖見 [Pandas Plotting](../../data-manipulation-and-eda/visualization/pandas-plotting.md)。
-
-## 這一章要解決什麼
-
-- 我該如何穩定地清理欄位、篩選列、更新值，而不是寫出難以除錯的鏈式處理？
-- 哪些分析前置工作應該先做：缺值、型別、分類欄位、索引，還是 merge？
-- 當資料框開始變大、變慢或時間欄位變複雜時，應該先看哪一組工具？
-
-## 常見錯誤
-
-- 把 view / copy 問題混在一起，導致更新結果不如預期。
-- 沒先整理欄位型別就直接 groupby 或 merge。
-- 看到缺失值就補，但沒有先確認缺失機制。
+| 相關 | 連結 |
+| --- | --- |
+| 讀檔（CSV、Excel、JSON、資料庫） | [匯入資料](../importing-data.md) |
+| 日期欄位、時區、resample | [日期與時間](../datetime.md) |
+| 快速作圖 | [pandas Plotting](../../data-manipulation-and-eda/visualization/pandas-plotting.md) |
+| 比 pandas 快、資料數 GB | [Polars](../performance-and-scaling/polars.md) |
+| R 對應 | [dplyr / tidyr](../../r-foundations/README.md) |
+| SQL 對應 | [SQL 查詢基礎](../../databases/sql-query-foundations.md) |

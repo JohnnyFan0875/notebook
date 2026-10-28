@@ -1,281 +1,147 @@
-# Functions in R
+[Data Science](../README.md) › [R Foundations](README.md) › 函式
 
-函數是把重複邏輯包裝成可重用工具的基本單位。當同一段資料處理、統計摘要或欄位轉換開始重複出現時，就該考慮抽成函數，而不是繼續複製貼上。
+# 函式 (Functions)
 
-## Function Structure
+同一段清理、摘要或轉換複製貼上第三次時，就該抽成函式：只定義一次邏輯、可以測試、改一處全部生效。Python 版見 [函式](../python-foundations/function.md)；在 dplyr 裡傳欄名的函式見 [dplyr 程式化模式](dplyr-programming-patterns.md)。
 
-R 函數的基本形式如下：
+## 基本結構
 
 ```r
-func_name <- function(arguments) {
-  body
+calc_returns <- function(x, lag = 1) {          # 名稱用動詞；預設值寫在 signature
+  diff(x, lag = lag) / head(x, -lag)
 }
-```
+calc_returns(c(23.4, 23.8, 22.3))               # 0.01709402 -0.06302521
 
-函數通常由三部分組成：
-
-- arguments: 輸入資料與選項
-- body: 實際執行的邏輯
-- return value: 最終輸出
-
-R 會自動回傳最後一個 expression，但在流程較長時，明確使用 `return()` 會更清楚。
-
-## Required and Optional Arguments
-
-有些參數是必填的，有些可以給預設值：
-
-```r
-add <- function(x, value = 1) {
-  x + value
+# 最後一個 expression 自動回傳；return() 用於提早離開
+safe_mean <- function(x) {
+  if (length(x) == 0) return(NA_real_)
+  mean(x, na.rm = TRUE)
 }
 
-add(7)
-# [1] 8
+# 匿名函式：R ≥ 4.1.0 的簡寫
+sapply(1:3, \(i) i^2)                           # 同 function(i) i^2
 
-add(7, value = 3)
-# [1] 10
+args(cor); formals(mean); ?mean                 # 查參數
 ```
 
-像 `na.rm = TRUE` 這類參數就是很典型的 optional argument。它們常用來控制缺失值處理、輸出格式或行為細節。
+| 組成 | 說明 |
+| --- | --- |
+| arguments | 輸入資料與選項；必填的放前面，有預設值的放後面 |
+| body | 邏輯本體 |
+| return value | 最後一個 expression，或 `return()` |
+| environment | 定義函式時所在的環境，決定找不到的變數去哪裡找（lexical scoping） |
 
-## Calling Arguments by Position or Name
+## 參數
 
-R 函數可以用「位置」或「名稱」傳參數。
+### 位置 vs 名稱
 
 ```r
-mean(numbers, 0.1, TRUE)
-mean(na.rm = TRUE, trim = 0.1, x = numbers)
-mean(numbers, trim = 0.1, na.rm = TRUE)
+mean(numbers, 0.1, TRUE)                        # 難讀：0.1 與 TRUE 是什麼？
+mean(numbers, trim = 0.1, na.rm = TRUE)         # 前 1–2 個常用參數用位置，其餘用名稱
 ```
 
-實務上比較穩定的做法是：
+### 預設值
 
-- 常見、直觀的前幾個參數可依位置傳入
-- 不那麼常見或容易混淆的參數改用名稱
-
-這樣既不會太冗長，也能降低位置傳錯的風險。
-
-## Function Names Should Describe an Action
-
-函數名稱最好包含動詞，讓讀者一眼知道它做什麼。
-
-例如：
-
-- `clean_scores()`
-- `calc_geometric_mean()`
-- `run_linear_regression()`
-
-比起過度簡短或歷史包袱很重的名稱，這種命名更適合 notebook 筆記與分析專案。
-
-## Generalize Instead of Hard-Coding
-
-很多初學者會先寫出只能處理單一資料集的函數，然後很快就卡住。
-
-例如把檔名、變數名都寫死：
-
-```r
-import_test_scores <- function(filename) {
-  test_scores_raw <- readr::read_csv(filename)
-
-  test_scores_raw |>
-    dplyr::select(person_id, first_name, last_name, test_date, score)
-}
-```
-
-這種做法比直接把 `"test_scores_geography.csv"` 寫死在函數裡更好，因為：
-
-- 重用性更高
-- 更容易測試
-- 更容易移到別的資料集
-
-## Reading Documentation
-
-不確定函數接受哪些參數時，先查說明文件：
-
-```r
-?mean
-?matrix
-```
-
-這一步很重要，因為很多錯誤不是函數做不到，而是參數沒有設對。
-
-你也可以直接看函數參數列表：
-
-```r
-args(mean)
-args(median)
-args(cor)
-```
-
-這對理解 default arguments 和 `...` 很有幫助。
-
-## Default Arguments
-
-預設值應該直接寫在函數 signature 裡，而不是在函數內部補救。
+| 預設類型 | 例子 | 用途 |
+| --- | --- | --- |
+| 布林 | `na.rm = FALSE` | 開關行為 |
+| 數值 | `conf.level = 0.95` | 常見設定 |
+| `NULL` | `weights = NULL` | 沒給就稍後決定（`if (is.null(weights)) ...`） |
+| 依賴其他參數 | `n = length(x)` | lazy evaluation：用到時才計算 |
+| 選項清單 | `method = c("pearson", "spearman")` | 搭配 `match.arg(method)`，預設取第一個並驗證拼字 |
 
 ```r
 toss_coin <- function(n_flips, p_head = 0.5) {
-  coin_sides <- c("head", "tail")
-  weights <- c(p_head, 1 - p_head)
-  sample(coin_sides, n_flips, replace = TRUE, prob = weights)
+  sample(c("head", "tail"), n_flips, replace = TRUE, prob = c(p_head, 1 - p_head))
+}
+
+summarise_expr <- function(x, method = c("mean", "median")) {
+  method <- match.arg(method)                   # 打錯字會報錯並列出可選值
+  switch(method, mean = mean(x), median = median(x))
 }
 ```
 
-常見的 default 類型包括：
-
-- 布林值，例如 `na.rm = FALSE`
-- 數值，例如 `conf.level = 0.95`
-- `NULL`，表示「若使用者沒提供，就稍後再決定」
-- 一個依賴其他參數的值
-
-好預設值的標準不是花俏，而是讓大多數常見呼叫可以直接工作。
-
-## Forwarding Arguments with `...`
-
-當你想把額外參數往下傳給別的函數時，可以使用 `...`。
+### 用 `...` 轉交參數
 
 ```r
 calc_geometric_mean <- function(x, ...) {
-  exp(mean(log(x), ...))
+  exp(mean(log(x), ...))                        # 例如 na.rm = TRUE 會傳給 mean()
 }
 ```
 
-`...` 很方便，但也有代價：
+`...` 的代價：拼錯的參數名會被默默吞掉或傳到意想不到的地方。只在確實要把選項轉交給下游函式時使用。
 
-- 讀函數的人不一定知道哪些參數最後會被接受
-- 拼錯參數名時，有時不容易立刻發現
-
-所以只有在確實需要把選項往下傳時再用。
-
-## Example: Arithmetic Returns
-
-把單次計算抽成函數後，才容易在不同價格序列上重用：
+## 不要寫死
 
 ```r
-arith_returns <- function(x) {
-  diff(x) / x[-length(x)]
-}
+# 差：檔名、欄位寫死，只能處理一個資料集
+import_scores <- function() readr::read_csv("test_scores_geography.csv")
 
-prices <- c(23.4, 23.8, 22.3)
-arith_returns(prices)
-# [1]  0.01709402 -0.06302521
+# 好：輸入是參數，輸出明確
+import_scores <- function(path, cols = c("person_id", "test_date", "score")) {
+  readr::read_csv(path, show_col_types = FALSE) |> dplyr::select(dplyr::all_of(cols))
+}
 ```
 
-這種寫法的好處是：
-
-- 核心公式只定義一次
-- 後續可以直接套到別的向量
-- 更容易測試長度、缺失值與極端案例
-
-## Returning Early
-
-R 會自動回傳最後一個 expression，但在遇到錯誤條件或特殊情況時，提早 `return()` 往往更清楚。
+函式也不要依賴全域變數：
 
 ```r
-simple_sum <- function(x) {
-  if (anyNA(x)) {
-    return(NA)
-  }
-
-  total <- 0
-  for (value in x) {
-    total <- total + value
-  }
-
-  total
-}
+threshold <- 10
+flag <- function(x) x > threshold               # 能跑，但結果取決於外部狀態
+flag <- function(x, threshold = 10) x > threshold
 ```
 
-這種 early return 很適合：
+## 輸入檢查與錯誤處理
 
-- 前置條件不成立
-- 缺失值或空輸入要走特例
-- 後續運算已經沒有意義
-
-## Input Validation
-
-函數一旦開始重用，就不能假設使用者永遠傳對資料。
-
-基本檢查通常包括：
-
-- 類型是否正確
-- 長度是否合理
-- 值域是否合理
-- 是否含有不允許的 `NA`
-
-例如 geometric mean 只對正數有意義：
+重用的函式不能假設輸入永遠正確。檢查型別、長度、值域與 `NA`，並在**最早**的地方失敗。
 
 ```r
 calc_geometric_mean <- function(x, na.rm = FALSE) {
-  if (!is.numeric(x)) {
-    stop("x must be numeric.")
-  }
-
+  stopifnot(is.numeric(x), is.logical(na.rm), length(na.rm) == 1)
   if (any(x <= 0, na.rm = TRUE)) {
-    stop("x contains non-positive values, so geometric mean is undefined.")
+    stop("x contains non-positive values; geometric mean is undefined.", call. = FALSE)
   }
-
   exp(mean(log(x), na.rm = na.rm))
 }
 ```
 
-如果專案裡已經使用 `assertive` 或類似工具，也可以把常見檢查交給套件處理。
+| 訊號 | 用途 | 例子 |
+| --- | --- | --- |
+| `stop()` | 無法產生可信結果，中止 | 型別錯、必要欄位不存在 |
+| `warning()` | 結果可用但有風險，繼續 | 移除了 12 列含 NA 的資料 |
+| `message()` | 一般資訊（可用 `suppressMessages()` 關掉） | 進度、讀了幾個檔案 |
+| `stopifnot()` | 一行列出多個前提 | `stopifnot(nrow(df) > 0, "id" %in% names(df))` |
 
-## Errors, Warnings, and Messages
+### 捕捉錯誤：`tryCatch()`
 
-R 函數不一定只能「算成功」或「直接爆掉」，還有幾種常見訊號：
-
-- `stop()`：直接中止，表示結果不可靠或條件不成立
-- `warning()`：繼續執行，但提醒使用者結果可能需要注意
-- `message()`：提供一般資訊，不一定代表問題
-
-一個簡單原則是：
-
-- 無法產生可信結果時用 `stop()`
-- 還能產生結果，但有風險時用 `warning()`
-
-### Catching Errors with `try()`
-
-有些步驟可以容忍失敗，這時可以先攔住錯誤，再決定怎麼處理。
+批次處理時，單一樣本失敗不應讓整個流程中止，但要記錄是誰失敗。
 
 ```r
-result <- try("Scotland" + "World cup", silent = TRUE)
-
-if (inherits(result, "try-error")) {
-  message("Computation failed")
+read_one <- function(path) {
+  tryCatch(
+    readr::read_csv(path, show_col_types = FALSE),
+    error   = function(e) { message("skip ", path, ": ", conditionMessage(e)); NULL },
+    finally = message("done: ", path)           # 不論成功與否都會執行（關連線、刪暫存）
+  )
 }
+
+res <- try(log("a"), silent = TRUE)             # 簡化版
+inherits(res, "try-error")                      # TRUE
 ```
 
-這種模式適合批次流程，但不要拿來掩蓋本來就應該修掉的核心 bug。
+`purrr::safely()` / `possibly()` 是函數式版本，見 [函數式程式設計](functional-programming.md)。
 
-## Coercion and Defensive Defaults
+> 不要用 `try()` 包住所有東西來「讓程式跑完」。只在預期會失敗、且知道失敗後該怎麼做的地方捕捉。
 
-有些參數表面上看起來是單一布林值，但使用者可能傳進長度大於 1 的向量，或型別不完全對。
+## 設計原則
 
-像 `na.rm` 這類參數，必要時可以先標準化，再交給核心計算：
+| 原則 | 說明 |
+| --- | --- |
+| 一個函式做一件事 | 清理、建模、畫圖分開，方便單獨測試 |
+| 名稱是動詞 | `clean_dates()`、`calc_cpm()`、`run_de()` |
+| 輸入輸出明確 | 不讀寫全域變數，不偷偷改檔案 |
+| 型別穩定 | 同一函式永遠回傳同一型別（例如永遠是 tibble） |
+| 早失敗 | 前提不成立就 `stop()`，不把壞資料往下傳 |
+| 邊界情況 | 空 vector、全 `NA`、長度 1、單一 level 的 factor |
 
-- 只取第一個值
-- 明確轉成 logical
-- 對奇怪輸入提供 warning 或 error
-
-這種 defensive programming 會讓函數在 notebook 之外也更穩定。命名、風格、`lintr` 與專案結構見 [Defensive Programming in R](defensive-programming.md)。
-
-## Design Guidelines
-
-- 函數名稱要描述動作，例如 `calc_returns()`、`clean_dates()`。
-- 優先讓函數只做一件事，避免一個函數同時清理、建模、畫圖。
-- 對容易出錯的輸入先做基本檢查，例如長度、型別、是否含缺失值。
-- 把可調參數放進 argument，不要寫死在函數裡。
-- default arguments 直接寫進 signature，不要在函數中散落補丁邏輯。
-- 只有真的要向下游函數轉交選項時才用 `...`。
-- 能提早判斷失敗條件時，就 early return 或 `stop()`，不要把壞資料一路往下傳。
-
-## Common Mistakes
-
-- 只是把一長段 script 包進函數，卻沒有明確輸入與輸出。
-- 依賴外部全域變數，導致函數難以重現。
-- 沒處理 `NA`、空向量或長度不足的情況。
-- 為了省一行而過度省略 `return()` 或參數命名，讓程式可讀性下降。
-- 把檔名、欄位名或分析情境寫死，讓函數無法泛化。
-- 過度依賴位置傳參數，導致像 `TRUE`、`FALSE` 這種值語意不清。
-- 使用 `...` 卻沒有想清楚它最後要傳給誰。
+風格、檔名、`lintr` 與測試見 [防禦性程式設計](defensive-programming.md)。
