@@ -1,137 +1,154 @@
-# Data Bias and Representativeness
+[Data Science](../README.md) › [Responsible AI](README.md) › 資料偏誤與代表性
 
-Data bias in AI occurs when the data, labels, sampling process, or interpretation of results systematically distort reality and produce unfair or misleading decisions.
+# 資料偏誤與代表性 (Data Bias and Representativeness)
 
-Key point: Biased models often begin with biased data, but they do not end there. Bias can enter during data collection, problem framing, feature design, labeling, analysis, and interpretation.
+資料偏誤 (data bias) 是資料、標籤、抽樣過程或結果解讀**系統性**地偏離真實，導致不公平或誤導的決策。乾淨、完整、格式正確的資料集仍可能嚴重不具代表性。統計上的偏誤與干擾見 [干擾與偏誤](../statistics/experimental-design/confounding-bias.md)；抽樣與代表性的 ML 觀點見 [抽樣與代表性](../machine-learning/foundations/sampling-and-representativeness.md)。
 
-> **待改寫（補內容）**：補生資 / 醫療情境——GWAS 與 polygenic risk score 的 ancestry bias（樣本以歐洲血統為主、跨族群可遷移性差）、EHR 的 selection bias 與 missing-not-at-random、單一醫院資料的 site effect。統計面的偏誤見 [Confounding and Bias](../statistics/experimental-design/confounding-bias.md)。
+> 如果評估資料和訓練資料有同樣的偏差，偏誤的模型在紙面上依然看起來很準確。
 
-## Why Data Bias Matters
+## 偏誤從哪裡進來
 
-Data-driven systems are now used in hiring, finance, social services, virtual assistants, law enforcement, and other high-impact settings.
+```
+問題定義 → 資料收集 → 標註 → 特徵設計 → 建模與評估 → 解讀與部署 → 新資料（回饋迴圈）
+（代理目標）（選擇偏誤）（標註偏誤）（代理變數）（只看整體指標）（認知偏誤）
+```
 
-| If Bias Enters the System | What Can Happen |
-| --- | --- |
-| Some groups are underrepresented | The model works worse for them |
-| Historical prejudice is embedded in records | The system repeats old discrimination patterns |
-| Analysts interpret evidence selectively | Bad decisions look justified by data |
-| Training data is incomplete or skewed | Outputs become unreliable even at scale |
-
-Warning: A biased system can still look accurate on paper if the evaluation data reflects the same distortion as the training data.
-
-## What Data Bias Is
-
-Data bias appears when available data paints an inaccurate or unfair picture of the population or phenomenon being studied.
-
-Common sources include:
-
-- imbalances and underrepresentation
-- historical prejudice
-- flawed sampling or participation patterns
-- subjective human judgment during labeling or interpretation
-
-Tip: Bias is not just "bad data quality." A dataset can be tidy, complete, and technically valid while still being systematically unrepresentative.
-
-## A Classic Example: The Amazon Hiring Case
-
-A common failure pattern is training a model on historical decisions that were themselves biased.
-
-In the well-known hiring example, a resume-screening model learned from past hiring outcomes in an environment where male candidates had been disproportionately favored. The model then inherited and reinforced that pattern.
-
-Key point: If the past process was unfair, a model trained on that process can automate the unfairness unless the target, features, and evaluation criteria are redesigned.
-
-## Selection Bias
-
-Selection bias occurs when data is gathered in a way that systematically favors certain individuals, groups, or characteristics, making the sample unrepresentative of the intended population.
-
-| Type | What It Means | Example |
+| 階段 | 偏誤 | 生醫例子 |
 | --- | --- | --- |
-| Sampling bias | The sampling method itself is not fair or random | Convenience sampling in a customer survey |
-| Undercoverage bias | Important groups are missing or weakly represented | Online-only survey excludes people without internet access |
-| Non-response bias | People who do not respond differ from those who do | Dissatisfied employees skip a morale survey |
-| Self-selection bias | Participation is voluntary and skewed toward certain viewpoints | Only highly motivated customers submit feedback |
-| Survivorship bias | Only visible successes remain in the dataset | Studying successful product launches but ignoring failures |
+| 問題定義 | 用代理目標 (proxy) 取代真正目標 | 以「醫療花費」代表「健康需求」：花費少的群體可能是就醫機會少，而非比較健康（Obermeyer et al., 2019, *Science*） |
+| 資料收集 | 選擇 / 抽樣偏誤 | GWAS 參與者以歐洲血統為主 |
+| 標註 | 標註者不一致、歷史判斷有偏 | 不同病理師對分級的標準不同 |
+| 測量 | 儀器對不同群體準確度不同 | 脈搏血氧儀在深膚色者可能高估血氧 |
+| 特徵 | 敏感屬性的代理變數 | 郵遞區號 ≈ 社經地位、族群 |
+| 評估 | 整體指標掩蓋子群失敗 | 整體 AUC 0.90，少數族群只有 0.70 |
+| 解讀 | 認知偏誤 | 只採信支持假說的結果 |
 
-Tip: Several selection biases often appear together. A survey can easily have both self-selection bias and non-response bias at the same time.
+## 選擇偏誤 (Selection Bias)
 
-## Historical Bias
+| 類型 | 意義 | 例子 |
+| --- | --- | --- |
+| 抽樣偏誤 | 抽樣方法本身不隨機 | 便利樣本：只收門診病人 |
+| 涵蓋不足 (undercoverage) | 重要群體缺席 | 線上問卷排除沒有網路的人 |
+| 無回應偏誤 (non-response) | 不回應者與回應者不同 | 病情重者不回追蹤問卷 |
+| 自我選擇 (self-selection) | 自願參與者有特定傾向 | 消費型基因檢測使用者偏高收入、高教育 |
+| 存活者偏誤 (survivorship) | 只看到留下來的 | 只分析完成療程的病人 |
+| 轉診 / 醫院偏誤 (Berkson) | 住院樣本中的關聯不代表一般族群 | 兩種疾病在住院病人中看似相關 |
 
-Historical bias happens when past events, social structures, or institutional behavior are baked into the data and treated as if they were neutral truth.
+多種選擇偏誤常同時存在。生物資料庫（如 [UK Biobank](../../biology/clinical-informatics-and-standards/clinical-databases/uk-biobank.md)）的參與者通常比一般族群更健康、社經地位更高（"healthy volunteer" bias），推論到一般族群時要小心。
 
-| Historical Pattern | Risk in AI |
+## 生醫資料的常見偏誤
+
+### 族群 (Ancestry) 偏誤：GWAS 與多基因風險分數
+
+| 問題 | 原因 | 後果 |
+| --- | --- | --- |
+| [GWAS](../../biology/genomics/sequencing-and-analysis/genome-wide-analysis/gwas-fundamental.md) 樣本以歐洲血統為主 | 研究資源與生物資料庫分布不均 | 其他族群的風險位點較少被發現 |
+| 多基因風險分數 (PRS) 跨族群可遷移性差 | 連鎖不平衡 (LD) 結構、等位基因頻率、效應大小在族群間不同 | 用歐洲樣本建立的 PRS 套用在非洲血統族群時，預測力通常大幅下降 |
+| 參考基因體與變異資料庫偏向特定族群 | 參考資料的組成 | 非歐洲族群的罕見變異較常被判為「意義不明」(VUS) |
+
+| 緩解 | 做法 |
 | --- | --- |
-| Past hiring favored one group | Resume model learns that preference |
-| Prior policing focused on certain neighborhoods | Risk model overpredicts issues there |
-| Legacy lending standards excluded groups | Credit model inherits the exclusion |
+| 報告樣本的血統組成 | 在論文與 Model Card 中說明適用族群 |
+| 分族群評估 | 各族群分別報告 PRS 表現，不只報合併結果 |
+| 多族群方法 | 跨族群 meta-analysis、多族群 PRS 方法 |
+| 納入多元族群資料 | All of Us、H3Africa、台灣人體生物資料庫等 |
 
-Warning: Historical data is not automatically a gold standard. It may be a record of how decisions used to be made, not how they should be made.
+### 電子病歷 (EHR) 偏誤
 
-## Bias Beyond Data Collection
+| 偏誤 | 機制 | 後果 |
+| --- | --- | --- |
+| 就醫選擇 | 只有就醫的人有紀錄；就醫頻率與保險、地區、社經相關 | 「沒有診斷」≠「沒有疾病」 |
+| 資訊性缺失 (MNAR) | 醫師依病情決定是否檢驗；有檢驗本身就代表懷疑有問題 | 「有沒有驗」比「驗出什麼」更能預測結果（見 [缺失資料](../data-manipulation-and-eda/missing-data.md)） |
+| 編碼偏誤 | ICD 碼受給付規則影響 | 診斷碼不等於真實病況 |
+| 治療混淆 | 治療決策依病情而定 | 模型學到「用藥者死亡率高」 |
+| 時間漂移 | 診斷標準、檢驗儀器、編碼版本改變 | 舊資料訓練的模型在新資料失準 |
 
-Bias does not stop once the dataset is collected. It can also appear during analysis, model development, and interpretation.
+### 單一機構與批次 (Site / Batch Effect)
 
-| Stage | Bias Risk |
+只用一家醫院、一台掃描儀、一個定序批次訓練的模型，常學到機構特有的訊號（影像標記、染色差異、定序深度），換到別處就失準。驗證時用**外部機構**資料，並依機構做分組交叉驗證（見 [交叉驗證](../machine-learning/workflow/cross-validation.md)）。
+
+## 歷史偏誤 (Historical Bias)
+
+過去的決策紀錄被當成中性的真相。
+
+| 歷史模式 | AI 風險 |
 | --- | --- |
-| Problem framing | Wrong objective or proxy target |
-| Feature engineering | Sensitive or proxy variables influence decisions |
-| Modeling | Metrics hide uneven subgroup performance |
-| Interpretation | Analysts over-trust convenient or confirming evidence |
+| 過去的招募偏好特定性別 | 履歷篩選模型學到同樣偏好（Amazon 招募工具的著名案例） |
+| 某些族群的疼痛被低估、轉診較少 | 以轉診或治療紀錄為標籤的模型延續低估 |
+| 臨床試驗以特定族群為主 | 劑量與療效證據對其他族群不足 |
 
-## Cognitive Biases in Analysis
+> 歷史資料記錄的是「過去怎麼決定」，不是「應該怎麼決定」。目標變數本身有偏時，修模型沒用，要重新定義目標與標籤。
 
-Analysts and decision-makers can distort results even when the dataset itself is acceptable.
+## 認知偏誤 (Cognitive Bias)
 
-| Cognitive Bias | Pattern |
+資料沒問題，分析者也會扭曲結論。
+
+| 偏誤 | 模式 | 防範 |
+| --- | --- | --- |
+| 確認偏誤 (confirmation) | 只採信支持既有假說的結果 | 事先註冊分析計畫；主動找反證 |
+| 過度自信 | 高估分析的可靠度 | 報告不確定性、做敏感度分析 |
+| 近因偏誤 (recency) | 過度重視最近的事件 | 看長期趨勢 |
+| 可得性捷思 (availability) | 以印象深刻的案例判斷機率 | 用資料估計頻率 |
+| 錨定偏誤 (anchoring) | 被最初的數字或假設綁住 | 獨立估計後再比較 |
+| 分岔路徑 (garden of forking paths) | 嘗試多種分析後只報告顯著的 | 預先指定分析、[多重檢定](../statistics/inferential-statistics/multiple-testing.md)校正 |
+
+## 偏誤的回饋迴圈
+
+```
+有偏的資料 → 有偏的模型 → 影響人的決策 → 產生新的有偏資料 → 下一版模型更偏
+```
+
+例：模型預測某群體風險低 → 該群體較少被安排檢查 → 較少被診斷 → 新資料中該群體「疾病較少」→ 模型更確信風險低。高影響系統需要定期重新檢視標籤與目標，而不只是重訓。
+
+## 偵測與緩解
+
+### 子群評估
+
+```python
+import pandas as pd
+from sklearn.metrics import roc_auc_score, recall_score
+
+df = pd.DataFrame({"y": y_test, "score": proba, "pred": proba >= 0.5, "group": ancestry_test})
+
+def subgroup_metrics(g):
+    return pd.Series({
+        "n": len(g),
+        "prevalence": g["y"].mean(),
+        "auc": roc_auc_score(g["y"], g["score"]) if g["y"].nunique() == 2 else float("nan"),
+        "recall": recall_score(g["y"], g["pred"]),                 # 偽陰性率 = 1 - recall
+        "flag_rate": g["pred"].mean(),                             # 被判為陽性的比例
+    })
+
+df.groupby("group").apply(subgroup_metrics)    # 各群樣本數小時，指標要附信賴區間
+```
+
+| 公平性準則 | 要求各群相等的是 | 何時適用 |
+| --- | --- | --- |
+| 人口統計均等 (demographic parity) | 被判陽性的比例 | 資源分配；但各群真實盛行率不同時不合理 |
+| 機會均等 (equal opportunity) | recall（真陽性率） | 篩檢：不希望某群體更容易被漏掉 |
+| 均等化勝算 (equalized odds) | TPR 與 FPR | 兩種錯誤都重要 |
+| 校準 (calibration within groups) | 預測機率與實際比例一致 | 臨床風險分數 |
+
+> 各群盛行率不同時，這些準則在數學上**無法同時滿足**。依用途決定哪種錯誤最需要避免，並記錄這個取捨。小樣本子群的指標波動很大，要報告 [信賴區間](../machine-learning/evaluation/metric-uncertainty.md)。
+
+### 緩解手段
+
+| 階段 | 手段 | 說明 |
+| --- | --- | --- |
+| 資料 | 補收缺漏群體、分層抽樣 | 根本解法；成本最高 |
+| 資料 | 重新加權、重新抽樣 | 調整群體比例（見 [類別不平衡](../machine-learning/evaluation/class-imbalance.md)） |
+| 標籤 | 重新審查標籤、改用較不偏的目標 | 如以實際疾病指標取代醫療花費 |
+| 訓練 | 加入公平性限制（如 Fairlearn） | 通常犧牲部分整體表現 |
+| 後處理 | 各群使用不同門檻 | 簡單；在某些法規情境下可能有爭議 |
+| 部署 | 限縮適用範圍、人工覆核 | 在 Model Card 寫明不適用的族群 |
+| 監控 | 上線後持續追蹤子群表現 | 偏誤會隨時間與使用情境改變 |
+
+## 建模前檢查
+
+| 問題 | 沒回答時 |
 | --- | --- |
-| Confirmation bias | Favor evidence that supports existing beliefs |
-| Overconfidence bias | Overestimate the reliability of the analysis |
-| Recency bias | Overweight recent events and underweight longer-term context |
-| Memory bias | Recall past outcomes selectively |
-| Availability heuristic | Judge likelihood based on vivid recent examples |
-| Anchoring bias | Rely too heavily on an initial number or assumption |
-
-Key point: Responsible AI requires guarding against human interpretive bias, not only dataset bias.
-
-## Examples of Cognitive Bias in Practice
-
-| Bias | Example |
-| --- | --- |
-| Confirmation bias | Product team ignores negative feedback that challenges launch success |
-| Overconfidence bias | Analyst trusts a model result without stress-testing assumptions |
-| Recency bias | Recent market shift is treated as the only relevant signal |
-| Availability heuristic | Data breach risk is overestimated because of recent headlines |
-| Anchoring bias | Early estimate shapes every later forecast discussion |
-
-## How Bias Reinforces Itself
-
-Bias can form a feedback loop:
-
-1. biased data creates a biased model
-2. biased outputs influence human decisions
-3. those decisions generate new biased data
-4. the next model is trained on an even more distorted history
-
-This is one reason high-impact AI systems require monitoring, retraining review, and periodic re-evaluation of both labels and objectives.
-
-## Practical Ways to Reduce Data Bias
-
-| Control | Why It Helps |
-| --- | --- |
-| Define the target population clearly | Prevents vague or convenience-driven sampling |
-| Audit representation across groups | Reveals missing or undercovered populations |
-| Check response patterns and missingness | Detects who is absent from the data |
-| Review historical labels critically | Avoids learning old unfair decisions blindly |
-| Evaluate subgroup performance | Detects uneven error rates hidden by overall metrics |
-| Use structured review and challenge sessions | Reduces confirmation and anchoring bias |
-
-Tip: Bias mitigation is usually iterative. Teams often need to revisit data definitions, labels, and evaluation criteria more than once.
-
-## Minimum Standard Before Modeling
-
-Before training or deploying a model, you should be able to answer:
-
-1. who is represented in the data and who is missing
-2. whether historical labels reflect desired decisions or only past behavior
-3. which selection biases may affect collection or participation
-4. how subgroup performance and fairness will be evaluated
-5. what review process exists to challenge analyst assumptions and interpretation
+| 資料代表誰？漏掉誰？ | 模型在缺席群體上失準 |
+| 標籤反映的是想要的決策，還是過去的行為？ | 自動化歷史偏誤 |
+| 有哪些選擇偏誤影響收集或參與？ | 推論到錯誤的母體 |
+| 如何評估子群表現？採用哪個公平性準則、為什麼？ | 整體指標掩蓋傷害 |
+| 外部機構 / 外部族群驗證了嗎？ | 只在單一來源有效 |

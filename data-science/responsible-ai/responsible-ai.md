@@ -1,768 +1,187 @@
-# Responsible AI
+[Data Science](../README.md) › [Responsible AI](README.md) › 原則與治理
 
-把「AI / 資料該怎麼用才對」從原則落到流程。本篇依序是：responsible AI 的原則與生命週期、AI ethics（偏誤、透明性、倫理框架）、data ethics（取得、同意、分享、FAIR）、AI 用資料的責任管理（合法性、來源、代表性、稽核）、AI governance（角色、文件、監控）。
+# 負責任的 AI：原則、倫理與治理 (Responsible AI)
 
-偏誤細節見 [Data Bias and Representativeness](data-bias-and-representativeness.md)；個資與法規見 [Privacy and Regulation](privacy-and-regulation.md)、[Understanding the EU AI Act](understanding-the-eu-ai-act.md)；技術風險見 [AI Security and Risk Management](ai-security-and-risk-management.md)。
+AI 倫理 (AI ethics) 問「應該怎麼做」；負責任的 AI (responsible AI) 問「怎麼在設計、開發、部署、監控中真的做到」。本篇從原則與生命週期開始，接著是倫理框架、資料倫理（同意、分享、FAIR）、AI 用資料的責任管理，最後是治理：角色、文件與審查流程。偏誤細節見 [資料偏誤](data-bias-and-representativeness.md)；法規見 [隱私與法規](privacy-and-regulation.md)、[EU AI Act](understanding-the-eu-ai-act.md)；技術風險見 [AI 資安](ai-security-and-risk-management.md)。
 
-## Principles and Lifecycle
+## 原則
 
-Responsible AI is the practice of building and using AI systems in ways that are accountable, fair, safe, and aligned with human and societal well-being.
+| 原則 | 實務意義 | 生醫例子 |
+| --- | --- | --- |
+| 透明與可解釋 | 使用者與審查者理解系統的目的、輸入、限制 | 醫師知道風險分數用了哪些變數、不適用哪些病人 |
+| 公平與不歧視 | 結果不系統性地對某些群體不利 | 皮膚病變模型在深膚色上的表現 |
+| 穩健與安全 | 在真實條件下行為可靠，失敗時安全 | 換了掃描儀或醫院後不會悄悄失準 |
+| 隱私與資料治理 | 敏感資料的收集、使用、保護合宜 | 病歷、基因資料的存取控制 |
+| 可問責 | 審核、監控、事故處理都有具名負責人 | 模型出錯時誰停用、誰通知 |
+| 包容與永續 | 價值不只服務狹隘的技術目標 | 研究成果能惠及資料來源的族群 |
 
-Key point: AI ethics asks what should be done. Responsible AI focuses on how those principles are applied across design, development, deployment, and monitoring.
-
-### Responsible AI vs. AI Ethics
-
-These ideas overlap, but they are not identical.
-
-| Concept | Main Focus |
+| 常見誤解 | 較好的理解 |
 | --- | --- |
-| AI ethics | Moral questions, social impact, fairness, and human values |
-| Responsible AI | Turning those values into processes, metrics, controls, and governance |
+| 只是法規遵循問題 | 也是產品品質、信任與營運問題；合法是底線不是標準 |
+| 治理會阻礙創新 | 好的治理減少魯莽部署，讓成果能長期被採用 |
+| 只有大公司做得起 | 小團隊也能記錄用途、定義紅線、監控結果 |
+| 一套流程適用所有專案 | 控制強度要與風險成比例 |
 
-Tip: A team can agree with ethical principles in theory and still fail in practice if those principles are not embedded into product decisions and operating workflows.
+## 生命週期
 
-### Why Responsible AI Matters
+| 階段 | 關鍵問題 | 常見失誤 |
+| --- | --- | --- |
+| 設計 | 要最佳化什麼目標？值得最佳化嗎？誰受影響？ | 用方便取得的代理指標（如醫療花費代替疾病嚴重度） |
+| 資料 | 資料能合法使用嗎？代表誰、漏掉誰？ | 只用單一醫院、單一族群 |
+| 開發 | 評估設計是否可信？子群表現如何？ | [資料洩漏](../machine-learning/foundations/data-leakage.md)、只看整體 AUC |
+| 部署 | 真實使用者與資料出現時有什麼保護？ | 沒有人工覆核、沒有回報管道 |
+| 監控 | 傷害、drift、誤用是否出現？ | 上線後沒人看（見 [部署與監控](../machine-learning/production/deployment-and-monitoring.md)） |
 
-AI influences decisions across healthcare, education, finance, transportation, employment, and public institutions. As impact grows, responsibility extends beyond model accuracy.
-
-| Concern | Responsible AI Question |
+| 利害關係人層級 | 要問 |
 | --- | --- |
-| Human impact | Who may be helped, excluded, or harmed? |
-| Social impact | What happens if the system scales across groups or institutions? |
-| Accountability | Who owns the outcomes and failure response? |
-| Inclusion | Does the system work fairly for diverse users and contexts? |
+| 個人 | 能理解或申訴決策嗎？ |
+| 群體 | 某些族群是否承擔不成比例的負擔？ |
+| 組織 | 是否造成法律、信任或營運風險？ |
+| 社會 | 大規模使用是否扭曲資源分配或權力？ |
 
-### Common Responsible AI Principles
+> 利害關係人分析若在部署後才做，許多高影響的設計決策已經來不及改。
 
-Many frameworks converge on a similar set of principles.
+## AI 倫理
 
-| Principle | Practical Meaning |
+AI 系統不會消除人的判斷，而是把判斷**固化**：訓練資料、目標函數、門檻、介面文字、升級政策都編碼了價值選擇。
+
+| 倫理框架 | 核心問題 | 生醫情境 |
+| --- | --- | --- |
+| 義務論 (deontological) | 是否尊重規則、權利與義務？ | 是否取得適當同意？ |
+| 結果論 (consequentialist) | 結果是否減少傷害、增進福祉？ | 篩檢模型的偽陰性造成多少延誤診斷？ |
+| 德行倫理 (virtue) | 鼓勵組織成為什麼樣子？ | 是否誠實報告模型限制？ |
+| 利害關係人 | 誰受益、誰承擔風險、誰失去自主？ | 資料提供者是否分享研究利益？ |
+
+生物醫學研究倫理的四原則（尊重自主、不傷害、行善、正義）可直接對應：自主 ↔ 知情同意；不傷害 ↔ 安全與隱私；行善 ↔ 臨床效益；正義 ↔ 公平與代表性。
+
+| 透明的層次 | 對象 | 提供什麼 |
+| --- | --- | --- |
+| 系統層 | 監管者、審查者 | 目的、資料來源、評估結果、限制（[Model Card](#文件與可追溯性)） |
+| 決策層 | 使用者（醫師） | 個別預測的主要影響因素、信心程度 |
+| 申訴層 | 受影響者（病人） | 如何提出異議、由誰覆核 |
+
+透明不等於公開每個權重，而是讓各方得到**可用**的解釋：目的、輸入、限制、信心、升級途徑。可解釋性方法（SHAP 等）見 [模型可解釋性](../machine-learning/interpretability-and-diagnostics/model-interpretability.md)。
+
+## 資料倫理
+
+資料倫理關心整個資料生命週期是否尊重人、權利與信任，範圍比隱私法和演算法公平都廣。
+
+| 階段 | 倫理問題 |
 | --- | --- |
-| Transparency and explainability | Users and reviewers can understand the system purpose and limits |
-| Fairness and non-discrimination | Outcomes are not systematically skewed against groups |
-| Robustness and safety | The system behaves reliably under realistic conditions |
-| Privacy and data governance | Sensitive data is collected, used, and protected appropriately |
-| Accountability | Named owners exist for approval, monitoring, and incident handling |
-| Inclusive and sustainable benefit | The system should create value beyond a narrow technical objective |
+| 取得 | 目的是否明確、是否必要、是否有同意、供應商是否可靠 |
+| 準備 | 清理是否抹除重要脈絡；標註品質與標註者的勞動條件 |
+| 儲存 | 機密性、完整性、存取控制 |
+| 分析 | 解讀是否過度、結果如何被使用 |
+| 保存 | 保存期限是否合理 |
+| 分享 | 所有權、二次使用是否在同意範圍內、去識別化 |
 
-### Stakeholders Affected by AI
+### 有效同意
 
-Responsible AI starts by identifying who is affected.
+| 條件 | 意義 | 生醫研究的挑戰 |
+| --- | --- | --- |
+| 知情 (informed) | 清楚、具體、可理解的說明 | 未來研究用途難以事先說明 |
+| 自由 (freely given) | 能拒絕而不受懲罰 | 病人可能擔心拒絕影響治療 |
+| 細分 (granular) | 不同用途分開同意 | 檢體、資料、商業用途、回傳結果分開 |
+| 情境敏感 | 兒童、弱勢、權力不對等時更謹慎 | 原住民族群的集體同意 |
 
-| Stakeholder Level | Example Questions |
+| 同意模式 | 說明 |
 | --- | --- |
-| Individuals | Can a person contest or understand a decision? |
-| Groups | Are some communities disproportionately burdened? |
-| Organizations | Does the system create legal, trust, or operational risk? |
-| Society | Could large-scale use distort norms, access, or power? |
+| 特定同意 (specific) | 只用於特定研究 |
+| 概括同意 (broad) | 同意用於某範圍內的未來研究，由倫理委員會把關；生物資料庫常用 |
+| 動態同意 (dynamic) | 透過數位平台持續告知並讓參與者逐項選擇 |
 
-Warning: If stakeholder analysis only happens after deployment, the team is already too late for many high-impact design decisions.
+> 同意不是勾選框。若參與者無法理解、無法安全拒絕，或用途遠超原本說明，同意在倫理上就站不住。
 
-### Responsible AI Across the Lifecycle
+### FAIR 原則
 
-Responsible AI should be present in every phase of the AI lifecycle.
+FAIR 指資料**可被找到、可存取、可互通、可重用**，與演算法「公平」(fairness) 無關。
 
-| Phase | Key Questions |
+| 原則 | 實務 | 例子 |
+| --- | --- | --- |
+| Findable | 永久識別碼、豐富 metadata、可被檢索 | GEO / SRA accession、DOI |
+| Accessible | 標準協定取得；受限資料也公開說明取得方式 | dbGaP 受控存取仍公開 metadata |
+| Interoperable | 標準格式、標準詞彙 | AnnData、VCF；HPO、Ontology 標準化 |
+| Reusable | 清楚授權、來源、處理流程 | README、授權條款、處理腳本 |
+
+FAIR 不等於開放：可以「FAIR 但受控存取」。FAIR 要與隱私、所有權與同意範圍取得平衡。
+
+## AI 用資料的責任管理
+
+| 面向 | 要確認 |
 | --- | --- |
-| Design | What objective are we optimizing, and is it worth optimizing? |
-| Development | Are data, features, and evaluation methods fair and reliable? |
-| Deployment | What safeguards exist when the model faces live users and live data? |
-| Monitoring | Are harms, drift, or misuse appearing after launch? |
+| 合法性 | 適用哪些法規（GDPR、HIPAA、個資法）；授權條款、資料使用協議 (DUA) 是否允許此用途；用途是否在原本告知範圍內 |
+| 來源 | 一手或二手資料？哪些族群、地點、情境不在資料中？方法學是否適合此用途？ |
+| 代表性 | 子群分布、缺失模式（見 [資料偏誤](data-bias-and-representativeness.md)） |
+| 品質與血緣 | 格式、範圍、一致性、資料血緣（見 [資料品質檢查](../data-engineering/data-quality-checks.md)） |
+| 稽核 | 同意、授權、覆蓋範圍、已知限制都有紀錄，可事後查驗 |
 
-#### Design
+> 法律判斷應諮詢專業人員（法務、IRB、資料保護官）。技術團隊負責把文件與控制做好，不要自行解釋所有邊界案例。
 
-During design, teams should define:
+```
+審查流程：確認法律基礎與使用權 → 記錄同意、目的、保存期限 → 檢查來源覆蓋與代表性
+        → 驗證品質與血緣 → 子群評估 → 發現偏誤時處理 → 上線後監控 drift 與新傷害
+```
 
-1. the problem being solved
-2. the business value and social trade-offs
-3. the data architecture and data requirements
-4. the budget, governance, and stakeholder support needed
+## 治理 (AI Governance)
 
-#### Development
+治理把倫理意圖變成可重複的組織行為：哪些用途允許、誰核准、證據怎麼記錄、出事怎麼處理。
 
-During development, teams build, train, and test the system while watching for risks such as overfitting, underfitting, bias, and weak evaluation design.
+### 角色
 
-#### Deployment
-
-Deployment is not just release. It means integrating the system into a real environment, observing live behavior, and refining controls as context changes.
-
-### Risk Spectrum
-
-Responsible AI includes security, operational, business, and social risk.
-
-| Risk Category | Examples |
+| 角色 | 職責 |
 | --- | --- |
-| Security and operational | Hallucination, data corruption, data leakage, privacy failure |
-| Model quality | Bias, drift, weak generalization, unreliable outputs |
-| Business | Misalignment with goals, reputational harm, failed adoption |
-| Social and regulatory | Discrimination, unsafe use, non-compliance, public distrust |
+| 主管 / 計畫主持人 | 設定風險容忍度、資源優先順序 |
+| 業務 / 臨床負責人 | 定義用途與可接受的結果 |
+| 資料科學 / ML 團隊 | 建構、測試、記錄系統 |
+| 法務 / 法遵 / IRB / 資料保護官 | 審查義務、控制與政策 |
+| 維運團隊 | 監控上線行為、事故處理 |
 
-Key point: Responsible AI is broader than model evaluation. It includes whether the system should exist in its current form, for this use case, under these constraints.
+> 沒有人負責上線後的監控，就等於沒有人真正擁有這個模型。
 
-### Regulation and Risk-Based Thinking
+### 依風險分級
 
-Responsible AI increasingly operates in a regulatory environment, but compliance alone is not the full standard.
+| 風險 | 判斷訊號 | 治理強度 |
+| --- | --- | --- |
+| 低 | 內部效率工具、可輕易人工覆核（文獻摘要草稿） | 簡單紀錄、基本監控 |
+| 中 | 影響研究結論或資源分配 | 正式核准、較強的評估證據、定期審查 |
+| 高 | 影響個人權利、健康、安全；自動化程度高；難以撤銷（臨床決策支援） | 跨部門審查、限制部署範圍、持續監控、人工覆核 |
 
-Useful governance ideas include:
+分級訊號：對權利 / 金錢 / 安全 / 健康的影響、資料敏感度、自動化程度、錯誤是否可撤銷。EU AI Act 的四級風險見 [EU AI Act](understanding-the-eu-ai-act.md#風險分級)。
 
-- map systems by risk level rather than treating all AI the same
-- distinguish low-risk convenience use cases from high-risk decision systems
-- treat transparency, documentation, and human oversight as design requirements
+### 文件與可追溯性
 
-The EU AI Act popularized a risk-tier framing:
-
-| Risk Level | Typical Interpretation |
+| 文件 | 內容 |
 | --- | --- |
-| Minimal risk | Low-stakes everyday systems |
-| Limited risk | Systems requiring disclosure or transparency |
-| High risk | Systems affecting areas like employment, education, or law enforcement |
-| Unacceptable risk | Systems that cross clear societal red lines |
+| Model Card | 預期用途與禁止用途、訓練資料、評估結果（含子群）、已知限制、倫理考量 |
+| Datasheet for Datasets | 資料收集動機、組成、收集過程、前處理、建議用途、維護者 |
+| 核准紀錄 | 誰在何時依據什麼證據核准 |
+| 監控與回滾計畫 | 觸發條件、負責人、回滾步驟 |
+| 事故紀錄 | 發生什麼、影響誰、如何修正 |
 
-Tip: Even if a team is not directly governed by a specific regulation, risk-tier thinking is still useful because it forces proportional controls.
+### 嵌入工作流程
 
-### Practical Steps for Implementation
-
-Responsible AI becomes real through repeated organizational habits.
-
-| Step | Why It Matters |
+| 階段 | 治理問題 |
 | --- | --- |
-| Embrace AI governance | Responsibility needs leadership support and explicit ownership |
-| Create an AI playbook | Teams need written expectations, not only informal norms |
-| Identify internal and external stakeholders | Real-world effects are broader than the model team |
-| Use internal support mechanisms | Codes of conduct, review boards, and approval paths create consistency |
-| Adopt a multi-stakeholder approach | External perspectives catch harms insiders may miss |
-| Use fit-for-purpose tools | Controls should match the context and risk of the system |
-| Monitor and audit continuously | Governance quality must be tested after launch |
+| 受理 (intake) | 這個用途該做嗎？屬於哪個風險等級？ |
+| 設計 | 需要哪些限制、指標與人工控制？ |
+| 上線前審查 | 證據是否足以上線？ |
+| 上線 | 監控、警示、事故負責人是否到位？ |
+| 上線後審查 | 新資料、drift、用途擴張是否改變風險？ |
 
-### Common Misconceptions
+| 治理模式 | 優點 | 限制 |
+| --- | --- | --- |
+| 自律 | 快、貼近情境 | 在商業壓力下容易鬆動 |
+| 政府監管 | 建立底線保護 | 跟不上技術變化 |
+| 混合 | 兼顧彈性與問責 | 需要把政策對應到實際流程 |
 
-| Misconception | Better View |
+> 無法轉成流程、檢查表或系統控制的政策，還不算治理。許多治理失敗不是模型失敗，而是範圍控制、文件、升級或審查紀律的失敗。
+
+## 上線前檢查
+
+| 問題 | 對應段落 |
 | --- | --- |
-| Responsible AI is only a legal compliance issue | It is also a product, trust, and operating model issue |
-| Governance blocks innovation | Good governance reduces reckless deployment and improves durable adoption |
-| Stakeholder engagement is a box-ticking exercise | It is a source of adaptive feedback and harm detection |
-| Only large companies can afford responsible AI | Even small teams can document use cases, define red lines, and monitor outcomes |
-| One governance toolkit fits every AI project | Controls should be proportional to risk, domain, and user impact |
-
-### Minimum Standard Before Launch
-
-Before launching an AI system, you should be able to explain:
-
-1. the intended benefit and the main trade-offs
-2. which stakeholders may be affected
-3. what fairness, privacy, and safety checks were performed
-4. which governance process approved the release
-5. how the system will be monitored, audited, and updated after deployment
-
-## AI Ethics
-
-AI ethics is the practice of designing, deploying, and governing AI systems in ways that are fair, explainable, and aligned with human values.
-
-Key point: AI ethics is not separate from product or model design. Training data, objective functions, thresholds, user interfaces, and escalation policies all encode value judgments.
-
-### Why AI Ethics Matters
-
-As AI systems move into healthcare, finance, insurance, hiring, and public decision-making, they can scale both benefits and harm.
-
-| Opportunity | Ethical Risk if Unchecked |
-| --- | --- |
-| Faster decisions | Opaque decisions that users cannot contest |
-| Personalization | Unequal treatment across groups |
-| Automation | Hidden bias repeated at scale |
-| Optimization | Business goals overriding privacy or dignity |
-
-Warning: A model can be statistically strong and still be ethically weak if it is biased, non-transparent, or deployed without human recourse.
-
-### What "Ethics" Means in AI
-
-Ethics provides principles for judging whether a decision is acceptable, not just whether it is efficient.
-
-Common questions include:
-
-- Is the system fair across affected groups?
-- Can people understand why a decision happened?
-- Is sensitive data handled proportionately and lawfully?
-- Is there accountability when the system causes harm?
-
-Tip: In practice, most AI ethics issues are not abstract philosophy debates. They show up as design choices around labels, data collection, model monitoring, user messaging, and appeals processes.
-
-### Bias and Human Influence
-
-AI systems do not remove human judgment; they often formalize it.
-
-| Bias Source | Example |
-| --- | --- |
-| Historical data bias | Past approvals reflect old discrimination patterns |
-| Label bias | Human reviewers apply inconsistent standards |
-| Sampling bias | Some groups are underrepresented in training data |
-| Objective bias | The model optimizes a proxy that ignores broader harm |
-
-If bias enters the data, features, or labels, the model can reproduce it at scale. This is especially risky in insurance, legal, or public-sector settings where decisions shape access, rights, or resources.
-
-### Transparency and the Black-Box Problem
-
-Many AI systems behave like black boxes: we can observe inputs and outputs, but the internal reasoning is difficult to inspect.
-
-| Transparency Need | Why It Matters |
-| --- | --- |
-| User trust | People hesitate to accept decisions they cannot understand |
-| Validation | Teams need to test whether outputs are sensible and consistent |
-| Auditability | Regulators and internal reviewers need a traceable rationale |
-| Adoption | Transparent systems are easier to deploy in high-stakes workflows |
-
-Transparency should be considered across the full AI lifecycle:
-
-1. problem framing and objective selection
-2. data sourcing and labeling
-3. model design and evaluation
-4. deployment, monitoring, and user feedback
-
-Tip: Transparency does not always mean exposing every model weight. It often means giving stakeholders a usable explanation of purpose, inputs, constraints, confidence, and escalation paths.
-
-### Ethical Frameworks
-
-Ethical frameworks help teams reason consistently about trade-offs instead of making ad hoc decisions.
-
-| Framework Lens | Core Question |
-| --- | --- |
-| Deontological | Are we respecting rules, rights, and duties? |
-| Consequentialist | Do the outcomes reduce harm and improve welfare? |
-| Virtue-based | What kind of organizational behavior does this encourage? |
-| Stakeholder-based | Which groups benefit, bear risk, or lose agency? |
-
-There is no single universal framework for every AI use case. Different industries emphasize different constraints, but the framework still acts as scaffolding for decision-making.
-
-### Why Organizations Need an Ethical Framework
-
-| Benefit | Practical Effect |
-| --- | --- |
-| Clear starting point | Teams know which principles apply before shipping |
-| Better foresight | Risks are discussed earlier in the design process |
-| Less ambiguity | Reviewers can evaluate trade-offs with shared criteria |
-| Stronger innovation | Constraints reduce reckless deployment, not useful experimentation |
-
-Warning: "Move fast" without an ethical frame usually shifts hidden risk onto users, operations teams, or downstream institutions.
-
-### Industry-Specific Trade-Offs
-
-Ethical priorities vary by domain. A system for agricultural automation, for example, may need to balance environmental sustainability, economic viability, and social equity rather than accuracy alone.
-
-The same pattern appears elsewhere:
-
-- healthcare: privacy, safety, fairness, clinical accountability
-- finance: explainability, disparate impact, fraud risk, consumer protection
-- public sector: due process, contestability, proportionality, transparency
-
-Key point: The right question is rarely "Is this AI ethical?" The better question is "Under which constraints, for which stakeholders, and with what safeguards?"
-
-### A Practical Review Checklist
-
-| Question | Check |
-| --- | --- |
-| Who is affected by this system? | □ |
-| What harms could result from false positives or false negatives? | □ |
-| Which groups may be underrepresented in the data? | □ |
-| Can a user understand or challenge the decision? | □ |
-| What human oversight exists for edge cases? | □ |
-| Who owns post-deployment monitoring and incident response? | □ |
-
-### Minimum Standard Before Deployment
-
-Before deploying an AI system in a meaningful workflow, you should be able to explain:
-
-1. the intended benefit of the system
-2. the main harms and who bears them
-3. the source and known limits of the training data
-4. how fairness, transparency, and privacy were evaluated
-5. what recourse exists when the system fails
-
-## Data Ethics
-
-Data ethics studies the moral responsibilities involved in collecting, preparing, storing, sharing, and using data.
-
-Key point: Data ethics is broader than privacy law and broader than AI fairness. It asks whether the entire data lifecycle respects people, rights, dignity, and social trust.
-
-### Why Data Ethics Matters
-
-Data now powers social media, smart devices, cloud systems, analytics platforms, and AI applications. As data becomes a core economic and technical asset, ethical decisions about data affect both individuals and institutions.
-
-| Data Capability | Ethical Question |
-| --- | --- |
-| Large-scale collection | Should this data be collected at all, and how much is necessary? |
-| Detailed profiling | Do people understand what is inferred about them? |
-| Sharing and reuse | Who benefits, and who loses control? |
-| Automation | Are data-driven decisions fair, contestable, and proportional? |
-
-Warning: A data practice can be legal in a narrow sense and still be ethically weak if it is manipulative, excessive, opaque, or disrespectful of agency.
-
-### Ethics, Laws, and Data
-
-Ethics and law are closely related, but they are not the same.
-
-| Concept | Role |
-| --- | --- |
-| Law | Enforced minimum rules |
-| Ethics | Broader guidance about what is right, responsible, and justified |
-
-Key point: Legal compliance is a floor, not a full ethical standard. Ethical review often asks harder questions than regulation alone.
-
-### Core Foundations of Data Ethics
-
-Common foundations include:
-
-| Foundation | Practical Meaning |
-| --- | --- |
-| Privacy and data protection | Sensitive data should be protected and used proportionately |
-| Informed consent and agency | People should understand and meaningfully choose what happens to their data |
-| Transparency and trust | Data use should not be hidden behind vague explanations |
-| Fairness and non-discrimination | Data practices should not systematically burden certain groups |
-| Accountability and oversight | Named owners should exist for decisions and harms |
-| Social benefit | Data use should create value without treating people merely as inputs |
-
-Another simple beginner framing is to ask whether the work respects five practical principles:
-
-1. permission for data collection
-2. transparency about the plan
-3. privacy of the data
-4. good intentions behind the use
-5. careful consideration of likely outcomes
-
-This list is not a complete governance framework, but it is a useful early-screening checklist before a team moves into detailed legal or technical review.
-
-### Data Ethics Across the Data Lifecycle
-
-Ethical issues appear at every stage of the data lifecycle, not just at deployment time.
-
-| Stage | Ethical Concerns |
-| --- | --- |
-| Acquisition | Purpose, necessity, representation, consent, supplier quality |
-| Preparation | Cleaning, labeling, annotation quality, labor conditions, biased labels |
-| Storage | Confidentiality, integrity, unauthorized access, internal controls |
-| Analysis | Interpretation, model use, decision impact, bias in outputs |
-| Retention and archival | How long data is kept and whether that duration is justified |
-| Sharing | Ownership, access rights, privacy-preserving release, downstream use |
-
-Tip: Teams often focus on model performance and forget that unethical decisions may have happened much earlier during sourcing, labeling, or storage design.
-
-### Ethical Data Acquisition
-
-Responsible acquisition means being clear about why data is collected and how much is truly needed.
-
-| Good Practice | Why It Matters |
-| --- | --- |
-| Collect with a defined purpose | Prevents vague "collect now, decide later" behavior |
-| Seek representative data | Reduces exclusion and bias risk |
-| Use informed consent when appropriate | Protects autonomy and agency |
-| Vet third-party data suppliers | Avoids inheriting unknown legal or ethical problems |
-
-Warning: Consent is not meaningful if people cannot understand the request, cannot refuse safely, or are pressured by power imbalance.
-
-### Data Preparation and Human Labor
-
-Data preparation is often treated as a technical step, but it carries ethical weight.
-
-| Activity | Ethical Risk |
-| --- | --- |
-| Cleaning and preprocessing | Hidden decisions may erase meaningful context |
-| Labeling and annotation | Biased labels shape biased models |
-| Outsourced review work | Poor training or exploitative labor conditions distort quality and ethics |
-| Quality checks | Weak review allows inconsistent or harmful labels to persist |
-
-Key point: If labels are inconsistent, rushed, or produced under poor conditions, the model can inherit both technical noise and ethical harm.
-
-### Data Storage and Protection
-
-Data storage is not only a security issue. It is also an ethical commitment to preserve confidentiality, integrity, and appropriate access.
-
-| Storage Concern | Practical Question |
-| --- | --- |
-| Confidentiality | Who should and should not see the data? |
-| Integrity | How do we prevent accidental loss or silent corruption? |
-| Access control | Is access limited to justified uses? |
-| Organizational controls | Are training, policies, and escalation paths in place? |
-
-### Data Sharing, Ownership, and Reuse
-
-Sharing data can support innovation and collaboration, but it also raises ownership and control questions.
-
-| Question | Why It Matters |
-| --- | --- |
-| Who owns the data? | Ownership affects permission, compensation, and limits of reuse |
-| Was reuse covered by consent? | Secondary use often goes beyond original expectations |
-| Are privacy-preserving methods used? | Sharing should not expose people unnecessarily |
-| Who benefits from reuse? | Value extraction without permission can be ethically weak |
-
-Tip: Ownership questions apply beyond personal data. They also affect copyright, creative work, and other forms of intellectual property.
-
-### Valid Consent
-
-Valid consent is more than a checkbox.
-
-| Consent Standard | Meaning |
-| --- | --- |
-| Informed | People receive clear, specific, understandable information |
-| Freely given | They can say no without unfair pressure or penalty |
-| Granular | Different uses are separated rather than bundled vaguely |
-| Context-sensitive | Extra care is taken for children, workers, or other power-imbalanced settings |
-
-Warning: If an app requires unrelated personal data just to function, or if an employee cannot realistically refuse employer data collection, consent may not be freely given.
-
-### Bias as a Data Ethics Issue
-
-One of the first ethical concerns in data work is bias.
-
-| Bias Pattern | Ethical Problem |
-| --- | --- |
-| Underrepresentation | Some groups are less visible in the data |
-| Measurement or labeling bias | The same behavior is recorded differently across groups |
-| Historical bias | Past inequality is treated as neutral evidence |
-| Self-reporting bias | Participation or responses reflect unequal incentives or pressure |
-
-Representation is crucial. A system built on unrepresentative data can fail in areas ranging from facial recognition to healthcare and public services.
-
-### Common Ethical Failure Patterns
-
-Many data ethics problems begin well before a model is trained.
-
-| Failure pattern | Why it matters |
-| --- | --- |
-| Poorly defined problem | Teams collect extra data or answer the wrong question |
-| Insufficient or unrepresentative data | Conclusions reflect sampling bias rather than reality |
-| Collecting the wrong data | Even a clean analysis cannot answer the original question |
-| Jumping to conclusions without context | Information is mistaken for justified knowledge |
-| Weak transparency about storage and reuse | Users lose meaningful control and trust erodes |
-
-Warning: A technically correct workflow can still be ethically weak if the question is vague, the sample is biased, or the downstream use was never justified clearly.
-
-### FAIR Data Principles
-
-FAIR does not mean "fairness" in the bias sense. It refers to data being:
-
-| Principle | Meaning |
-| --- | --- |
-| Findable | Data can be discovered through clear metadata and stable references |
-| Accessible | Data can be reached through appropriate infrastructure and access rules |
-| Interoperable | Data works across systems, formats, and standards |
-| Reusable | Data is documented and managed so others can use it appropriately later |
-
-Key point: FAIR principles support transparency, collaboration, and reuse, but they still need to be balanced with privacy, ownership, and consent.
-
-### Minimum Standard for Ethical Data Practice
-
-Before using a dataset in analysis or AI, you should be able to explain:
-
-1. why the data was collected and whether that purpose is justified
-2. whether consent, representation, and supplier quality were reviewed
-3. how labels, storage, and sharing are governed
-4. who owns the data and what reuse rights exist
-5. which privacy, fairness, and accountability safeguards are in place
-
-## Responsible Data for AI
-
-Responsible AI data management is the practice of handling data in ways that are lawful, fair, representative, secure, and accountable across the full AI lifecycle.
-
-Key point: Many AI failures begin before modeling. Weak consent, poor source selection, unbalanced representation, or missing audits can undermine a system even if the model metrics look strong.
-
-### Why This Topic Matters
-
-Responsible AI often emphasizes models, governance, and deployment, but the data layer determines what the system can learn and whom it may disadvantage.
-
-| Data Management Concern | Responsible AI Question |
-| --- | --- |
-| Lawfulness | Do we have the right to collect, use, and share this data? |
-| Fair representation | Which people, groups, or contexts are missing or distorted? |
-| Transparency and accountability | Can we explain where the data came from and how it was handled? |
-| Privacy and security | Are sensitive records protected throughout the lifecycle? |
-| Auditability | Can we validate quality, bias, and usage decisions after the fact? |
-
-### Core Dimensions of Responsible Data
-
-Several principles repeatedly show up in responsible AI data work.
-
-| Dimension | Practical Meaning |
-| --- | --- |
-| Lawfulness | Data collection and use align with regulation, contracts, and stated purpose |
-| Fairness | Data does not systematically overrepresent or underrepresent groups without review |
-| Transparency and accountability | Data decisions, lineage, ownership, and trade-offs are documented |
-| Diversity and inclusion | The dataset reflects relevant variation in people, environments, and behavior |
-| Privacy and security | Personal or sensitive data is protected against misuse, leakage, or overcollection |
-
-Tip: These dimensions can conflict. For example, collecting more detailed sensitive attributes may improve fairness analysis while increasing privacy obligations.
-
-### Failure Pattern: When Data Creates Harm
-
-A system can fail responsibly long before deployment if teams optimize for technical performance alone.
-
-Common warning signs include:
-
-1. training data reflects historical discrimination
-2. protected groups are poorly represented
-3. labels encode past human bias
-4. teams judge success only with aggregate accuracy
-5. privacy or licensing constraints are treated as paperwork instead of design inputs
-
-Key point: If the data pipeline is biased, a well-engineered model can still scale that bias efficiently.
-
-### Legal and Compliance Foundations
-
-Responsible AI data management begins with permission, purpose, and traceability.
-
-| Area | What Teams Need to Clarify |
-| --- | --- |
-| Regulation | Which laws apply, such as GDPR, CCPA, HIPAA, or sector-specific rules |
-| Contractual rights | Whether licensing or data sharing agreements allow the intended use |
-| Data ownership | Who is accountable for approving access, usage, and retention |
-| Intended purpose | Whether the AI use case matches the purpose communicated during collection |
-| Documentation | How consent, approvals, restrictions, and exceptions are recorded |
-
-Warning: Legal compliance should involve qualified counsel. Technical teams can structure documentation and controls, but they should not assume they can interpret every edge case alone.
-
-### Informed Consent and Data Usage
-
-Consent is not just a form. It is part of the operating design for responsible use.
-
-| Consent Practice | Why It Matters |
-| --- | --- |
-| Clear notice | People should understand what data is collected and why |
-| Meaningful choice | Opt-in or opt-out mechanisms should be real rather than misleading |
-| Record keeping | Teams need evidence of what a person agreed to and when |
-| Data minimization | Only collect what is necessary for the stated purpose |
-| Usage boundaries | Secondary use should be reviewed rather than assumed acceptable |
-
-Related agreements may also matter when data crosses organizational boundaries.
-
-| Agreement Type | Purpose |
-| --- | --- |
-| License terms | Define what a purchaser or user is allowed to do with the data |
-| Data usage agreement | Defines responsibilities, restrictions, and acceptable handling between parties |
-| Internal policy | Extends legal terms into practical operational requirements |
-
-### Choosing Data Sources Responsibly
-
-Source selection affects fairness, validity, cost, and long-term trust.
-
-| Source Dimension | Example Questions |
-| --- | --- |
-| Primary vs. secondary | Was the data collected directly for this purpose, or repurposed later? |
-| Quantitative vs. qualitative | Do we only have numeric signals, or also context about why behavior occurs? |
-| Static vs. dynamic | Does the source reflect a stable snapshot or a changing environment? |
-| Coverage | Which populations, locations, or edge cases are absent? |
-| Access and licensing | Are there legal, financial, or contractual barriers to continued use? |
-
-Typical source limitations include:
-
-1. access restrictions or weak licensing rights
-2. cost that pushes teams toward narrower or lower-quality proxies
-3. sampling or selection bias
-4. methodology mismatch between source and use case
-5. lack of domain expertise when interpreting the data
-
-Tip: Bring domain experts in early. They often spot representational gaps or misleading proxies before those issues become embedded in features and labels.
-
-### Common Bias Patterns in Data Sources
-
-Bias enters datasets in different ways, and each pattern needs a different response.
-
-| Bias Pattern | Description |
-| --- | --- |
-| Historical bias | The source reflects unfair real-world conditions from the past |
-| Selection bias | The data includes some groups or cases more often than others |
-| Sampling bias | The sample differs systematically from the population of interest |
-| Measurement bias | The chosen metric or instrument captures some groups more accurately than others |
-| Label bias | Human judgments or historical outcomes distort the target variable |
-
-Key point: Source quality is not only about cleanliness. A perfectly formatted dataset can still be structurally unfair.
-
-### Auditing and Validation
-
-Responsible AI data management requires repeated checks before and after model training.
-
-| Audit Activity | Purpose |
-| --- | --- |
-| Data audit | Review lineage, consent, coverage, licensing, and known limitations |
-| Validation | Check formats, ranges, completeness, consistency, and business rules |
-| Fairness assessment | Compare representation and outcomes across relevant subgroups |
-| Stratified evaluation | Test whether performance hides subgroup failures |
-| Drift monitoring | Detect when incoming data distribution changes over time |
-
-Warning: Aggregate metrics can mask harm. A model may perform well overall while repeatedly failing for underrepresented groups.
-
-### Bias Mitigation in the Data Workflow
-
-Mitigation should start with the data pipeline, not only with post hoc model explanations.
-
-| Mitigation Approach | Practical Use |
-| --- | --- |
-| Better source coverage | Add missing populations, environments, or edge cases |
-| Rebalancing | Adjust class or subgroup distribution where appropriate |
-| Label review | Revisit labels that may encode human inconsistency or historical bias |
-| Fairness-aware constraints | Introduce explicit fairness goals during training or selection |
-| Ongoing monitoring | Recheck bias as usage context and incoming data evolve |
-
-Some teams also use methods such as class weighting, subgroup analysis, or adversarial approaches to reduce learned bias, but these methods do not replace responsible data collection and governance.
-
-### A Practical Review Flow
-
-One useful way to operationalize this topic is to review AI data work in sequence.
-
-1. confirm legal basis, ownership, and usage rights
-2. document consent, purpose, and retention expectations
-3. examine source coverage, representativeness, and known limitations
-4. validate quality and lineage before feature engineering
-5. test subgroup behavior rather than relying only on overall metrics
-6. apply mitigation where bias or imbalance is found
-7. monitor for drift, new harms, and policy exceptions after deployment
-
-### Minimum Standard Before Using Data in AI
-
-Before calling a dataset ready for AI use, you should be able to explain:
-
-1. why the data can be used lawfully and contractually
-2. which groups or contexts may be underrepresented
-3. what privacy, security, and consent controls apply
-4. how quality and fairness were validated
-5. what the plan is for monitoring drift, bias, and reuse risk over time
-
-## AI Governance
-
-AI governance is the set of roles, policies, controls, and review workflows used to keep AI systems aligned with organizational goals, legal requirements, and risk tolerance.
-
-Key point: Governance is how ethical intent becomes repeatable operational behavior. Without governance, responsible AI remains a slogan instead of a system.
-
-### Why Governance Exists
-
-Once AI systems affect decisions, costs, customer experience, or regulated workflows, organizations need a consistent way to decide:
-
-- which use cases are allowed
-- who approves deployment
-- how evidence is documented
-- what happens when a model fails or drifts
-
-### Core Components of an AI Governance System
-
-| Component | Purpose |
-| --- | --- |
-| Policy | Defines acceptable use, restricted use, and escalation rules |
-| Roles and ownership | Assigns accountability across business, data, legal, and technical teams |
-| Risk assessment | Classifies systems by impact, sensitivity, and control requirements |
-| Documentation | Preserves traceability for data, models, approvals, and incidents |
-| Monitoring | Detects drift, misuse, performance decay, or policy violations |
-
-Tip: A governance program should be lightweight for low-risk use cases and stricter for high-stakes systems. One uniform process for every model usually creates either bottlenecks or blind spots.
-
-### Roles and Responsibilities
-
-Governance fails when ownership is vague.
-
-| Role | Typical Responsibility |
-| --- | --- |
-| Executive sponsor | Sets risk appetite and funding priority |
-| Product or business owner | Defines the use case and acceptable outcomes |
-| Data science or ML team | Builds, tests, and documents the system |
-| Risk, legal, or compliance team | Reviews obligations, controls, and policy fit |
-| Operations team | Monitors production behavior and incident response |
-
-Warning: If no one owns post-deployment monitoring, then no one really owns the model.
-
-### Regulation, Self-Regulation, and Oversight
-
-AI governance often sits between internal self-regulation and external oversight.
-
-| Governance Mode | Strength | Limitation |
-| --- | --- |
-| Self-regulation | Fast and context-aware | Can be inconsistent or weak under business pressure |
-| Government oversight | Creates baseline protections | May lag behind technical change |
-| Hybrid approach | Balances flexibility and accountability | Requires clear mapping from policy to practice |
-
-Organizations should assume that documentation, transparency, and risk classification will matter even when regulation is still evolving.
-
-### Applying Governance Requirements
-
-Governance requirements need to be attached to systems, not just written in policy documents.
-
-| Requirement | Example Implementation |
-| --- | --- |
-| Approval gates | Review high-risk models before production release |
-| Traceability | Record data lineage, model versions, and sign-offs |
-| Human oversight | Route edge cases or contested outcomes to a reviewer |
-| Usage constraints | Block deployment for prohibited or unsupported use cases |
-| Review cadence | Reassess models on a fixed schedule or after incidents |
-
-Key point: A policy that cannot be translated into a workflow, checklist, or system control is not yet operational governance.
-
-### Governance Documentation and Traceability
-
-Traceability makes it possible to explain how a system was built and why a decision was approved.
-
-Minimum documentation often includes:
-
-1. intended use and prohibited use
-2. training data sources and major limitations
-3. evaluation results and known failure modes
-4. approval records and responsible owners
-5. monitoring triggers and rollback procedures
-
-Tip: Good documentation is not just for auditors. It also reduces team fragility when ownership changes or incidents occur months after launch.
-
-### Designing a Governance Strategy
-
-A practical governance strategy usually starts with use-case classification.
-
-| Risk Level | Typical Governance Response |
-| --- | --- |
-| Low risk | Lightweight review, basic documentation, simple monitoring |
-| Medium risk | Formal approval, stronger evaluation evidence, periodic review |
-| High risk | Cross-functional oversight, restricted deployment, continuous monitoring |
-
-Useful classification signals include:
-
-- decision impact on rights, money, safety, or access
-- sensitivity of personal or proprietary data
-- degree of automation without human intervention
-- difficulty of contesting or reversing a bad decision
-
-### Operationalizing Governance Workflows
-
-Governance becomes real when it is embedded into delivery workflows.
-
-| Stage | Governance Question |
-| --- | --- |
-| Intake | Should this use case be allowed at all? |
-| Design | What constraints, metrics, and human controls are required? |
-| Pre-deployment review | Is the evidence strong enough for release? |
-| Production | Are monitoring, alerting, and incident ownership in place? |
-| Post-deployment review | Has risk changed because of new data, drift, or usage expansion? |
-
-### Governance at Scale
-
-As the number of models grows, ad hoc spreadsheet tracking stops working. Teams usually need shared tooling for inventory, approvals, lineage, and monitoring.
-
-The specific platform matters less than the capability set:
-
-- model and use-case inventory
-- linked documentation and approvals
-- policy mapping and exception handling
-- monitoring history and incident trails
-
-### Monitoring and Continuous Improvement
-
-Governance is not complete at launch.
-
-| Monitoring Target | Why It Matters |
-| --- | --- |
-| Performance drift | A model may degrade as the environment changes |
-| Data drift | Input distributions may no longer match training conditions |
-| Policy violations | Users may apply the tool outside approved scope |
-| Incident trends | Repeated failures may reveal structural governance gaps |
-
-Warning: Many governance failures are not model failures. They are failures of scope control, documentation, escalation, or review discipline.
-
-### Minimum Standard Before Production
-
-Before shipping an AI system, you should be able to answer:
-
-1. who owns the use case
-2. what risk tier the system belongs to
-3. which evidence justified approval
-4. how the system is monitored after launch
-5. what rollback or escalation path exists if harm appears
+| 預期效益與主要取捨是什麼？誰受影響？ | [生命週期](#生命週期) |
+| 資料能合法使用嗎？同意範圍涵蓋此用途嗎？ | [資料倫理](#資料倫理)、[責任管理](#ai-用資料的責任管理) |
+| 做了哪些公平性、隱私、安全檢查？子群表現如何？ | [資料偏誤](data-bias-and-representativeness.md) |
+| 屬於哪個風險等級？誰核准？依據什麼證據？ | [治理](#治理-ai-governance) |
+| 怎麼監控、稽核、更新？出事怎麼回滾？ | [文件與可追溯性](#文件與可追溯性) |

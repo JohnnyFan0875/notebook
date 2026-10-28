@@ -26,7 +26,7 @@
 | --- | --- | --- |
 | [影像分析](image-analysis/README.md) | scikit-image、mask、物件量測、registration（古典方法，非 DL） | 不訓練模型時，如何從顯微鏡或醫學影像抽出可量測的結構？ |
 | [網路分析](network-analysis/README.md) | graph、centrality、路徑、cliques、二分網路 | 資料核心是「誰和誰相連」時，如何找重要節點與群體結構？ |
-| [Responsible AI](responsible-ai/README.md) | 倫理與治理、偏誤、隱私與法規（GDPR / EU AI Act）、匿名化、AI 資安 | 模型進入真實決策時，如何可控、可問責、合規？ |
+| [Responsible AI](responsible-ai/README.md) | 倫理與治理、偏誤（含 GWAS / EHR）、隱私與法規（GDPR / HIPAA / 個資法 / EU AI Act 醫材）、基因資料受控存取、匿名化與差分隱私、AI 資安 | 模型進入真實決策時，如何可控、可問責、合規？ |
 | [應用領域](applied-domains/README.md) | finance、行銷反應模型、最佳化、process mining | 通用方法放進特定領域時要注意什麼？ |
 
 ### 資料取得與工程（選讀）
