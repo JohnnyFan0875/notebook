@@ -1,3 +1,5 @@
+[Data Science](README.md) › Understanding Data Science
+
 # Understanding Data Science
 
 Data science is the practice of turning data into usable understanding, predictions, and decisions.
@@ -18,7 +20,7 @@ This is why data science sits between technical work and decision-making. It nee
 
 ## A Practical Workflow
 
-Most beginner-friendly data science workflows follow a pattern like this:
+A typical workflow:
 
 | Stage | Main goal | Typical output |
 | --- | --- | --- |
@@ -32,8 +34,6 @@ Most beginner-friendly data science workflows follow a pattern like this:
 Warning: Many projects fail before modeling because the question is vague, the data is weak, or the preparation step is skipped.
 
 ## Common Data Sources
-
-The introductory material split data sources into two broad groups.
 
 | Source type | Description | Examples |
 | --- | --- | --- |
@@ -92,7 +92,7 @@ Tip: Experiments are especially valuable when the goal is to support a decision 
 
 ## Modeling And Machine Learning
 
-The course also framed modeling as representing a real-world process using mathematical relationships between variables.
+Modeling means representing a real-world process using mathematical relationships between variables.
 
 Two useful distinctions:
 
@@ -118,69 +118,10 @@ One more distinction matters in business settings:
 
 These goals overlap, but they are not identical. A model with strong predictive power may be hard to explain, while an explanatory model may intentionally sacrifice some raw predictive accuracy in exchange for interpretability.
 
-## Where Python Fits
-
-Python is not data science itself. It is one of the main tools used to implement the workflow.
-
-Teams commonly use Python to:
-
-- load data from files, databases, or APIs
-- clean and reshape data
-- visualize patterns
-- run statistics and experiments
-- train machine learning models
-- automate repeatable analysis workflows
-
-## A First End-To-End Workflow
-
-Many introductory courses teach data science through a very small loop:
-
-1. load a table from a CSV file
-2. inspect the columns and a few example rows
-3. ask a simple question about one or two variables
-4. make a basic plot
-5. interpret what the plot suggests
-
-For example:
-
-```python
-import pandas as pd
-from matplotlib import pyplot as plt
-
-df = pd.read_csv("data.csv")
-
-print(df.head())
-print(df.dtypes)
-
-plt.scatter(df["age"], df["height"])
-plt.xlabel("Age")
-plt.ylabel("Height")
-plt.show()
-```
-
-This is a useful beginner workflow because it connects three ideas early:
-
-- imported files become tables you can inspect
-- table columns become inputs to analysis
-- plots are part of reasoning, not decoration
-
-The goal is not to make a perfect chart on the first pass. The goal is to shorten the distance between raw data and a testable observation.
-
-## A Healthy Beginner Mental Model
-
-If you are new to data science, keep this order in mind:
-
-1. understand the problem
-2. inspect the data source
-3. prepare and profile the data
-4. choose the right analytical method
-5. communicate the result in decision language
-
-The common mistake is reversing the order and asking "Which model should I use?" before the data and the question are stable.
-
 ## Related Notes
 
 - Use [Data Manipulation and EDA](./data-manipulation-and-eda/README.md) for profiling, missingness, and exploration before modeling.
 - Use [Data Communication](./data-communication/README.md) for problem framing, stakeholder alignment, and decision-oriented reporting.
 - Use [Statistics](./statistics/README.md) when the core task becomes estimation, hypothesis testing, or experimental reasoning.
 - Use [Machine Learning](./machine-learning/README.md) when the core task becomes prediction, evaluation, and deployment.
+- Use [A/B Testing](./statistics/experimental-design/ab-testing.md) for the experiment loop above.
