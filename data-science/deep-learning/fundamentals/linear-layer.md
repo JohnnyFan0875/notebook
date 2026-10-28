@@ -1,119 +1,63 @@
-# Linear Layer in PyTorch
+[Deep Learning](../README.md) › [基礎](README.md) › 線性層
 
-> **待修（改寫階段）**：移除標題與內文中的 emoji。
+# 線性層 (Linear Layer)
 
-## Overview
+線性層（又稱全連接層 fully connected、dense layer）對輸入做一次仿射轉換，是多層感知器 (MLP) 的基本單元，也是 CNN、Transformer 最後的分類頭。
 
-A **linear layer** (also called a fully connected or dense layer) performs a simple linear transformation:
+$$
+Y = XW^\top + b
+$$
 
-\[
-Y = XW^T + b
-\]
+| 符號 | shape | 意義 |
+| --- | --- | --- |
+| $X$ | `(batch, in_features)` | 一批輸入 |
+| $W$ | `(out_features, in_features)` | 權重；PyTorch 存的是轉置前的形狀 |
+| $b$ | `(out_features,)` | 偏差 (bias) |
+| $Y$ | `(batch, out_features)` | 輸出 |
 
-- \( X \): input tensor (batch of input samples)
-- \( W \): weight matrix (learnable parameters)
-- \( b \): bias vector (learnable parameters)
+單一線性層就是 [線性迴歸](../../statistics/regression-analysis/simple-linear-regression.md) / [logistic 迴歸](../../statistics/regression-analysis/logistic-regression.md)的線性部分；疊很多層但不加 [激活函數](activation-functions.md)，整體仍只是一個線性轉換。
 
-This is the building block of **Multilayer Perceptrons (MLPs)**.
-
-## Basic Example
+## 手算一次
 
 ```python
 import torch
-import torch.nn as nn
+from torch import nn
 
-input_tensor = torch.tensor([[0, 1, 2]])
-linear_layer = nn.Linear(in_features=3, out_features=2)
-output_tensor = linear_layer(input_tensor)
-
-print("Weights:\n", linear_layer.weight)
-print("Bias:\n", linear_layer.bias)
-
-# Formula:
-# output = input * weight^T + bias
-```
-
-## Parameter Counting
-
-Each neuron has:
-
-- One weight per input feature
-- One bias term
-
-```python
-model = nn.Sequential(
-    nn.Linear(10, 18),  # input 10 → output 18
-    nn.Linear(18, 5)    # input 18 → output 5
-)
-
-# First layer: 18 neurons × (10 + 1 bias) = 198 parameters
-# Second layer: 5 neurons × (18 + 1 bias) = 95 parameters
-
-total = 0
-for parameter in model.parameters():
-    total += parameter.numel()
-print("Total parameters:", total)  # 293
-```
-
-## Manual Weights and Bias
-
-You can manually set weights and biases for demonstration.
-
-```python
 layer = nn.Linear(2, 3)
+with torch.no_grad():                       # 手動設定參數時不要被 autograd 記錄
+    layer.weight.copy_(torch.tensor([[ 0.5, -0.3],
+                                     [ 0.2,  0.8],
+                                     [-0.7,  0.4]]))
+    layer.bias.copy_(torch.tensor([0.1, -0.2, 0.3]))
 
-# Manually assign values
-with torch.no_grad():
-    layer.weight = nn.Parameter(torch.tensor([[0.5, -0.3],
-                                              [0.2,  0.8],
-                                              [-0.7, 0.4]]))
-    layer.bias = nn.Parameter(torch.tensor([0.1, -0.2, 0.3]))
-
-x = torch.tensor([[2.0, 3.0]])
-output = layer(x)
-print(output)
+x = torch.tensor([[2.0, 3.0]])              # 必須是 float；整數輸入會報 dtype 錯誤
+layer(x)                                    # tensor([[0.2000, 2.6000, 0.1000]])
 ```
 
-### Step-by-Step Breakdown
+| 輸出神經元 | $x \cdot w_j$ | + bias | 結果 |
+| --- | --- | --- | --- |
+| 1 | 2×0.5 + 3×(−0.3) = 0.1 | +0.1 | **0.2** |
+| 2 | 2×0.2 + 3×0.8 = 2.8 | −0.2 | **2.6** |
+| 3 | 2×(−0.7) + 3×0.4 = −0.2 | +0.3 | **0.1** |
 
-Consider the example above with \( x = [2, 3] \):
+## 參數量
 
-\[
-x \times W^T =
-[2, 3] \times
-\begin{bmatrix}
-0.5 & -0.3 \\
-0.2 & 0.8 \\
--0.7 & 0.4
-\end{bmatrix}^T
-\]
+每個輸出神經元有 `in_features` 個權重 + 1 個 bias：參數量 = `out × (in + 1)`。
 
-Breaking it down:
+```python
+model = nn.Sequential(nn.Linear(10, 18), nn.Linear(18, 5))
+# 第 1 層 18 × (10 + 1) = 198；第 2 層 5 × (18 + 1) = 95
+sum(p.numel() for p in model.parameters())                     # 293
+sum(p.numel() for p in model.parameters() if p.requires_grad)  # 只算可訓練的（凍結層之後有差）
+```
 
-- **First output neuron**:
-  \((2 \times 0.5) + (3 \times -0.3) = 0.1\)
+> 生資常見的「20,000 個基因 → 512 個隱藏單元」第一層就有約 1,000 萬個參數，樣本卻只有幾百個——這是 [高維小樣本](../../machine-learning/foundations/high-dimensional-data.md) 問題，需要強正則化、先降維或改用預訓練表示。
 
-- **Second output neuron**:
-  \((2 \times 0.2) + (3 \times 0.8) = 2.8\)
+## 實務提醒
 
-- **Third output neuron**:
-  \((2 \times -0.7) + (3 \times 0.4) = -0.2\)
-
-So, before bias:
-\[
-[0.1, \; 2.8, \; -0.2]
-\]
-
-Adding bias \([0.1, -0.2, 0.3]\):
-\[
-[0.2, \; 2.6, \; 0.1]
-\]
-
-✅ **Final output**: `[0.2, 2.6, 0.1]`
-
-## Practical Notes
-
-- `nn.Linear(in_features, out_features)` automatically initializes weights and biases.
-- Initialization can be customized with methods like **Xavier** or **Kaiming** (see [Weight Initialization](weight-initialization.md)).
-- Linear layers are often combined with **activation functions** (`ReLU`, `Sigmoid`, etc.) to build non-linear models (see [Activation functions](activation-functions.md)).
-- Always check **parameter counts** when designing networks → helps avoid **underfitting** (too few parameters) or **overfitting** (too many parameters).
+| 項目 | 說明 |
+| --- | --- |
+| 預設初始化 | `nn.Linear` 建立時已隨機初始化；自訂方式見 [權重初始化](weight-initialization.md) |
+| 不知道輸入維度 | `nn.LazyLinear(out_features)` 會在第一次 forward 時推斷 `in_features`（CNN flatten 後常用） |
+| 輸出層 | 分類輸出維度 = 類別數，**不加 softmax**（loss 內含），見 [損失函數](loss-functions.md) |
+| 層與層之間 | 加非線性（ReLU、GELU），否則多層等於一層 |

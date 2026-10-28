@@ -1,98 +1,124 @@
-# Convolutional Neural Networks
+[Deep Learning](../README.md) › [電腦視覺](README.md) › 卷積神經網路
 
-CNN 是影像任務的經典起點。它的核心不是「神經網路比較深」，而是利用卷積核與局部感受野，讓模型更有效率地學到空間結構。
+# 卷積神經網路 (Convolutional Neural Networks, CNN)
 
-## 為什麼影像不適合直接全連接
+CNN 用小卷積核 (kernel) 掃過影像，同一組權重在每個位置共用。這帶來兩個好處：參數量遠少於全連接層，而且同一個特徵（邊緣、細胞核紋理）無論出現在哪裡都能被偵測到。
 
-若直接把影像攤平成一大串數值再接全連接層，參數量會暴增，而且模型很難利用鄰近像素之間的空間關係。
+## 為什麼不用全連接層
 
-CNN 的做法是：
+| 做法 | 224×224×3 影像接 1,000 個單元的參數量 | 空間結構 |
+| --- | --- | --- |
+| 攤平後接 `Linear` | 約 1.5 億 | 丟失；像素位置一移動就是不同輸入 |
+| `Conv2d(3, 64, kernel_size=3)` | 3×3×3×64 + 64 = 1,792 | 保留；局部連接、權重共享 |
 
-- 用小卷積核掃過局部區域
-- 共享權重，減少參數量
-- 逐層從邊緣、紋理到更高階特徵
+## 元件
 
-## CNN 的常見元件
+| 元件 | 作用 | PyTorch |
+| --- | --- | --- |
+| 卷積 (convolution) | 擷取局部特徵；輸出通道數 = kernel 數 | `nn.Conv2d(C_in, C_out, kernel_size, stride, padding)` |
+| 激活 | 非線性 | `nn.ReLU()` |
+| Normalization | 穩定訓練 | `nn.BatchNorm2d(C)`，見 [Normalization](../fundamentals/regularization-and-normalization.md#batchnorm-vs-layernorm) |
+| Pooling | 降低空間解析度、增加對小位移的容忍 | `nn.MaxPool2d(2)` |
+| Global average pooling | 每個通道取平均 → 長度 C 的向量，與輸入大小無關 | `nn.AdaptiveAvgPool2d(1)` |
+| 分類頭 | 向量 → 類別 logits | `nn.Linear(C, K)` |
 
-| 元件 | 作用 |
+逐層堆疊後，前面的層學邊緣與紋理，後面的層組合成更高階的形狀；每個輸出位置「看得到」的輸入範圍（感受野 receptive field）隨深度擴大。
+
+## 輸出尺寸
+
+$$
+H_{out} = \left\lfloor \frac{H_{in} + 2 \cdot \text{padding} - \text{kernel}}{\text{stride}} \right\rfloor + 1
+$$
+
+| 設定 | 64×64 輸入 → 輸出 |
 | --- | --- |
-| convolution | 擷取局部特徵 |
-| activation | 加入非線性 |
-| pooling | 降低空間解析度、增加穩健性 |
-| batch normalization | 穩定訓練 |
-| fully connected head | 做最終分類 |
+| `kernel=3, padding=1, stride=1` | 64×64（"same"） |
+| `kernel=3, padding=0` | 62×62 |
+| `kernel=3, padding=1, stride=2` | 32×32 |
+| `MaxPool2d(2)` | 32×32 |
 
-## PyTorch Skeleton
+## 影像分類模型
 
 ```python
+import torch
 from torch import nn
 
 model = nn.Sequential(
-    nn.Conv2d(3, 16, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.MaxPool2d(2),
-    nn.Conv2d(16, 32, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.MaxPool2d(2),
-    nn.Flatten(),
-    nn.Linear(32 * 16 * 16, 64),
-    nn.ReLU(),
-    nn.Linear(64, 4),
+    nn.Conv2d(3, 16, kernel_size=3, padding=1), nn.BatchNorm2d(16), nn.ReLU(),
+    nn.MaxPool2d(2),                                   # 64 → 32
+    nn.Conv2d(16, 32, kernel_size=3, padding=1), nn.BatchNorm2d(32), nn.ReLU(),
+    nn.MaxPool2d(2),                                   # 32 → 16
+    nn.Flatten(),                                      # 32 × 16 × 16 = 8192
+    nn.Linear(32 * 16 * 16, 64), nn.ReLU(),
+    nn.Linear(64, 4),                                  # 4 類 logits
 )
+x = torch.randn(8, 3, 64, 64)                          # (batch, channels, height, width)
+model(x).shape                                         # torch.Size([8, 4])
 ```
 
-## 該注意哪些 shape
+> 不想手算 flatten 後的維度：用 `nn.AdaptiveAvgPool2d(1)` + `nn.Flatten()` + `nn.Linear(32, 4)`（輸入大小改變也能用），或 `nn.LazyLinear(64)`。
 
-- `Conv2d` 的輸入通常是 `(batch, channels, height, width)`
-- pooling 會改變高與寬
-- 接到 `Linear` 前，務必確認 flatten 後的維度
-
-## 影像分類流程
-
-1. 準備資料集與標籤
-2. 做 resize、normalize、augmentation
-3. 用 `DataLoader` 建立 mini-batch
-4. 定義模型與 loss
-5. 訓練並監控 validation 表現
-6. 檢查 confusion matrix、錯誤樣本與 class imbalance
-
-| 前處理 | 作用 |
-| --- | --- |
-| `Resize` | 統一輸入大小 |
-| `ToTensor` | 把影像轉成 tensor |
-| `Normalize` | 讓像素分布穩定 |
-| augmentation | flip、crop、color jitter；只套在 train |
+## 資料管線
 
 ```python
-from torch import nn, optim
 from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
+from torchvision import datasets
+from torchvision.transforms import v2 as T
 
-transform = transforms.Compose([
-    transforms.Resize((64, 64)),
-    transforms.ToTensor(),
+train_tf = T.Compose([
+    T.RandomResizedCrop(224, scale=(0.8, 1.0)),
+    T.RandomHorizontalFlip(),
+    T.ToImage(), T.ToDtype(torch.float32, scale=True),           # 取代舊的 ToTensor()
+    T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),   # ImageNet 統計量（用預訓練模型時）
 ])
-train_ds = datasets.FakeData(size=512, image_size=(3, 64, 64), num_classes=4, transform=transform)
-train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
-
-criterion = nn.CrossEntropyLoss()                       # model 用上面的 CNN skeleton（64×64 輸入 → 32×16×16）
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+eval_tf = T.Compose([
+    T.Resize(256), T.CenterCrop(224),                            # 無隨機性
+    T.ToImage(), T.ToDtype(torch.float32, scale=True),
+    T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+train_ds = datasets.ImageFolder("data/train", transform=train_tf)   # 子資料夾名稱 = 類別
+train_loader = DataLoader(train_ds, batch_size=32, shuffle=True, num_workers=4)
 ```
 
-## 輸出該怎麼看
+訓練迴圈見 [PyTorch 訓練迴圈](../training-workflows/pytorch-training-loop.md)；資料少時直接用 [預訓練模型](../training-workflows/transfer-learning.md)，幾乎一定比從頭訓練好。
 
-- 多類別分類時，輸出通常是 logits，不是機率。
-- 要看預測類別時，常用 `argmax(dim=1)`。
-- 要看類別機率時，可再接 `softmax`，但訓練時的 `CrossEntropyLoss` 不需要你手動先做 softmax。
+## 經典架構
+
+| 架構 | 關鍵想法 | 現況 |
+| --- | --- | --- |
+| LeNet / AlexNet / VGG | 卷積 + pooling 堆疊；VGG 全用 3×3 | 教學用 |
+| **ResNet** | 殘差連接 (residual connection)：$y = F(x) + x$，梯度可直接走捷徑 → 可訓練上百層 | 最常用的 baseline 骨幹 |
+| EfficientNet / ConvNeXt | 系統化縮放深度、寬度、解析度 / 現代化 CNN 設計 | 準確率與效率兼顧 |
+| U-Net | encoder-decoder + skip connection | 分割，見 [U-Net](u-net-segmentation.md) |
+| Vision Transformer (ViT) | 影像切成 patch 當 token，用 [Transformer](../nlp-and-transformers/transformers-and-attention.md) | 大資料 / 大型預訓練時表現佳；病理基礎模型多採用 |
+
+## 1D CNN：序列也能用
+
+卷積不限於影像。DNA 序列 one-hot 成 `(4, L)` 後，用 `nn.Conv1d` 掃描，kernel 等同於可學習的 motif（PWM）偵測器：
+
+```python
+x = torch.randn(8, 4, 1000)                            # (batch, A/C/G/T, 序列長度)
+nn.Conv1d(4, 64, kernel_size=19, padding="same")(x).shape   # torch.Size([8, 64, 1000])
+```
+
+詳見 [序列與蛋白模型](../bio-applications/sequence-and-protein-models.md)。
+
+## 輸出與評估
+
+| 項目 | 做法 |
+| --- | --- |
+| 預測類別 | `logits.argmax(dim=1)` |
+| 類別機率 | `logits.softmax(dim=1)`；訓練時不要先 softmax（[CrossEntropyLoss](../fundamentals/loss-functions.md) 內含） |
+| 評估 | 混淆矩陣、每類 recall、AUROC，見 [模型評估](../../machine-learning/evaluation/README.md) |
+| 模型在看哪裡 | Grad-CAM 熱圖；可檢查是否依賴非病灶線索（尺標、文字標記、掃描儀邊框） |
 
 ## 常見錯誤
 
-- 忘記算卷積與 pooling 後的輸出 shape，導致 `Linear` 維度不合。
-- 把 `CrossEntropyLoss` 和手動 `Softmax` 疊在一起用。
-- augmentation 只套在 train，卻忘了 validation 也要至少做一致的 resize / tensor transform。
-- 資料量不多卻訓練太深的 CNN，結果嚴重 overfitting；資料不多時先用 [Transfer Learning](../training-workflows/transfer-learning.md)。
-- 只看訓練 accuracy，不看 validation loss 是否反而上升；accuracy 不錯也要回頭看哪些類別最常被混淆。
-
-## 小結
-
-CNN 是學影像 deep learning 最好的入門任務，因為它能把資料前處理、模型設計、shape 檢查、loss 與評估全部串起來。
+| 錯誤 | 說明 |
+| --- | --- |
+| `Linear` 維度不合 | 沒算對卷積 / pooling 後的尺寸；用上方公式或 adaptive pooling |
+| 通道順序錯 | PyTorch 是 `(N, C, H, W)`；NumPy / PIL / Keras 常是 `(H, W, C)` → `permute(2, 0, 1)` |
+| augmentation 也套在 validation | validation 只做 resize / normalize，不能有隨機變換 |
+| 同一病人的影像跨 train / test | 依病人切分（見 [訓練迴圈](../training-workflows/pytorch-training-loop.md#資料切分dl-特有的陷阱)） |
+| 捷徑學習 (shortcut learning) | 模型學到醫院、掃描儀或標記而非病灶；用外部醫院資料驗證、看 Grad-CAM |
+| 樣本少卻從頭訓練深層 CNN | 嚴重過擬合；改用預訓練模型 |

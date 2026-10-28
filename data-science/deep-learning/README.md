@@ -1,25 +1,43 @@
-# Deep Learning
+[Data Science](../README.md) › Deep Learning
 
-這個章節整理深度學習的核心觀念與常見任務，涵蓋入門、影像、文字、transformer、訓練效率與 LLM fine-tuning。內容已從零散的 framework 筆記重整成概念與任務導向的結構，方便用一般 Markdown 連續閱讀。
+# 深度學習 (Deep Learning)
 
-## 建議學習順序
+用多層可微分的函數從原始資料（影像、序列、圖）直接學表示 (representation)。本章以 PyTorch 為主，講模型與訓練；LLM 的應用與系統見 [LLM](../llm/README.md)。
 
-1. [Fundamentals](fundamentals/README.md): 先理解 tensor、linear layer、activation、loss、backpropagation 與 initialization。
-2. [Training Workflows](training-workflows/README.md): 把訓練、checkpoint、遷移學習與效率優化串成完整流程。
-3. [Computer Vision](computer-vision/README.md): 以影像分類任務理解 CNN 與資料管線。
-4. [NLP and Transformers](nlp-and-transformers/README.md): 從文字表示、序列模型一路到 transformer 與 LLM fine-tuning。
+> 深度學習不會讓 [資料洩漏](../machine-learning/foundations/data-leakage.md)、[交叉驗證設計](../machine-learning/workflow/cross-validation.md)、[評估指標](../machine-learning/evaluation/README.md) 的規則失效；參數越多，越容易把切分錯誤記成「好結果」。
+
+## 模組
+
+| 模組 | 核心內容 | 回答的問題 |
+| --- | --- | --- |
+| [基礎](fundamentals/README.md) | tensor、linear layer、activation、loss、反向傳播與 optimizer、初始化、dropout / normalization | 神經網路由什麼組成？怎麼學？ |
+| [訓練流程](training-workflows/README.md) | Dataset / DataLoader、訓練迴圈、scheduler、early stopping、checkpoint、遷移學習、混合精度 | 怎麼把模型穩定、可重現地訓練起來？ |
+| [電腦視覺](computer-vision/README.md) | CNN、影像分類、U-Net 分割 | 影像（含顯微、醫學影像）怎麼建模？ |
+| [NLP 與 Transformer](nlp-and-transformers/README.md) | tokenize、embedding、RNN / LSTM、attention、Transformer | 序列資料怎麼建模？Transformer 為何主流？ |
+| [表示學習](representation-learning/README.md) | Autoencoder、VAE、圖神經網路 (GNN) | 沒有標籤、或資料是圖結構時怎麼學？ |
+| [生資應用](bio-applications/README.md) | DNA / 蛋白質序列模型（CNN、ESM、Enformer、AlphaFold）、單細胞 DL（scVI） | 深度學習在生資實際怎麼用？陷阱是什麼？ |
+
+## 建議路線
+
+| 讀者 | 路線 |
+| --- | --- |
+| 初學 | 基礎（tensor → linear → activation → loss → 反向傳播 → 初始化 → 正則化）→ [訓練迴圈](training-workflows/pytorch-training-loop.md) → [CNN](computer-vision/convolutional-neural-networks.md) → [Transformer](nlp-and-transformers/transformers-and-attention.md) |
+| **生物資訊** | [訓練迴圈](training-workflows/pytorch-training-loop.md) → [遷移學習](training-workflows/transfer-learning.md) → [序列與蛋白模型](bio-applications/sequence-and-protein-models.md) → [VAE](representation-learning/autoencoders-and-vae.md) → [單細胞 DL](bio-applications/single-cell-deep-learning.md) → [U-Net](computer-vision/u-net-segmentation.md) / [GNN](representation-learning/graph-neural-networks.md) 依資料型態選 |
+| 已會 Keras | [PyTorch ↔ Keras 對照](fundamentals/tensorflow-and-keras-basics.md) → [訓練迴圈](training-workflows/pytorch-training-loop.md) |
 
 ## 先備知識
 
-- [NumPy](../python-foundations/numpy/README.md): 張量 shape、broadcasting 與矩陣運算觀念會大量重用。
-- [Machine Learning Foundations](../machine-learning/foundations/README.md): 尤其是 loss、generalization、overfitting 與 regularization。
+| 主題 | 為什麼 |
+| --- | --- |
+| [NumPy](../python-foundations/numpy/README.md) | shape、broadcasting、矩陣乘法與 tensor 完全相同 |
+| [ML 基礎](../machine-learning/foundations/README.md) | loss、泛化、bias-variance、正則化 |
+| [ML 工作流程](../machine-learning/workflow/README.md) | 切分、交叉驗證、調參在 DL 一樣適用 |
 
-## 補充說明
+## 什麼時候不用深度學習
 
-- `Fundamentals` 除了觀念本身，也開始補上 TensorFlow/Keras 的基礎工作流，避免整個 deep learning 區只剩 PyTorch 視角。
-
-## 章節設計原則
-
-- 以「觀念」與「任務」分類，而不是以套件名稱分類。
-- PyTorch 仍然是主要範例框架，但不再當成最上層目錄。
-- 與 `llm/` 章節切分方式為：本章講模型與訓練，`llm/` 講應用與系統。
+| 情境 | 較好的起點 |
+| --- | --- |
+| 表格資料（臨床變數、基因表現矩陣當特徵）、樣本數幾百 | 正則化線性模型、[梯度提升樹](../machine-learning/supervised-learning/ensemble/README.md) |
+| 需要係數解釋、信賴區間 | [統計模型](../statistics/README.md) |
+| 樣本少但有大型預訓練模型可用 | [遷移學習](training-workflows/transfer-learning.md) / 抽 embedding 再接簡單模型 |
+| 影像、序列、圖、大量未標註資料 | 深度學習 |
