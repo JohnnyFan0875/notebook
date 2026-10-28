@@ -200,7 +200,7 @@
 
 - [x] 重寫 `data-science/README.md`：新章節地圖、依讀者類型的建議路線（生資 / ML / 選讀的工程與 BI），移除已刪章節
 - [x] `understanding-data-science.md` 精簡（改寫階段處理文字）（已刪 Where Python Fits / 入門 CSV 範例 / 重複的 mental model 段，加麵包屑）
-- [ ] 全 notebook 連結檢查零錯誤 → commit → 合併回 master（使用者確認後）（連結檢查與 commit 已完成，待使用者確認後合併）
+- [x] 全 notebook 連結檢查零錯誤 → commit → 合併回 master（使用者確認後）（已合併）
 
 ## Phase 7：用 `/rewrite-notes` 分批改寫
 
