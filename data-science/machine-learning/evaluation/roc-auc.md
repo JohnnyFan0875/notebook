@@ -1,92 +1,69 @@
-# ROC curve, AUC
+[Machine Learning](../README.md) › [模型評估](README.md) › ROC 與 AUC
 
-* **ROC curve**: Receiver Operating Characteristic Curve
-* **AUC**: Area Under the Curve, ranges between `0` and `1`
+# ROC 曲線與 AUC (ROC Curve and AUC)
 
-ROC curve 用來看二元 [classification](../supervised-learning/classification/) 模型在不同 threshold 下，真陽性率與假陽性率如何一起變化。它適合回答「模型有沒有把正例排得比負例前面」這類辨識能力問題。
+ROC (Receiver Operating Characteristic) 曲線看二元 [分類](../supervised-learning/classification/README.md) 模型在**所有閾值**下，真陽性率與偽陽性率如何一起變化；AUC (Area Under the Curve) 把整條曲線濃縮成一個數字，衡量模型**把陽性排在陰性前面**的能力。
 
-## Axes
+## 曲線怎麼來
 
-* **x-axis**: FPR (False Positive Rate) ( FPR = \frac{FP}{TN + FP} = 1 - \text{Specificity} )
-* **y-axis**: TPR (True Positive Rate, Sensitivity) ( TPR = \frac{TP}{TP + FN} )
+| 軸 | 定義 |
+| --- | --- |
+| x：偽陽性率 FPR | $\frac{FP}{FP+TN}$ = 1 − specificity |
+| y：真陽性率 TPR | $\frac{TP}{TP+FN}$ = recall = sensitivity |
 
-## How to Read the Curve
+把閾值從 1 掃到 0，每個閾值產生一個 (FPR, TPR) 點，連起來就是 ROC 曲線。
 
-* 曲線越靠左上角越好，代表在維持較低 FPR 的同時能拿到較高 TPR。
-* 對角線代表隨機猜測基準。
-* 若兩模型 ROC 曲線交叉，只看 AUC 可能還不夠，還要考慮實際可接受的 FPR 區間。
+![Score distributions and ROC](src/roc-auc-score-distributions.png)
 
-![Example ROC curve](assets/roc-curve-example.png)
+左：陽性與陰性的預測機率分布；閾值 0.5 右邊的陽性是 TP、陰性是 FP。右：閾值 0.5 對應 ROC 上的黑點（TPR 0.55、FPR 0.11）；降低閾值會沿曲線往右上移動。兩個分布重疊越少，曲線越靠左上角。
 
-## Construction
+## AUC 的意義
 
-把模型機率輸出從高到低掃過不同 cutoff，每個 threshold 都會對應一組 `(FPR, TPR)`，連起來就是 ROC curve。
+> **AUC = 隨機挑一個陽性與一個陰性，模型給陽性的分數比較高的機率。** 它只看排序，不看機率值本身。
 
-## AUC Interpretation
+| AUC | 意義 |
+| --- | --- |
+| 1.0 | 完美排序 |
+| 0.9 以上 | 很好（但先懷疑一下 [洩漏](../foundations/data-leakage.md)） |
+| 0.7–0.8 | 可用，依領域而定 |
+| 0.5 | 等於隨機（對角線） |
+| < 0.5 | 比隨機差 → 通常是標籤或分數方向反了 |
 
-* **AUC = 0.5**: classifier performs no better than random guessing
-* **AUC > 0.5**: model has predictive power
-* **AUC = 1.0**: perfect ranking between positive and negative classes
+AUC 等價於 Mann-Whitney U 統計量除以 $n_{pos} \cdot n_{neg}$，見 [Mann-Whitney U](../../statistics/nonparametric-methods/two-independent-samples.md)。
 
-## When ROC/AUC Is Useful
-
-* 你關心模型的整體排序能力，而不是單一 cutoff。
-* 你還沒決定 threshold，但想先比較不同模型。
-* 正負樣本不完全平衡，但你仍希望看 across-threshold 的辨識能力。
-
-## Important Cautions
-
-* ROC/AUC 不會直接告訴你哪個 threshold 最符合業務目標。
-* 在極度不平衡資料中，PR curve 有時比 ROC 更敏感。
-* AUC 高不代表 calibration 好，也不代表實際 precision 一定高。
-
-## Example
+## 程式
 
 ```python
-from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_curve, auc, roc_auc_score
 import numpy as np
+from sklearn.metrics import roc_auc_score, roc_curve, RocCurveDisplay
 
-# Generate dataset
-X, y = make_classification(n_samples=1000, n_features=20, n_informative=2, n_classes=2, random_state=42)
+# 承「混淆矩陣指標」的乳癌範例：model、X_test、y_test（1 = 惡性）
+y_prob = model.predict_proba(X_test)[:, 1]        # 要用機率 / 分數，不是 predict() 的 0/1
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-
-# Train model
-model = LogisticRegression()
-model.fit(X_train, y_train)
-
-# Predict probabilities
-y_prob = model.predict_proba(X_test)[:, 1]
-
-# ROC curve
+roc_auc_score(y_test, y_prob)                     # 0.9975
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
-roc_auc = auc(fpr, tpr)
-roc_auc_score_val = roc_auc_score(y_test, y_prob)
+RocCurveDisplay.from_predictions(y_test, y_prob)
 
-# Find best threshold using Youden index
-j_scores = tpr - fpr
-best_threshold = thresholds[np.argmax(j_scores)]
+# Youden index：最大化 TPR − FPR 的閾值（= sensitivity + specificity − 1 最大）
+j = np.argmax(tpr - fpr)
+thresholds[j], tpr[j], fpr[j]                     # 0.243, 0.984, 0.019
 
-print("AUC (via auc):", roc_auc)
-print("AUC (via roc_auc_score):", roc_auc_score_val)
-print("Best threshold (Youden):", best_threshold)
+# 多類別：one-vs-rest 平均
+roc_auc_score(y_multi, proba_multi, multi_class="ovr", average="macro")
 ```
 
-## Key Takeaways
+> 用 `predict()` 的 0/1 結果算 AUC 只會得到單一閾值的點，AUC 會被嚴重低估；一定要傳機率或 `decision_function` 的分數。
 
-* ROC curve evaluates a model across thresholds instead of at one cutoff.
-* AUC summarizes overall discrimination ability.
-* **Youden index** can be a useful heuristic cutoff, but it should not replace cost-based decision design.
-* Useful when class distribution is [imbalanced](class-imbalance.md).
+## 何時用、何時不夠
 
-## Related Concepts
+| 適合 | 不夠的地方 |
+| --- | --- |
+| 比較模型的整體排序能力 | 不告訴你該用哪個閾值 |
+| 還沒決定閾值時 | **不反映校準**：機率全部乘 0.5，AUC 不變，見 [校準](classification-thresholds-and-calibration.md) |
+| 類別比例會改變時（ROC 不受盛行率影響） | 正類很稀少時太樂觀：大量 TN 讓 FPR 看起來很小 → 改看 [PR 曲線](class-imbalance.md) |
+| — | 兩條 ROC 交叉時，AUC 高的不一定在你在乎的區間比較好 → 看部分 AUC 或特定 FPR 下的 TPR |
+| — | 只能處理前 k% 時，看 [Gains / Lift](gains-and-lift-curves.md) |
 
-* [Classification Thresholds and Calibration](classification-thresholds-and-calibration.md)
-* [Confusion Matrix](confusion-metrics.md)
-* [Class Imbalance](class-imbalance.md)
-* [Logistic Regression](../supervised-learning/classification/logistic-regression.md)
-
-[Back to Evaluation](./)
+> Youden index 是方便的啟發式閾值，但它假設偽陽性與偽陰性代價相同；實務上應依錯誤成本決定閾值。
+>
+> 測試集小時 AUC 的不確定性很大，記得報告信賴區間，見 [指標的不確定性](metric-uncertainty.md)。

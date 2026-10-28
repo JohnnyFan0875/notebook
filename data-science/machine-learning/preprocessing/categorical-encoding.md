@@ -1,145 +1,98 @@
-# Categorical Encoding
+[Machine Learning](../README.md) › [前處理](README.md) › 類別編碼
 
-Categorical encoding transforms categorical features into numeric representations that machine learning models can use. [scikit-learn](../packages/scikit-learn/README.md) and related libraries provide multiple encoding strategies suitable for different scenarios.
+# 類別編碼 (Categorical Encoding)
 
-## Example Dataset
+把類別變數轉成模型能用的數值。選法取決於**類別有沒有順序**、**類別數（基數 cardinality）多寡**，以及**模型種類**。
+
+## 方法比較
+
+| 方法 | 做法 | 適用 | 風險 |
+| --- | --- | --- | --- |
+| One-hot | 每個類別一個 0/1 欄 | 名目、低基數（< 數十類）；**安全預設** | 高基數時欄位爆量 |
+| Dummy（`drop_first`） | One-hot 少一欄 | 未正則化的線性 / 邏輯斯迴歸（避免完全共線性） | 有正則化或樹模型時不需要 |
+| Ordinal | 依順序給 0, 1, 2… | **有順序**的類別（S < M < L）；樹模型的低基數名目變數 | 用在線性模型的名目變數會捏造大小關係 |
+| Frequency / count | 以出現比例 / 次數取代 | 高基數；頻率本身有意義 | 不同類別頻率相同會撞在一起 |
+| Target encoding | 以該類別的平均目標值取代 | 高基數且與目標有關（郵遞區號、基因家族） | **極易洩漏**，必須交叉擬合 (cross-fitting) |
+| Hashing | 雜湊到固定數量的欄 | 極高基數、串流資料 | 雜湊碰撞；不可解釋 |
+| Binary | 類別編號轉二進位 | 中基數 | 需 `category_encoders` 套件；欄位語意不清 |
+| 原生類別支援 | 模型直接處理 | `HistGradientBoosting(categorical_features=...)`、LightGBM、CatBoost | 依套件而定 |
+
+## 用法
 
 ```python
-import seaborn as sns
 import pandas as pd
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, TargetEncoder
 
-# Load the Iris dataset
-iris = sns.load_dataset("iris").copy()
-iris.head()
-```
+df = pd.DataFrame({"size": ["S", "M", "L", "M", "S", "XL"],
+                   "city": ["A", "B", "A", "C", "A", "B"]})
 
-## One-Hot Encoding
+# 1. One-hot：handle_unknown 讓上線遇到新類別不報錯；min_frequency 把罕見類別併成一欄
+ohe = OneHotEncoder(handle_unknown="infrequent_if_exist", min_frequency=2, sparse_output=False)
+ohe.fit(df[["city"]]).get_feature_names_out()   # ['city_A', 'city_B', 'city_infrequent_sklearn']
 
-One of the most common techniques. Each category is represented as a new binary feature.
+# pandas 版（探索用；建模請用 sklearn，才能存進 pipeline）
+pd.get_dummies(df["city"], drop_first=True, dtype=int)            # 欄位 B, C
 
-```python
-from sklearn.preprocessing import OneHotEncoder
+# 2. Ordinal：明確指定順序，否則預設依字母排序
+OrdinalEncoder(categories=[["S", "M", "L", "XL"]]).fit_transform(df[["size"]])   # 0, 1, 2, 1, 0, 3
 
-encoder = OneHotEncoder(sparse_output=False)
-encoded = encoder.fit_transform(iris[['species']])
-encoded_df = pd.DataFrame(encoded, columns=encoder.get_feature_names_out(['species']))
+# 3. Frequency：比例要用訓練資料算，再 map 到測試資料
+freq = X_train["city"].value_counts(normalize=True)
+X_test["city_freq"] = X_test["city"].map(freq).fillna(0)
 
-iris_encoded = pd.concat([iris, encoded_df], axis=1)
-```
+# 4. Target encoding：sklearn ≥ 1.3 的 TargetEncoder 在 fit_transform 時自動做 cross-fitting
+te = TargetEncoder(cv=5)                 # 平滑 (smooth="auto") 會把小類別拉向整體平均
+X_train_te = te.fit_transform(X_train[["gene_family"]], y_train)   # 每筆用「不含自己 fold」的平均
+X_test_te = te.transform(X_test[["gene_family"]])                   # 測試資料用全部訓練資料的平均
 
-- Creates a new column for each category.
-- Suitable for algorithms that don’t assume order.
-- Can increase dimensionality when categories are many (high-cardinality).
-
-在很多 basetable workflow 裡，這其實就是把 business category 轉成 dummy variables。
-
-```python
-dummies_segment = pd.get_dummies(basetable["segment"], drop_first=True)
-basetable = pd.concat([basetable, dummies_segment], axis=1)
-del basetable["segment"]
-```
-
-`drop_first=True` 常用在 linear / logistic regression，因為它可以少一欄、降低完全共線性的風險。
-
-## Ordinal Encoding
-
-Assigns integer values to categories. Useful when categories have a natural order.
-
-```python
-from sklearn.preprocessing import OrdinalEncoder
-
-encoder = OrdinalEncoder()
-iris['species_ordinal'] = encoder.fit_transform(iris[['species']])
-```
-
-- Fast and memory efficient.
-- Only appropriate when categories are ordered (e.g., small < medium < large).
-- Misuse may mislead models into assuming order where none exists.
-
-## Frequency Encoding
-
-Replace each category with its frequency or proportion in the dataset.
-
-```python
-freq_map = iris['species'].value_counts(normalize=True)
-iris['species_freq'] = iris['species'].map(freq_map)
-```
-
-- Keeps feature 1-dimensional.
-- Useful for high-cardinality categorical features.
-- May capture target leakage if computed improperly (must use only training set).
-
-## Mean Target Encoding
-
-Replace categories with the mean of the target variable within each category.
-
-```python
-from sklearn.model_selection import train_test_split
-
-# For illustration, predict whether petal_length > 3.5
-iris['target'] = (iris['petal_length'] > 3.5).astype(int)
-
-train, test = train_test_split(iris, test_size=0.3, random_state=42)
-mean_target = train.groupby('species')['target'].mean().to_dict()
-
-train['species_mean_target'] = train['species'].map(mean_target)
-test['species_mean_target'] = test['species'].map(mean_target)
-```
-
-- Powerful for categorical features with predictive power.
-- **Risk of [overfitting](../foundations/overfitting-underfitting.md)** if computed on full dataset (must be computed only on training data).
-- Can be improved with smoothing (e.g., blending global mean with category mean).
-
-## Hashing Encoding
-
-Encodes categories into a fixed number of hashed bins. Useful for very high-cardinality features.
-
-```python
+# 5. Hashing
 from sklearn.feature_extraction import FeatureHasher
-
-# Example with synthetic categorical data
-import pandas as pd
-X = pd.DataFrame({'category': ['a', 'b', 'c', 'a', 'b', 'd']})
-
-hasher = FeatureHasher(n_features=4, input_type='string')
-X_hashed = hasher.transform(X['category'])
+FeatureHasher(n_features=16, input_type="string").transform([[c] for c in df["city"]])
 ```
 
-- Constant memory usage.
-- No need to store a dictionary of categories.
-- Hash collisions possible (two categories mapped to same bin).
+> sklearn 1.9 起 `TargetEncoder(shuffle=..., random_state=...)` 已 deprecated，改成傳入 CV 物件：`TargetEncoder(cv=KFold(5, shuffle=True, random_state=0))`。
 
-## Binary Encoding (via `category_encoders`)
+## Target encoding 為什麼會洩漏
 
-Encodes categories as binary digits. Efficient for medium-cardinality features.
+手動在整份訓練資料上算「類別平均目標值」，每一列的編碼都包含了**它自己的標籤**。類別越多、每類樣本越少，洩漏越嚴重。
+
+模擬：300 個類別、2,000 筆、**目標是純隨機**（真正 AUC = 0.5）：
+
+| 做法 | 5-fold CV AUC |
+| --- | --- |
+| 先在全資料上算類別平均，再做 CV | **0.71**（假訊號） |
+| `TargetEncoder` 放在 pipeline 內 | 0.51 |
 
 ```python
-!pip install category_encoders
+# 錯：手動 groupby 平均後再 CV
+means = y.groupby(X["gene_family"]).mean()
+X_leak = X["gene_family"].map(means).to_frame()
 
-import category_encoders as ce
-
-encoder = ce.BinaryEncoder(cols=['species'])
-iris_binary = encoder.fit_transform(iris[['species']])
+# 對：放進 pipeline，每個 fold 重新 fit，且 fit_transform 內部再做 cross-fitting
+from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LogisticRegression
+pipe = make_pipeline(TargetEncoder(), LogisticRegression())
 ```
 
-- More compact than one-hot encoding.
-- Reduces dimensionality while retaining some uniqueness.
+詳見 [資料洩漏](../foundations/data-leakage.md)。
 
-## Key Considerations
+## 怎麼選
 
-- **One-Hot Encoding** → Safe default for low-cardinality categorical variables.
-- **Ordinal Encoding** → Only for ordinal categories.
-- **Frequency / Mean Target Encoding** → Powerful but risk leakage; must be computed within training folds.
-- **Hashing / Binary Encoding** → Useful for high-cardinality features.
-- Always apply encoding **within [cross-validation](../workflow/cross-validation.md) folds** or training set only to avoid leakage.
-- 如果類別值來自 slowly changing dimension，也要確認取的是 reference date 當下有效的 category，而不是最新狀態。
+```
+類別有順序嗎？
+├─ 是 → Ordinal（指定順序）
+└─ 否 → 類別數？
+         ├─ 少（< ~20）→ One-hot
+         ├─ 中 → One-hot + min_frequency / max_categories，或 Target encoding
+         └─ 多（數百以上）→ Target encoding（cross-fitting）、Frequency、Hashing、或模型原生類別支援
+```
 
-## Related Concepts
+## 注意事項
 
-- [Feature Engineering Principles](../foundations/feature-engineering-principles.md)
-- [Data Leakage](../foundations/data-leakage.md)
-- [Pipeline Basics](../workflow/pipeline-basic.md)
-- [Class Imbalance](../evaluation/class-imbalance.md)
-- [Basetable and Time-Aware Feature Engineering](../foundations/basetable-and-time-aware-feature-engineering.md)
-
-[Back to Preprocessing](README.md)
+| 注意 | 原因 |
+| --- | --- |
+| 編碼器放進 [Pipeline](../workflow/pipeline-basic.md) | 只從訓練資料學類別與統計量 |
+| 上線會出現新類別 | `handle_unknown="ignore"` 或 `"infrequent_if_exist"` |
+| 樹模型不一定需要 one-hot | 高基數 one-hot 反而讓樹難以切分；ordinal 或原生類別支援常更好 |
+| 會隨時間變動的類別（客戶等級、診斷代碼版本） | 取 reference date 當下有效的值，不是最新狀態，見 [Basetable](../foundations/basetable-and-time-aware-feature-engineering.md) |
+| 生資的高基數類別 | 基因 ID、細胞株、批次：先想清楚它是特徵還是**分組變數**（應該用 `GroupKFold`，而不是編碼進模型） |

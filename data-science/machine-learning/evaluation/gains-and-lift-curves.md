@@ -1,178 +1,79 @@
-# Cumulative Gains and Lift Curves
+[Machine Learning](../README.md) › [模型評估](README.md) › Gains 與 Lift
 
-ROC / AUC 很適合回答「模型排序能力好不好」，但很多名單式決策其實更在意另一個問題：
+# 累積增益與提升度曲線 (Cumulative Gains and Lift Curves)
 
-- 如果我只能聯絡前 10% 的人，能抓到多少真正 target？
-- 比起隨機挑選，模型讓 top segment 好了幾倍？
+[ROC-AUC](roc-auc.md) 回答「整體排序好不好」，但很多決策其實只能處理名單的一部分：只能聯絡前 10% 的人、每天只能審 100 件、只能送 5% 的樣本做驗證實驗。Gains 與 lift 把排序能力翻成「**只處理前 x% 時能得到多少**」的語言。
 
-這就是 cumulative gains 與 lift curve 的用途。
-
-Key point: gains / lift 不是拿來取代 AUC，而是把「排序能力」翻成更接近名單投放、審核容量、人工覆核配額的語言。
-
-## When These Curves Matter
-
-這類曲線特別適合：
-
-- direct marketing
-- fundraising
-- fraud review queue
-- collection prioritization
-- lead scoring
-- manual investigation capacity allocation
-
-共同特徵是：
-
-- 模型先輸出一個 ranking 或 score
-- 真正資源只能覆蓋母體的一部分
-
-## Cumulative Gains Curve
-
-cumulative gains curve 的 x 軸通常是：
-
-- 按模型分數由高到低排序後
-- 你選取的母體比例
-
-y 軸則是：
-
-- 截至目前為止累積抓到的 target 比例
-
-例如：
-
-- 取前 20% 的 donor
-- 若已經涵蓋 60% 的會捐款者
-- 那麼 `20% -> 60%` 就是 gains curve 上的一個點
-
-### How To Read It
-
-- 曲線越早往上衝越好，代表高分群集中了更多 target。
-- 對角線附近代表接近隨機排序。
-- 若前 10% 已抓到 40% target，代表模型很適合做 top-list prioritization。
-
-Key point: cumulative gains 回答的是「如果我只出手一部分母體，能回收多少 target coverage」。
-
-## Lift Curve
-
-lift 描述的是：
-
-- 某一段被選中的人群
-- target incidence 相對於整體平均 incidence 高了幾倍
-
-公式直覺可以寫成：
-
-\[
-\text{lift} = \frac{\text{segment target rate}}{\text{overall target rate}}
-\]
-
-例如：
-
-- 整體 target incidence = `5%`
-- top decile 的 target incidence = `12.5%`
-
-則：
-
-\[
-\text{lift} = \frac{12.5\%}{5\%} = 2.5
-\]
-
-代表在這個 segment 裡，命中率是母體平均的 `2.5` 倍。
-
-### How To Read It
-
-- `lift = 1` 代表和隨機挑選差不多。
-- 越前面的 segment lift 越高，通常代表排序越有用。
-- 若前面幾個 bucket lift 很高，但後面迅速掉到 1 附近，表示模型價值集中在最前面的少數名單。
-
-Key point: lift 回答的是「這段名單的單位效率比平均好多少」。
-
-## Gains vs Lift
-
-| Curve | Main question |
+| 適用情境 | 共同點 |
 | --- | --- |
-| Cumulative gains | 我選前 x% 人群時，能累積抓到多少 target？ |
-| Lift | 我選中的這段人群，target density 比平均高幾倍？ |
+| 行銷名單、募款、催收優先序、銷售線索評分 | 模型輸出分數用來**排序** |
+| 詐欺審查佇列、人工複核配額 | 資源只能覆蓋母體的一部分 |
+| 候選基因 / 化合物的實驗驗證優先序 | 同上 |
 
-兩者都依賴 ranking，但解讀角度不同：
+## 兩條曲線
 
-- gains 比較像 coverage
-- lift 比較像 efficiency
+| | 累積增益 (cumulative gains) | 提升度 (lift) |
+| --- | --- | --- |
+| x 軸 | 依分數由高到低，取前 x% 的母體 | 同左（或分成十等分 decile） |
+| y 軸 | 累積抓到全部陽性的比例 | 該段的陽性率 ÷ 整體陽性率 |
+| 回答 | 處理前 x% 能**涵蓋**多少陽性？（coverage） | 這段名單的**命中效率**是平均的幾倍？（efficiency） |
+| 隨機基準 | 對角線 | lift = 1 |
 
-## Why AUC Alone Is Not Enough
+$$
+\text{lift} = \frac{\text{該段的陽性率}}{\text{整體陽性率}}
+$$
 
-AUC 很重要，但它只是一個單一數字。
+例：整體陽性率 5%、分數前 10% 的陽性率 12.5% → lift = 12.5 / 5 = 2.5。
 
-它不會直接告訴你：
+![Gains and lift](src/gains-and-lift-curves-example.png)
 
-- 前 5% 名單到底多有價值
-- 容量限制在 20% 時該不該採用這個模型
-- 和「全部都聯絡」相比，能省下多少成本
+模擬資料（陽性率約 4.7%）：只聯絡分數前 20% 就涵蓋 58% 的陽性；第一個 decile 的命中率是平均的 4.1 倍，之後快速下降，第 4 個 decile 起已低於隨機。模型的價值集中在名單最前段。
 
-因此在 ranking 問題裡，常見工作流是：
+| 判讀 | 意義 |
+| --- | --- |
+| Gains 曲線越早往上衝越好 | 高分群集中了更多陽性 |
+| 前幾個 decile lift 很高、之後掉到 1 附近 | 模型只對名單前段有用 → 資源有限時很有價值 |
+| Lift 不隨 decile 單調下降 | 排序不穩定，或樣本太少 |
 
-1. 先用 AUC 比較整體排序能力
-2. 再用 gains / lift 看 top segments 是否真的有業務價值
+## 計算
 
-## A Profit Framing
-
-gains / lift 很容易直接接到 profit calculation。
-
-假設：
-
-- population size = `N`
-- 每命中一個 target 的收益 = `reward_target`
-- 每接觸一個人的成本 = `cost_campaign`
-
-若某個被選 segment 的 target incidence 因 lift 提高，則可以直接比較：
-
-- 挑 top segment 的 profit
-- 全部都做的 profit
-- 完全不做的 baseline
-
-這也是為什麼 marketing、fundraising、risk operations 很喜歡 lift：它比 AUC 更容易接到資源配置與 ROI。
-
-## Python Examples
-
-### Plot Cumulative Gains
+`scikit-plot`（`plot_cumulative_gain`、`plot_lift_curve`）已停止維護，在新版 SciPy 會因 `scipy.interp` 被移除而 import 失敗。自己算只要幾行：
 
 ```python
-import scikitplot as skplt
+import numpy as np
+import pandas as pd
 
-skplt.metrics.plot_cumulative_gain(y_true, y_prob)
+def gains_table(y_true, score, n_bins=10):
+    d = (pd.DataFrame({"y": np.asarray(y_true), "s": np.asarray(score)})
+           .sort_values("s", ascending=False))
+    d["bin"] = np.arange(len(d)) * n_bins // len(d) + 1              # 1 = 分數最高的 10%
+    t = d.groupby("bin")["y"].agg(n="size", positives="sum")
+    t["pct_pop"] = t["n"].cumsum() / t["n"].sum()                    # 累積母體比例
+    t["gain"] = t["positives"].cumsum() / t["positives"].sum()       # 累積增益
+    t["lift"] = (t["positives"] / t["n"]) / d["y"].mean()            # 各 decile 的 lift
+    t["cum_lift"] = t["gain"] / t["pct_pop"]                         # 累積 lift
+    return t
+
+gains_table(y_test, y_prob)
 ```
 
-### Plot Lift Curve
+## 接到利潤 / 成本
 
-```python
-import scikitplot as skplt
+Gains 與 lift 很容易接到資源配置：
 
-skplt.metrics.plot_lift_curve(y_true, y_prob)
-```
+$$
+\text{利潤}(x\%) = \text{抓到的陽性數} \times \text{每個陽性的收益} - \text{處理人數} \times \text{每人成本}
+$$
 
-如果你不用 `scikit-plot`，也可以自己：
+比較「只處理前 x%」、「全部處理」、「完全不處理」三者，選利潤最高的 x。這也是行銷、募款、風險作業偏好 lift 勝過 AUC 的原因。
 
-1. 依 `y_prob` 由高到低排序
-2. 分 bucket 或做 cumulative scan
-3. 計算 cumulative target capture 與 segment incidence
+## 常見誤解
 
-## Common Interpretation Traps
+| 誤解 | 事實 |
+| --- | --- |
+| AUC 高 → 前 10% 名單一定最好用 | AUC 是整條曲線的平均；兩個模型的前段表現可以相反 |
+| Lift 高 → 機率準 | Gains / lift 只看排序，不看機率值；機率要看 [校準](classification-thresholds-and-calibration.md) |
+| Gains 好看 → 選定的切點符合成本 | 切點仍要依成本與容量決定 |
+| 驗證集上的 lift = 上線的 lift | 驗證切分不像真實部署時一樣會過度樂觀 |
 
-- AUC 高，不代表前 10% 名單一定最好用。
-- lift 高，不代表 calibration 好。
-- gains 好看，也不代表 chosen cutoff 就符合成本限制。
-- 若 validation split 不貼近真實 deployment，gains / lift 也可能過度樂觀。
-
-Warning: 這些曲線都是 ranking-based evaluation。若你的最終問題是「0.8 機率到底是不是 80%」，那還要另外看 calibration。
-
-## Practical Checklist
-
-在看 gains / lift 前，可以先問：
-
-1. 真實作業一次能處理多少比例的母體？
-2. 每個 false positive 與 false negative 的成本差多少？
-3. 你在乎的是 coverage 還是 hit rate？
-4. 模型分數是否只用來排序，而不是直接當機率溝通？
-
-## Related Notes
-
-- [ROC curve, AUC](roc-auc.md)
-- [Classification Thresholds and Calibration](classification-thresholds-and-calibration.md)
-- [Class Imbalance](class-imbalance.md)
+開始前先問：作業一次能處理多少比例？偽陽性與偽陰性的成本差多少？在乎的是涵蓋率還是命中率？

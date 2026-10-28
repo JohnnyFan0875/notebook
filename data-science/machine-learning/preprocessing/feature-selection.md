@@ -1,191 +1,93 @@
-# Feature Selection
+[Machine Learning](../README.md) › [前處理](README.md) › 特徵選擇
 
-## Overview
+# 特徵選擇 (Feature Selection)
 
-- **Feature selection** is the process of identifying and selecting the most relevant features (variables) from a dataset for use in model training.
-- Goals:
-  - Reduce **[overfitting](../foundations/overfitting-underfitting.md)** by eliminating irrelevant/noisy features.
-  - Improve **accuracy** by focusing on informative features.
-  - Reduce **computational cost** by working with fewer variables.
+從所有特徵中挑出子集合。目的不只是分數：較少的特徵代表較低的 [過擬合](../foundations/overfitting-underfitting.md) 風險、較少的上線資料依賴、較好的可解釋性與維護性。
 
-## Main Approaches
+> 一個稍簡單但穩定、好維護的模型，常比「多加十個欄位才多一點分數」更有價值。
 
-### 1. Filter Methods
+## 三類方法
 
-- Evaluate the relevance of features independently of the machine learning model.
-- Typically use **statistical tests** or **information-theoretic measures**.
-- Examples:
-  - **Correlation matrix**: Remove features highly correlated with each other.
-  - **Chi-squared test** (for categorical data).
-  - **Mutual information** (captures non-linear relationships).
+| 類型 | 做法 | 例子 | 速度 | 缺點 |
+| --- | --- | --- | --- | --- |
+| 過濾法 (filter) | 不看模型，用統計量逐一評分 | 變異數門檻、相關係數、F 檢定、卡方、互資訊 (mutual information) | 最快 | 忽略特徵間交互作用與冗餘 |
+| 包裝法 (wrapper) | 反覆訓練模型、比較特徵子集合 | RFE、前向 / 後向逐步選擇 | 最慢 | 計算量大，容易對驗證資料過擬合 |
+| 嵌入法 (embedded) | 訓練過程中順便選 | Lasso / L1、樹模型重要性 | 中 | 結果綁定特定模型 |
 
-```python
-from sklearn.datasets import load_iris
-from sklearn.feature_selection import SelectKBest, chi2
+降維（[PCA](../unsupervised-learning/dimensionality-reduction/pca.md)）是**產生新特徵**，不是特徵選擇；選擇保留的是原始特徵，可解釋性較好。
 
-X, y = load_iris(return_X_y=True)
-selector = SelectKBest(score_func=chi2, k=2)
-X_new = selector.fit_transform(X, y)
-print("Selected features (indices):", selector.get_support(indices=True))
-```
+## sklearn 工具
 
-### 2. Wrapper Methods
-
-- Use a machine learning model to evaluate subsets of features.
-- Computationally more expensive since they involve **repeated model training**.
-- Examples:
-  - **Recursive Feature Elimination (RFE)**.
-  - Stepwise selection.
+| 工具 | 類型 | 說明 |
+| --- | --- | --- |
+| `VarianceThreshold` | 過濾 | 刪除（近乎）常數的欄位；不用標籤 |
+| `SelectKBest(f_classif / f_regression)` | 過濾 | 單變量 F 檢定 |
+| `SelectKBest(chi2)` | 過濾 | 只適用**非負**特徵（計數、one-hot） |
+| `SelectKBest(mutual_info_classif)` | 過濾 | 能抓非線性關係 |
+| `RFE` / `RFECV` | 包裝 | 反覆刪除最不重要的特徵；`RFECV` 用 CV 決定保留幾個 |
+| `SequentialFeatureSelector` | 包裝 | 前向 / 後向逐步選擇，以 CV 分數為準 |
+| `SelectFromModel(L1 模型或樹)` | 嵌入 | 保留係數非 0 或重要性超過門檻的特徵 |
 
 ```python
-from sklearn.feature_selection import RFE
+from sklearn.datasets import load_breast_cancer
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.feature_selection import SelectKBest, f_classif, SelectFromModel, SequentialFeatureSelector, RFECV
+from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 
-model = LogisticRegression(max_iter=200)
-rfe = RFE(model, n_features_to_select=2)
-rfe = rfe.fit(X, y)
-print("Selected features (indices):", rfe.get_support(indices=True))
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)     # 30 個特徵
+y = 1 - y                                                      # 改成 1 = 惡性
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=42)
+cv = StratifiedKFold(5, shuffle=True, random_state=0)
+clf = LogisticRegression(max_iter=1000)
+
+# 選擇步驟一律放進 pipeline，CV 才會在每個 fold 內重新選
+pipes = {
+    "全部 30 個":   make_pipeline(StandardScaler(), clf),
+    "F 檢定前 10":  make_pipeline(StandardScaler(), SelectKBest(f_classif, k=10), clf),
+    "L1 嵌入":      make_pipeline(StandardScaler(),
+                                  SelectFromModel(LogisticRegression(C=0.1, l1_ratio=1, solver="liblinear")), clf),
+    "前向逐步 5 個": make_pipeline(StandardScaler(),
+                                  SequentialFeatureSelector(clf, n_features_to_select=5,
+                                                            direction="forward", scoring="roc_auc", cv=3), clf),
+}
+{k: cross_val_score(p, X_train, y_train, cv=cv, scoring="roc_auc").mean() for k, p in pipes.items()}
+# 全部 0.992、F 檢定前 10 0.982、L1（保留 8 個）0.993、前向 5 個 0.991
+
+# RFECV：用 CV 決定保留幾個特徵
+rfecv = make_pipeline(StandardScaler(), RFECV(clf, cv=cv, scoring="roc_auc")).fit(X_train, y_train)
+rfecv[-1].n_features_    # 17
 ```
 
-### 3. Embedded Methods
+這個例子裡，5–8 個特徵就能達到與 30 個幾乎相同的 AUC：很多特徵彼此高度相關（半徑、周長、面積）。
 
-- Perform feature selection **during model training**.
-- Feature importance is a natural byproduct of the algorithm.
-- Examples:
-  - **LASSO [regression](../supervised-learning/regression/README.md) (L1 penalty)**.
-  - **Decision tree / Random forest feature importances**.
+## 前向逐步選擇 (Forward Stepwise)
 
-```python
-from sklearn.linear_model import Lasso
-import numpy as np
-
-lasso = Lasso(alpha=0.1)
-lasso.fit(X, y)
-print("Feature coefficients:", np.round(lasso.coef_, 3))
+```
+從空集合開始
+  ↓
+每輪把每個候選特徵試加進來 → 用 CV 指標（如 AUC）評分 → 加入最好的那個
+  ↓
+重複，直到提升很小、達到上限，或新增欄位的維護成本不值得
 ```
 
-### Critical Notes
+| 停止條件 | 說明 |
+| --- | --- |
+| 驗證指標不再明顯提升 | 搭配 CV 標準差判斷「明顯」 |
+| 達到預設欄位上限 | 上線資料依賴的考量 |
+| 新特徵與既有特徵重複表達同一件事 | 高相關欄位誰被選進來常是偶然 |
+| 新特徵有時間洩漏風險或上線拿不到 | 見 [資料洩漏](../foundations/data-leakage.md) |
 
-- **[Data leakage](../foundations/data-leakage.md)**: Always perform feature selection **inside the [cross-validation](../workflow/cross-validation.md) loop** (not before splitting train/test data).
-- **Interpretability**: Feature importance scores can differ depending on the method and the model. Interpret with caution.
-- **Dimensionality reduction ≠ feature selection**: Techniques like [PCA](../unsupervised-learning/dimensionality-reduction/pca.md) create new features, while feature selection keeps a subset of the original ones.
-- **Balance**: Removing too many features may underfit, while keeping too many may overfit.
+> 逐步選擇的評分**必須在驗證資料或 CV 上算**。在同一份訓練資料上 fit 再算 AUC，分數一定隨特徵增加而上升，選不出任何東西。
 
-## Interview Fast Comparison
+## 注意事項
 
-如果面試官問 feature selection 方法差在哪，最穩的回答順序通常是：
-
-- `filter`: 不依賴模型，先用統計量或規則篩欄位
-- `wrapper`: 反覆訓練模型，直接比較不同欄位子集合
-- `embedded`: 在模型訓練過程中一起做選擇
-
-可以再補一句 trade-off：
-
-- filter 最快，但通常最粗
-- wrapper 最貼近最終模型表現，但最貴
-- embedded 通常是速度與效果之間的折衷
-
-## Quick Comparison Table
-
-| Method | Uses model? | Can search subsets? | Main trade-off |
-| --- | --- | --- | --- |
-| Filter | No | Usually not directly | Fast, but may miss interaction effects |
-| Wrapper | Yes | Yes | Strong but computationally expensive |
-| Embedded | Yes | Partly | Efficient, but tied to chosen model |
-
-## Why Teams Often Want Fewer Variables
-
-在實務專案裡，變數選擇不只是為了分數。
-
-模型帶太多欄位時，常見代價包括：
-
-- 更容易 overfit
-- 特徵管線更難維護
-- 上線時需要更多資料依賴
-- 解釋更困難
-- 高相關欄位造成 multicollinearity 或重要性不穩定
-
-Key point: 一個稍微簡單、但穩定而可維護的模型，常常比「多加十個欄位才多一點點分數」更有價值。
-
-### Interview Prompt: Why Do Feature Selection?
-
-高訊號回答通常不只講 accuracy，還會提到：
-
-- 降低 overfitting
-- 提升 interpretability
-- 縮短 training time
-- 降低資料依賴與上線複雜度
-
-## Forward Stepwise Selection
-
-forward stepwise 是一種常見的 wrapper heuristic：
-
-1. 從空集合開始
-2. 每輪把每個候選變數都試著加進來
-3. 挑出讓驗證指標提升最多的那一個
-4. 重複直到沒有明顯提升，或達到預設變數數量
-
-例如如果你用 AUC 作為 ranking 指標，流程可以長這樣：
-
-```python
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score
-
-def auc_for_variables(variables, target, basetable):
-    X = basetable[variables]
-    y = basetable[target]
-
-    model = LogisticRegression(max_iter=1000)
-    model.fit(X, y)
-    pred = model.predict_proba(X)[:, 1]
-    return roc_auc_score(y, pred)
-```
-
-這個思路的價值在於：
-
-- 它直接對著你真正關心的指標選變數
-- 它比暴力搜尋所有子集合便宜很多
-- 它能幫你觀察「多加一個欄位，是否真的還有邊際價值」
-
-## Important Caveat on Stepwise Methods
-
-stepwise 方法好用，但要小心：
-
-- 若直接在同一份資料上反覆挑變數，會過度樂觀
-- 被選進來的欄位不一定穩定，對抽樣或時間切片可能敏感
-- 高相關欄位之間，誰被選進來有時只是偶然
-
-Warning: 如果你要用 stepwise 或任何 supervised feature selection，評估必須放在 validation split 或 cross-validation 裡，而不是在整份資料上選完再宣稱效果很好。
-
-## Common Interview Traps
-
-- 先在整份資料上做 supervised selection，再切 train/test
-- 把 feature importance 當成穩定真理，忽略相關特徵與模型依賴
-- 把 PCA 說成 feature selection
-- 只談分數，不談維護成本與資料取得成本
-
-## When to Stop Adding Variables
-
-常見停止條件包括：
-
-- 已達預設欄位上限
-- 指標提升非常小
-- 測試集 AUC 不再改善
-- 新增欄位雖然加分，但 maintenance cost 明顯變高
-
-實務上不要只問「分數還能不能更高」，也要問：
-
-- 這個欄位上線時拿不拿得到？
-- 是否會增加時間 leakage 風險？
-- 是否只是和現有欄位重複表達同一件事？
-
-> Feature selection is an essential preprocessing step in machine learning [pipeline](../workflow/pipeline-basic.md)s. Combining multiple approaches (e.g., filter + embedded) often yields the most robust results.
-
-## Related Concepts
-
-- [Regularization](../foundations/regularization.md)
-- [Feature Engineering Principles](../foundations/feature-engineering-principles.md)
-- [Data Leakage](../foundations/data-leakage.md)
-- [Pipeline Basics](../workflow/pipeline-basic.md)
-
-[Back to Preprocessing](README.md)
+| 注意 | 原因 |
+| --- | --- |
+| 選擇要放在 CV 迴圈內 | 在全資料上用標籤選特徵再 CV = 洩漏；p ≫ n 時純雜訊也能有 90%+ 準確率，見 [高維小樣本](../foundations/high-dimensional-data.md) |
+| 選出的特徵清單不穩定 | 相關特徵可互換；換個子樣本選出的就不同。重要時用 bootstrap 看被選中頻率 |
+| 重要性依方法與模型而異 | 不要把某個方法的排名當成真理，見 [可解釋性](../interpretability-and-diagnostics/model-interpretability.md) |
+| 刪太多 → 欠擬合；留太多 → 過擬合 | 用 CV 決定數量 |
+| 正則化本身就是軟性的特徵選擇 | 很多時候不必另外選，直接用 Lasso / Elastic Net，見 [正則化](../foundations/regularization.md) |
+| 「預測重要」≠「差異顯著」 | 要回答「哪些基因有差異」是推論問題，用 [多重檢定校正](../../statistics/inferential-statistics/multiple-testing.md) |

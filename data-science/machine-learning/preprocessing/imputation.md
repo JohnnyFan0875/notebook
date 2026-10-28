@@ -1,158 +1,92 @@
-# Imputation
+[Machine Learning](../README.md) › [前處理](README.md) › 補值
 
-Filling in **`missing values`** in a dataset with substituted values.
+# 補值 (Imputation)
 
-## Interview Fast Answer
+補值是用估計值填入缺失值。重點不是「把空格補滿」，而是補值方式**符合資料生成機制**、**不扭曲分布與關係**，且**只在訓練資料上 fit**。pandas 端的缺失偵測、缺失機制 (MCAR / MAR / MNAR) 與 `missingno` 視覺化見 [pandas: Handling Missing Data](../../python-foundations/pandas/missing-data.md)。
 
-如果面試官問「怎麼處理 missing data」，最穩的回答通常不是直接報某個函式，而是先講決策順序：
+## 決策順序
 
-1. 先看缺值比例
-2. 再看欄位型態與分布
-3. 再問 missingness 本身是否有訊號
-4. 最後才選補值方法
-
-一個夠精簡的版本可以說成：
-
-- numerical data 常考慮 mean / median
-- categorical data 常考慮 mode 或 `"unknown"`
-- 若缺值本身有商業意義，可以加 missingness indicator
-- 所有會學到資料資訊的補值規則，都應該只在 training split 或 CV fold 內 fit
-
-- Common strategies:
-- **Mean** (for numerical data)
-- **Mode** (for categorical data)
-- **Constant value** (e.g., `0`, `-999`, `"unknown"`)
-
-## Single Imputation
-
-- Replaces each missing value with a single estimated value.
-- Methods: mean, median, mode, regression-based substitution, hot-deck imputation.
-- **Pros:** Simple to implement, fast.
-- **Cons:** Underestimates variability, ignores uncertainty about missing data, may bias results.
-
-**Example:**
-
-```python
-from sklearn.impute import SimpleImputer
-
-# Single imputation using mean
-imputer = SimpleImputer(strategy='mean')
-df[['age']] = imputer.fit_transform(df[['age']])
+```
+1. 缺多少？集中在哪些欄位？ ──► 缺太多（如 > 50%）→ 考慮刪欄位或只留缺失指標
+2. 為什麼缺？ ──► 缺失本身有意義（沒做檢查 = 醫師判斷不需要）→ 加缺失指標
+3. 缺失其實代表某個值？ ──► 「去年購買次數」缺失 = 0 → 固定值
+4. 其餘 ──► 統計量 / 模型補值，放進 pipeline
 ```
 
-## Multiple Imputation
+## 方法
 
-- Generates several different imputed datasets by replacing missing values with multiple plausible values.
-- Each dataset is analyzed separately, and results are pooled for inference.
-- Methods: Multiple Imputation by Chained Equations (MICE), Bayesian approaches.
-- **Pros:** Accounts for uncertainty, provides valid statistical inference, less bias.
-- **Cons:** More complex, computationally intensive.
-
-**Example (using `statsmodels`/`fancyimpute`/`miceforest`):**
-
-```python
-# Example with IterativeImputer (approximation of MICE)
-from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
-
-imputer = IterativeImputer(random_state=0)
-imputed_df = imputer.fit_transform(df)
-```
-
-## Example: Column-specific Imputation
+| 方法 | sklearn | 適用 | 缺點 |
+| --- | --- | --- | --- |
+| 平均數 | `SimpleImputer(strategy="mean")` | 近似對稱的數值 | 對離群值敏感；**壓縮變異、削弱相關** |
+| 中位數 | `strategy="median"` | 偏態數值（金額、表現量） | 同上 |
+| 眾數 | `strategy="most_frequent"` | 類別 | 放大多數類別 |
+| 固定值 | `strategy="constant", fill_value=0` | 缺失有明確意義（0、`"unknown"`） | 選錯值會引入偏誤 |
+| 缺失指標 | `add_indicator=True`、`MissingIndicator` | 缺失本身可能有訊號 | 增加欄位 |
+| KNN | `KNNImputer(n_neighbors=5)` | 樣本間相似度有意義 | 需先縮放；大資料慢 |
+| 迭代 / MICE 式 | `IterativeImputer`（實驗性 API） | 特徵之間有關聯 | 較慢；預設補的是條件平均 |
+| 不補，交給模型 | `HistGradientBoosting*`、XGBoost、LightGBM、新版決策樹 / 隨機森林 | 樹模型 | 只適用支援 NaN 的模型 |
 
 ```python
-import pandas as pd
 import numpy as np
-from sklearn.impute import SimpleImputer
+from sklearn.impute import SimpleImputer, KNNImputer
+from sklearn.experimental import enable_iterative_imputer   # noqa: 必須先 import 才能用
+from sklearn.impute import IterativeImputer
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline
 
-# Define column-specific imputations
-column_transformer = ColumnTransformer(
-    transformers=[
-        ('age_income', SimpleImputer(strategy='mean'), ['age', 'income']),
-        ('gender', SimpleImputer(strategy='most_frequent'), ['gender'])
-    ])
+X = np.array([[1, 2], [np.nan, 3], [7, np.nan], [4, 5]], dtype=float)
 
-# Apply imputation
-imputed_df = column_transformer.fit_transform(df)
-imputed_df = pd.DataFrame(imputed_df, columns=['age', 'income', 'gender'])
+SimpleImputer(strategy="median", add_indicator=True).fit_transform(X)
+# [[1, 2, 0, 0],
+#  [4, 3, 1, 0],    ← 補中位數 4，並多出「第 0 欄是否缺失」指標
+#  [7, 3, 0, 1],
+#  [4, 5, 0, 0]]
+KNNImputer(n_neighbors=2).fit_transform(X)            # 用最近的 2 個樣本平均
+IterativeImputer(random_state=0).fit_transform(X)     # 用其他欄位迴歸預測
+
+# 不同欄位不同策略：放進 ColumnTransformer / Pipeline
+preprocess = ColumnTransformer([
+    ("num", SimpleImputer(strategy="median", add_indicator=True), ["age", "income"]),
+    ("cat", SimpleImputer(strategy="constant", fill_value="unknown"), ["gender"]),
+])
+
+# 規則型：缺失代表 0、或手動做缺失指標
+df["n_purchases_last_year"] = df["n_purchases_last_year"].fillna(0)
+df["no_email"] = df["email"].isna().astype(int)
 ```
 
-## Example: Single Column Imputation
+## 補值會扭曲資料
 
-```python
-# Note: double brackets are required
-df[['col']] = SimpleImputer(strategy='mean').fit_transform(df[['col']])
-```
+![Imputation distortion](src/imputation-distortion.png)
 
-## Mean vs. Median vs. Fixed Value
+兩個相關特徵（真實 r = 0.81），B 有 30% 缺失：
 
-補值不是只看哪個函式方便，而是要問缺值本身代表什麼。
+| 方法 | 結果 | 影響 |
+| --- | --- | --- |
+| 平均數補值（左） | 補值全落在一條水平線上 | SD 從 1.01 降到 0.85、r 降到 0.68：**低估變異、削弱關係** |
+| 迴歸補值（中） | 補值全落在迴歸線上 | r 升到 0.87：**誇大關係**（補的值沒有雜訊） |
+| 加入隨機性（右，`sample_posterior=True`） | 補值帶有合理雜訊 | SD 與 r 都接近真值 |
 
-例如：
+> 對**預測**而言，單一補值通常夠用（模型評估看的是驗證分數）。對**統計推論**（係數、p 值、CI），單一補值會讓標準誤過小，應使用**多重補值 (multiple imputation)**：產生 m 份補值資料、分別分析、再用 Rubin's rules 合併（R `mice`、`statsmodels.imputation.mice`）。
 
-- `age` 缺值，常見會考慮 mean 或 median
-- `number_of_purchases_last_year` 缺值，常常其實代表 0
-- contact information 缺值，可能值得另外做 missingness indicator
+## 單一補值 vs 多重補值
 
-如果欄位分布很偏，mean 可能會被極端值拉走。
+| | 單一補值 (single) | 多重補值 (multiple) |
+| --- | --- | --- |
+| 做法 | 每個缺失值補一個值 | 補 m 次（含隨機性），分析後合併 |
+| 不確定性 | 忽略 → 標準誤偏小 | 納入補值的不確定性 |
+| 用途 | ML 預測 | 統計推論 |
+| 工具 | `SimpleImputer`、`KNNImputer`、`IterativeImputer` | `mice`（R）、`statsmodels` MICE、`IterativeImputer(sample_posterior=True)` 跑多次 |
 
-例如 `max_donation` 這類 heavy-tailed 欄位，median 往往比 mean 更穩。
+## 常見錯誤
 
-### Interview Prompt: Mean vs Median
+| 錯誤 | 後果 / 改正 |
+| --- | --- |
+| 在全資料上補值再切分 | 洩漏 → 放進 [Pipeline](../workflow/pipeline-basic.md) |
+| 高缺失率欄位硬補平均 | 製造一大群相同值；改成缺失指標或刪欄位 |
+| 類別欄位用平均數 | 語意錯誤；用眾數或 `"unknown"` |
+| 偏態欄位用平均數 | 被極端值拉走；用中位數（如 `max_donation`） |
+| 把補值和插值 (interpolation) 混為一談 | 插值用於**有順序**的資料（時間序列、空間），利用前後點；見 [pandas Interpolation](../../python-foundations/pandas/missing-data.md#interpolation) |
+| 時間感知資料用未來資訊估補值 | 補值規則必須在未來的快照上也能重現，見 [Basetable](../foundations/basetable-and-time-aware-feature-engineering.md) |
 
-這也是常見面試追問。
-
-高訊號回答通常是：
-
-- 分布偏斜或有 outliers 時，median 比 mean 更 robust
-- 如果缺值其實代表「沒有發生」，fixed value 可能比平均數更合理
-- 補值方法不是統計技巧比賽，而是要符合資料生成機制
-
-## Missingness Indicator Can Be a Feature
-
-有時候缺值本身就有訊號。
-
-```python
-basetable["no_email"] = basetable["email"].isna().astype(int)
-```
-
-這在實務上很常見，尤其是：
-
-- 聯絡資訊缺失
-- 財務資訊缺失
-- 某個行為欄位只對特定族群有值
-
-Key point: 補值處理不一定只是「把空格補滿」，也可能是把 missingness 本身變成一個 feature。
-
-## Common Interview Traps
-
-- 在 full dataset 上先補值，再切 train/test，這是 leakage
-- 忽略 missingness ratio，對高缺值欄位硬補平均數
-- 對類別欄位用 mean 這種不合語意的方法
-- 把 imputation 和 interpolation 混成同一件事
-
-## Interpolation vs. Imputation
-
-Although both _imputation_ and _interpolation_ involve filling missing data, they differ in purpose and assumption.
-
-- **Imputation** estimates missing values based on other features or statistical distributions (common in clinical or tabular datasets).
-- **Interpolation** estimates intermediate values in a **continuous sequence**, such as time-series or spatial data.
-
-For interpolation methods in `pandas`, see:
-👉 [Data Modification — Interpolation in Pandas](../../python-foundations/pandas/missing-data.md#interpolation)
-
-> **Tip**: Always check the proportion of missing values before choosing an imputation strategy. For high missingness, consider advanced methods (e.g., [KNN](../supervised-learning/classification/knn.md) imputer, iterative imputer, or multiple imputation).
-
-> **Tip**: 在 time-aware basetable 裡，補值規則也必須能在未來 snapshot 重現，不能偷用未來資料估計 replacement value。
-
-## Related Concepts
-
-- [Data Leakage](../foundations/data-leakage.md)
-- [Train-Test Split](train-test-split.md)
-- [Pipeline Basics](../workflow/pipeline-basic.md)
-- [Feature Engineering Principles](../foundations/feature-engineering-principles.md)
-- [Basetable and Time-Aware Feature Engineering](../foundations/basetable-and-time-aware-feature-engineering.md)
-
-[Back to Preprocessing](README.md)
+> **生資提醒**：蛋白質體 / 代謝體的缺失常是**低於偵測極限 (MNAR)**，補平均數會嚴重高估；常用最小值的一部分或從左截尾分配抽樣。單細胞 RNA-seq 的大量 0（dropout）多半不該當成缺失值補。
