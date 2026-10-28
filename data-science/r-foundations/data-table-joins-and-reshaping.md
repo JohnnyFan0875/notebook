@@ -1,268 +1,129 @@
-# Joining and Reshaping with data.table
+[Data Science](../README.md) › [R Foundations](README.md) › data.table
 
-`data.table` 的 join 與 reshape 很適合資料量大、步驟密集，或你想把篩選、聚合、更新和合併寫成同一套語法時使用。
+# data.table：查詢、合併與重塑 (data.table Joins and Reshaping)
 
-如果 `dplyr` 的重點是把資料操作表達得清楚，`data.table` 的重點通常是把操作壓進同一個高效工作流裡。要讀懂 join，先記住它的核心語法：
+`data.table` 把篩選、計算、分組、更新、join 都壓進同一個語法 `DT[i, j, by]`，而且多數操作**就地修改 (by reference)**、不複製資料，所以在千萬列以上的資料（變異位點表、單細胞 metadata、大型讀數表）明顯比 dplyr 快、省記憶體。dplyr 的對應寫法見 [dplyr 合併資料](joining-data-with-dplyr.md) 與 [tidyr 資料重塑](data-reshaping-with-tidyr.md)。
 
-```r
-DT[i, j, by]
+```
+DT[ i,        j,             by       ]
+    哪些列     算什麼 / 改什麼   依什麼分組
+    （或 join 的表）
 ```
 
-- `i`：挑哪些列，或拿哪張表來 join。
-- `j`：要計算、選出或更新什麼。
-- `by`：要按哪個鍵分組。
-
-## `merge()` 與 `DT[i, on = ...]`
-
-在 `data.table` 裡有兩條常見路線：
-
-- `merge()`：語意接近 base R，適合表達 full join、left join、inner join。
-- `DT[i, on = ...]`：更貼近 `data.table` 原生工作流，適合把 join 和後續聚合、更新寫在一起。
+## 讀寫與基本查詢
 
 ```r
-merge(demographics, shipping, by = "name")
-merge(demographics, shipping, by = "name", all = TRUE)
-merge(demographics, shipping, by = "name", all.x = TRUE)
-merge(demographics, shipping, by = "name", all.y = TRUE)
+library(data.table)
+
+dt <- fread("variants.tsv.gz")                 # 自動偵測分隔符，可直接讀 .gz；多執行緒
+fwrite(dt, "out.csv.gz")                       # 寫檔也很快
+setDT(df)                                      # data.frame → data.table（就地，不複製）
+
+dt[chrom == "chr17" & qual > 30]               # i：篩列
+dt[, .(chrom, pos, ref, alt)]                  # j：選欄（.() = list()）
+dt[, .(n = .N, mean_qual = mean(qual)), by = chrom]   # 分組摘要；.N = 列數
+dt[order(chrom, -qual)]                        # 排序
+dt[, .SD[which.max(qual)], by = gene]          # 每組取最大那列；.SD = 該組子表
+dt[, lapply(.SD, mean), by = sample, .SDcols = patterns("^expr_")]   # 多欄同一函式
 ```
 
-對照關係可以這樣記：
-
-- 預設 `merge()` 是 inner join。
-- `all = TRUE` 是 full join。
-- `all.x = TRUE` 是 left join。
-- `all.y = TRUE` 是 right join。
-
-## `DT[i, on = ...]` 的 join 心智模型
-
-`x[i, on = ...]` 可以先理解成「拿 `i` 的 key 去 `x` 裡找對應列」。因此保留哪些列，常跟 `i` 這張表有關。
+### `:=` 就地更新
 
 ```r
-demographics[shipping, on = .(name)]
-shipping[demographics, on = .(name)]
-shipping[demographics, on = .(name), nomatch = 0]
+dt[, af := alt_count / depth]                  # 新增欄，不需重新指派
+dt[qual < 20, filter := "LowQual"]             # 只改符合條件的列
+dt[, c("a", "b") := .(x + 1, y * 2)]           # 多欄
+dt[, mean_dp := mean(depth), by = sample]      # 組內統計寫回每列
+dt[, tmp := NULL]                              # 刪欄
+
+dt2 <- dt                                      # 不是複製！改 dt2 也會改 dt
+dt2 <- copy(dt)                                # 真的要副本時
 ```
 
-幾個常用判讀：
+> `:=` 與 `set*()` 系列函式就地修改，函式內改到傳入的 data.table 會影響呼叫端的物件。這是效能來源，也是最常見的意外。
 
-- `demographics[shipping, on = .(name)]`：預設偏向 right join 的效果。
-- `shipping[demographics, on = .(name)]`：把順序對調後，可得到 left join 的效果。
-- `nomatch = 0`：只保留成功配對列，等同 inner join。
-- 如果要 full join，通常直接用 `merge(..., all = TRUE)` 比較直觀。
+## Join
 
-### `on` 的寫法
-
-```r
-shipping[demographics, on = .(name)]
-shipping[demographics, on = list(name)]
-
-join_key <- "name"
-shipping[demographics, on = join_key]
-```
-
-如果兩張表欄位名稱不同：
+| 寫法 | 結果 | dplyr |
+| --- | --- | --- |
+| `X[Y, on = .(id)]` | 保留 **Y** 全部列（以 Y 查 X） | `right_join(X, Y)` |
+| `X[Y, on = .(id), nomatch = NULL]` | 只留配對成功 | `inner_join()` |
+| `X[!Y, on = .(id)]` | X 中沒配對到的列 | `anti_join()` |
+| `merge(X, Y, by = "id")` | inner | `inner_join()` |
+| `merge(X, Y, by = "id", all.x = TRUE)` | 保留 X | `left_join()` |
+| `merge(X, Y, by = "id", all = TRUE)` | 兩邊全部 | `full_join()` |
 
 ```r
-customers[web_visits, on = .(name = person)]
-customers[web_visits, on = c("name" = "person")]
-```
+shipping[demographics, on = .(name)]                      # 保留 demographics 全部 = 以它為主的 left join
+customers[web_visits, on = .(name = person)]              # key 名稱不同
+purchases[web_visits, on = .(name, date)]                 # 多 key
+key_col <- "name"; shipping[demographics, on = key_col]   # key 在變數裡
 
-多鍵 join 也是同樣概念：
-
-```r
-merge(purchases, web_visits, by = c("name", "date"))
-purchases[web_visits, on = .(name, date)]
-```
-
-## Key 與 `setkey()`
-
-如果某些欄位會反覆被拿來 join、排序或查找，可以先設 key。
-
-```r
-setkey(dt1, customer_id)
-setkey(dt2, customer_id)
-
-dt1[dt2, nomatch = 0]
-```
-
-多個欄位也可以：
-
-```r
-setkey(DT, key1, key2)
-
-keys <- c("key1", "key2")
-setkeyv(DT, keys)
-```
-
-實務上要注意：
-
-- `setkey()` 會改變資料表本身的排序與 key 狀態。
-- 如果你只是偶爾 join 一次，直接用 `on = ...` 往往已經夠用。
-- 如果是重複查找、反覆 join，同一組 key 值值得明確設起來。
-
-## Join 後立刻聚合
-
-`data.table` 很強的一點，是 join 完可以直接在同一行做 `j` 與 `by`。
-
-```r
-demographics[shipping,
-  on = .(name),
-  .(avg_age = mean(age)),
-  by = .(gender)
-]
-```
-
-如果要按照 `i` 的每一列各自做計算，可以用 `by = .EACHI`：
-
-```r
+# join 後直接計算：by = .EACHI 對 i 的每一列各自彙總，不必先產生大表
 DT1[DT2, on = .(id), .(n = .N, total = sum(value)), by = .EACHI]
+
+# lookup：把右表欄位就地加到左表（不改變列數）
+samples[meta, on = .(sample_id), `:=`(batch = i.batch, sex = i.sex)]   # i. 前綴 = 右表的欄
 ```
 
-這很適合：
+`setkey(dt, id)` 會把表依 key 排序並記住，之後 `dt[J("x")]` 用二分搜尋查找。偶爾 join 一次用 `on =` 就夠；同一組 key 反覆查找才值得 `setkey()`。
 
-- 每個查詢條件對應一組彙總。
-- 每個 lookup row 都想得到自己的統計結果。
-- 避免先 join 出大表，再額外 group 一次。
-
-## 常見 join 問題
-
-### 欄位型別不一致
-
-`data.table` 對 join key 的型別很嚴格。像 integer 對 character 這種情況會直接報錯，而不是默默幫你轉型。
+### 滾動 join 與區間重疊
 
 ```r
-customers[web_visits, on = .(id)]
+# 每筆交易對應「當時或之前最近一筆」報價（同 dplyr closest()）
+quotes[trades, on = .(symbol, time), roll = TRUE]         # roll = -Inf 往後找；roll = 60 限 60 秒內
+
+# 基因體區間重疊：變異位點落在哪個基因
+setkey(genes, chrom, start, end)                          # y 必須設 key，最後兩個是區間起訖
+variants[, `:=`(start = pos, end = pos)]                  # 點也是長度 1 的區間
+foverlaps(variants, genes, type = "within")
 ```
 
-如果 `customers$id` 是 integer，但 `web_visits$id` 是 character，就需要先顯式轉型：
+> Bioconductor 的 `GenomicRanges::findOverlaps()` 是生資標準做法，會處理 strand 與座標系統；見 [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md)。
+
+### join 陷阱
+
+| 問題 | data.table 行為 | 對策 |
+| --- | --- | --- |
+| key 型別不一致（integer vs character） | 直接報錯 | 先統一：`dt[, id := as.integer(id)]` |
+| 兩邊 key 都重複 | 結果超過 `nrow(X) + nrow(Y)` 列時報錯，要求 `allow.cartesian = TRUE` | 先 `dt[, .N, by = key][N > 1]` 找重複，不要直接打開 |
+| 一對多只想取一筆 | `mult = "first"` / `"last"` | 確認「第一筆」的意義（先排序） |
+| key 語意不同但剛好能 join | 不會報錯 | join 前確認兩邊 key 是同一實體、同一粒度 |
+| 完全沒有共同值 | inner 回空表；outer 一堆 `NA` | 先 `intersect(X$id, Y$id)` 檢查覆蓋率 |
+
+## 合併多張表
 
 ```r
-web_visits[, id := as.integer(id)]
+files <- list.files("per_sample", pattern = "\\.tsv$", full.names = TRUE)
+all <- rbindlist(lapply(setNames(files, basename(files)), fread),
+                 idcol = "file",          # 保留來源檔名
+                 use.names = TRUE,        # 依欄名對齊而非位置
+                 fill = TRUE)             # 缺欄補 NA
 ```
 
-### 用錯 key 欄位
-
-比起型別錯誤，更危險的是「剛好能 join，但意義完全錯」。例如把 `age` 對到 `duration`，或把地址對到姓名，程式可能跑得動，結果卻是假的。
-
-整理 join 前，至少先確認：
-
-- 兩邊 key 代表的是不是同一個實體。
-- key 值粒度是否一致。
-- 是否應該是一對一、一對多，還是多對多。
-
-### 完全沒有共同值
-
-如果 key 沒有任何交集：
-
-- inner join 會回空表。
-- left / right join 會留下大量 `NA`。
-- full join 會看起來像兩張表硬被拼在一起。
-
-這通常不是語法問題，而是 key 選錯或前處理不一致。
-
-## 多對多 join 與 `allow.cartesian`
-
-當兩邊 key 都有重複值時，join 可能導致列數急遽膨脹。`data.table` 會對這種 cartesian expansion 很謹慎。
+## 重塑：`melt()` / `dcast()`
 
 ```r
-site1_ecology[site2_ecology, on = .(genus), allow.cartesian = TRUE]
-```
+# 寬 → 長（同 pivot_longer）
+sales_long <- melt(sales_wide, id.vars = c("quarter", "department"),
+                   variable.name = "year", value.name = "amount")
+melt(dt, id.vars = "gene", measure.vars = patterns("^s\\d+"))   # 依欄名 pattern
 
-只有在你非常確定多對多配對是預期行為時，才打開 `allow.cartesian = TRUE`。否則先檢查重複：
-
-```r
-duplicated(site1_ecology, by = "genus")
-unique(site1_ecology, by = "genus")
-```
-
-建議先回答兩個問題：
-
-- key 原本是否應該唯一？
-- 如果不唯一，列數膨脹是否真的是你要的分析單位？
-
-### 只取第一筆或最後一筆
-
-如果同一個 key 有多筆對應，但你只想取其中一筆：
-
-```r
-site1_ecology[site2_ecology, on = .(genus), mult = "first"]
-children[parents, on = .(parent = name), mult = "last"]
-```
-
-`mult = "first"` / `"last"` 可以快速限制匹配結果，但前提是你真的知道「第一筆」或「最後一筆」代表什麼。否則只是把資料問題藏起來。
-
-## 合併多張 data.table
-
-### `rbind()` 與 `rbindlist()`
-
-```r
-rbind(sales_2015, sales_2016)
-
-tables <- list(sales_2015, sales_2016, sales_2017)
-rbindlist(tables)
-```
-
-- `rbind()`：適合少量、直接列出的資料表。
-- `rbindlist()`：適合你手上已經是一個 list。
-
-### `idcol`
-
-```r
-rbindlist(
-  list("2015" = sales_2015, "2016" = sales_2016),
-  idcol = "year"
-)
-```
-
-`idcol` 很適合把來源資訊保留下來，避免合併後分不清哪一列來自哪個批次、年份或檔案。
-
-### `fill = TRUE`
-
-```r
-rbindlist(
-  list(sales_2015, sales_2016),
-  use.names = TRUE,
-  fill = TRUE
-)
-```
-
-如果欄位不完全一致，`fill = TRUE` 會補上缺的欄位並填 `NA`。這在批次整併半結構化資料時很常用，但也代表你後面要更小心欄位品質。
-
-## `melt()` 與 `dcast()`
-
-`data.table` 內建 reshape 工具，跟 `tidyr::pivot_longer()` / `pivot_wider()` 的角色很像。
-
-### 寬轉長
-
-```r
-sales_long <- melt(
-  sales_wide,
-  id.vars = c("quarter", "department"),
-  variable.name = "year",
-  value.name = "amount"
-)
-```
-
-適合情境：
-
-- 多個年份或測量欄位散在不同 columns。
-- 想把欄名轉成可分組的資料值。
-
-### 長轉寬
-
-```r
+# 長 → 寬（同 pivot_wider）；公式左邊 = 列，右邊 = 展開成欄
 dcast(sales_long, quarter ~ department + year, value.var = "amount")
-dcast(sales_long, season ~ year, value.var = "amount")
+dcast(expr_long, gene ~ sample, value.var = "count", fill = 0)
+dcast(sales_long, season ~ year, value.var = "amount", fun.aggregate = sum)  # 有重複時明確聚合
 ```
 
-使用 `dcast()` 前先想清楚：
+## dplyr 或 data.table？
 
-- 哪些欄位是 row id。
-- 哪些欄位要展成新欄名。
-- 如果同一格有多筆值，是否需要 `fun.aggregate`。
+| 考量 | dplyr | data.table |
+| --- | --- | --- |
+| 可讀性、團隊共用 | 較好，每步一個動詞 | 語法緊湊，需要熟悉 |
+| 速度 / 記憶體（>1e7 列） | 中等 | 快，就地修改 |
+| 依賴 | tidyverse 生態系 | 單一套件、無依賴 |
+| 資料庫後端 | `dbplyr` 可翻成 SQL | 無 |
+| 兩者兼得 | `dtplyr`：寫 dplyr、背後跑 data.table | |
 
-## 實務判斷
-
-- 如果你要的是易讀性與團隊共用語意，`dplyr` join 往往更友善。
-- 如果你要把 join、聚合、更新、reshape 串成單一高效工作流，`data.table` 很有優勢。
-- 在 `data.table` 裡，語法會跑不代表 key 是對的；先驗證 key 的語意與唯一性，比記住 `nomatch` 或 `mult` 更重要。
+更大的資料（超過記憶體）考慮 `arrow` + `duckdb`，見 [寫出有效率的 R](writing-efficient-r-code.md) 與 [匯入資料](importing-data.md)。

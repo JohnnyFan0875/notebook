@@ -1,245 +1,130 @@
-# Tidyverse Workflow in R
+[Data Science](../README.md) › [R Foundations](README.md) › Tidyverse 工作流
 
-`tidyverse` 的價值不只是「一包很多函式」，而是它把資料整理、摘要與視覺化串成一條一致的工作流。當資料已經接近 tidy format 時，你可以先用 `dplyr` 篩選與彙整，再把結果直接送進 `ggplot2`。
+# Tidyverse 工作流 (Tidyverse Workflow)
 
-## The Core Mental Model
+tidyverse 的價值不在於單一函式，而在於**每個 verb 都吃 data frame、吐 data frame**，所以讀檔 → 清理 → 摘要 → 畫圖能用 pipe 一路串起來。Python 的對應是 pandas method chaining，見 [pandas](../python-foundations/pandas/README.md)。
 
-先把資料想成：
+## Tidy data
 
-- rows: observations
-- columns: variables
-- each verb: 對資料表做一個明確轉換
+| 原則 | 意思 | 反例 |
+| --- | --- | --- |
+| 每欄一個變數 | `sample`、`gene`、`count` 各一欄 | 每個樣本一欄（寬表） |
+| 每列一個觀測 | 一列 = 一個樣本 × 一個基因 | 一列塞多個時間點 |
+| 每格一個值 | `"TP53"` | `"TP53;BRCA1"` |
 
-最常見的 tidyverse 分析節奏是：
+> 表現量矩陣（基因 × 樣本）是寬表，適合矩陣運算與 Bioconductor；要用 dplyr / ggplot2 分組畫圖時先 `pivot_longer()`。見 [tidyr 資料重塑](data-reshaping-with-tidyr.md)。
 
-1. 讀入或準備資料
-2. 用 `filter()` / `select()` / `mutate()` 整理欄位
-3. 用 `group_by()` / `summarize()` 做摘要
-4. 用 `ggplot2` 把結果視覺化
-
-Key point: tidyverse 的強項不是單一函式，而是每一步都維持相容的表格結構。
-
-## Everything Is an Object（給 SAS 使用者）
-
-SAS 用 `DATA step` + `PROC` 產生報表；R 則是在有狀態的 session 裡建立、轉換、重用物件。單一數值、vector、data frame、`summary()` 輸出、模型結果都是 object，「輸出」往往就是下一步的輸入。
-
-```r
-smry <- df %>% select(weight, height) %>% summary()
-class(smry); smry[, 1:2]            # summary 也能 subset
-
-fit <- lm(height ~ weight + sex, data = df)
-coef(fit); residuals(fit)            # 模型是物件，不是報表
-broom::tidy(fit)                     # 轉成 tibble，可接 dplyr / ggplot2
-```
-
-| SAS 習慣 | R 對應 |
+| 套件 | 負責 |
 | --- | --- |
-| `BY` 分組 | `group_by()` + `summarise()` |
-| `PROC MEANS` / `FREQ` | `summarise()`、`count()` |
-| `PROC REG` 報表 | `lm()` 物件 + `summary()` / `broom::tidy()` |
-| 看 log | `class()`、`str()`、`glimpse()` 檢查物件 |
+| `readr` / `readxl` | 讀檔，見 [匯入資料](importing-data.md) |
+| `dplyr` | 列 / 欄操作、分組摘要、join |
+| `tidyr` | 寬長轉換、拆欄、補缺值 |
+| `stringr` / `forcats` / `lubridate` | 字串 / 類別 / 日期 |
+| `purrr` | 對 list 迭代 |
+| `ggplot2` | 圖 |
 
-常見錯誤：只找一模一樣的 `PROC` 對照、看完輸出不存物件、忘記 session 有狀態（重跑順序影響物件是否存在）。
-
-## Tibbles and Pipes
-
-tidyverse 裡最常見的表格物件是 tibble。它和 base R 的 data frame 很像，但輸出更適合互動分析，也較少自動把字串偷偷轉型。
-
-`%>%` 代表把前一步的結果接到下一個函式：
+## Pipe：`|>` vs `%>%`
 
 ```r
-library(dplyr)
+library(tidyverse)
 
-gapminder_2007 <- gapminder %>%
-  filter(year == 2007)
+gapminder |> filter(year == 2007) |> arrange(desc(lifeExp))
 ```
 
-這樣寫的好處是流程是由上到下展開的，你比較容易看出每一步對資料形狀做了什麼。
+| | `\|>`（base R ≥ 4.1.0） | `%>%`（magrittr） |
+| --- | --- | --- |
+| 需要套件 | 否 | 是（tidyverse 會載入） |
+| 佔位符 | `_`，需具名參數：`lm(y ~ x, data = _)`（R ≥ 4.2.0） | `.`，可放任何位置 |
+| 速度 | 語法轉換，零成本 | 函式呼叫，有些微開銷 |
 
-如果某個中間結果後面還會重用，先指派給一個清楚命名的物件通常比把整條 pipeline 拉得很長更好。
+新程式建議用 `|>`。中間結果會被重用就先存成有名字的物件，不要把 pipeline 拉到 20 行。
 
-## Extracting Rows with `filter()`
+## 核心 verbs
 
-`filter()` 用來保留符合條件的列。
-
-```r
-gapminder %>%
-  filter(country == "United States", year == 2007)
-```
-
-常見用法包括：
-
-- 篩某一年或某個區間
-- 篩單一國家、群組或類別
-- 把後續視覺化限制在一個子集合
-
-這一步很重要，因為很多圖表不是畫不出來，而是畫了不該混在一起的資料。
-
-## Common Transformation Verbs
-
-除了 `filter()`，最常一起出現的還有幾個基本 verb：
+| 想做 | dplyr | pandas 對應 |
+| --- | --- | --- |
+| 篩列 | `filter(year == 2007, pop > 1e7)` | `df.query(...)` / boolean mask |
+| 選欄 | `select(country, starts_with("gdp"))` | `df[[...]]`、`df.filter(like=)` |
+| 新增 / 改欄 | `mutate(gdp = gdpPercap * pop)` | `df.assign(...)` |
+| 排序 | `arrange(desc(lifeExp))` | `sort_values(ascending=False)` |
+| 改欄名 | `rename(life = lifeExp)` | `rename(columns=)` |
+| 取不重複 | `distinct(country, continent)` | `drop_duplicates()` |
+| 取前 n | `slice_max(lifeExp, n = 5)` | `nlargest(5, ...)` |
+| 分組摘要 | `group_by(continent) \|> summarize(...)` | `groupby().agg()` |
+| 計數 | `count(continent, sort = TRUE)` | `value_counts()` |
+| 多欄套同函式 | `across(where(is.numeric), mean)` | `df.select_dtypes().mean()` |
 
 ```r
-gapminder %>%
-  select(country, continent, year, lifeExp)
-
-gapminder %>%
-  arrange(desc(lifeExp))
-
-gapminder %>%
-  mutate(gdp_billions = gdpPercap * pop / 1e9)
-```
-
-- `select()`: 挑欄位，讓後續工作聚焦
-- `arrange()`: 排序，方便檢查極端值或排名
-- `mutate()`: 新增或改寫欄位
-
-Key point: `mutate()` 通常是在建立下游分析需要的新變數，而不是為了把所有可能的欄位都先算一遍。
-
-## Grouping and `summarize()`
-
-當你不再關心每一列，而是想看群組層級的整體特徵時，就該用 `summarize()`。
-
-```r
-gapminder %>%
-  summarize(meanLifeExp = mean(lifeExp))
-```
-
-這會把很多列壓縮成一個摘要結果。更常見的情況是先分組再摘要：
-
-```r
-gapminder %>%
-  group_by(continent, year) %>%
+gapminder |>
+  filter(year == 2007) |>
+  mutate(gdp_billion = gdpPercap * pop / 1e9) |>
   summarize(
-    mean_lifeExp = mean(lifeExp),
-    mean_gdpPercap = mean(gdpPercap),
-    .groups = "drop"
+    n          = n(),
+    mean_life  = mean(lifeExp),
+    total_gdp  = sum(gdp_billion),
+    .by = continent                                    # dplyr ≥ 1.1.0：單次分組，不留 group 狀態
   )
+
+# 舊寫法：group_by() 後記得解除分組
+gapminder |>
+  group_by(continent, year) |>
+  summarize(mean_life = mean(lifeExp), .groups = "drop")
+
+# 多欄套同一組函式
+gapminder |>
+  summarize(across(c(lifeExp, gdpPercap), list(mean = mean, sd = sd)), .by = continent)
+
+# 分組後 mutate：組內標準化
+gapminder |> mutate(life_z = (lifeExp - mean(lifeExp)) / sd(lifeExp), .by = year)
 ```
 
-如果你需要的是各群出現次數，`count()` 通常比手寫 `group_by(...) %>% summarize(n = n())` 更直接：
+> `group_by()` 的分組狀態會跟著物件走，後面的 `mutate()` / `slice()` 仍會分組執行。用 `.by` 或 `.groups = "drop"` / `ungroup()` 避免意外。
+
+## 接到 ggplot2
+
+先把資料整理成「圖要的形狀」，再畫圖；圖很亂時通常是資料沒先 filter / summarize。
 
 ```r
-gapminder %>%
-  count(continent, sort = TRUE)
-```
+gapminder |>
+  filter(year == 2007) |>
+  ggplot(aes(x = gdpPercap, y = lifeExp, color = continent, size = pop)) +
+  geom_point(alpha = 0.7) +
+  scale_x_log10() +
+  labs(x = "GDP per capita (log)", y = "Life expectancy")
 
-## Data Transformation and Visualization
-
-很多 tidyverse workflow 真正有效的地方，在於你可以先整理資料，再直接把整理後的表送進 `ggplot2`。
-
-```r
-gapminder %>%
-  filter(year == 2007) %>%
-  ggplot(aes(x = gdpPercap, y = lifeExp)) +
-  geom_point()
-```
-
-這個模式的意思是：
-
-- `dplyr` 負責把資料變成你真正想看的子集合
-- `ggplot2` 負責把那個子集合映成視覺元素
-
-如果圖很亂，先回頭檢查資料轉換是否正確，通常比一開始就在圖層上硬調更有效。
-
-## Aesthetics in `ggplot2`
-
-`aes()` 會把資料欄位對應到視覺通道：
-
-```r
-gapminder_2007 %>%
-  ggplot(
-    aes(
-      x = gdpPercap,
-      y = lifeExp,
-      color = continent,
-      size = pop
-    )
-  ) +
-  geom_point()
-```
-
-常見對應包括：
-
-- `x`, `y`: 座標位置
-- `color`: 群組或數值差異
-- `size`: 規模大小
-
-Key point: 美學映射應該幫助比較，而不是把每個欄位都塞進圖裡。
-
-## Choosing Plot Types
-
-同一份 tidy data 可以用不同圖表回答不同問題。
-
-### Scatter Plots
-
-```r
-ggplot(gapminder_2007, aes(gdpPercap, lifeExp)) +
-  geom_point()
-```
-
-適合看：
-
-- 兩個連續變數之間的關係
-- 群組分布與離群值
-
-### Line Plots
-
-```r
-gapminder %>%
-  filter(country %in% c("Taiwan", "Japan")) %>%
+gapminder |>
+  filter(country %in% c("Taiwan", "Japan")) |>
   ggplot(aes(year, lifeExp, color = country)) +
   geom_line()
 ```
 
-適合看：
+| 問題 | geom | 資料形狀 |
+| --- | --- | --- |
+| 兩連續變數關係 | `geom_point()` | 原始列 |
+| 隨時間 / 有序 x 的趨勢 | `geom_line()` | 每組每時間一列 |
+| 單變數分布 | `geom_histogram()` / `geom_density()` | 原始列 |
+| 組間分布比較 | `geom_boxplot()` / `geom_violin()` | 原始列（long） |
+| 類別計數 | `geom_bar()`（自己數）/ `geom_col()`（已摘要） | 原始 / 摘要後 |
 
-- 隨時間變化的趨勢
-- 同一個個體或群組 across ordered x-axis 的變化
+圖表選擇原則見 [圖表設計原則](../data-manipulation-and-eda/visualization/chart-design-principles.md)。
 
-Scatter plot 與 line plot 的差別不只是幾何形狀，而是資料是否帶有自然順序。當 x 軸是時間、階段或其他有順序的索引時，`geom_line()` 才比較有意義。
+## 一切皆物件（給 SAS / SPSS 使用者）
 
-### Other Common Choices
-
-- histogram: 單一連續變數的分布
-- bar plot: 類別計數或已彙總數值
-- box plot: 群組間分布比較
-
-不要把 plot type 當模板背下來。先問自己：
-
-- 我想比較 relationship、distribution，還是 trend？
-- 我的 x 軸是 category、continuous，還是 time？
-- 資料是原始列，還是已經 summary 過？
-
-## A Small End-to-End Example
+SAS 用 `DATA step` + `PROC` 產生報表；R 是在有狀態的 session 裡建立、轉換、重用物件。`summary()` 輸出、模型結果都是物件，「輸出」就是下一步的輸入。
 
 ```r
-library(dplyr)
-library(ggplot2)
-
-summary_2007 <- gapminder %>%
-  filter(year == 2007) %>%
-  group_by(continent) %>%
-  summarize(
-    mean_lifeExp = mean(lifeExp),
-    mean_gdpPercap = mean(gdpPercap),
-    .groups = "drop"
-  )
-
-ggplot(summary_2007, aes(mean_gdpPercap, mean_lifeExp, color = continent)) +
-  geom_point(size = 3)
+fit <- lm(lifeExp ~ log(gdpPercap) + continent, data = gapminder)
+coef(fit); residuals(fit)            # 模型是物件，不是報表
+broom::tidy(fit)                     # 係數表變 tibble，可再接 dplyr / ggplot2
+broom::glance(fit)                   # 一列模型層級統計（R²、AIC）
 ```
 
-這個流程展示的不是特定函式技巧，而是 tidyverse 最重要的習慣：
+| SAS 習慣 | R 對應 |
+| --- | --- |
+| `BY` 分組 | `summarize(.by = )` / `group_by()` |
+| `PROC MEANS` / `PROC FREQ` | `summarize()`、`count()` |
+| `PROC REG` 報表 | `lm()` 物件 + `summary()` / `broom::tidy()` |
+| `PROC SORT` + `MERGE` | `left_join()`，見 [dplyr 合併資料](joining-data-with-dplyr.md) |
+| 看 log | `str()`、`glimpse()`、`class()` |
 
-1. 先決定分析單位
-2. 再把資料整理成對應形狀
-3. 最後才選圖
-
-## Practical Habits
-
-- 圖畫不清楚時，先檢查資料是否該先 `filter()` 或 `summarize()`。
-- 會重用的中間結果先命名，例如 `gapminder_2007`。
-- 一張圖盡量只承載一個主要問題，不要把所有欄位都映射進 `aes()`。
-- `group_by()` 之後要留意輸出是否仍保持分組狀態；必要時明確加上 `.groups = "drop"`。
-- 如果你已經在做大量 joins、reshape 或 grouped summaries，代表你真正需要的是 workflow clarity，不只是多記幾個函式名。
+> session 有狀態：物件是否存在取決於執行順序。交付前要「Restart R → 從頭跑一次」，或用 [R Markdown / Quarto](reporting-with-r-markdown.md) 強制從乾淨環境執行。

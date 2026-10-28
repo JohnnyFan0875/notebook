@@ -1,240 +1,182 @@
-# Data Structures in R: Vectors, Data Frames and Lists
+[Data Science](../README.md) › [R Foundations](README.md) › 資料結構
 
-R 最常用的三種容器：**vector**（同型別、向量化運算的基本單位）、**data frame**（等長 vector 組成的表格）、**list**（可裝任何型別，包括巢狀物件與模型結果）。factor 見 [Categorical Data in R](categorical-data.md)。
+# 資料結構 (Data Structures: Vector, Matrix, Data Frame, List)
 
-## Vectors in R
+R 的一切運算都建立在幾種容器上：**vector** 是向量化運算的基本單位，**matrix** 是同型別的二維陣列（表現量矩陣），**data frame** 是等長 vector 組成的表格，**list** 可以裝任何東西（模型結果、巢狀 JSON）。factor 見 [類別資料](categorical-data.md)。
 
-vector 是 R 最基本的資料結構。很多運算之所以可以直接對整批資料生效，是因為 R 預設就是以 vector 為核心在設計。
+| 結構 | 維度 | 元素型別 | 典型用途 | Python 對應 |
+| --- | --- | --- | --- | --- |
+| atomic vector | 1 | 同一型別 | 一欄數值、一組基因名 | 1-D `np.ndarray` / `pd.Series` |
+| matrix / array | 2 / n | 同一型別 | counts 矩陣（基因 × 樣本） | 2-D `np.ndarray` |
+| data frame / tibble | 2 | 每欄可不同 | 樣本 metadata、tidy 表 | `pd.DataFrame` |
+| list | 1（可巢狀） | 任意 | 模型物件、API 回應、多個結果打包 | `list` / `dict` |
+| factor | 1 | 整數碼 + levels | 分組、處理組別 | `pd.Categorical` |
 
-### What a Vector Is
+> 一個數字在 R 裡就是長度 1 的 vector，沒有獨立的 scalar 型別。
 
-vector 是「同一型別元素的有序集合」：
+## Vector
+
+### 型別與強制轉換 (coercion)
+
+| 型別 | 例子 | `typeof()` | 缺值 |
+| --- | --- | --- | --- |
+| logical | `TRUE`, `FALSE` | `"logical"` | `NA` |
+| integer | `1L`, `1:3` | `"integer"` | `NA_integer_` |
+| double | `1`, `2.5`, `1e-8` | `"double"` | `NA_real_`；另有 `NaN`、`Inf` |
+| character | `"TP53"` | `"character"` | `NA_character_` |
+
+`c()` 混合型別時會自動往「較通用」的方向轉：**logical → integer → double → character**。
 
 ```r
-prices <- c(159.4, 160.3, 161.3)
-grocery <- c("apple", "orange", "cereal")
+c(1, "a", TRUE)            # "1" "a" "TRUE"   全變字串
+c(1, TRUE, FALSE)          # 1 1 0
+sum(c(TRUE, FALSE, TRUE))  # 2   logical 加總 = 計數
+mean(x > 10)               # 大於 10 的比例
+
+as.numeric(c("1.5", "abc"))  # 1.5 NA + warning：解析失敗變 NA，要檢查
+is.numeric(1L); is.character("a"); class(1:3)   # "integer"
 ```
 
-一個單一數值在 R 裡本質上也可以視為長度為 1 的 vector。
+> 讀進來的數值欄若混入 `"<0.01"`、`"N/A"`，整欄會變 character；`as.numeric()` 後一定要看多出幾個 `NA`。
 
-### Named Vectors
-
-當資料本身帶有自然索引時，幫 vector 命名會更好讀：
+### 建立、命名與取值
 
 ```r
-apple_stock <- c(159.4, 160.3, 161.3)
-names(apple_stock) <- c("Monday", "Tuesday", "Wednesday")
+expr <- c(TP53 = 8.2, BRCA1 = 5.1, MYC = 11.3)   # named vector
+names(expr)                     # "TP53" "BRCA1" "MYC"
+seq(0, 1, by = 0.25); rep(c("ctrl", "trt"), each = 3); seq_len(5)
 
-apple_stock
+expr[2]            # 依位置（R 從 1 開始）
+expr[-1]           # 負號 = 排除，不是倒數
+expr["MYC"]        # 依名稱
+expr[expr > 6]     # 依 logical 遮罩
+expr[c("MYC", "TP53")]
+which(expr > 6)    # 回傳位置：TP53 1, MYC 3
 ```
 
-這對時間點、資產代碼、群組名稱都很方便。
-
-### Vectorized Arithmetic
-
-R 會自動把相同位置的元素一起運算：
+### 向量化運算與 recycling
 
 ```r
-dan <- c(100, 200, 150)
-rob <- c(50, 75, 100)
+dan <- c(100, 200, 150); rob <- c(50, 75, 100)
+dan + rob                  # 150 275 250   逐位置運算
+dan * 2                    # 長度 1 的 2 被 recycle
+1:6 + c(0, 10)             # 1 12 3 14 5 16   長度整除：靜默 recycle
+1:5 + c(0, 10)             # 有 warning：長度不整除，但仍算出結果
 
-monthly_total <- dan + rob
-sum(monthly_total)
-```
-
-同樣的觀念也適用於減法、乘法與比較運算。
-
-### Vectorized Comparison
-
-比較運算在 R 裡也是向量化的。不是只得到一個 `TRUE` 或 `FALSE`，而是通常會得到一整個 logical vector：
-
-```r
 linkedin <- c(16, 9, 13, 5, 2, 17, 14)
-linkedin > 10
-# [1]  TRUE FALSE  TRUE FALSE FALSE  TRUE  TRUE
-```
-
-如果兩邊都是等長向量，R 會逐位置比較：
-
-```r
 facebook <- c(17, 7, 5, 16, 8, 13, 14)
-facebook <= linkedin
-# [1] FALSE  TRUE  TRUE FALSE FALSE  TRUE  TRUE
+linkedin > 10              # TRUE FALSE TRUE FALSE FALSE TRUE TRUE
+facebook <= linkedin       # FALSE TRUE TRUE FALSE FALSE TRUE TRUE
+any(linkedin > 15); all(linkedin > 1)
 ```
 
-這很重要，因為很多 subset、篩選和條件運算，都是先產生 logical vector，再用它挑資料。
+> recycling 是 R 最容易「看似成功但邏輯錯誤」的地方：只有長度 1 的 recycle 是安全的直覺用法，其他情況請先確認長度相同。
 
-### Logical Vectors
+### 比較與相等
 
-logical vector 是 R 分析流程裡非常核心的中介物件：
+| 想做 | 寫法 | 陷阱 |
+| --- | --- | --- |
+| 浮點數相等 | `isTRUE(all.equal(0.1 + 0.2, 0.3))` | `0.1 + 0.2 == 0.3` 是 `FALSE` |
+| 屬於集合 | `x %in% c("A", "B")` | `x == c("A", "B")` 會 recycle 逐位比較 |
+| 含 NA 的比較 | `x > 5 & !is.na(x)` | `NA > 5` 是 `NA`，不是 `FALSE` |
+| 字串比較 | `"Hello" > "Goodbye"` → `TRUE` | 字典序依 locale，跨系統可能不同 |
+
+## Matrix 與 Array
+
+matrix 是**同一型別**的二維 vector（帶 `dim` 屬性），計算比 data frame 快，是表現量資料的標準格式（列 = 基因、欄 = 樣本）。
 
 ```r
-is_popular <- linkedin > 10
-is_popular
-# [1]  TRUE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+m <- matrix(1:6, nrow = 2)            # 依欄填 (column-major)：第一欄是 1 2
+dim(m); nrow(m); ncol(m)              # 2 3
+rownames(m) <- c("geneA", "geneB"); colnames(m) <- paste0("s", 1:3)
+
+m["geneA", ]                          # 一列 → 掉成 named vector
+m[, 2, drop = FALSE]                  # 保持 matrix
+t(m); m %*% t(m)                      # 轉置、矩陣乘法（* 是逐元素）
+rowMeans(m); colSums(m)               # 比 apply(m, 1, mean) 快
+log2(m + 1)                           # 向量化，維度保留
+
+as.matrix(df[, c("x", "y")])          # data frame → matrix：有字串欄會整個變 character
 ```
 
-它常被拿來做：
+> 生資套件把 counts 矩陣、樣本 metadata、基因註解打包成 `SummarizedExperiment`；它的 `assay()` 就是 matrix，`colData()` 是 data frame。見 [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md)。
 
-- 條件篩選
-- 多個條件的組合
-- `sum()`、`any()`、`all()` 這類摘要判斷
+## Data Frame
 
-實務上可以把 logical vector 想成一個與原資料等長的條件遮罩。
-
-### Comparing More Than Numbers
-
-比較運算不只適用於數值。字串也可以比較，而且是依字典序：
+data frame = 多個**等長** vector 按欄綁在一起，每欄型別可不同；列是觀測、欄是變數。
 
 ```r
-"Hello" > "Goodbye"
-# [1] TRUE
+debt <- data.frame(
+  friend = c("Dan", "Dan", "Dan", "Rob", "Rob", "Rob"),
+  money  = c(100, 200, 150, 50, 75, 100)
+)
+str(debt); head(debt); summary(debt)
+names(debt) <- c("friend", "payment")      # 改欄名
+
+debt[3:6, ]                    # 列
+debt[1:3, 2]                   # 單欄 → 掉成 vector
+debt[1:3, 2, drop = FALSE]     # 保持 data frame
+debt$payment                   # 單欄 vector（$ 會部分比對名稱，寫程式時改用 [["payment"]]）
+debt[debt$payment > 100, ]     # 條件篩選；欄位有 NA 時會產生全 NA 的列
+subset(debt, payment > 100)    # 會丟掉 NA 列
+debt$log_pay <- log(debt$payment)   # 新增欄
 ```
 
-布林值也能被比較，因為 `TRUE` 和 `FALSE` 在某些情況下會被 coercion：
+### data.frame vs tibble
+
+tidyverse 的 tibble 是較嚴格的 data frame，dplyr 輸出預設都是 tibble。
+
+| 行為 | `data.frame` | `tibble` |
+| --- | --- | --- |
+| `df[, 1]` | 掉成 vector | 永遠是 tibble |
+| `df$ab`（只有 `abc` 欄） | 部分比對，回傳 `abc` | `NULL` + warning |
+| 列名 (row names) | 支援 | 不支援，用 `rownames_to_column()` 轉成欄 |
+| 印出 | 全部印 | 只印前 10 列與欄型別 |
+| 字串轉 factor | R 4.0 以前預設會轉（`stringsAsFactors`） | 不轉 |
+
+> 很多 Bioconductor 物件依賴 row names（基因 ID）。轉成 tibble 前先 `rownames_to_column("gene_id")`，否則 ID 會消失。
+
+## List
+
+list 的每個元素可以是不同型別、不同長度；模型物件（`lm()` 結果）、`jsonlite::fromJSON()` 回應、`split()` 結果都是 list。
 
 ```r
-TRUE < FALSE
-# [1] FALSE
-```
-
-這類行為可以幫助理解 R 的底層規則，但實務上除非很明確知道自己在做什麼，否則不要把布林值比較當成主要資料分析寫法。
-
-### Recycling
-
-當一邊是長向量、一邊是長度 1 的數值時，R 會自動重複短的那邊：
-
-```r
-a <- c(2.2, 12, 7)
-a * 2
-```
-
-這很方便，但也要小心。若兩個向量長度不一致且不是整除關係，R 仍可能繼續運算，只是結果不一定符合你的本意。
-
-### Why Vectors Matter
-
-理解 vector 後，很多 R 行為就會變得合理：
-
-- `mean(x)`、`sum(x)` 是對整個向量摘要
-- `x > 0` 會回傳一個 logical vector
-- data frame 的每一欄本質上也是一個 vector
-- `x[x > 0]` 這類寫法其實是在用 logical vector 做 subsetting
-
-### Common Mistakes
-
-- 混入不同型別元素，讓 R 自動 coercion 成不預期的型別。
-- 忘記 R 會做 recycling，導致運算看似成功但邏輯錯誤。
-- 把 vector 當成純 scalar 使用，忽略很多函數其實會整批處理。
-
-## Data Frames in R
-
-data frame 是 R 最常見的表格式資料結構。它可以視為「多個等長 vector 按欄位綁在一起」，每一欄可以有自己的型別。
-
-### Creating a Data Frame
-
-```r
-name <- c("Dan", "Dan", "Dan", "Rob", "Rob", "Rob")
-payment <- c(100, 200, 150, 50, 75, 100)
-
-debt <- data.frame(name, payment)
-```
-
-如果一開始就知道欄位名稱，直接在建立時命名通常比後改更清楚：
-
-```r
-debt <- data.frame(friend = name, money = payment)
-```
-
-### Renaming Columns
-
-```r
-colnames(debt) <- c("friend", "money")
-```
-
-欄位名稱不只是美觀問題。清楚、穩定的欄名會直接影響後續的 subset、merge 與視覺化可讀性。
-
-### Subsetting
-
-data frame 常見的取值方式有三種：
-
-```r
-debt[3:6, ]
-debt[1:3, 2]
-debt$payment
-```
-
-如果你想保留 data frame 形狀，而不是讓單欄被簡化成 vector，可以加上 `drop = FALSE`：
-
-```r
-debt[1:3, 2, drop = FALSE]
-```
-
-這在寫函數或可重用腳本時很重要，因為輸出型別穩定才能避免下游報錯。
-
-### Mental Model
-
-把 data frame 想成：
-
-- rows: 觀測值
-- columns: 變數
-- each column: 一個 vector
-
-這個心智模型能幫助你判斷什麼操作應該逐欄做，什麼操作應該逐列做。
-
-### Common Mistakes
-
-- 取單欄時忘記會掉成 vector，導致下游程式期待 data frame 卻收到 vector。
-- 用模糊欄名，後續很難看出欄位含義。
-- 以為所有欄位型別都一樣；其實 data frame 本來就允許 mixed types。
-
-## Lists in R
-
-當你需要把不同型別、不同形狀的物件包在一起時，R 的 list 是最自然的容器。它和 vector 不同，list 不要求每個元素型別一致。
-
-### Why Lists Exist
-
-分析工作常需要把多種物件放在一起，例如：
-
-- 一個資料表
-- 一段 metadata
-- 幾個模型物件
-- 一組參數設定
-
-這時 list 比 vector 或 data frame 更適合。
-
-### Creating a List
-
-```r
-company_name <- "DataCampers Inc."
-
-cash <- data.frame(
-  company = c("A", "A", "A", "B", "B", "B", "B"),
-  cash_flow = c(1000, 4000, 550, 1500, 1100, 750, 6000),
-  year = c(1, 3, 4, 1, 2, 4, 5)
+run <- list(
+  name   = "batch_01",
+  counts = data.frame(gene = c("A", "B"), n = c(10, 3)),
+  params = list(min_count = 5, method = "TMM")
 )
 
-my_company <- list(company_name, cash)
+run["name"]          # 子 list（仍是 list）
+run[["name"]]        # 元素本身："batch_01"
+run$params$method    # 巢狀取值："TMM"
+run[["params"]][["min_count"]]
+str(run, max.level = 1)
+
+run$note <- "rerun"  # 新增元素
+run$note <- NULL     # 刪除元素
+length(run); names(run)
+
+fit <- lm(mpg ~ wt, data = mtcars)
+is.list(fit); names(fit)          # coefficients、residuals...
+by_cyl <- split(mtcars, mtcars$cyl)   # list of data frames，接 lapply / purrr::map
 ```
 
-這個 list 的第一個元素是字串，第二個元素是 data frame。這正是 list 的價值所在。
+| 運算子 | 回傳 | 比喻 |
+| --- | --- | --- |
+| `x[i]` | 同型別的子集（list 還是 list） | 拿到裝著貨物的車廂 |
+| `x[[i]]` | 單一元素本身 | 拿出車廂裡的貨物 |
+| `x$name` | 同 `x[["name"]]`，但會部分比對 | 方便互動使用 |
 
-### Practical Uses
+逐元素處理 list 見 [函數式程式設計](functional-programming.md)。
 
-list 在 R 裡非常常見，因為很多函數本來就會回傳 list，例如：
+## 常見錯誤
 
-- 模型擬合結果
-- API 回應
-- 巢狀資料結構
-- 多步驟分析的中間結果
-
-當你後面開始使用 `lapply()`、`sapply()` 時，list 也會變成核心資料結構。
-
-### Mental Model
-
-可以把 list 想成一個容器，裡面每個 slot 都能放完全不同的東西。重點不是長得整齊，而是把相關物件組成一個可攜帶、可傳遞的分析單位。
-
-### Common Mistakes
-
-- 以為 list 應該像 data frame 一樣每個元素長度一致。
-- 把本來應該拆成欄位的表格資料硬塞進 list，讓後續操作變複雜。
-- 不清楚 list 與 vector 的差別，導致 indexing 與回傳型別判讀混亂。
+| 錯誤 | 結果 | 對策 |
+| --- | --- | --- |
+| 混入不同型別 | 整個 vector 變 character | `str()` 檢查；匯入時指定 `col_types` |
+| 長度不一致卻運算 | recycle 出錯誤結果 | 檢查 `length()`；用 `stopifnot(length(x) == length(y))` |
+| 單欄 / 單列取值掉成 vector | 下游期待 data frame 而報錯 | `drop = FALSE` 或改用 tibble |
+| 用 `[` 取 list 元素 | 拿到 list 而不是值 | 取值用 `[[` |
+| `$` 部分比對 | 拿到錯的欄 | 程式中用 `[["col"]]` |
+| `1:length(x)` 遇到空 vector | 得到 `1 0`，迴圈跑兩次 | 用 `seq_along(x)` |

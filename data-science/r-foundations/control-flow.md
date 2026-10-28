@@ -1,167 +1,99 @@
-# Control Flow in R
+[Data Science](../README.md) › [R Foundations](README.md) › 控制流程
 
-This note covers R-specific control flow. If you need the Python version of the same topic, see [Python: Control Flow](../python-foundations/control-flow.md); the branching concepts are similar, but R's vectorization-first style changes when loops are the right tool.
+# 控制流程 (Control Flow)
 
-控制流程用來決定「什麼條件下執行什麼事」以及「哪些步驟需要重複執行」。R 雖然支援完整的流程控制，但在資料分析情境中，應先偏好向量化與彙總函數，只有在狀態需要逐步更新時才使用 loop。
+條件判斷與迴圈的 R 寫法。觀念與 [Python 控制流程](../python-foundations/control-flow.md) 相同，差別在 R 以向量化為主：**對整個 vector 做事時用向量化函式，只有狀態需要逐步更新時才寫迴圈**。
 
-## Relational Operators
+## 比較與邏輯運算子
 
-條件判斷最基本的是比較運算：
-
-| Operator | Meaning |
-| --- | --- |
-| `>` | greater than |
-| `>=` | greater than or equal to |
-| `<` | less than |
-| `<=` | less than or equal to |
-| `==` | equal to |
-| `!=` | not equal to |
+| 運算子 | 意義 | 作用範圍 |
+| --- | --- | --- |
+| `>` `>=` `<` `<=` `==` `!=` | 比較 | 逐元素，回傳 logical vector |
+| `&` `\|` `!` | AND / OR / NOT | 逐元素，用於篩選資料 |
+| `&&` `\|\|` | AND / OR（短路） | 只接受長度 1，用於 `if` / `while` |
+| `xor()`、`any()`、`all()` | 互斥或、任一、全部 | 把 vector 收斂成單一值 |
+| `%in%` | 屬於集合 | 逐元素 |
 
 ```r
-today_price <- 54.33
-yesterday_price <- 55.24
-
-today_price < yesterday_price
-# [1] TRUE
+x <- c(3, 12, 20)
+x > 5 & x < 15                 # FALSE TRUE FALSE   逐元素
+c(TRUE, TRUE) && TRUE          # R ≥ 4.3.0：Error，長度 > 1 不再只看第一個元素
+length(x) > 0 && x[1] > 5      # 短路：左邊 FALSE 就不算右邊，可防止越界
+NA & FALSE                     # FALSE；NA & TRUE 是 NA
 ```
 
-如果比較對象是向量，結果也會是逐元素的 logical vector，而不是單一真假值。
+> `if` 的條件必須是**長度 1、非 NA** 的 logical。`if (x > 5)` 遇到長度 > 1 的 `x` 在 R ≥ 4.2.0 直接報錯；遇到 `NA` 報 `missing value where TRUE/FALSE needed`。需要時用 `isTRUE()`、`any()`、`all()` 收斂。
 
-## Logical Operators
-
-當條件需要組合時，會用到 logical operators：
-
-| Operator | Meaning |
-| --- | --- |
-| `&` | element-wise AND |
-| `|` | element-wise OR |
-| `!` | NOT |
-| `&&` | first-element AND |
-| `||` | first-element OR |
+## 條件判斷
 
 ```r
-x <- 12
-x > 5 & x < 15
-# [1] TRUE
-
-y <- 14
-y < 5 | y > 15
-# [1] FALSE
-```
-
-如果是在向量上，`&` 和 `|` 會逐元素運算：
-
-```r
-c(TRUE, TRUE, FALSE) & c(TRUE, FALSE, FALSE)
-# [1]  TRUE FALSE FALSE
-```
-
-但 `&&` 和 `||` 只看第一個元素：
-
-```r
-c(TRUE, TRUE, FALSE) && c(TRUE, FALSE, FALSE)
-# [1] TRUE
-```
-
-Key point: 在 `if (...)`、`while (...)` 這種只需要單一判斷值的情境，通常更該明確思考自己要的是整個向量逐元素判斷，還是只看第一個值。
-
-## if / else
-
-當邏輯是「符合條件才做事」時，用 `if` 最清楚：
-
-```r
-signal <- if (today_price < yesterday_price) {
-  "down"
-} else {
-  "up_or_flat"
-}
-```
-
-如果你的條件是針對整個向量逐元素判斷，通常應考慮向量化寫法，而不是用單一 `if`。
-
-## else if
-
-當條件不只兩種分支時，`else if` 會比連續巢狀 `if` 更清楚：
-
-```r
-x <- 0
-
-label <- if (x < 0) {
+# if / else if / else：第一個成立的分支就停止
+label <- if (x[1] < 0) {
   "negative"
-} else if (x == 0) {
+} else if (x[1] == 0) {
   "zero"
 } else {
   "positive"
 }
+
+# 向量版：每個元素各自判斷
+ifelse(x > 10, "high", "low")                   # base R，會丟失 Date / factor 屬性
+dplyr::if_else(x > 10, "high", "low")           # 型別嚴格，可指定 missing =
+dplyr::case_when(                               # 多分支
+  x < 5  ~ "low",
+  x < 15 ~ "mid",
+  .default = "high"                             # dplyr ≥ 1.1.0；舊版寫 TRUE ~ "high"
+)
+
+# 依字串選分支
+switch("median", mean = mean(x), median = median(x), stop("unknown stat"))
 ```
 
-這種結構很適合：
+| 情境 | 用 |
+| --- | --- |
+| 單一判斷（參數、檔案是否存在） | `if` / `else` |
+| 整欄二分 | `if_else()` / `ifelse()` |
+| 整欄多分支、區間分類 | `case_when()` 或 `cut()` |
+| 依字串選方法 | `switch()` |
 
-- 數值區間分類
-- 多個業務規則依序判斷
-- 根據資料狀態決定不同處理分支
-
-條件順序很重要。`else if` 會在第一個符合的條件就停止往下判斷。
-
-## repeat
-
-`repeat` 會無限執行，直到你主動 `break`。它適合用在「不知道要跑幾次，但知道停止條件」的情況。
+## 迴圈
 
 ```r
-i <- 0
+# for：逐一處理檔案、樣本、參數
+files <- list.files("data", pattern = "\\.csv$", full.names = TRUE)
+results <- vector("list", length(files))        # 先配置好長度
+for (i in seq_along(files)) {                   # 不要寫 1:length(files)，空 vector 會跑 1、0
+  results[[i]] <- readr::read_csv(files[i], show_col_types = FALSE)
+}
+combined <- dplyr::bind_rows(results)
 
+# while：條件成立就繼續
+price <- 52.1
+while (price <= 52.5) price <- price * runif(1, 0.99, 1.01)
+
+# repeat：不知道要跑幾次，但知道何時停
+i <- 0
 repeat {
   i <- i + 1
   if (i >= 3) break
 }
-```
 
-風險在於忘記寫停止條件，就會變成 infinite loop。
-
-## while
-
-`while` 適合在條件為真時持續更新狀態：
-
-```r
-price <- 52.1
-
-while (price <= 52.5) {
-  price <- price * runif(1, 0.99, 1.01)
+for (s in samples) {
+  if (s %in% failed) next                       # 跳過這次
+  ...
 }
 ```
 
-這類寫法常見於模擬、逐步搜尋、門檻觸發與資料清理直到滿足條件為止。
+> 迴圈內 `x <- c(x, new)` 每次都複製整個物件，n 大時呈 O(n²)。先用 `vector("list", n)` 配置，或改用 `lapply()` / `purrr::map()`，最後 `bind_rows()`。
 
-## for
+## 何時不寫迴圈
 
-`for` 適合明確地逐個元素處理：
+| 想做 | 迴圈寫法 | 向量化 / 函數式寫法 |
+| --- | --- | --- |
+| 整個 vector 運算 | `for (i ...) y[i] <- log(x[i])` | `log(x)` |
+| 每欄摘要 | `for (col ...) mean(df[[col]])` | `colMeans(df)`、`summarize(across(...))` |
+| 矩陣每列 | `for (g ...) mean(m[g, ])` | `rowMeans(m)` |
+| 條件取代 | `for (i ...) if (x[i] < 0) x[i] <- 0` | `x[x < 0] <- 0` 或 `pmax(x, 0)` |
+| 每個 list 元素套函式 | `for (el ...) f(el)` | `lapply()` / `purrr::map()`，見 [函數式程式設計](functional-programming.md) |
 
-```r
-for (number in 1:5) {
-  print(number)
-}
-```
-
-對分析工作來說，`for` 常用於：
-
-- 逐一處理多個欄位或檔案
-- 迭代模型設定
-- 對多個資產或群組重複執行相同步驟
-
-## When Not to Loop
-
-下面這類情境通常優先考慮向量化或 `apply` 類函數：
-
-- 對整個向量做數學運算
-- 對 data frame 每欄做同一個摘要統計
-- 對 list 中每個元素套用同一個函數
-
-Key point: loop 不一定錯，但如果資料結構本來就支援向量化，loop 往往會讓程式更長、更慢，也更難檢查。
-
-## Common Mistakes
-
-- 用 `if` 判斷整個向量，卻以為它會逐元素處理。
-- 把 `&` / `|` 和 `&&` / `||` 混用，結果拿到不同層級的判斷。
-- `while` 條件永遠不會改變，造成無限迴圈。
-- 在 `for` 迴圈中反覆長大物件，讓效能變差。
-- 本來可以直接用 `mean(x, na.rm = TRUE)` 或 `sapply()`，卻手動寫冗長迴圈。
+迴圈本身不慢，慢的是「在迴圈裡長大物件」與「逐元素呼叫本來可以整批處理的函式」。效能量測見 [寫出有效率的 R](writing-efficient-r-code.md)。

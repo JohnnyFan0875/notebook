@@ -1,189 +1,104 @@
-# Defensive Programming in R
+[Data Science](../README.md) › [R Foundations](README.md) › 防禦性程式設計
 
-Defensive programming 的核心不是把程式寫得悲觀，而是讓常見錯誤更早被發現、更容易被理解，並盡量不要一路傳染到後面的分析結果。
+# 防禦性程式設計 (Defensive Programming)
 
-在 R workflow 裡，這通常意味著三件事：
+讓錯誤**早一點暴露、訊息看得懂、不悄悄變成錯誤結論**。分析腳本最危險的不是報錯，而是沒報錯卻算錯（欄位對錯、join 爆量、NA 被當成 0）。函式層級的輸入檢查與 `tryCatch()` 見 [函式](functions.md#輸入檢查與錯誤處理)；Python 對應見 [錯誤處理與斷言](../python-foundations/errors-and-assertions.md)、[軟體工程實務](../python-foundations/software-engineering.md)。
 
-- 先避免明顯會出錯的寫法
-- 對輸入與中間結果做基本檢查
-- 讓檔案、函數與錯誤訊息保持一致
+## 語言層級的小陷阱
 
-## Goal
-
-一個防禦性夠好的 R script，應該做到：
-
-- 問題能早一點暴露
-- 錯誤訊息能幫助定位
-- 小失誤不會悄悄變成錯誤結論
-
-這種思路在資料清理、統計分析與報表自動化特別重要。
-
-## Prefer `TRUE` and `FALSE` over `T` and `F`
-
-`TRUE` 和 `FALSE` 是保留邏輯值，`T` 和 `F` 只是一般名稱。
-
-因此：
-
-- `TRUE <- 5` 會直接報錯
-- `T <- 5` 則可能被重新賦值，造成難查的邏輯錯誤
-
-實務上最好直接養成習慣：
-
-- 寫 `TRUE`
-- 寫 `FALSE`
-- 不要依賴 `T`
-- 不要依賴 `F`
-
-## Use `isTRUE()` for Explicit Checks
-
-當你真的要確認某個條件是單一且明確的 `TRUE` 時，`isTRUE()` 比直接 `if (x)` 更穩定。
+| 寫法 | 風險 | 改成 |
+| --- | --- | --- |
+| `T` / `F` | 只是普通變數，可被 `T <- 0` 覆蓋 | `TRUE` / `FALSE` |
+| `if (x)` | `x` 可能是長度 > 1、`NA` 或數字 | `if (isTRUE(x))` |
+| `1:length(x)` | 空 vector 會得到 `1 0` | `seq_along(x)`、`seq_len(n)` |
+| `df$col` | 部分比對到別的欄 | `df[["col"]]` |
+| `sapply()` | 回傳型別隨輸入變（vector / matrix / list） | `vapply(x, f, numeric(1))` 或 `purrr::map_dbl()` |
+| `x == NA` | 永遠是 `NA` | `is.na(x)` |
+| `ifelse()` 處理日期 | 丟失 `Date` 屬性 | `dplyr::if_else()` |
 
 ```r
-isTRUE(TRUE)
-isTRUE(2)
+isTRUE(TRUE); isTRUE(c(TRUE, TRUE)); isTRUE(NA)   # TRUE FALSE FALSE
 ```
 
-這樣可以避免把非零數字、長度不對的邏輯向量，或其他模糊輸入誤當成布林條件。
+## 在資料流程中加斷言
 
-## Input Validation and Errors
-
-輸入檢查、`stop()` / `warning()` / `message()` 的選擇與 `try()` 見 [Functions in R](functions.md#input-validation)。
-
-## DRY over Copy-Paste
-
-防禦性程式設計和 DRY 很有關係。
-
-DRY = do not repeat yourself  
-WET = write everything twice
-
-經驗法則：
-
-1. 複製貼上一次通常還能接受
-2. 第二次就該開始警覺
-3. 第三次通常代表應該抽函數、抽設定或抽共用流程
-
-重複越多，修 bug 時漏改其中一份的風險越高。
-
-## The Copy-and-Paste Rule
-
-如果同一段資料清理、模型設定或繪圖格式開始重複出現，通常可以抽成：
-
-- 一個函數
-- 一個共用常數
-- 一段 reusable pipeline
-
-防禦性的重點不是省字數，而是避免邏輯分叉。
-
-## Style Consistency Helps Catch Bugs
-
-一致的格式會讓錯誤更容易被看到。
-
-例如：
+在關鍵步驟後檢查假設，比事後追查結果異常快得多。
 
 ```r
-res <- t.test(x, paired = FALSE)
+library(dplyr)
+
+stopifnot(
+  !anyDuplicated(samples$sample_id),               # ID 唯一
+  all(c("sample_id", "condition") %in% names(samples)),
+  !anyNA(samples$condition)
+)
+
+n_before <- nrow(counts)
+merged <- left_join(counts, samples, by = "sample_id",
+                    relationship = "many-to-one")   # dplyr ≥ 1.1.0：違反就報錯（防 join 爆量）
+stopifnot(nrow(merged) == n_before)
+
+# 計數矩陣的欄順序要和 metadata 列順序一致（DESeq2 不會幫你對齊）
+stopifnot(identical(colnames(count_mat), samples$sample_id))
 ```
 
-通常比下面更容易掃描與除錯：
+| 工具 | 用途 |
+| --- | --- |
+| `stopifnot()` | base R，簡單斷言 |
+| `checkmate` | `assert_numeric(x, lower = 0, any.missing = FALSE)`，訊息清楚、速度快 |
+| `rlang::abort()` / `cli::cli_abort()` | 結構化、格式化的錯誤訊息（tidyverse 套件慣用） |
+| `validate` / `pointblank` | 資料層級的規則檢查與報告，見 [資料品質檢查](../data-engineering/data-quality-checks.md) |
+| `testthat` | 函式的單元測試，見 [R 套件開發](package-development.md) |
+
+## DRY：不要複製貼上
+
+複製一次可以接受，第二次要警覺，第三次就該抽成函式、共用常數或參數化流程。重複越多，修 bug 時漏改其中一份的機率越高。
 
 ```r
-res<-t.test(x,paired=FALSE)
+# 重複三次的清理邏輯 → 一個函式 + map
+clean_batch <- function(path) readr::read_csv(path) |> janitor::clean_names() |> filter(qc_pass)
+batches <- purrr::map(list.files("data", full.names = TRUE), clean_batch)
 ```
 
-這不只是美觀問題，還是降低認知負擔的方式。
+## 風格與靜態檢查
 
-## Static Analysis with `lintr`
+一致的格式讓錯誤更容易被看到：`res <- t.test(x, paired = FALSE)` 比 `res<-t.test(x,paired=FALSE)` 好掃描。
 
-`lintr` 可以幫你在執行前先抓出一些風格和潛在問題。
+| 工具 | 做什麼 |
+| --- | --- |
+| `styler::style_file("analysis.R")` | 依 tidyverse style guide 自動排版 |
+| `lintr::lint("analysis.R")` | 靜態檢查：未使用變數、`T`/`F`、過長行 |
+| RStudio / Positron 診斷 | 編輯時即時提示 |
 
-```r
-lintr::lint("code.R")
+## 檔名與專案結構
+
+| 原則 | 好 | 避免 |
+| --- | --- | --- |
+| 不用空白 | `load-survival-data.R` | `my final script.R`（shell 要加引號、URL 變 `%20`） |
+| 可排序 | `01-import.R`、`02-clean.R` | `import.R`、`clean_new2.R` |
+| 副檔名一致 | 一律 `.R` | `.r` / `.R` 混用 |
+| 日期用 ISO | `2024-03-15-qc-report.html` | `3-15-24-report.html` |
+
+```
+project/
+├── project.Rproj        # 或 .here 檔；搭配 here::here() 取路徑，不要 setwd()
+├── renv.lock            # 套件版本鎖定（renv::init() / renv::snapshot()）
+├── R/                   # 函式
+├── analysis/            # 依序執行的腳本或 .qmd
+├── data/raw/            # 原始資料，唯讀
+├── data/processed/
+└── output/
 ```
 
-它不會取代測試，但很適合當早期警報系統。
+> `setwd("C:/Users/me/...")` 寫死絕對路徑，換台電腦就壞。用 RStudio Project 或 `here::here("data", "raw", "counts.csv")`。
 
-## File Naming Matters
+## 最小習慣清單
 
-R script 都存在檔案裡，所以命名規則本身就是防呆的一部分。
-
-好檔名的目標是：
-
-- 容易搜尋
-- 容易排序
-- 在 shell、git、網址和自動化流程中不容易出錯
-
-## Prefer Hyphens, Avoid Spaces
-
-像這樣的檔名通常比空白檔名穩定：
-
-- `cluster-analysis.R`
-- `load-survival-data.R`
-- `plot-residuals.R`
-
-避免：
-
-- `file name.R`
-- `my final script.R`
-
-原因包括：
-
-- shell 操作要額外加引號
-- 網址或部分工具會把空白轉成 `%20`
-- 搜尋、排序和 tab completion 都更麻煩
-
-## Avoid Underscore-Heavy Search Problems
-
-課程也提到一個很實務的小點：某些搜尋情境下，`file_name` 會比較像單一 token，未必像連字號那樣容易被切開。
-
-這不是絕對規則，但若你重視檔案可搜尋性，kebab-case 常常是穩定選項。
-
-## Use Consistent Extensions
-
-同類型腳本應使用一致副檔名，例如統一用 `.R`。
-
-這有助於：
-
-- 編輯器辨識
-- 檔案排序
-- 自動化工具處理
-
-## Keep a Predictable Project Layout
-
-當專案變大，固定的目錄慣例會比臨時命名更重要。
-
-一個常見思路是：
-
-- `R/` 放腳本
-- `input/` 放原始資料
-- `output/` 放產出結果
-
-如果每個分析專案都沿用接近的結構，切換上下文會更容易。
-
-## Start Small
-
-防禦性程式設計不一定要從完整測試框架開始。
-
-先從這些最小習慣開始就很有幫助：
-
-- 不用 `T` / `F`
-- 對關鍵輸入加 `stop()`
-- 對可疑但可繼續的情況加 `warning()`
-- 減少複製貼上
-- 固定檔名規則
-- 用 `lintr` 掃描 script
-
-這些小習慣累積起來，通常就能明顯降低 script 變脆弱的速度。
-
-## Common Traps
-
-- 把 `T` 或 `F` 當成永遠安全的布林值
-- 遇到錯誤就全部用 `try()` 包起來，卻沒有真正處理失敗
-- 同一段邏輯複製貼上很多份
-- 檔名含空白、大小寫混亂或規則不一致
-- 把 warning 該處理的問題當成沒事
-- 把應該 `stop()` 的情況默默吞掉
-
-## Related Notes
-
-- [Functions in R](functions.md)
-- [Control Flow in R](control-flow.md)
+| 習慣 | 成本 | 效果 |
+| --- | --- | --- |
+| 不用 `T` / `F`，迴圈用 `seq_along()` | 零 | 避免隱性錯誤 |
+| join / filter 後檢查列數 | 一行 | 抓到 join 爆量、誤刪資料 |
+| 關鍵輸入加 `stopifnot()` | 一行 | 早失敗 |
+| warning 要讀，不要一律 `suppressWarnings()` | 零 | 解析失敗、NA 產生常藏在 warning 裡 |
+| 固定 seed：`set.seed(42)` | 一行 | 隨機結果可重現 |
+| `sessionInfo()` 或 `renv` 記錄版本 | 一行 | 結果可重現 |

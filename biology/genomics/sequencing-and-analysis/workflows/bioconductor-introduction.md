@@ -2,6 +2,8 @@
 
 `Bioconductor` is an R ecosystem for genomics, transcriptomics, and other high-dimensional biological data. The practical value is not only the package collection itself, but also a shared set of data structures that make sequencing workflows composable.
 
+R prerequisites (vector / matrix / list, factor reference levels, joins, importing): [R Foundations](../../../../data-science/r-foundations/README.md); see especially [Data Structures](../../../../data-science/r-foundations/data-structures.md) and [Importing Data](../../../../data-science/r-foundations/importing-data.md#生資檔案格式).
+
 ## Installation
 
 Most packages are installed through `BiocManager`:
