@@ -1,393 +1,165 @@
-# Recursive and Hierarchical SQL
+[Data Science](../README.md) › [Databases](README.md) › 遞迴與階層查詢
 
-這篇整理遞迴 CTE 與階層式 SQL 查詢的實用模式。這類查詢最適合處理「一筆資料會再指向另一筆同型資料」的問題，例如組織樹、分類樹、族譜、零件結構、路線展開與多層相依關係。
+# 遞迴與階層查詢 (Recursive and Hierarchical SQL)
 
-## 適合處理的問題
+資料指向同類資料時（員工 → 主管、GO term → 上層 term、物種 → 上層分類、零件 → 子零件、機場 → 下一站），用 recursive CTE 一層層展開。範例以 PostgreSQL / DuckDB / SQLite 語法為主，SQL Server 差異見文末。
 
-- 給定主管，找出所有下屬
-- 計算每個節點位於第幾層
-- 把祖先路徑或分類路徑串成單一欄位
-- 展開多段路徑，像是轉機航線或多跳 graph traversal
-- 拆解 bill of materials，計算產品由哪些零件組成
-
-## Recursive CTE Mental Model
-
-recursive CTE 通常由兩段查詢組成：
-
-- anchor member: 定義起點
-- recursive member: 定義如何從上一層走到下一層
-
-常見骨架如下：
+## 骨架
 
 ```sql
-WITH RECURSIVE cte_name AS (
-  SELECT ...
-  FROM ...
-  WHERE ... -- anchor member
+WITH RECURSIVE tree AS (
+  -- 1. anchor：起點
+  SELECT id, parent_id, 1 AS level
+  FROM nodes
+  WHERE parent_id IS NULL
 
   UNION ALL
 
-  SELECT ...
-  FROM some_table AS t
-  JOIN cte_name AS c
-    ON ...
-  WHERE ... -- recursive member and termination rule
+  -- 2. recursive：從上一輪的結果走到下一層
+  SELECT n.id, n.parent_id, t.level + 1
+  FROM nodes AS n
+  JOIN tree  AS t ON n.parent_id = t.id
+  -- 3. 終止：某一輪沒有新列時停止；可再加 WHERE t.level < 10
 )
-SELECT *
-FROM cte_name;
+SELECT * FROM tree ORDER BY level, id;
 ```
 
-如果是 SQL Server，語法不寫 `RECURSIVE`，但心智模型相同：
+| 檢查 | 說明 |
+| --- | --- |
+| 欄位數與型別一致 | anchor 與 recursive 兩段的欄位要對齊；字串欄在 anchor 先 `CAST` 成夠長的型別 |
+| 終止條件 | 樹狀結構自然走到葉節點就停；有環（cycle）時會無限遞迴 |
+| `UNION ALL` vs `UNION` | `UNION` 會去掉重複列，對簡單的環有保護作用，但狀態欄（level、path）不同時仍會繼續展開 |
+| 表結構 | adjacency list（每列存 `parent_id`）最常見；多個 parent（DAG，如 GO）用 `child, parent` 邊表 |
+
+## 模式一：往下展開 + 層級 + 路徑
 
 ```sql
-WITH cte_name AS (
-  SELECT ...
-  FROM ...
-  WHERE ...
-
-  UNION ALL
-
-  SELECT ...
-  FROM some_table AS t
-  JOIN cte_name AS c
-    ON ...
-  WHERE ...
-)
-SELECT *
-FROM cte_name
-OPTION (MAXRECURSION 32767);
-```
-
-## 使用遞迴 CTE 時要先檢查
-
-- anchor member 與 recursive member 的欄位數必須一致
-- 對應欄位的資料型別必須相容
-- 一定要有終止條件，不然容易無限遞迴
-- 如果資料可能有 cycle，最好加上 path 檢查或層數上限
-- SQL Server 預設遞迴層數有限，深層查詢常要加 `OPTION (MAXRECURSION n)`
-
-實務上，最常見的終止方式有兩種：
-
-- 結構自然走到底，例如某節點沒有子節點
-- 額外設上限，例如 `level < 5` 或 `stops < 3`
-
-## 階層資料最常見的表結構
-
-最常見的是 adjacency list，也就是每筆資料用一個 parent 欄位指向上層：
-
-```sql
-CREATE TABLE employee (
-  id int PRIMARY KEY,
-  name nvarchar(100),
-  supervisor_id int
-);
-```
-
-這種模型容易寫入，也容易和 recursive CTE 搭配。
-
-## Pattern 1: 展開整棵階層樹
-
-這是最基本的 descendant expansion。從根節點出發，一路找到所有子節點。
-
-```sql
-WITH hierarchy AS (
-  SELECT id, supervisor_id
+WITH RECURSIVE hierarchy AS (
+  SELECT id, supervisor_id, 1 AS level,
+         CAST(id AS VARCHAR) AS path
   FROM employee
-  WHERE supervisor_id = 0
+  WHERE supervisor_id IS NULL                 -- 根節點；有些資料用 0 代表沒有上層
 
   UNION ALL
 
-  SELECT e.id, e.supervisor_id
+  SELECT e.id, e.supervisor_id, h.level + 1,
+         h.path || ' -> ' || CAST(e.id AS VARCHAR)
   FROM employee AS e
-  JOIN hierarchy AS h
-    ON e.supervisor_id = h.id
+  JOIN hierarchy AS h ON e.supervisor_id = h.id
 )
-SELECT *
-FROM hierarchy;
+SELECT * FROM hierarchy ORDER BY path;
+-- id sup level path
+-- 1  NULL 1    1
+-- 2  1    2    1 -> 2
+-- 3  2    3    1 -> 2 -> 3
+-- 4  2    3    1 -> 2 -> 4
 ```
 
-這個模式常用在：
+`level` 用來限制深度、縮排顯示；`path` 用來顯示祖先鏈（breadcrumb）、依路徑排序成樹狀，也用來偵測環。
 
-- 部門組織樹
-- 分類樹
-- 留言回覆樹
-- 檔案夾樹狀結構
+## 模式二：往上找所有祖先（本體論 / 分類樹）
 
-## Pattern 2: 計算層級
-
-很多分析問題不只要知道有哪些節點，也要知道每個節點在第幾層。
+GO、HPO、NCBI Taxonomy 都是「子 → 父」的邊表，且 GO 的一個 term 可以有多個 parent。富集分析常需要把基因的註解往上傳播到所有祖先 term（true path rule）。
 
 ```sql
-WITH hierarchy AS (
-  SELECT id, supervisor_id, 1 AS level
-  FROM employee
-  WHERE supervisor_id = 0
+-- go_isa(child, parent)：is_a 關係
+WITH RECURSIVE anc AS (
+  SELECT child AS term, parent AS ancestor, 1 AS dist
+  FROM go_isa
+  WHERE child = 'GO:0006915'                  -- apoptotic process
 
   UNION ALL
 
-  SELECT e.id, e.supervisor_id, h.level + 1
-  FROM employee AS e
-  JOIN hierarchy AS h
-    ON e.supervisor_id = h.id
+  SELECT a.term, g.parent, a.dist + 1
+  FROM anc AS a
+  JOIN go_isa AS g ON g.child = a.ancestor
 )
-SELECT *
-FROM hierarchy
-ORDER BY level, id;
+SELECT ancestor, MIN(dist) AS dist            -- DAG：同一祖先可經多條路徑到達
+FROM anc
+GROUP BY ancestor
+ORDER BY dist;
 ```
 
-`level` 很重要，因為後續常會拿它做：
+> DAG 中同一祖先會經不同路徑出現多次，先展開、再在外層 `GROUP BY` / `DISTINCT`。資料量大時（整個 GO × 所有基因），預先算好 closure table（`term, ancestor` 全配對）存起來，比每次遞迴快。富集分析本身見 [富集分析](../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/09-annotation-and-functional-enrichment.md)。
 
-- 階層深度分析
-- 限制遞迴深度
-- 排版 tree view
-- 計算世代數、管理層級或零件層數
+## 模式三：多跳路徑（圖）
 
-## Pattern 3: 把路徑串成單一欄位
-
-如果想知道某節點是沿著哪條路徑走到的，可以在遞迴過程中累積 path。
+把狀態（停靠數、累積成本、路徑）一起往下傳，就能回答成本上限、最便宜路線等問題。
 
 ```sql
-WITH hierarchy AS (
-  SELECT
-    id,
-    supervisor_id,
-    CAST(id AS varchar(max)) AS path
-  FROM employee
-  WHERE supervisor_id = 0
-
-  UNION ALL
-
-  SELECT
-    e.id,
-    e.supervisor_id,
-    CAST(h.path + ' -> ' + CAST(e.id AS varchar(max)) AS varchar(max)) AS path
-  FROM employee AS e
-  JOIN hierarchy AS h
-    ON e.supervisor_id = h.id
-)
-SELECT *
-FROM hierarchy;
-```
-
-這種寫法適合：
-
-- 顯示完整祖先鏈
-- 建立 breadcrumb
-- 偵測 cycle
-- 產生可讀的 traversal log
-
-如果需要追蹤名稱而不是 id，也可以改成串接 `name`。
-
-## Pattern 4: 展開多段路徑
-
-recursive CTE 不只能查樹，也可以查 graph 上的多跳路徑。典型例子是航線、物流節點或 network traversal。
-
-```sql
-WITH flight_route AS (
-  SELECT
-    departure,
-    arrival,
-    0 AS stops,
-    cost AS total_cost,
-    CAST(departure + ' -> ' + arrival AS nvarchar(max)) AS route
-  FROM flight_plan
+WITH RECURSIVE route AS (
+  SELECT departure, arrival,
+         0                           AS stops,
+         cost                        AS total_cost,
+         departure || ' -> ' || arrival AS path
+  FROM flights
   WHERE departure = 'New York'
 
   UNION ALL
 
-  SELECT
-    r.departure,
-    f.arrival,
-    r.stops + 1,
-    r.total_cost + f.cost,
-    CAST(r.route + ' -> ' + f.arrival AS nvarchar(max)) AS route
-  FROM flight_route AS r
-  JOIN flight_plan AS f
-    ON r.arrival = f.departure
-  WHERE r.stops < 3
+  SELECT r.departure, f.arrival,
+         r.stops + 1,
+         r.total_cost + f.cost,
+         r.path || ' -> ' || f.arrival
+  FROM route   AS r
+  JOIN flights AS f ON r.arrival = f.departure
+  WHERE r.stops < 3                                   -- 深度上限
+    AND r.path NOT LIKE '%' || f.arrival || '%'       -- 不重複造訪（防環）
 )
-SELECT *
-FROM flight_route;
-```
-
-這個模式的重點是把「狀態」一起往下傳：
-
-- 目前停靠數 `stops`
-- 累積成本 `total_cost`
-- 已走過的路徑 `route`
-
-一旦把狀態放進 recursive member，就能回答更進一步的問題。
-
-### Example: 找成本上限內的路線
-
-```sql
-WITH flight_route AS (
-  SELECT
-    departure,
-    arrival,
-    0 AS stops,
-    cost AS total_cost,
-    CAST(departure + ' -> ' + arrival AS nvarchar(max)) AS route
-  FROM flight_plan
-  WHERE departure = 'New York'
-
-  UNION ALL
-
-  SELECT
-    r.departure,
-    f.arrival,
-    r.stops + 1,
-    r.total_cost + f.cost,
-    CAST(r.route + ' -> ' + f.arrival AS nvarchar(max)) AS route
-  FROM flight_route AS r
-  JOIN flight_plan AS f
-    ON r.arrival = f.departure
-  WHERE r.stops < 3
-)
-SELECT departure, arrival, total_cost, route
-FROM flight_route
-WHERE total_cost <= 500
-ORDER BY total_cost;
-```
-
-### Example: 找每個目的地最便宜的路線
-
-先展開所有可能路徑，再做彙總，通常比試圖在 recursive member 裡直接求最小值更穩。
-
-```sql
-WITH flight_route AS (
-  SELECT
-    departure,
-    arrival,
-    0 AS stops,
-    cost AS total_cost,
-    CAST(departure + ' -> ' + arrival AS nvarchar(max)) AS route
-  FROM flight_plan
-  WHERE departure = 'New York'
-
-  UNION ALL
-
-  SELECT
-    r.departure,
-    f.arrival,
-    r.stops + 1,
-    r.total_cost + f.cost,
-    CAST(r.route + ' -> ' + f.arrival AS nvarchar(max)) AS route
-  FROM flight_route AS r
-  JOIN flight_plan AS f
-    ON r.arrival = f.departure
-  WHERE r.stops < 3
-)
+-- 先展開所有候選路徑，再在外層篩選與彙總
 SELECT arrival, MIN(total_cost) AS cheapest_cost
-FROM flight_route
+FROM route
+WHERE total_cost <= 500
 GROUP BY arrival
 ORDER BY cheapest_cost;
 ```
 
-## Pattern 5: Bill of Materials
+| 防環方式 | 平台 | 說明 |
+| --- | --- | --- |
+| 深度上限 `WHERE level < n` | 全部 | 最保守，一定會停 |
+| 路徑字串 `NOT LIKE` | 全部 | 簡單但會誤判子字串（`'LA'` 與 `'LAX'`）；加分隔符比對較安全 |
+| 路徑陣列 `NOT f.arrival = ANY(path_arr)` | PostgreSQL、DuckDB | 精確 |
+| `CYCLE id SET is_cycle USING path` | PostgreSQL 14+ | 標準語法，自動偵測 |
 
-零件結構是另一個很典型的階層模型。每個 component 會再由多個子零件組成。
+> 「最短路徑」「連通元件」等真正的圖分析，資料一大就該交給圖工具（networkx、igraph、圖資料庫），見 [Network Analysis](../network-analysis/README.md) 與 [NoSQL：Graph](nosql-foundations.md#graph-database)。
+
+## 模式四：物料清單 (Bill of Materials)
+
+數量要沿路徑相乘，再在外層加總：
 
 ```sql
-CREATE TABLE component_structure (
-  parent_component nvarchar(100),
-  child_component nvarchar(100),
-  quantity int
-);
-```
-
-如果要問「一台 SUV 有哪些層級的零件」，就可以把根產品當 anchor，逐層往下展開。
-
-```sql
-WITH bom AS (
-  SELECT
-    parent_component,
-    child_component,
-    quantity,
-    1 AS level
+WITH RECURSIVE bom AS (
+  SELECT child_component, quantity,
+         CAST(quantity AS BIGINT) AS total_quantity, 1 AS level
   FROM component_structure
   WHERE parent_component = 'SUV'
 
   UNION ALL
 
-  SELECT
-    c.parent_component,
-    c.child_component,
-    c.quantity,
-    b.level + 1
+  SELECT c.child_component, c.quantity,
+         b.total_quantity * c.quantity, b.level + 1
   FROM component_structure AS c
-  JOIN bom AS b
-    ON c.parent_component = b.child_component
+  JOIN bom AS b ON c.parent_component = b.child_component
 )
-SELECT child_component, level, quantity
-FROM bom
-ORDER BY level, child_component;
-```
-
-如果每層 quantity 需要相乘，則要把累積數量一起往下傳：
-
-```sql
-WITH bom AS (
-  SELECT
-    parent_component,
-    child_component,
-    quantity,
-    CAST(quantity AS bigint) AS total_quantity
-  FROM component_structure
-  WHERE parent_component = 'SUV'
-
-  UNION ALL
-
-  SELECT
-    c.parent_component,
-    c.child_component,
-    c.quantity,
-    b.total_quantity * c.quantity
-  FROM component_structure AS c
-  JOIN bom AS b
-    ON c.parent_component = b.child_component
-)
-SELECT
-  child_component,
-  SUM(total_quantity) AS total_quantity
+SELECT child_component, SUM(total_quantity) AS total_quantity
 FROM bom
 GROUP BY child_component
-ORDER BY total_quantity DESC, child_component;
+ORDER BY total_quantity DESC;
+-- SUV = 1 Engine + 4 Wheel；Engine = 10 Bolt、Wheel = 5 Bolt
+-- → Bolt 30 (= 10 + 4×5)、Wheel 4、Engine 1
 ```
 
-這種寫法很適合回答：
+## SQL Server 差異
 
-- 做一個成品總共需要多少零件
-- 哪些零件在多條子路徑上重複出現
-- 哪些零件是最上層、最底層或中間組件
+| 項目 | PostgreSQL / DuckDB / SQLite | SQL Server |
+| --- | --- | --- |
+| 關鍵字 | `WITH RECURSIVE` | `WITH`（不寫 `RECURSIVE`） |
+| 字串串接 | `\|\|` | `+` 或 `CONCAT()` |
+| 路徑欄型別 | `VARCHAR` / `TEXT` | anchor 與 recursive 都要 `CAST(... AS NVARCHAR(MAX))`，型別不一致會報錯 |
+| 遞迴上限 | 無預設上限 | 預設 100 層，超過報錯；`OPTION (MAXRECURSION 1000)`，`0` 為不限 |
 
-## 常見陷阱
+## 實務原則
 
-### Cycle
-
-如果 `A -> B -> C -> A` 形成環，遞迴就可能無限展開。最保守的做法是：
-
-- 限制最大層數
-- 在 path 中檢查新節點是否已出現
-
-### Duplicate Paths
-
-在 graph 型資料中，同一目的地可能由多條不同路徑抵達。  
-所以 `arrival` 重複不一定是錯誤，而是代表路徑空間本來就不只一種。
-
-### 把太多邏輯塞進 Recursive Member
-
-通常比較穩的做法是：
-
-1. 先用 recursive CTE 展開候選集合
-2. 再在外層查詢做 `GROUP BY`、排名、篩選或報表整理
-
-這樣比較容易 debug，也比較容易驗證每一層輸出是否合理。
-
-## 實務心法
-
-- 遞迴查詢的本質是「定義起點」與「定義下一步」
-- 如果問題聽起來像「從某節點一路往下或往上找」，通常可以先試 recursive CTE
-- `level`、`path`、累積數量、累積成本，都是很常見的狀態欄位
-- 對樹狀資料，`parent_id` 模型通常已經夠用
-- 對多跳圖狀資料，務必先想好去重、成本、終止條件與 cycle 保護
+- 先在 recursive CTE 展開候選集合，`GROUP BY`、排名、篩選放在外層：每一層都能單獨檢查，也容易除錯。
+- 同一目的地出現多次不一定是錯：圖中本來就可能有多條路徑。
+- 要結果穩定的樹狀順序，依 `path` 排序。

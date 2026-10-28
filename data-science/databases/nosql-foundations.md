@@ -1,334 +1,149 @@
-# NoSQL Foundations
+[Data Science](../README.md) › [Databases](README.md) › NoSQL 基礎
 
-這篇整理 NoSQL 的基礎心智模型。重點不是把各家產品背熟，而是先分清楚：NoSQL 解的是什麼問題、常見資料形狀有哪些、以及它和 relational database 各自擅長的工作。
+# NoSQL 基礎 (NoSQL Foundations)
 
-## What NoSQL Usually Means
+NoSQL（not only SQL）不是單一產品，也不是「比 SQL 新」的資料庫，而是一組以非表格資料模型為主的系統：document、key-value、graph、wide-column。選型時先看資料形狀與存取模式，而不是流行度。
 
-NoSQL 通常可理解成 `not only SQL`。  
-它不是單一產品，也不是「比 SQL 更新的資料庫」，而是一組偏向非關聯式、較彈性資料模型的 storage pattern。
+## SQL vs NoSQL
 
-常見特徵：
-
-- schema 較鬆，不要求每筆資料都完全同型
-- 容易處理 semi-structured data
-- 常見於高吞吐、水平擴充、低延遲場景
-- 不一定以複雜 join 為核心查詢模式
-
-這不代表 relational database 過時。比較準確的理解是：
-
-- SQL / relational database：強 schema、關聯完整性、複雜查詢
-- NoSQL：彈性資料模型、特定存取模式、擴充與延遲需求
-
-## SQL vs. NoSQL
-
-| 面向 | Relational Database | NoSQL |
+| 面向 | 關聯式資料庫 | NoSQL |
 | --- | --- | --- |
-| 資料形狀 | rows / columns 為主 | document、key-value、graph、wide-column |
-| schema | schema-on-write 較常見 | 較鬆、欄位可變 |
-| 關聯處理 | join 很強 | 常避免複雜 join，改靠資料模型設計 |
-| 一致性 | 常強調 constraints 與 transaction | 常依產品設計，在一致性與擴充間取捨 |
-| 常見用途 | OLTP、核心主資料、複雜分析 | 快取、事件資料、半結構化資料、關係網路 |
+| 資料形狀 | 表格（列 × 欄） | 文件、key-value、圖、wide-column |
+| schema | schema-on-write，事先定義 | 彈性，欄位可變 |
+| 關聯 | join 是核心能力 | 避免複雜 join，靠資料模型設計（把一起讀的資料存在一起） |
+| 一致性 | ACID 交易、constraint | 依產品而異；常在一致性、延遲、可用性間取捨 |
+| 擴充 | 傳統上垂直擴充（加大單機） | 多數為水平擴充（加節點、分片） |
+| 適合 | 交易、主資料、複雜查詢與分析 | 快取、事件與日誌、半結構化資料、關係網路 |
 
-## Scaling and Transaction Trade-Offs
+> 很多 NoSQL 產品已支援交易（MongoDB 4.0+ 多文件交易），關聯式資料庫也能存 JSON 與水平擴充。比較好的問題是：這個工作負載最需要的是什麼？
 
-NoSQL 常被拿來處理需要水平擴充的工作負載。
+## 四種資料模型
 
-- vertical scaling：把單機 CPU、RAM、storage 往上加
-- horizontal scaling：增加更多節點分散資料與流量
+| 類型 | 資料模型 | 典型產品 | 適合 | 不適合 |
+| --- | --- | --- | --- | --- |
+| Document | JSON-like 文件，可巢狀 | MongoDB、Couchbase | 欄位隨演進改變、一次讀整個物件（樣本 metadata、API 回應） | 大量跨文件 join |
+| Key-value | `key → value` 的超大 dict | Redis、DynamoDB | 快取、session、計數器、依 key 查詢 | 依值的條件查詢 |
+| Graph | node + edge（都可帶屬性） | Neo4j、Amazon Neptune | 多跳關係：知識圖譜、交互作用網路、推薦、詐騙偵測 | 大量聚合統計 |
+| Wide-column | 依 row key 分散、欄位分組（column family） | Cassandra、HBase、Bigtable | 超大量寫入、依 key 範圍讀取（時間序列、感測器） | 臨時性的分析查詢 |
 
-relational database 並不是不能 scale，但許多 NoSQL 系統從一開始就把分散式擴充、低延遲讀寫、或高吞吐量放在更前面的設計順位。
+### Document database
 
-另一個常見差異是 transaction 模型：
+文件就是 Python 的 `dict`：
 
-- relational database 通常把 ACID transaction 當成核心能力
-- NoSQL 產品之間差異很大，有些支援交易，有些只在較小範圍保證一致性
+```json
+{
+  "sample_id": "S001",
+  "tissue": "liver",
+  "assays": [
+    {"type": "RNA-seq", "reads": 42000000},
+    {"type": "WGS", "coverage": 30}
+  ]
+}
+```
 
-因此比較好的選型問題不是「NoSQL 有沒有 transaction」，而是：
+同一 collection 的文件可以有不同欄位；巢狀欄位用 dot notation 直接查（`assays.type`）。PyMongo 實作見 [MongoDB 與 PyMongo](mongodb-pymongo.md)。
 
-- 這個 workload 最需要的是什麼
-- 一致性、延遲、吞吐量、擴充性之間要怎麼取捨
+### Key-value：Redis
 
-## Common NoSQL Families
+| 用途 | 為什麼適合 |
+| --- | --- |
+| 快取（cache） | 資料在記憶體，讀取延遲低；熱門資料放 Redis，完整資料留在主資料庫 |
+| session、rate limiting | 依 key 讀寫、可設過期時間（TTL） |
+| 排行榜 | 內建 sorted set |
+| 工作佇列、pub/sub | 內建 list、stream |
 
-NoSQL 不是只有一種資料庫。先分資料形狀，比背產品名稱更重要。
+value 不只是字串，還可以是 hash、list、set、sorted set 等結構。以 replication 提高可用性；非同步 replication 用一致性換延遲。
 
-### Document Databases
+### Graph database
 
-document database 以文件為中心，每筆資料常是 JSON-like 結構。
+| 概念 | 說明 |
+| --- | --- |
+| node | 實體（基因、蛋白質、疾病、藥物） |
+| edge | 關係（交互作用、調控、適應症），可帶權重與屬性 |
+| traversal | 沿著 edge 走：「與 TP53 距離 2 跳內的所有蛋白」 |
+| path | node 與 edge 交錯的序列；最短路徑、可達性 |
 
-適合情境：
+問題的核心是「誰和誰相連、隔幾層、怎麼走」時，圖模型比多層 SQL join（或 [recursive CTE](recursive-and-hierarchical-sql.md#模式三多跳路徑圖)）自然得多。Neo4j 用 Cypher 查詢語言，並提供社群偵測、中心性、最短路徑等圖演算法。生醫知識圖譜（藥物再利用、疾病基因預測）常用這類系統；單純分析一個網路則用 networkx / igraph 即可（見 [Network Analysis](../network-analysis/README.md)）。
 
-- 欄位會隨業務演進
-- 同一類資料不保證每筆都有完全相同欄位
-- 讀取時常想一次拿到整個物件
+### Wide-column 與 column store
 
-常見特徵：
+兩者名稱都有 column，但目的不同：
 
-- 資料常以 key-value、array、nested object 組成
-- schema 比表格式更有彈性
-- 很適合 semi-structured data
-
-### Key-Value Databases
-
-key-value database 用最簡單的 `key -> value` 模型存資料。
-
-可以把它想成超大規模、可持久化的 dictionary。
-
-適合情境：
-
-- session management
-- caching
-- user preferences
-- 非常明確的 key-based lookup
-
-常見特徵：
-
-- 依 key 取值很快
-- 通常不擅長複雜條件查詢
-- value 可能是 string、hash、list、set、sorted set、JSON 等結構
-
-有些 key-value 系統會逐步補上 secondary index 或額外查詢能力，但核心心智模型仍然是「先有 key，再高效取值」，而不是把它當成通用 relational query engine。
-
-### Redis as a Key-Value Example
-
-Redis 是很常見的 key-value database 案例。
-
-常被拿來處理：
-
-- cache
-- session store
-- rate limiting
-- leaderboard
-- pub/sub 或輕量即時協作場景
-
-它的一個特色是除了簡單的 `GET` / `SET` 之外，也直接提供多種資料結構操作，因此很適合把存取模式明確、延遲要求高的資料放進記憶體型資料庫處理。
-
-實務上也常看到：
-
-- 以 replication 提高可用性
-- 以非同步 replication 交換延遲與一致性
-- 先把熱門資料放進 Redis，再把完整真實資料留在後端主資料庫
-
-### Graph Databases
-
-graph database 直接把資料建模成 nodes 和 edges。
-
-- node 代表 entity
-- edge 代表 relationship
-
-這類模型來自 graph theory。它的重點不是只存「物件有哪些欄位」，而是把「物件彼此如何相連」也當成一級公民。
-
-適合情境：
-
-- social network
-- recommendation
-- fraud detection
-- relationship-heavy analysis
-- knowledge graph
-
-如果問題核心是「誰和誰相連、隔幾層、路徑怎麼走」，graph model 往往比硬用多層 join 更自然。
-
-### Traversal Thinking
-
-graph database 很常見的操作不是 join，而是 traversal，也就是沿著 edge 從 node 走到另一個 node。
-
-典型問題像是：
-
-- 兩個人之間隔幾層關係
-- 哪條路徑最短
-- 某個商品和哪些商品常被同一群人連到
-
-這裡的 path 可以理解成一串由 nodes 和 edges 組成的連接序列。當查詢重心是 path discovery、multi-hop relationship、或鄰近節點探索時，graph model 通常比表格模型更貼近問題本身。
-
-### Neo4j Ecosystem at a Glance
-
-Neo4j 是最常見的 graph database 產品之一。先記住幾個高層概念就夠：
-
-- `Cypher` 是它最知名的 graph query language
-- 常搭配 graph algorithms 或 graph data science workflow 做推薦、社群偵測、最短路徑等分析
-- 生態系也常強調和 Spark、Kafka、BI 工具的整合
-
-這些產品細節不用一開始就背熟，但它們反映了一個重要訊號：graph database 不只是 storage choice，常常也是一套圍繞 relationship analysis 的工作流。
-
-### Column-Oriented / Wide-Column Thinking
-
-有些 NoSQL 或 analytical data store 會偏 column-oriented。
-
-這類系統的重點不是把整列資料一起讀出，而是：
-
-- 只讀查詢真正需要的欄位
-- 對大量資料做聚合或掃描
-- 在分析 workload 下取得更好的壓縮與查詢效率
-
-這和 row-oriented OLTP database 的優先順序不同：
-
-- row-oriented：較適合單筆插入、更新、刪除
-- column-oriented：較適合 bulk load、分析查詢、欄位裁切式讀取
-
-如果是在 NoSQL 脈絡下談 wide-column 或 column family database，重點又會再不一樣一些。
-
-### Column Family Databases
-
-column family database 常被視為 wide-column database，經典脈絡可追到 Google Bigtable。
-
-這類系統通常會把經常一起存取的資料放進同一個 column family，目標是：
-
-- 讓大規模資料的讀寫更有效率
-- 針對特定存取模式安排資料位置
-- 在超大量資料下仍維持可擴充性
-
-因此它和一般分析型 column store 雖然都跟「column」有關，但心智模型不完全一樣：
-
-- analytical column store：偏重掃描少數欄位、壓縮、聚合分析
-- wide-column / column family：偏重分散式擴充、依 access pattern 組織資料
-
-## Row-Oriented vs. Column-Oriented
-
-| 面向 | Row-Oriented | Column-Oriented |
+| | Wide-column / column family（Cassandra、HBase） | 欄式分析儲存（Parquet、DuckDB、Snowflake） |
 | --- | --- | --- |
-| 典型 workload | transactional | analytics |
-| 寫入模式 | 單筆或小批次操作 | 大批量載入與掃描 |
-| 讀取方式 | 常一次讀整列 | 常只讀部分欄位 |
-| 常見優勢 | update / delete 單筆效率較自然 | compression、aggregation、selective read |
+| 目的 | 分散式擴充、超大寫入量 | 掃描少數欄並聚合 |
+| 存取 | 依 row key 讀寫 | 讀整欄、壓縮、跳過不相關區塊 |
+| 類別 | NoSQL | 多為 SQL 系統 |
 
-如果查詢是：
+## Row-oriented vs column-oriented
+
+| 面向 | Row-oriented | Column-oriented |
+| --- | --- | --- |
+| 儲存 | 一列的所有欄位放在一起 | 一欄的所有值放在一起 |
+| 擅長 | 單筆插入、更新、讀整列（OLTP） | 大量列、少數欄的聚合（OLAP） |
+| 壓縮 | 一般 | 好（同欄型別相同、值相近） |
+| 例子 | PostgreSQL、MySQL、SQLite | DuckDB、Snowflake、BigQuery、Parquet 檔 |
 
 ```sql
-SELECT title, price
-FROM books
-WHERE price < 50.00;
+SELECT title, price FROM books WHERE price < 50;
+-- column store：只讀 price 欄找出符合的列，再取對應的 title；其他欄完全不碰
 ```
 
-在 column-oriented engine 裡，心智模型通常比較像：
+表現量矩陣、變異位點表這類「很多列、分析時只用幾欄」的資料，欄式格式（Parquet）的優勢最明顯，見 [DuckDB 與 Parquet](duckdb-and-parquet.md)。
 
-1. 先掃 `price` 欄找出符合條件的 records。
-2. 再回頭取那些 records 對應的 `title` 欄值。
+## 關聯式資料庫裡的半結構化資料
 
-所以它特別適合「欄位少、資料量大、以分析為主」的場景。
+不必為了少數彈性欄位就換成 NoSQL：PostgreSQL、Snowflake、DuckDB 都能在欄位裡存 JSON。
 
-## Semi-Structured Data Inside SQL Systems
+### PostgreSQL JSONB
 
-實務上不是只有 NoSQL database 才能處理 semi-structured data。  
-很多 relational 或 analytical system 也內建了這類能力。
-
-### Snowflake
-
-Snowflake 常用 `VARIANT` 來放 semi-structured data，也支援 `OBJECT` 與 `ARRAY`。
-
-可以把它先理解成：
-
-- `OBJECT` 類似 dictionary
-- `ARRAY` 類似 list
-- `VARIANT` 是可容納 semi-structured value 的泛用型別
-
-常見查法：
+| 型別 | 儲存 | 用途 |
+| --- | --- | --- |
+| `JSON` | 原始文字，保留空白與 key 順序 | 只存不查 |
+| `JSONB` | 解析後的二進位格式 | 查詢、建 index（GIN）；**通常選這個** |
 
 ```sql
-SELECT
-    library['ISBN_13'],
-    library["size"]["dimensions"]
-FROM books;
-```
-
-或：
-
-```sql
-SELECT
-    library:ISBN_13,
-    library:size.dimensions,
-    library:size.weight
-FROM books;
-```
-
-重點不是語法細節，而是你可以先把 nested data 留在單一欄位裡，再逐步展開查詢。
-
-### PostgreSQL JSON / JSONB
-
-PostgreSQL 雖然是 relational database，但也很適合放部分 semi-structured data。
-
-兩個常見型別：
-
-- `JSON`：以 JSON 格式儲存
-- `JSONB`：binary representation，通常更適合查詢與索引
-
-如果欄位需要常被篩選、抽取、索引，`JSONB` 通常比 `JSON` 更實用。
-
-例如：
-
-```sql
-CREATE TABLE students (
-  student_id BIGINT,
-  parent_meta JSONB
+CREATE TABLE samples (
+  sample_id TEXT PRIMARY KEY,
+  meta      JSONB
 );
+
+SELECT
+  meta -> 'library'                   AS library_json,   -- -> 回傳 JSON
+  meta ->> 'tissue'                   AS tissue,         -- ->> 回傳文字
+  meta -> 'library' ->> 'kit'         AS kit,            -- 巢狀
+  meta -> 'lanes' ->> 0               AS first_lane,     -- 陣列（0 起算）
+  (meta ->> 'rin')::NUMERIC           AS rin,            -- 取出後轉型
+  jsonb_typeof(meta -> 'lanes')       AS lanes_type      -- 'array'
+FROM samples
+WHERE meta @> '{"tissue": "liver"}';                     -- 包含運算子，可用 GIN index
+
+CREATE INDEX ON samples USING GIN (meta);
+SELECT sample_id, jsonb_array_elements_text(meta -> 'lanes') AS lane FROM samples;   -- 陣列展開成列
 ```
 
-### PostgreSQL JSONB Query Pattern
-
-`->` 取出 JSON value。  
-`->>` 取出 text value。
+### Snowflake VARIANT
 
 ```sql
 SELECT
-    parent_meta -> 'guardian' AS guardian_json,
-    parent_meta ->> 'status' AS status_text
-FROM students;
+  library:ISBN_13::STRING,            -- : 取值，:: 轉型
+  library:size.dimensions,            -- 巢狀用 .
+  library['size']['weight']           -- 也可用中括號
+FROM books;
 ```
 
-查 nested object：
+陣列展開用 `LATERAL FLATTEN`，見 [SQL 方言速查](sql-dialect-cheatsheet.md#snowflake半結構化資料)。
 
-```sql
-SELECT
-    parent_meta -> 'jobs' ->> 'P1' AS job_p1,
-    parent_meta -> 'jobs' ->> 'P2' AS job_p2
-FROM students;
-```
+> 穩定、常用來過濾或 join 的欄位拉成正式欄位；只把少數變動的屬性留在 JSON。某個 JSON 欄位成為主要過濾條件或報表核心時，就該升級成一般欄位。
 
-查 array element：
+## 選型
 
-```sql
-SELECT
-    parent_meta -> 'educations' ->> 0 AS education_0,
-    parent_meta -> 'educations' ->> 1 AS education_1
-FROM students;
-```
-
-檢查 JSON 外層型別：
-
-```sql
-SELECT
-    json_typeof(parent_meta -> 'jobs') AS jobs_type
-FROM students;
-```
-
-這種設計很適合：
-
-- 先保留欄位彈性
-- 只把穩定核心欄位正規化
-- 把少數變動欄位留在 JSONB
-
-但如果某些 JSON 欄位已經成為高頻 join key、主過濾條件、或報表核心欄位，通常就代表它們值得被拉回正式欄位。
-
-## When NoSQL Is a Better Fit
-
-- 資料型狀常變，schema 很難先完全定死
-- 系統主要是 key-based lookup，而不是關聯分析
-- 關係網路本身就是核心問題
-- 要處理大量 semi-structured payload
-- 分析系統偏向 scan 某些欄位，而不是整列交易更新
-
-## When Relational Design Is Still Better
-
-- 需要明確 foreign key 與資料完整性
-- 複雜 join 是主要查詢模式
-- 業務規則必須靠 transaction 嚴格保證
-- schema 已相對穩定，而且團隊很依賴 SQL 分析
-
-## Practical Reminders
-
-- NoSQL 不是 relational database 的替代王者，而是另一組 trade-off。
-- 選型前先問 access pattern，而不是先問流行度。
-- semi-structured data 不代表完全不用 schema，只是 schema 可以延後或局部化。
-- 把彈性欄位放進 JSONB 很方便，但不要把所有資料建模問題都推給單一 JSON 欄位。
-- column-oriented 系統通常適合分析，不代表它自然適合高頻單筆交易。
-
-[Back to Databases](README.md)
+| 情境 | 選擇 |
+| --- | --- |
+| 需要外鍵、constraint、交易保證 | 關聯式 |
+| 主要查詢是多表 join 與聚合 | 關聯式（或分析型 column store） |
+| 結構常變、以整份文件讀寫 | Document |
+| 只依 key 存取、要求極低延遲 | Key-value |
+| 核心問題是多跳關係 | Graph |
+| 超大寫入量、依 key 範圍讀取 | Wide-column |
+| 主體是關聯式，只有部分欄位彈性 | 關聯式 + JSONB |

@@ -33,7 +33,7 @@
 
 | 章節 | 核心內容 | 回答的問題 |
 | --- | --- | --- |
-| [資料庫](databases/README.md) | SQL 查詢、window functions、交易、效能、方言對照、SQLAlchemy / PyMongo | 如何在資料庫端先篩選、聚合再抽取？ |
+| [資料庫](databases/README.md) | SQL 查詢、window functions、交易、效能、方言對照、SQLAlchemy、DuckDB / Parquet、PyMongo | 如何在資料庫端先篩選、聚合再抽取？ |
 | [網頁爬蟲](web-scraping/README.md) | Scrapy、BeautifulSoup / Selenium、rvest | 資料不在 API 或 CSV 時，如何合法抓取？ |
 | [資料工程](data-engineering/README.md) | ingestion、pipelines、Spark、Databricks、雲端資料倉儲、串流、治理、資料品質 | 資料如何穩定流進分析與模型，而不是每次手動整理？ |
 | [資料溝通](data-communication/README.md) | 問題定義、結果溝通、dashboard 設計、[BI 工具](data-communication/bi-tools/README.md)（Power BI / Tableau） | 如何把模糊需求翻成分析問題，並讓結果回到決策？ |

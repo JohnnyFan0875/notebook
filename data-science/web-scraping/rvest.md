@@ -1,293 +1,122 @@
-# Web Scraping in R
+[Data Science](../README.md) › [Web Scraping](README.md) › rvest
 
-在 R 裡做 web scraping，通常是把三件事接起來：
+# rvest：R 的網頁擷取
 
-- 用 `xml2` / `rvest` 讀取與解析 HTML。
-- 用 CSS selector 或 XPath 找到目標節點。
-- 用 `httr` 或其他 HTTP 工具處理請求、headers 和抓取節奏。
-
-重點不只是「抓到資料」，而是分清楚你到底在處理哪一層：
-
-- HTML 結構
-- selector 邏輯
-- HTTP 請求
+R 的 scraping 分三層：`httr2` 處理 HTTP 請求（headers、節流、重試），`rvest`（建立在 `xml2` 上）解析 HTML，CSS / XPath selector 定位節點。卡住時先分清楚問題在哪一層。Selector 語法對照與共用原則見 [Web Scraping](README.md#共用觀念)；Python 對應見 [BeautifulSoup 與 Selenium](beautifulsoup-selenium.md)。
 
 ## 基本流程
 
 ```r
 library(rvest)
 
-page <- read_html("https://example.com")
+page <- read_html("https://example.com")       # 1. 取得 HTML 文件
 
-titles <- page %>%
-  html_elements("h2") %>%
-  html_text2()
+page |>
+  html_elements("h2") |>                       # 2. 定位節點（全部）
+  html_text2()                                 # 3. 抽出文字
 ```
 
-最常見的 pipeline 是：
+| 步驟 | 函式 | 說明 |
+| --- | --- | --- |
+| 讀取 | `read_html(url 或 檔案 或 字串)` | 靜態 HTML |
+| 讀取（動態頁） | `read_html_live(url)` | rvest ≥ 1.0.4；透過 chromote 開真的 Chrome 執行 JS，可 `$click()`、`$scroll_to()` |
+| 定位一個 | `html_element(css)` | 每個輸入節點回傳一個結果，找不到為 missing，**長度不變** |
+| 定位全部 | `html_elements(css)` | 所有符合的節點，長度可能變 |
+| 文字 | `html_text2()` | 模擬瀏覽器顯示：處理 `<br>`、合併空白；`html_text()` 回傳原始文字 |
+| 屬性 | `html_attr("href")` / `html_attrs()` | 單一屬性 / 全部屬性 |
+| 表格 | `html_table()` | 回傳 tibble；`html_elements("table")` 後得到 tibble 的 list |
+| 相對連結 | `url_absolute(href, base)` | 轉成完整網址 |
 
-1. `read_html()` 取得 HTML 文件
-2. `html_element()` 或 `html_elements()` 定位節點
-3. `html_text2()`、`html_attr()`、`html_table()` 抽出可用資料
-
-## HTML 的心智模型
-
-HTML 樹狀結構見 [Web Scraping: 共用觀念](README.md#html-是一棵樹)。
-
-## `html_element()` 與 `html_elements()`
+## 選取與抽值
 
 ```r
-page %>% html_element("body")
-page %>% html_elements("div p")
+# CSS selector
+page |> html_elements("a, span")               # 任一
+page |> html_elements(".alert.emph")           # 同時有兩個 class（與 ".alert, .emph" 不同）
+page |> html_elements("div p")                 # 後代
+page |> html_elements("div > p")               # 直接子節點
+
+# XPath：依位置、子節點條件、文字
+page |> html_elements(xpath = "//ol/li[position() < 3]")
+page |> html_elements(xpath = "//ol[count(li) > 2]")
+page |> html_elements(xpath = "//div[a]")      # 含 <a> 子節點的 div
+page |> html_elements(xpath = "//span/a[@class = 'external']")
+
+# 屬性與表格
+page |> html_elements("a") |> html_attr("href") |> url_absolute("https://example.com")
+tbl <- page |> html_element("table") |> html_table()   # 第一列 <th> 自動當欄名
 ```
 
-- `html_element()`：取第一個符合條件的節點。
-- `html_elements()`：取所有符合條件的節點。
+`html_table()` 的結果仍要清理：合併儲存格會讓列變形、數字欄常帶逗號或註腳符號（`readr::parse_number()`）、欄名可能重複（`janitor::clean_names()`）。
 
-實務上如果頁面有多筆重複卡片、列或表格列，通常要用 `html_elements()`；如果只該有唯一標題或主容器，用 `html_element()` 比較自然。
-
-## 抽文字、屬性與表格
-
-### 文字
+### 局部抓取：先選列，再抓欄位
 
 ```r
-page %>%
-  html_elements("p") %>%
-  html_text2()
-```
+rows <- page |> html_elements("#cast tr")
 
-### 屬性
-
-```r
-page %>%
-  html_element("a") %>%
-  html_attr("href")
-```
-
-如果想看全部屬性：
-
-```r
-page %>%
-  html_element("a") %>%
-  html_attrs()
-```
-
-### 表格
-
-```r
-page %>%
-  html_element("table") %>%
-  html_table()
-```
-
-若表格沒有 `<th>` 欄名，可嘗試：
-
-```r
-page %>%
-  html_element("table") %>%
-  html_table(header = TRUE)
-```
-
-`html_table()` 很方便，但也要小心：
-
-- 合併儲存格常讓結果變形。
-- 頁面上的表格不一定就是你想像中的 tidy table。
-- 抓完後通常還是要做欄名與型別清理。
-
-## CSS Selectors
-
-對大多數 scraping 任務，CSS selector 已經夠用，而且通常比 XPath 更短、更好讀。
-
-### Type selectors
-
-```r
-page %>% html_elements("h1")
-page %>% html_elements("a, span")
-page %>% html_elements("*")
-```
-
-### Class 與 ID
-
-```r
-page %>% html_elements(".alert")
-page %>% html_elements("#special")
-page %>% html_elements("div#special")
-page %>% html_elements("a.alert")
-```
-
-如果節點要同時有兩個 class：
-
-```r
-page %>% html_elements(".alert.emph")
-```
-
-注意這和 `.alert, .emph` 不一樣：
-
-- `.alert.emph`：同時具有兩個 class 的節點
-- `.alert, .emph`：符合任一 selector 的節點
-
-### Descendant 與 child
-
-```r
-page %>% html_elements("div p")
-page %>% html_elements("div > p")
-```
-
-- `div p`：任何在 `div` 裡面的後代 `p`
-- `div > p`：只有直接子節點 `p`
-
-很多 selector 抓太多資料，就是因為把這兩者混在一起。
-
-## 什麼時候改用 XPath
-
-當 CSS 很難表達條件時，XPath 會更有力，特別是：
-
-- 要依節點位置選擇
-- 要根據子節點條件過濾父節點
-- 要寫比較細的 predicate
-
-基本形式：
-
-```r
-page %>% html_elements(xpath = "//p")
-page %>% html_elements(xpath = "//body//p")
-page %>% html_elements(xpath = "/html/body//p")
-```
-
-可以先這樣記：
-
-- `//`：從目前範圍往下找任意後代
-- `/`：直接往下一層
-- `[...]`：加條件
-
-### XPath 範例
-
-```r
-page %>% html_elements(xpath = "//div/p")
-page %>% html_elements(xpath = "//*[@id = 'special']//div")
-page %>% html_elements(xpath = "//span/a[@class = 'external']")
-```
-
-有些條件 CSS 很難寫，XPath 很直：
-
-```r
-page %>% html_elements(xpath = "//div[a]")
-```
-
-意思是「選出包含 `<a>` 子節點的 `div`」。
-
-### `position()` 與進階 predicates
-
-```r
-page %>% html_elements(xpath = "//ol/li[position() = 2]")
-page %>% html_elements(xpath = "//ol/li[position() < 3]")
-page %>% html_elements(xpath = "//ol[count(li) > 2]")
-```
-
-這類條件適合：
-
-- 只抓第二個或前幾個元素
-- 按子節點數量過濾容器
-- 從結構規則而不是 class 名稱來定位
-
-如果頁面結構很規則，XPath 常能比一長串 CSS 更穩。
-
-## 局部抓取比全域抓取穩
-
-比起直接對整頁寫超長 selector，通常更穩的方式是先縮小到區塊，再向下抽欄位。
-
-```r
-rows <- page %>% html_elements("#cast tr")
-
-roles <- rows %>%
-  html_element("td.role") %>%
-  html_text2()
-```
-
-這種寫法的好處：
-
-- selector 比較短
-- debug 比較容易
-- 如果某一列缺欄位，比較容易定位問題
-
-## HTTP 層：不是每個頁面都只靠 `read_html(url)` 就夠
-
-Scraping 背後是 HTTP request / response。至少要知道：
-
-- `GET`：取資料
-- `POST`：送資料給伺服器，例如表單提交
-- 常見狀態碼：`200`, `404`, `3xx`, `5xx`
-
-用 `httr` 可以先看 response：
-
-```r
-library(httr)
-
-response <- GET("https://httpbin.org")
-status_code(response)
-content(response)
-```
-
-這在幾種情況特別重要：
-
-- 你懷疑被 redirect
-- 網頁其實沒有成功返回內容
-- 伺服器需要特定 headers
-
-## Custom User-Agent
-
-如果你在抓別人的網站，最好明確表明自己是誰，而不是完全沿用預設 UA。
-
-```r
-library(httr)
-
-response <- GET(
-  "https://example.com",
-  user_agent("Research scraper for personal notebook; contact: you@example.com")
+cast <- tibble::tibble(
+  actor = rows |> html_element("td.actor") |> html_text2(),
+  role  = rows |> html_element("td.role")  |> html_text2()   # 某列缺 role → NA，不會錯位
 )
 ```
 
+> 這裡一定要用單數的 `html_element()`：它對每一列各回傳一個結果，缺的補 `NA`，所以兩個欄位長度一致。若用 `html_elements()`，缺值的列會被跳過，欄位長度不同，資料就錯位了。
 
-## 控制抓取速度
+## HTTP 層：httr2
 
-很多 scraping 問題不是 selector 錯，而是你抓太快。
-
-如果需要批次抓多個頁面，至少加入延遲：
+`read_html(url)` 無法設定 headers、處理錯誤狀態碼或節流。需要這些時，先用 `httr2` 取得回應，再把 body 交給 rvest。
 
 ```r
-library(httr)
-library(purrr)
+library(httr2)
 
-slow_get <- purrr::slowly(~ GET(.x), rate = rate_delay(3))
+req <- request("https://example.com/list") |>
+  req_user_agent("mylab-scraper/0.1 (me@uni.edu)") |>   # 表明身分
+  req_throttle(rate = 20 / 60) |>                        # 每分鐘最多 20 次（同一 realm 共用）
+  req_retry(max_tries = 3)                               # 429 / 503 自動退避重試
 
-urls <- c("https://example.com/a", "https://example.com/b")
-responses <- map(urls, slow_get)
+resp <- req_perform(req)                                 # 4xx / 5xx 會直接拋錯
+resp_status(resp)                                        # 200
+page <- resp |> resp_body_html()                         # 交給 rvest
+page |> html_elements("h2") |> html_text2()
+
+# 批次抓多頁：節流設定跟著 request 走
+urls  <- c("https://example.com/a", "https://example.com/b")
+pages <- purrr::map(urls, \(u) request(u) |>
+                      req_user_agent("mylab-scraper/0.1 (me@uni.edu)") |>
+                      req_throttle(rate = 20 / 60) |>
+                      req_perform() |>
+                      resp_body_html())
 ```
 
-原則見 [禮貌與合法性](README.md#禮貌與合法性)。
+| 舊寫法（httr） | httr2 |
+| --- | --- |
+| `GET(url)` | `request(url) \|> req_perform()` |
+| `status_code(r)` | `resp_status(resp)` |
+| `content(r)` | `resp_body_html()` / `resp_body_json()` / `resp_body_string()` |
+| `user_agent("...")` | `req_user_agent("...")` |
+| `purrr::slowly(GET, rate_delay(3))` | `req_throttle(rate = 1 / 3)` |
+| 手寫重試迴圈 | `req_retry(max_tries = 3)` |
 
-## 什麼情況 selector 會失效
+API 請求、認證、分頁的 R 寫法見 [匯入資料（R）](../r-foundations/importing-data.md#http-與-api)。
 
-常見原因：
+### polite：遵守 robots.txt 與節流
 
-- class 名稱是動態生成的
-- 頁面結構改版
-- 你抓到的是 JS 初始骨架，不是真正資料
-- 你以為資料在 HTML，其實在 API 回應裡
+```r
+library(polite)
 
-所以 debug 順序通常是：
+session <- bow("https://example.com", user_agent = "mylab-scraper/0.1 (me@uni.edu)")  # 讀 robots.txt、設定延遲
+page <- session |> nod("/list") |> scrape()      # 被 robots.txt 禁止時回傳 NULL 並警告
+```
 
-1. 先確認 HTTP response 是否成功
-2. 再確認原始 HTML 裡是否真的有目標資料
-3. 最後才調 selector
+`polite` 會自動快取並依 robots.txt 的 crawl-delay 節流，適合在不熟悉的網站上先用。
 
-如果原始 HTML 沒資料，繼續調 CSS / XPath 通常只是浪費時間。
+## 什麼時候 selector 會失效
 
-## 實務選擇
+| 原因 | 判斷 | 對策 |
+| --- | --- | --- |
+| 資料由 JavaScript 產生 | `read_html()` 結果裡搜不到目標文字 | 找 Network 裡的 JSON 端點；不行再 `read_html_live()` |
+| class 名稱動態產生 | 類似 `css-1x2y3z`、每次改版都變 | 改用 `id`、`data-*` 或結構（XPath 位置、子節點條件） |
+| 頁面改版 | 昨天能跑今天全是 `NA` | selector 集中放一處，抓完檢查 `NA` 比例 |
+| 請求失敗或被導向 | `resp_status()` 不是 200、內容是登入頁 | 先檢查 HTTP 層 |
 
-- 簡單頁面、穩定 class、一般節點抓取：先用 CSS selector。
-- 需要位置條件、父子條件、進階 predicate：改用 XPath。
-- 需要看 status code、headers、user-agent、節流：補上 `httr`。
-- 如果頁面資料本質上是表格，先試 `html_table()`，再決定是否手拆節點。
-
-在 R 裡做 scraping，真正重要的不是記住所有 selector，而是先搞清楚資料是在 HTML tree 的哪裡，以及你現在卡在 HTML、selector，還是 HTTP 這一層。
+除錯順序：HTTP 回應是否成功 → 原始 HTML 是否真的有資料 → 最後才調 selector。

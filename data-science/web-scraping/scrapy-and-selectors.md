@@ -1,323 +1,137 @@
-# Python: Web Scraping Basics
+[Data Science](../README.md) › [Web Scraping](README.md) › Scrapy 與 Selector
 
-Web scraping is the workflow of downloading HTML, selecting the parts you care about, and extracting structured data from them.
+# Scrapy 與 Selector
 
-This note focuses on the **Python-level mechanics**: selectors, extraction patterns, and how HTML structure maps to code. If you want the broader workflow of deciding between API vs scraping, static vs dynamic pages, or where scraping fits in the notebook, start with [Web Scraping](README.md).
+Scrapy 是 Python 的爬蟲框架：排程請求、跟隨連結、節流、重試、輸出都幫你處理好。它的 selector 引擎 `parsel` 也可以單獨使用，對任何 HTML 寫 CSS / XPath。CSS 與 XPath 語法對照見 [Web Scraping](README.md#css-selector-vs-xpath)。
 
-A practical scraping loop is:
+```
+抓一頁 → 解析 HTML → 選重複區塊 → 抽文字 / 屬性 → 跟隨下一頁連結 → 輸出結構化資料
+```
 
-1. Fetch the page.
-2. Parse the HTML.
-3. Select elements.
-4. Extract text or attributes.
-5. Follow links if the data spans multiple pages.
-6. Save the structured result.
+| 規模 | 工具 |
+| --- | --- |
+| 一兩頁 | `requests` + `parsel.Selector`（或 BeautifulSoup） |
+| 數十頁以上、需要跟隨連結、重試、節流 | Scrapy spider |
 
-This note focuses on the `scrapy` style of parsing and selection, because it gives a clean mental model for both simple scripts and larger crawlers.
-
-
-> **待修（改寫階段）**：`extract()` / `extract_first()` 是舊 API，改成 `.getall()` / `.get()`。
-
-## HTML Structure First
-
-HTML 樹狀結構與常見 attribute 見 [Web Scraping: 共用觀念](README.md#html-是一棵樹)。
-
-## What You Usually Extract
-
-In practice, scraping often means one of these:
-
-- visible text
-- links from `href`
-- identifiers in `id` or `data-*` attributes
-- repeated blocks such as cards, rows, or table entries
-
-The real work is usually not downloading the page. It is selecting the right repeated structure reliably.
-
-Tip: In this foundations note, treat scraping as a parsing problem. In the dedicated [Web Scraping](README.md) chapter, treat it as a data-collection workflow with tooling, policy, and maintainability concerns.
-
-## Fetch HTML and Turn It into a Selector
-
-You can fetch a page with `requests`, then hand the HTML to Scrapy's `Selector`.
+## Selector：單頁解析
 
 ```python
 import requests
-from scrapy import Selector
+from parsel import Selector          # scrapy.Selector 是同一個東西
 
-url = "https://en.wikipedia.org/wiki/Web_scraping"
-html = requests.get(url).content
-sel = Selector(text=html)
-```
+r = requests.get("https://en.wikipedia.org/wiki/Web_scraping",
+                 headers={"User-Agent": "mylab-scraper/0.1 (me@uni.edu)"}, timeout=10)
+r.raise_for_status()
+sel = Selector(text=r.text)
 
-This pattern is useful when:
-
-- you only need one page
-- you want Scrapy selectors without building a full spider
-
-## XPath Basics
-
-XPath selects elements by navigating the HTML tree.
-
-Examples:
-
-```python
-sel.xpath("/html/body")
+# 1. 選取：回傳 SelectorList（還不是字串）
 sel.xpath("//p")
-sel.xpath("/html/body/div/p[2]")
-sel.xpath("//table")
-sel.xpath('/html/body/div[2]//table')
+sel.css("div#uid > p.class-1")
+
+# 2. 抽值：.get() 取第一個（找不到回傳 None）、.getall() 取全部（list）
+sel.css("h1::text").get()
+sel.css("h1::text").get(default="NA")                # 找不到時的預設值
+sel.css("a::attr(href)").getall()                    # CSS 取屬性
+sel.xpath("//a/@href").getall()                      # XPath 取屬性
+
+# 3. 直接文字 vs 所有後代文字：<p id="p-example">Hello <a>world</a>!</p>
+sel.xpath('//p[@id="p-example"]/text()').getall()    # ['Hello ', '!']
+sel.xpath('//p[@id="p-example"]//text()').getall()   # ['Hello ', 'world', '!']
+sel.css("p#p-example::text").getall()                # ['Hello ', '!']
+sel.css("p#p-example ::text").getall()               # ['Hello ', 'world', '!']（::text 前有空白 = 後代）
+sel.css("p#p-example").xpath("string()").get()       # 'Hello world!'（串成一個字串）
+
+# 4. 先選區塊，再用相對路徑抓欄位
+for block in sel.css("div.course-block"):
+    title = block.css("a::text").get()
+    href  = block.xpath("./a/@href").get()           # ./ 從目前區塊開始；寫 //a 會回到整頁搜尋
 ```
 
-Mental model:
+| 舊 API | 新 API | 說明 |
+| --- | --- | --- |
+| `.extract_first()` | `.get()` | 第一個值或 `None` |
+| `.extract()` | `.getall()` | 全部值的 list |
+| `.re(r"...")` / `.re_first(r"...")` | 不變 | 用 regex 抽出片段 |
 
-- `/` means direct path from the root
-- `//` means search descendants anywhere below
-- `[2]` means the second matching sibling
+> 在迴圈裡用 XPath 時，`block.xpath("//a")` 的 `//` 是從**整份文件**開始，不是從 `block`；要寫 `.//a` 或 `./a`。這是區塊內抓到別人資料最常見的原因。
 
-XPath is especially useful when the structure is deeply nested or when you want precise positional selection.
+### XPath 常用寫法
 
-## Selecting by Attributes in XPath
+| 寫法 | 意義 |
+| --- | --- |
+| `/html/body/div/p[2]` | 從根開始的絕對路徑；`[2]` 是同層第 2 個（從 1 起算） |
+| `//table` | 任意位置的 `<table>` |
+| `//p[@class="class-1"]` | class 完全等於 `class-1`（多 class 時會失敗） |
+| `//*[contains(@class, "class-1")]` | class 字串包含（也會誤中 `class-10`） |
+| `//div[@id="uid"]/p[2]` | 屬性條件 + 位置 |
+| `//h1[contains(@class, "title")]/text()` | 文字 |
+| `//div[a]` | 含有 `<a>` 子節點的 `div` |
+| `./*` | 目前節點的所有直接子節點（摸索陌生結構時好用） |
 
-XPath can filter by attributes:
-
-```python
-sel.xpath('//p[@class="class-1"]')
-sel.xpath('//*[@id="uid"]')
-sel.xpath('//div[@id="uid"]/p[2]')
-sel.xpath('//*[contains(@class, "class-1")]')
-```
-
-Notes:
-
-- `@attr_name` references an attribute
-- `contains(...)` is useful when `class` contains multiple tokens
-- exact class equality can be brittle if class order changes
-
-## CSS Selectors
-
-CSS selectors are often shorter and easier to read for common cases.
-
-Examples:
-
-```python
-sel.css("div > p")
-sel.css("div#uid > p.class1")
-sel.css(".class1")
-sel.css("html > body > div")
-sel.css("html > body div > p:nth-of-type(2)")
-```
-
-Quick mapping:
-
-- `.class1` selects by class
-- `#uid` selects by id
-- `>` means direct child
-- `nth-of-type(2)` picks a positional child
-
-## XPath vs CSS
-
-選擇原則見 [CSS selector vs XPath](README.md#css-selector-vs-xpath)。
-
-## Extracting Attributes
-
-### XPath
-
-```python
-sel.xpath('//div[@id="uid"]/a/@href').extract()
-```
-
-### CSS
-
-```python
-sel.css("div#uid > a::attr(href)").extract()
-```
-
-This is one of the most common scraping tasks, because many crawls begin by extracting a list of links to follow.
-
-## Extracting Text
-
-### XPath
-
-```python
-sel.xpath('//p[@id="p-example"]/text()').extract()
-sel.xpath('//p[@id="p-example"]//text()').extract()
-```
-
-Difference:
-
-- `/text()` gets only direct text children
-- `//text()` gets text from all descendants
-
-### CSS
-
-```python
-sel.css("p#p-example::text").extract()
-sel.css("p#p-example ::text").extract()
-```
-
-This distinction matters when text is split across nested tags like links or spans.
-
-## `extract()` and `extract_first()`
-
-Selectors are not plain strings yet. You usually need to extract values.
-
-```python
-sel.xpath("//p").extract()
-sel.xpath("//p").extract_first()
-```
-
-Use them like this:
-
-- `extract()` when you expect a list
-- `extract_first()` when you want one value
-
-For mental clarity:
-
-- selection step: find elements
-- extraction step: convert them to strings
-
-## Working with Repeated Blocks
-
-A common pattern is:
-
-1. select the repeated card / row / block
-2. query inside that block
-
-```python
-course_divs = response.css("div.course-block")
-hrefs = course_divs.xpath("./a/@href")
-links = hrefs.extract()
-```
-
-Why this is good:
-
-- selectors stay local
-- the logic follows the page structure
-- you avoid writing one huge brittle selector for everything
-
-## Child Navigation
-
-## Related Notes
-
-- [Web Scraping](README.md): overall scraping workflow, tool choice, and chapter-level reading order
-- [API HTTP](../python-foundations/api-http.md): when the data source already exposes a stable API
-- [Data Manipulation and EDA](../data-manipulation-and-eda/README.md): what to do after raw HTML has been turned into rows and columns
-
-Sometimes you want the direct children of a selected element.
-
-```python
-children = first_div.xpath("./*")
-first_child = children[0]
-second_child = children[1]
-third_child = children[2]
-```
-
-This is useful for debugging page structure when the HTML is messy or unfamiliar.
-
-## Scrapy `Response` Object
-
-Inside a Scrapy spider, the `response` object behaves like a selector plus crawl context.
-
-```python
-response.xpath('//div/span[@class="bio"]')
-response.css("div > span.bio")
-response.xpath("//div").css("span.bio").extract()
-response.xpath("//div").css("span.bio").extract_first()
-```
-
-This makes Scrapy convenient because you can keep narrowing selections step by step.
-
-## Following Links
-
-After collecting links, you often want to crawl the next page.
-
-```python
-for link in links:
-    yield response.follow(url=link, callback=self.parse_pages)
-```
-
-`response.follow()` is better than manually concatenating URLs because it handles relative links cleanly.
-
-## Minimal Spider Skeleton
+## Scrapy Spider：多頁爬取
 
 ```python
 import scrapy
 from scrapy.crawler import CrawlerProcess
 
 
-class DCSpider(scrapy.Spider):
-    name = "dc_spider"
-
-    def start_requests(self):
-        urls = ["https://www.example.com"]
-        for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+class CourseSpider(scrapy.Spider):
+    name = "courses"
+    start_urls = ["https://www.example.com/courses"]       # 取代手寫 start_requests()
+    custom_settings = {
+        "USER_AGENT": "mylab-scraper/0.1 (me@uni.edu)",
+        "ROBOTSTXT_OBEY": True,                             # 遵守 robots.txt
+        "DOWNLOAD_DELAY": 1.0,                              # 同一網域請求間隔（秒，實際會隨機 0.5–1.5 倍）
+        "AUTOTHROTTLE_ENABLED": True,                       # 依伺服器回應時間自動放慢
+        "CONCURRENT_REQUESTS_PER_DOMAIN": 2,
+        "HTTPCACHE_ENABLED": True,                          # 快取回應，改 selector 重跑不必重抓
+        "FEEDS": {"courses.jsonl": {"format": "jsonlines"}},  # 輸出檔
+    }
 
     def parse(self, response):
-        links = response.css("div.course-block > a::attr(href)").extract()
-        for link in links:
-            yield response.follow(url=link, callback=self.parse_pages)
+        # 列表頁：抓每門課的連結，交給 parse_course
+        for href in response.css("div.course-block > a::attr(href)").getall():
+            yield response.follow(href, callback=self.parse_course)   # 自動處理相對連結
+        # 下一頁
+        next_page = response.css("a.next::attr(href)").get()
+        if next_page:
+            yield response.follow(next_page, callback=self.parse)
 
-    def parse_pages(self, response):
-        title = response.xpath('//h1[contains(@class, "title")]/text()').extract_first()
-        chapters = response.css("h4.chapter__title::text").extract()
+    def parse_course(self, response):
+        # 詳細頁：yield dict 就是一筆輸出
         yield {
-            "title": title,
-            "chapters": chapters,
+            "url": response.url,
+            "title": response.xpath('//h1[contains(@class, "title")]/text()').get(default="").strip(),
+            "chapters": response.css("h4.chapter__title::text").getall(),
         }
 
 
 process = CrawlerProcess()
-process.crawl(DCSpider)
-process.start()
+process.crawl(CourseSpider)
+process.start()                                             # 阻塞直到爬完；同一個 Python 程序只能 start 一次
 ```
 
-Core spider pieces:
+| 元件 | 角色 |
+| --- | --- |
+| `name` | spider 名稱（`scrapy crawl <name>`） |
+| `start_urls` / `start_requests()` | 起始請求；需要自訂 header、POST 時才寫 `start_requests()` |
+| `parse(response)` | 預設 callback；`response` 同時是 selector（`.css`、`.xpath`）與請求資訊（`.url`、`.status`） |
+| `yield response.follow(url, callback=...)` | 排入新請求；Scrapy 會自動去重已抓過的 URL |
+| `yield {...}` | 輸出一筆資料，交給 `FEEDS` 寫檔 |
 
-- `name`
-- `start_requests()`
-- one or more parser callbacks such as `parse()` / `parse_pages()`
-- yielded requests or yielded structured results
+> 正式專案用 `scrapy startproject` 建立目錄結構，設定放 `settings.py`，在終端機跑 `scrapy crawl courses -O courses.jsonl`；`CrawlerProcess` 適合單檔腳本。在 Jupyter 裡第二次 `process.start()` 會報 `ReactorNotRestartable`，需重啟 kernel。
 
-## Saving Output
+## 選 selector 的流程
 
-The simplest output is often a list of strings or dicts.
+1. 在 DevTools 找到重複的容器（卡片、表格列）。
+2. 只選一個區塊，抽出一個欄位並確認正確。
+3. 推廣到所有區塊；缺欄位用 `.get(default=...)`。
+4. 最後才加分頁與跟隨連結。
 
-For a very small script, you might write to a file directly:
-
-```python
-links = response.css("div.course-block > a::attr(href)").extract()
-
-with open("links.txt", "w", encoding="utf-8") as f:
-    for link in links:
-        f.write(link + "\n")
-```
-
-But for most real crawls, yielding dicts from the spider is cleaner than manually writing text line by line.
-
-## Practical Selector Strategy
-
-When scraping a new page:
-
-1. inspect the repeated container first
-2. select one block
-3. extract one field successfully
-4. generalize to all blocks
-5. only then add pagination or follow-up requests
-
-This keeps debugging local and reduces selector confusion.
-
-## Common Failure Modes
-
-- selecting direct text when the real text is nested deeper
-- matching exact classes when the page uses multiple class names
-- using a global selector when the page should be parsed block-by-block
-- following relative links incorrectly instead of using `response.follow()`
-- extracting raw HTML when you actually wanted text or attributes
-
-## Key Takeaways
-
-- Scraping is mostly about reliable selection, not just downloading pages.
-- Learn both XPath and CSS; each is simpler in different situations.
-- `extract()` / `extract_first()` are the bridge from selectors to usable data.
-- Start from repeated containers, then extract fields inside them.
-- In Scrapy, `response.follow()` and small parser callbacks keep multi-page crawls manageable.
+| 常見錯誤 | 改法 |
+| --- | --- |
+| 只取直接文字，內容其實在 `<a>` / `<span>` 裡 | `//text()`、`::text` 前加空白，或 `string()` |
+| `@class="..."` 完全比對，頁面有多個 class | CSS `.class` 或 XPath `contains(@class, ...)` |
+| 在區塊迴圈中寫 `//`，抓到整頁的值 | 改用 `./` 或 `.//` |
+| 手動串 URL（`base + href`） | `response.follow()` 或 `urljoin()` |
+| 抽到整段 HTML 而不是文字 | 選取最後加 `::text` / `/text()` / `::attr()` |

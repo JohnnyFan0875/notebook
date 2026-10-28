@@ -1,156 +1,153 @@
-# Python Web Scraping
+[Data Science](../README.md) › [Web Scraping](README.md) › BeautifulSoup 與 Selenium
 
-Web scraping allows you to extract and process information from websites. Two of the most common approaches in Python are:
+# BeautifulSoup 與 Selenium
 
-- **BeautifulSoup** (parsing static HTML)
-- **Selenium** (interacting with dynamic websites)
+靜態頁用 `requests` 下載 HTML、BeautifulSoup 解析；資料要等 JavaScript 載入、或需要登入與點擊時，才用 Selenium 驅動真的瀏覽器。Selector 語法與共用原則見 [Web Scraping](README.md#共用觀念)。
 
+| 情境 | 工具 | 速度 |
+| --- | --- | --- |
+| 原始 HTML 裡就有資料 | `requests` + BeautifulSoup（或 parsel，見 [Scrapy 與 Selector](scrapy-and-selectors.md)） | 快 |
+| 頁面表格（`<table>`） | `pd.read_html(html)`（需 `lxml`），回傳 `list[DataFrame]` | 快 |
+| 資料由 JS 產生，但 Network 有 JSON 端點 | 直接 `requests.get(json_url)` | 快 |
+| 必須執行 JS、登入、點擊、捲動 | Selenium 或 Playwright | 慢（啟動整個瀏覽器） |
 
-> **待修（改寫階段）**：`random.randint(5)` 少一個參數（應為 `random.uniform(1, 5)` 或 `randint(1, 5)`）；Selenium 4 起 `webdriver.Chrome(ChromeDriverManager().install())` 要改成 `webdriver.Chrome(service=Service(...))` 或直接 `webdriver.Chrome()`（Selenium Manager 自動處理 driver）；`find_element_by_xpath` 改成 `find_element(By.XPATH, ...)`。
-
-## BeautifulSoup Example
+## BeautifulSoup：靜態頁
 
 ```python
-from bs4 import BeautifulSoup
+import time
 import requests
+from bs4 import BeautifulSoup
 
-# Fetch HTML from a website
-html_text = requests.get('<website>').text
-soup = BeautifulSoup(html_text, 'lxml')
+headers = {"User-Agent": "mylab-scraper/0.1 (me@uni.edu)"}
+r = requests.get("https://example.com/courses", headers=headers, timeout=10)
+r.raise_for_status()                                  # 4xx / 5xx 直接拋錯，不要解析錯誤頁
+soup = BeautifulSoup(r.text, "lxml")                  # 解析器：lxml 快；"html.parser" 免安裝
 
-# Save parsed HTML
-with open('output_html', 'w', encoding='utf-8') as soup_output:
-    soup_output.write(str(soup))
+# 1. 先選重複區塊，再在區塊內抓欄位
+rows = []
+for card in soup.select("div.course-block"):          # CSS selector，回傳 list
+    link = card.select_one("a")                       # 第一個符合，找不到回傳 None
+    rows.append({
+        "title": link.get_text(strip=True) if link else None,   # 含所有子節點文字
+        "url":   link.get("href") if link else None,            # .get() 缺屬性回傳 None；link["href"] 會 KeyError
+    })
 
-# Load HTML from file
-with open('<html>', 'r', encoding='utf-8') as html_input:
-    content = html_input.read()
-    soup = BeautifulSoup(content, 'lxml')
+# 2. find / find_all：依標籤與屬性
+soup.find("h1")                                       # 第一個
+soup.find_all("div", class_="course-block")           # class 是保留字，所以參數名是 class_
+soup.find_all("a", href=True)                         # 只要有 href 的 <a>
+soup.find("div", attrs={"data-id": "42"})
 
-    # Find all tags
-    tag_li = soup.find_all('<tag>')  # returns list
+# 3. 文字與屬性
+tag = soup.select_one("p#intro")
+tag.get_text(" ", strip=True)                         # 子節點間用空白分隔，去除前後空白
+tag.attrs                                             # 全部屬性 dict
 
-    # Find divs with specific class
-    tags_div_class_name_li = soup.find_all('div', class_='<keyword>')
-    for tags_div_class_name in tags_div_class_name_li:
-        tag_h1 = tags_div_class_name.h1
-        tag_h1_name = tags_div_class_name.h1.text     # tag text
-        tag_h1_attr = tags_div_class_name.h1['href']  # attribute
-        sub_tag_li = tags_div_class_name.find_all('h1', class_='<keyword>')
+# 4. 相對連結 → 絕對網址
+from urllib.parse import urljoin
+urljoin(r.url, "/course/python")                      # https://example.com/course/python
+
+time.sleep(1)                                         # 下一個請求前先節流
 ```
 
-### Notes
+| 方法 | 回傳 | 說明 |
+| --- | --- | --- |
+| `select(css)` / `select_one(css)` | list / Tag 或 `None` | 用 CSS selector，最直覺 |
+| `find_all(name, attrs)` / `find(...)` | list / Tag 或 `None` | 依標籤名與屬性 |
+| `.text` / `.get_text(sep, strip=True)` | `str` | 含所有後代文字；`.string` 只在唯一子節點時有值 |
+| `tag["href"]` / `tag.get("href")` | `str` | 前者缺屬性會 `KeyError` |
+| `.parent`、`.find_next_sibling()` | Tag | 沿樹移動 |
+| `soup.prettify()` | `str` | 排版後的 HTML，除錯用 |
 
-- Use `.prettify()` to format HTML for better readability.
-- Use `.text` to extract text inside tags.
-- Attributes can be accessed like dictionaries, e.g., `tag['href']`.
+> 一個區塊缺某欄位時，`select_one` 回傳 `None`，直接 `.get_text()` 會 `AttributeError`。在區塊內逐欄抓並處理 `None`，才不會讓整批因為一筆資料中斷，也不會讓欄位錯位。
 
-## Selenium Example
+除錯時把 `r.text` 存檔，之後讀檔解析，避免重複送請求：
 
 ```python
+from pathlib import Path
+Path("page.html").write_text(r.text, encoding="utf-8")
+soup = BeautifulSoup(Path("page.html").read_text(encoding="utf-8"), "lxml")
+```
+
+## Selenium：動態頁
+
+Selenium 4.6 起內建 Selenium Manager，會自動下載對應的瀏覽器 driver，不再需要 `webdriver_manager`。
+
+```python
+import random
+import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-import time as t
-import random
-
-chrome = webdriver.Chrome(ChromeDriverManager().install())
-chrome.get('https://browserleaks.com/ip')
-
-t.sleep(random.randint(5))
-
-# Find element by ID
-element_id = chrome.find_element(By.ID, '<keyword>')  # first match
-elements_id = chrome.find_elements(By.ID, '<keyword>')  # all matches (list)
-
-# Explicit waits
-# Check if a single element exists in HTML
-element_id = WebDriverWait(chrome, 10).until(
-    EC.presence_of_element_located((By.ID, '<keyword>')),
-    'Cannot find the element.'
-)
-
-# Check if at least one matching element exists
-element_id = WebDriverWait(chrome, 10).until(
-    EC.presence_of_all_elements_located((By.ID, '<keyword>')),
-    'Cannot find the elements.'
-)
-
-# Check if an element is clickable (visible + enabled)
-element_clickable = WebDriverWait(chrome, 10).until(
-    EC.element_to_be_clickable((By.ID, '<keyword>')),
-    'Cannot click the element.'
-)
-
-element_clickable.send_keys('<send_information>')
-element_clickable.click()
-
-chrome.close()   # close just one window/tab
-# chrome.quit()  # shut down the whole browser and end the session
-```
-
-### About `element_to_be_clickable`
-
-- Ensures the element is both **visible** and **enabled** before interacting with it.
-- Prevents errors where an element exists but is covered by another element, hidden, or disabled.
-- Usage pattern:
-
-  ```python
-  clickable_elem = WebDriverWait(driver, 10).until(
-      EC.element_to_be_clickable((By.ID, 'submit-button'))
-  )
-  clickable_elem.click()
-  ```
-
-## XPath for Precise Location
-
-```html
-<html>
-  <body>
-    <form id="loginForm">
-      <input name="username" type="text" />
-      <input name="password" type="password" />
-      <input name="continue" type="submit" value="Login" />
-      <input name="continue" type="button" value="Clear" />
-    </form>
-  </body>
-</html>
-```
-
-```python
-username = driver.find_element_by_xpath("//form[@id='loginForm']/input[1]")
-clear_button = driver.find_element_by_xpath("//input[@name='continue'][@type='button']")
-```
-
-## Selenium with Custom Headers (User-Agent)
-
-```python
-import random
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-
-user_agent_li = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"
-    # Add more User-Agent strings as needed
-]
 
 options = Options()
-random_user_agent = random.choice(user_agent_li)
-options.add_argument(f"--user-agent={random_user_agent}")
-options.add_argument('--disable-notifications')
-options.add_argument('--headless')
-options.add_argument('--disable-gpu')
-options.add_argument('--start-maximized')
-options.add_argument('--incognito')
+options.add_argument("--headless=new")                # 不開視窗
+options.add_argument("--window-size=1920,1080")       # headless 預設視窗小，RWD 版面可能不同
+options.add_argument("--user-agent=mylab-scraper/0.1 (me@uni.edu)")
 
-chrome = webdriver.Chrome(options=options)
-chrome.get('<url>')
+driver = webdriver.Chrome(options=options)            # Selenium Manager 自動處理 chromedriver
+try:
+    driver.get("https://example.com/login")
+    wait = WebDriverWait(driver, 10)                  # 最多等 10 秒
 
-chrome.quit()
+    # 1. 找元素：find_element(By.X, ...)；find_element_by_* 在 Selenium 4 已移除
+    user = wait.until(EC.presence_of_element_located((By.NAME, "username")))
+    user.send_keys("me")
+    driver.find_element(By.NAME, "password").send_keys("...")
+    wait.until(EC.element_to_be_clickable((By.XPATH, "//form[@id='loginForm']//input[@type='submit']"))).click()
+
+    # 2. 等資料出現再抓：明確等待 (explicit wait)，不要用固定 sleep
+    rows = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table#results tr")))
+    data = [r.text for r in rows]
+
+    # 3. 也可以把渲染後的 HTML 交給 BeautifulSoup 解析
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(driver.page_source, "lxml")
+
+    time.sleep(random.uniform(1, 3))                  # 頁面之間隨機間隔 1–3 秒
+finally:
+    driver.quit()                                     # 結束整個瀏覽器；close() 只關目前分頁，程序會殘留
 ```
 
-## Best Practices
+| 等待條件 (`EC.*`) | 成立時機 | 用途 |
+| --- | --- | --- |
+| `presence_of_element_located` | 元素存在於 DOM（不一定看得見） | 抓資料 |
+| `visibility_of_element_located` | 存在且可見 | 讀取顯示的文字 |
+| `element_to_be_clickable` | 可見且啟用 | 點擊、輸入；避免被遮住或 disabled 時操作失敗 |
+| `presence_of_all_elements_located` | 至少一個符合 | 列表、表格列 |
+| `text_to_be_present_in_element` | 元素內出現指定文字 | 等搜尋結果更新 |
 
-robots.txt、節流、User-Agent 等共用原則見 [Web Scraping: 禮貌與合法性](README.md#禮貌與合法性)。
+`wait.until(...)` 逾時會拋 `TimeoutException`；第二個參數可以帶錯誤訊息，例如 `wait.until(cond, "找不到結果表格")`。
+
+| `By` | 例子 |
+| --- | --- |
+| `By.ID` / `By.NAME` / `By.CLASS_NAME` | `(By.ID, "submit")` |
+| `By.CSS_SELECTOR` | `(By.CSS_SELECTOR, "div.card > a")` |
+| `By.XPATH` | `(By.XPATH, "//input[@name='continue'][@type='button']")` |
+| `By.LINK_TEXT` | `(By.LINK_TEXT, "Next")` |
+
+### 常用操作
+
+| 任務 | 寫法 |
+| --- | --- |
+| 捲到底觸發 lazy loading | `driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")` |
+| 切換到 iframe | `driver.switch_to.frame(driver.find_element(By.TAG_NAME, "iframe"))`；回主頁 `switch_to.default_content()` |
+| 截圖除錯 | `driver.save_screenshot("debug.png")` |
+| 讀屬性 | `el.get_attribute("href")` |
+| 選下拉選單 | `from selenium.webdriver.support.select import Select`；`Select(el).select_by_visible_text("2024")` |
+
+> 新專案可考慮 [Playwright](https://playwright.dev/python/)：內建自動等待、可攔截網路請求直接拿 JSON，通常比 Selenium 穩。
+
+## 常見錯誤
+
+| 錯誤寫法 | 問題 | 正確寫法 |
+| --- | --- | --- |
+| `webdriver.Chrome(ChromeDriverManager().install())` | Selenium 4 第一個位置參數不是 driver 路徑 | `webdriver.Chrome()`；自訂路徑用 `service=Service("path")` |
+| `driver.find_element_by_xpath(...)` | Selenium 4.3 移除 | `driver.find_element(By.XPATH, ...)` |
+| `time.sleep(random.randint(5))` | `randint` 需要兩個參數，會 `TypeError` | `time.sleep(random.uniform(1, 5))` |
+| 固定 `sleep(5)` 等頁面 | 太短會失敗、太長浪費時間 | `WebDriverWait` + `expected_conditions` |
+| `requests.get(url)` 沒有 `timeout` | 伺服器沒回應時永遠卡住 | `requests.get(url, timeout=10)` |
+| 輪換假 User-Agent 規避封鎖 | 違反多數網站條款 | 表明身分、放慢速度，或改用 API |
+| `driver.close()` 收尾 | 只關分頁，chromedriver 程序殘留 | `try` / `finally` + `driver.quit()` |

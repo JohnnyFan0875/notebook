@@ -1,341 +1,193 @@
-# SQL Reporting Patterns
+[Data Science](../README.md) › [Databases](README.md) › 報表查詢模式
 
-這篇整理比較偏「報表交付」的 SQL 心智模型。  
-重點不是單一資料庫方言，而是當你要把原始資料整理成可讀、可驗證、可交付的表格時，常會遇到哪些問題。
+# 報表查詢模式 (SQL Reporting Patterns)
 
-## Reporting Is Not Just Querying
+把原始資料整理成可交付的摘要表：衍生分類欄位、型別清理、佔比、成長率、移動平均、小計與總計。多數錯誤不在語法，而在 **grain（一列代表什麼）**、**分母**與 **`NULL` 的語意**沒先講清楚。
 
-報表 SQL 通常不只是把資料查出來，而是把資料整理成可以回答問題的形狀。
+## 寫之前先回答
 
-常見目標：
+| 問題 | 例子 |
+| --- | --- |
+| 輸出一列代表什麼（grain）？ | 每個病人？每次就診？每月每科別？ |
+| 資料從哪些表來、怎麼 join？ | join key 唯一嗎？（見 [列數膨脹](sql-joins-and-set-operations.md#列數膨脹-fan-out)） |
+| 比例的分母是什麼？ | 佔全體、佔同組、佔前一期？ |
+| 哪些過濾是報表定義的一部分？ | 排除測試帳號、只算完成的檢驗 |
+| `NULL` 要顯示成什麼？ | 沒資料、未對到、還是小計列？ |
 
-- 把多張表整成一張 summary table
-- 建出對業務可理解的分類欄位
-- 算比例、成長率、排名、rolling metric
-- 處理型別混亂與 `NULL`
-- 控制排序、限制筆數、讓結果更像報表而不是原始 dump
-
-## Plan the Query Before Writing It
-
-在動手前，先把這幾個問題問完通常能少走很多彎路：
-
-- 需要從哪些表取資料
-- 這些表該怎麼 join 或 union
-- 哪些欄位需要即時計算
-- 哪些 filters 是報表定義的一部分
-- 是否需要排序、分頁或 top-N
-
-這個步驟很像先畫報表 spec。  
-如果需求講不清楚，SQL 常會越寫越長，最後連自己都很難驗證。
-
-## Build Derived Reporting Fields with `CASE`
-
-報表常需要把原始欄位轉成更可讀的分類欄位。
-
-例如把 `gender` 和 `age` 合成 `demographic_group`：
+## 衍生分類欄位：`CASE`
 
 ```sql
 SELECT
-    gender,
-    age,
-    CASE
-        WHEN age BETWEEN 13 AND 25 AND gender = 'M' THEN 'Male Age 13-25'
-        WHEN age > 25 AND gender = 'M' THEN 'Male Age 26+'
-        WHEN age BETWEEN 13 AND 25 AND gender = 'F' THEN 'Female Age 13-25'
-        WHEN age > 25 AND gender = 'F' THEN 'Female Age 26+'
-        ELSE 'Other'
-    END AS demographic_group
-FROM athletes;
+  patient_id,
+  age,
+  CASE
+    WHEN age IS NULL THEN 'unknown'
+    WHEN age < 18    THEN '<18'
+    WHEN age < 40    THEN '18-39'
+    WHEN age < 65    THEN '40-64'
+    ELSE '65+'
+  END AS age_group
+FROM patients;
 ```
 
-這類欄位很常成為：
+| 規則 | 原因 |
+| --- | --- |
+| 條件由上往下評估，第一個成立就停 | 用遞增的單邊門檻（`< 18`、`< 40`）就不會重疊或留洞 |
+| 先處理 `NULL` | 否則 `NULL` 會落到 `ELSE`，被誤歸為 `65+` |
+| 保留 `ELSE` | 沒有 `ELSE` 時不符合的值會變成 `NULL`，不易察覺 |
 
-- `GROUP BY` 的分類維度
-- dashboard filter
-- 報表列標籤
-
-實務上要注意兩件事：
-
-- `CASE` 規則要互斥，避免重疊條件
-- 最好保留 `ELSE`，避免漏掉不在預期範圍內的資料
-
-## Type Cleanup Is Part of Reporting
-
-報表工作很常卡在資料型別，而不是商業邏輯本身。
-
-常見問題：
-
-- 對字串欄位做數值 aggregate
-- 用文字欄位去 join 整數欄位
-- 日期其實是字串
-
-典型錯誤像是：
-
-```sql
-SELECT AVG(first_name)
-FROM athletes;
-```
-
-或：
-
-```sql
-SELECT country, continent
-FROM countries AS c1
-JOIN continents AS c2
-  ON c1.continent_id = c2.id;
-```
-
-如果兩邊型別不一致，通常就需要先 `CAST()`。
-
-```sql
-SELECT CAST(birthdate AS date)
-FROM athletes;
-
-SELECT *
-FROM table_a AS a
-JOIN table_b AS b
-  ON a.id = CAST(b.id AS varchar);
-```
-
-心智模型上，`CAST()` 不是補丁，而是把資料恢復成可運算、可比較、可 join 的狀態。
-
-## Join Carefully for Reporting
-
-報表 query 很容易因為 join 不夠精準而重複計數。
-
-特別要注意：
-
-- join key 是否唯一
-- 是否需要 composite key
-- `LEFT JOIN` 後的 `NULL` 代表沒有對到，不一定是原始缺值
-
-如果單一欄位 join 會重複，常要補上第二個條件：
-
-```sql
-SELECT *
-FROM players AS p
-JOIN matches AS m
-  ON p.id = m.id
- AND p.year = m.year;
-```
-
-比起「先 join 再看結果怪不怪」，更穩的習慣是先確認每層資料的 grain。
-
-## Window Functions for Report Columns
-
-報表很常需要在不壓掉明細的情況下，直接附上總計或比較值。
-
-例如整體總計：
+條件計數（一次算多個指標）：
 
 ```sql
 SELECT
-    country_id,
-    athlete_id,
-    SUM(bronze) OVER () AS total_bronze
-FROM summer_games;
+  department,
+  COUNT(*)                                          AS n,
+  SUM(CASE WHEN result = 'positive' THEN 1 ELSE 0 END) AS n_positive,
+  AVG(CASE WHEN result = 'positive' THEN 1.0 ELSE 0 END) AS positive_rate
+  -- PostgreSQL / DuckDB 也可寫 COUNT(*) FILTER (WHERE result = 'positive')
+FROM tests
+GROUP BY department;
 ```
 
-例如分國家 subtotal：
+## 型別清理：`CAST`
+
+| 症狀 | 原因 | 修正 |
+| --- | --- | --- |
+| `AVG(first_name)` 報錯 | 對文字做數值聚合 | 確認欄位語意 |
+| join 對不到或報型別錯 | 一邊 `int`、一邊 `varchar` | `ON a.id = CAST(b.id AS INTEGER)`；長期修正 schema |
+| `'10' < '9'` 為真 | 數字存成字串，按字典序比較 | `CAST(x AS NUMERIC)` |
+| 日期排序亂掉 | 日期存成 `'3/1/2024'` 字串 | `CAST(d AS DATE)` 或各方言的 `TO_DATE`（見 [方言速查](sql-dialect-cheatsheet.md)） |
+| 比例都是 0 | **整數除法**：`30 / 100 = 0` | 分子乘 `1.0` 或 `CAST(... AS NUMERIC)` |
+
+> 整數除法：PostgreSQL、SQL Server、SQLite 中兩個整數相除會捨去小數；MySQL、DuckDB、Snowflake 回傳小數。跨平台寫法一律讓分子先變成小數（`x * 1.0 / y`）。
+
+## 佔比 (Percent of Total)
 
 ```sql
-SELECT
-    country_id,
-    athlete_id,
-    SUM(bronze) OVER (PARTITION BY country_id) AS country_bronze
-FROM summer_games;
-```
-
-這種做法很適合：
-
-- 每列都要看到 overall total
-- 每列都要看到 group subtotal
-- 明細列旁邊需要直接帶 benchmark
-
-## Layered Calculations
-
-有些指標不能在同一層直接寫完，尤其是：
-
-- aggregation 之後還要再算比例
-- 先 group 再做 window
-- 先算前一期再算成長率
-
-這時候通常要分層。
-
-```sql
+-- 先聚合到隊伍層級，再除以總和
 WITH team_points AS (
-    SELECT
-        team_id,
-        SUM(points) AS points
-    FROM matches
-    GROUP BY team_id
+  SELECT team_id, SUM(points) AS points
+  FROM matches
+  GROUP BY team_id
 )
 SELECT
-    team_id,
-    points,
-    points / SUM(points) OVER () AS perc_of_total
+  team_id,
+  points,
+  points * 1.0 / SUM(points) OVER ()                      AS share_of_total,   -- 分母：全部
+  ROUND(100.0 * points / SUM(points) OVER (), 1)          AS pct_of_total
 FROM team_points;
-```
 
-一個很重要的判斷原則是：
-
-- 同層就能解的，不要硬拆太多層
-- 需要先產生中間 grain 的，就不要勉強寫成一層
-
-## Ratios and Percent of Total
-
-報表裡的比例欄位非常常見，例如：
-
-- 佔全體比例
-- 佔部門比例
-- per-game / per-capita 指標
-
-例如：
-
-```sql
-WITH team_points AS (
-    SELECT
-        team_id,
-        SUM(points) AS points
-    FROM matches
-    GROUP BY team_id
-)
+-- 組內佔比：分母改成同組總和
 SELECT
-    team_id,
-    points,
-    points / SUM(points) OVER () AS perc_of_total
-FROM team_points;
-```
-
-或分隊內占比：
-
-```sql
-SELECT
-    team_id,
-    player_id,
-    points,
-    points / SUM(points) OVER (PARTITION BY team_id) AS perc_of_team
+  team_id,
+  player_id,
+  points * 1.0 / SUM(points) OVER (PARTITION BY team_id) AS share_of_team
 FROM player_points;
 ```
 
-比例問題本質上通常是「某個 numerator 除以哪一個 denominator」，先把分母說清楚最重要。
+`SUM(...) OVER ()` 是 window function：保留每一列，同時附上整體總和（見 [Window Functions](sql-window-functions.md)）。
 
-## Period-over-Period Change
-
-成長率或變化率通常會用 `LAG()`。
+## 成長率 (Period-over-Period)
 
 ```sql
+WITH monthly AS (
+  SELECT
+    DATE_TRUNC('month', order_date) AS month,      -- 保留年份；只取月份數字會把不同年的 1 月混在一起
+    SUM(revenue)                    AS revenue
+  FROM orders
+  GROUP BY 1
+)
 SELECT
-    DATE_PART('month', date) AS month_n,
-    SUM(revenue) AS current_rev,
-    LAG(SUM(revenue)) OVER (
-        ORDER BY DATE_PART('month', date)
-    ) AS prev_rev,
-    SUM(revenue)
-      / NULLIF(
-          LAG(SUM(revenue)) OVER (
-              ORDER BY DATE_PART('month', date)
-          ),
-          0
-        ) - 1 AS perc_change
-FROM monthly_sales
-GROUP BY month_n
-ORDER BY month_n;
+  month,
+  revenue,
+  LAG(revenue) OVER (ORDER BY month)                                 AS prev_revenue,
+  revenue * 1.0 / NULLIF(LAG(revenue) OVER (ORDER BY month), 0) - 1  AS pct_change
+FROM monthly
+ORDER BY month;
 ```
 
-這裡最重要的保護是 `NULLIF(..., 0)`，避免分母為零。
+| 保護 | 作用 |
+| --- | --- |
+| `NULLIF(x, 0)` | 分母為 0 時變成 `NULL`，結果為 `NULL` 而不是除以零錯誤 |
+| 先聚合成月再 `LAG` | `LAG` 看的是「上一列」，grain 必須是一列一期 |
+| 補齊缺月 | 某月沒有資料時，`LAG` 會跳到更早的月份；先與完整月份序列 `LEFT JOIN`（PostgreSQL `generate_series`） |
 
-## Rolling Metrics
-
-rolling window 很適合報表中的短期趨勢欄位。
-
-例如 7 期 rolling revenue：
+## 移動平均 (Rolling)
 
 ```sql
+WITH daily AS (
+  SELECT order_date, SUM(revenue) AS revenue
+  FROM orders
+  GROUP BY order_date
+)
 SELECT
-    date,
-    SUM(SUM(revenue)) OVER (
-        ORDER BY date
-        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-    ) AS weekly_revenue
-FROM daily_sales
-GROUP BY date
-ORDER BY date;
+  order_date,
+  revenue,
+  AVG(revenue) OVER (
+    ORDER BY order_date
+    ROWS BETWEEN 6 PRECEDING AND CURRENT ROW      -- 最近 7 列
+  ) AS revenue_ma7
+FROM daily
+ORDER BY order_date;
 ```
 
-這種寫法的心智模型是：
+`ROWS` 數的是列不是天：有缺日時「7 列」會跨超過 7 天。缺日要先補齊，或改用以時間為單位的 `RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW`（PostgreSQL 11+、DuckDB）。
 
-- 先把每天聚合到正確 grain
-- 再對聚合後的結果做 rolling 計算
+## 小計與總計：`ROLLUP` / `CUBE` / `GROUPING SETS`
 
-## Subtotals with `ROLLUP` / `CUBE` / `GROUPING SETS`
-
-需要同時輸出明細、小計與總計時，用 `GROUP BY` 的 OLAP 擴充，不必 `UNION ALL` 多段查詢。
+不必用 `UNION ALL` 拼多段查詢，`GROUP BY` 的擴充一次輸出明細、小計與總計。
 
 | 語法 | 產生的層次 | 適用 |
 | --- | --- | --- |
 | `ROLLUP (a, b)` | `(a, b)`、`(a)`、`()` | 有階層：年 → 國家 → 總計 |
-| `CUBE (a, b)` | 所有組合 `(a, b)`、`(a)`、`(b)`、`()` | 各維度邊際總計；結果數量會膨脹 |
-| `GROUPING SETS (...)` | 只列出指定的組合 | 報表需求已明確 |
+| `CUBE (a, b)` | `(a, b)`、`(a)`、`(b)`、`()` | 每個維度的邊際總計；維度多時列數暴增 |
+| `GROUPING SETS (...)` | 只列出指定的組合 | 報表需求明確 |
 
 ```sql
 SELECT
-    m.year_of_release,
-    c.country,
-    COUNT(*)                AS n_rentals,
-    ROUND(AVG(r.rating), 2) AS avg_rating
+  m.year_of_release,
+  c.country,
+  COUNT(*)                     AS n_rentals,
+  ROUND(AVG(r.rating), 2)      AS avg_rating,
+  GROUPING(c.country)          AS is_country_total     -- 1 = 這列是彙總列
 FROM renting AS r
 LEFT JOIN customers AS c ON c.customer_id = r.customer_id
 LEFT JOIN movies    AS m ON m.movie_id    = r.movie_id
 GROUP BY ROLLUP (m.year_of_release, c.country);
 
 -- 只要特定層次
-GROUP BY GROUPING SETS ((country, genre), (country), (genre), ());
+-- GROUP BY GROUPING SETS ((country, genre), (country), (genre), ())
 ```
 
-小計 / 總計列的維度欄會是 `NULL`；要和真正的缺值區分時用 `GROUPING(col)`（1 表示該列是彙總列）。
+彙總列的維度欄是 `NULL`，與真正缺值的 `NULL` 長得一樣；用 `GROUPING(col)` 區分，再以 `CASE` 改成 `'Total'` 標籤。MySQL 寫法是 `GROUP BY a, b WITH ROLLUP`。
 
-## Correlated Subquery
+## 相關子查詢 (Correlated Subquery)
 
-子查詢參照外層列時就是 correlated subquery，適合「每列跟自己的群組比」的門檻條件。只檢查存在性時改用 `EXISTS`（見 [SQL Joins and Set Operations](sql-joins-and-set-operations.md)）。
+子查詢引用外層的列，對每一列各算一次，適合「和自己的群組比」：
 
 ```sql
--- 被租超過 5 次的電影
-SELECT m.movie_id, m.title
-FROM movies AS m
-WHERE 5 < (
-    SELECT COUNT(*)
-    FROM renting AS r
-    WHERE r.movie_id = m.movie_id
+-- 高於自己科別平均住院天數的病人
+SELECT p.patient_id, p.department, p.los_days
+FROM admissions AS p
+WHERE p.los_days > (
+  SELECT AVG(q.los_days)
+  FROM admissions AS q
+  WHERE q.department = p.department
 );
 ```
 
-## Handle Nulls Explicitly
+同樣的需求用 window function 通常更快也更好讀：先算 `AVG(los_days) OVER (PARTITION BY department)`，外層再過濾。只檢查存在性時改用 `EXISTS`（見 [semi join](sql-joins-and-set-operations.md#semi-join-與-anti-join)）。
 
-報表裡的 `NULL` 很少可以直接丟給使用者自己解讀。
-
-常見做法是 `COALESCE()`：
+## `NULL` 要明確處理
 
 ```sql
-SELECT
-    country,
-    COALESCE(golds, 0) AS golds
+SELECT country, COALESCE(golds, 0) AS golds
 FROM medal_summary;
 ```
 
-但要先分清楚：
-
-- 這個 `NULL` 是真的缺資料
-- 還是 join 沒對到
-- 還是 subtotal / total row 的語意
-
-不要一看到 `NULL` 就全部改成 `0`。
-
-## Practical Reminders
-
-- 報表 query 的第一步通常不是寫 SQL，而是先釐清 grain、欄位定義與分母。
-- `CASE` 很適合建報表分類欄位，但規則要可維護。
-- 遇到怪錯誤時，先檢查型別與 join key。
-- 比例、成長率、rolling metric 很常需要分層計算。
-- `LEFT JOIN` 產生的 `NULL` 要小心解讀，不一定代表原始資料缺失。
-
-[Back to Databases](README.md)
+| `NULL` 的來源 | 可以補 0 嗎 |
+| --- | --- |
+| 該事件確實沒發生（沒得獎） | 可以 |
+| `LEFT JOIN` 沒對到 | 視情況；可能是資料缺漏，應該標示出來 |
+| 測量值缺失 | 不行，補 0 會讓平均值偏低 |
+| `ROLLUP` 的彙總列 | 不行，改成 `'Total'` 標籤 |
