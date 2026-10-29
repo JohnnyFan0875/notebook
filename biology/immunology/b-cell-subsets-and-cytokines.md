@@ -13,19 +13,9 @@
 | **Marginal Zone (MZ) B cell**     | Spleen marginal zone                        | Rapid antibody response to T-independent antigens (LPS, polysaccharides) | IgMhi CD21hi CD1d⁺    |
 | **Follicular B cell (FO B cell)** | Lymph node follicles                        | T-dependent antibody responses                                           | CD23⁺ IgD⁺            |
 
-## 2. Cytokines Regulating B Cell Differentiation and Function
+## 2. Cytokines Regulating B Cells
 
-| Cytokine        | Source Cell               | Effect on B Cells                                                           | Related Pathway / Function |
-| --------------- | ------------------------- | --------------------------------------------------------------------------- | -------------------------- |
-| **IL-4**        | TH2, Tfh                  | Induces class switching to IgE and IgG1; promotes proliferation             | CSR to IgE; allergy        |
-| **IL-5**        | TH2                       | Promotes B cell differentiation, especially IgA secretion                   | Mucosal immunity           |
-| **IL-6**        | Macrophages, DCs, Tfh     | Supports plasma cell survival and antibody secretion                        | STAT3 pathway              |
-| **IL-10**       | Treg, Breg, macrophage    | Anti-inflammatory; induces Breg function; limits TH1 response               | Immune tolerance           |
-| **IL-21**       | Tfh                       | Key cytokine for germinal center formation and antibody affinity maturation | STAT3–BCL6 axis            |
-| **BAFF (BLyS)** | Follicular DCs, monocytes | Promotes B cell survival, maturation, and tolerance checkpoint              | BAFF–BAFFR signaling       |
-| **APRIL**       | Monocytes, DCs            | Enhances plasma cell longevity in bone marrow                               | APRIL–TACI pathway         |
-| **IFN-γ**       | TH1, NK                   | Drives class switching to IgG2a; enhances opsonizing antibody production    | STAT1–T-bet pathway        |
-| **TGF-β**       | Treg, epithelial cells    | Induces class switching to IgA; contributes to mucosal tolerance            | Smad signaling             |
+調控 B 細胞的細胞激素（IL-4、IL-6、IL-21、BAFF、APRIL…）見 [細胞激素網路](cytokines.md)。
 
 ## 3. B Cell Activation Pathways
 
@@ -35,15 +25,9 @@
 | **T-independent type I**   | Polymeric antigens (LPS)   | Direct activation via TLRs            | Bacterial LPS                       | IgM response, no memory                                |
 | **T-independent type II**  | Repetitive polysaccharides | Crosslinking of BCR                   | Pneumococcal capsule polysaccharide | IgM response, minimal memory                           |
 
-## 4. Class-Switch Recombination (CSR) and Associated Cytokines
+## 4. Class-Switch Recombination
 
-| Target Antibody Isotype | Inducing Cytokine(s) | Major Function             |
-| ----------------------- | -------------------- | -------------------------- |
-| **IgM → IgG1 / IgE**    | IL-4                 | Allergy, parasite defense  |
-| **IgM → IgA**           | TGF-β, IL-5          | Mucosal defense            |
-| **IgM → IgG2a**         | IFN-γ                | Antiviral, opsonization    |
-| **IgM → IgG3**          | IL-21                | Complement activation      |
-| **IgM → IgG4**          | IL-10                | Anti-inflammatory response |
+類別轉換與誘導的細胞激素（含人類與小鼠的差異）見 [細胞激素網路：抗體類別轉換](cytokines.md#抗體類別轉換-class-switching)。
 
 ## 5. Functional Relationship Between T and B Cells
 

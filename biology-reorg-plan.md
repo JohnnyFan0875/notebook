@@ -81,10 +81,10 @@
 - [x] `cancer-genomics/mutational-signatures/` 3 篇 → `mutational-signatures.md`
 - [x] `workflows/rnaseq-differential-expression-with-deseq2.md` → 獨特內容（size factors、vst / rlog、`lfcShrink`、常見錯誤）併入 `rna-seq/06`、`07`；更新 data-science 的 2 個連入與 `#pca-for-sample-structure` anchor
 - [x] `genomics/reference-data/`：7 個 annotation / FASTA 空殼 + `download-exon-from-fasta.md` → `reference-genomes.md`（UCSC / Ensembl / NCBI 版本、chr 命名、下載）與 `gene-annotations.md`（GTF / GFF、GENCODE、RefSeq、refGene）；`ncbi-reference-standard.md`（GIAB）→ `genomics/assay-validation/reference-standard.md`；`ena.md` → `raw-data-repositories.md`（SRA / ENA / GEO）
-- [ ] immunology：cytokine 內容統一到 `cytokines.md`（`cytokine-network-summary.md` 改寫），T / B 細胞筆記只留亞群並連過去
+- [x] immunology：cytokine 內容統一到 `cytokines.md`（`cytokine-network-summary.md` 改寫），T / B 細胞筆記只留亞群並連過去
 - [x] `genetics/databases/functional-expression/README.md`：UniProt / InterPro / HPA 只保留連結，不重複描述
 - [x] `workflows/pmbio.md` → `genomics/README.md` 的學習資源表
-- [ ] 連結檢查 → commit `Restructure biology: phase 2 merges`
+- [x] 連結檢查 → commit `Restructure biology: phase 2 merges`
 
 ## Phase 3：`/rewrite-notes` 分批改寫與補充
 

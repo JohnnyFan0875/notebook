@@ -21,47 +21,9 @@
 | **TH22**                      | IL-6, TNF-α                                    | IL-22                    | Promotes epithelial repair and mucosal defense                                | **AHR**, STAT3            | Psoriasis, dermatitis                                |
 | **γδ T cell**                 | Constitutive or infection-induced              | IFN-γ, IL-17             | Mucosal defense, tumor surveillance                                           | Distinct from αβ T cells  | Mucosal inflammation, cancer defense                 |
 
-## 3. Cytokine Categories and Representative Functions
+## 3. Cytokines and Disease Profiles
 
-| Category                      | Major Members                          | Summary of Functions                                             | Producing Cells            |
-| ----------------------------- | -------------------------------------- | ---------------------------------------------------------------- | -------------------------- |
-| **Pro-inflammatory**          | IL-1β, IL-6, TNF-α, IFN-γ, IL-17       | Triggers inflammation, fever, vascular dilation, cell activation | Macrophages, TH1, TH17     |
-| **Anti-inflammatory**         | IL-10, TGF-β                           | Suppresses immune overactivation, promotes tissue repair         | Treg, TH2, dendritic cells |
-| **Growth / Survival Factors** | IL-2, IL-7, IL-15, IL-21               | Promote lymphocyte expansion and maintenance                     | T cells, NK cells, Tfh     |
-| **Antiviral (Interferons)**   | IFN-α, IFN-β (Type I), IFN-γ (Type II) | Antiviral defense, enhances antigen presentation                 | DCs, NK, TH1               |
-| **Chemokines**                | CCL2, CXCL8 (IL-8), CXCL10             | Recruit immune cells to infection or inflammation sites          | Various immune cells       |
-| **B cell Stimulators**        | IL-4, IL-5, IL-6, IL-21                | Activate B cells, promote antibody production                    | TH2, Tfh                   |
-
-## 4. Regulatory Network Among T Cell Subsets
-
-```
-TH1  ──→  IFN-γ  ──┐
- ↑                  │ Inhibits
- │                  ↓
- │        IL-4, IL-13 ←── TH2
- │
- ↓ Inhibition
-IL-10, TGF-β ←── Treg ───┬── Suppresses TH1/TH17
-                          └── Maintains immune tolerance
-TH17 ──→ IL-17, IL-22 → Recruits neutrophils and enhances epithelial defense
-```
-
-**Key Concepts:**
-
-- TH1, TH2, TH17, and Treg maintain a **dynamic balance**.
-- IFN-γ, IL-4, and IL-10 are classic **antagonistic cytokines**.
-- Disease outcomes (infection, allergy, autoimmunity, tumor progression) reflect shifts in these pathways.
-
-## 5. Common Diseases and Immune Profiles
-
-| Disease Category                                  | Dominant Cell Type | Key Cytokines     | Immune Response Type               |
-| ------------------------------------------------- | ------------------ | ----------------- | ---------------------------------- |
-| **Viral Infections (Influenza, HBV, SARS-CoV-2)** | TH1, CTL, NK       | IFN-γ, IL-2       | Type 1 response                    |
-| **Parasitic Infections (Helminths)**              | TH2, Eosinophil    | IL-4, IL-5, IL-13 | Type 2 response                    |
-| **Fungal Infections (Candida, Aspergillus)**      | TH17               | IL-17, IL-22      | Type 3 response                    |
-| **Autoimmune Diseases (RA, MS, T1DM)**            | TH1, TH17          | IFN-γ, IL-17      | Inflammatory response              |
-| **Allergic Disorders (Asthma, Eczema)**           | TH2                | IL-4, IL-13       | Exaggerated humoral response       |
-| **Chronic Inflammation / Tumor**                  | Treg, IL-10        | IL-10, TGF-β      | Suppressive / tolerogenic response |
+細胞激素的家族、交互抑制網路與疾病中的主導軸已整合到 [細胞激素網路](cytokines.md)。
 
 ## 6. Summary
 
