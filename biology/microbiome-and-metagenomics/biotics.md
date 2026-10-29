@@ -1,71 +1,34 @@
-# Biotics: Probiotics, Prebiotics, Postbiotics
+[Biology](../README.md) › [微生物體](README.md) › 益生菌 / 益生元 / 後生元
 
-## 1. Probiotics 益生菌
+# 益生菌、益生元與後生元 (Probiotics, Prebiotics & Postbiotics)
 
-- **Definition**: Live microorganisms which, when administered in adequate amounts, confer a health benefit on the host.
-- **Examples**: Lactobacillus, Bifidobacterium, Saccharomyces boulardii.
-- **Mechanisms of Action**:
+調整腸道菌相的幾類產品，名稱相近但定義不同。以下採用國際益生菌與益生元科學協會 (ISAPP) 的共識定義；它們的健康效果多為**菌株專一、適應症專一**，不能從一個產品推論到同類所有產品。
 
-  - Compete with pathogens for adhesion sites
-  - Produce antimicrobial substances
-  - Modulate immune response
+## 定義
 
-- **Applications**:
+| 名稱 | ISAPP 定義（年份） | 例子 |
+| --- | --- | --- |
+| 益生菌 (probiotic) | 活的微生物，給予足量時對宿主有健康益處（2014，沿用 FAO/WHO 2001） | *Lacticaseibacillus rhamnosus* GG、*Bifidobacterium animalis* subsp. *lactis* BB-12、*Saccharomyces boulardii* |
+| 益生元 (prebiotic) | 被宿主微生物**選擇性利用**、帶來健康益處的受質（2017） | 菊糖 (inulin)、果寡糖 (FOS)、半乳寡糖 (GOS)、母乳寡糖 (HMO) |
+| 合生元 (synbiotic) | 活的微生物 + 被宿主微生物選擇性利用的受質，對宿主有益（2020） | 互補型（兩者各自符合定義）或協同型（受質專門供該菌利用） |
+| 後生元 (postbiotic) | **非活化的微生物和 / 或其成分**的製劑，對宿主有益（2021） | 熱滅活的乳酸菌製劑（含菌體與代謝物） |
 
-  - Gut health (IBS, diarrhea prevention)
-  - Immune regulation
-  - Potential role in allergy and metabolic disorders
+> 依 ISAPP 定義，純化的單一代謝物（如丁酸、短鏈脂肪酸）**不算**後生元，因為定義要求包含非活化的微生物細胞或其組成；只含代謝物的產品應直接稱其成分。分類學在 2020 年把原 *Lactobacillus* 屬拆成 25 個屬，舊名（如 *L. rhamnosus*）在文獻與標示中仍常見。
 
-## 2. Prebiotics 益生元
+## 機制與證據
 
-- **Definition**: Substrates that are selectively utilized by host microorganisms conferring a health benefit.
-- **Examples**: Inulin, fructooligosaccharides (FOS), galactooligosaccharides (GOS), resistant starch.
-- **Mechanisms of Action**:
+| | 主要機制 | 證據較充分的用途 | 證據有限或不一致 |
+| --- | --- | --- | --- |
+| 益生菌 | 競爭附著位點、產生抑菌物質、調節免疫、強化屏障 | 預防抗生素相關腹瀉、早產兒壞死性腸炎（特定菌株）、部分 IBS 症狀 | 一般健康人「改善免疫」、過敏、代謝疾病 |
+| 益生元 | 作為有益菌的受質，增加短鏈脂肪酸 (SCFA) 產生 | 增加 *Bifidobacterium* 豐度、改善排便、部分研究顯示促進鈣吸收 | 降低大腸癌風險（多為觀察 / 動物研究） |
+| 後生元 | 菌體成分直接作用於免疫細胞與上皮屏障 | 新興領域，臨床試驗較少 | 多數宣稱尚待驗證 |
 
-  - Serve as "food" for beneficial bacteria
-  - Promote growth of probiotics
-  - Increase production of short-chain fatty acids (SCFAs)
+## 安全性
 
-- **Applications**:
+| 議題 | 說明 |
+| --- | --- |
+| 免疫低下 / 中心靜脈導管 | 活菌可能造成菌血症或真菌血症（如 *S. boulardii*）；後生元不含活菌，理論上較安全 |
+| 產品品質 | 標示菌數與實測常不符；菌株名稱應寫到菌株層級 |
+| 定殖 | 多數益生菌停用後不會長期定殖，效果需持續攝取 |
 
-  - Improve gut microbiota composition
-  - Enhance calcium absorption
-  - Reduce risk of colon cancer
-
-## 3. Postbiotics 後生元
-
-- **Definition**: Bioactive compounds produced by food-grade microorganisms during a fermentation process that exert health benefits on the host.
-- **Examples**: Short-chain fatty acids (butyrate, acetate, propionate), bacterial cell wall fragments, peptides, vitamins.
-- **Mechanisms of Action**:
-
-  - Direct modulation of immune system
-  - Anti-inflammatory and antioxidant effects
-  - Support gut barrier integrity
-
-- **Applications**:
-
-  - Reduce intestinal inflammation
-  - Modulate immune responses
-  - Alternative to live probiotics in immunocompromised individuals
-
-## 4. Synbiotics
-
-- **Definition**: A combination of probiotics and prebiotics that synergistically promote health.
-- **Examples**: Lactobacillus + inulin.
-
-## 5. Comparison Table
-
-| Feature                  | Probiotics (益生菌)                | Prebiotics (益生元)                    | Postbiotics (後生元)                 |
-| ------------------------ | ---------------------------------- | -------------------------------------- | ------------------------------------ |
-| **Nature**               | Live microorganisms                | Non-digestible substrates              | Metabolites / components             |
-| **Needs live bacteria?** | Yes                                | No                                     | No                                   |
-| **Mode of Action**       | Colonize gut, modulate microbiota  | Feed beneficial bacteria               | Direct biological effects            |
-| **Examples**             | _Lactobacillus_, _Bifidobacterium_ | Inulin, FOS, GOS                       | SCFAs, peptides, cell wall fragments |
-| **Clinical Uses**        | Gut health, immune modulation      | Support probiotics, mineral absorption | Anti-inflammatory, immune regulation |
-
-## 6. Summary
-
-- **Probiotics** = "good bacteria" introduced into the gut.
-- **Prebiotics** = "food" for good bacteria.
-- **Postbiotics** = beneficial "products" of bacterial metabolism.
-- Together, these biotics contribute to maintaining gut health, modulating immunity, and preventing or managing disease.
+研究上評估這些介入是否改變菌相，可用 [16S](16s-analysis.md) 或 [shotgun](shotgun-metagenomics.md)（後者可追蹤特定菌株）。

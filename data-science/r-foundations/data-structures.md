@@ -99,7 +99,7 @@ log2(m + 1)                           # 向量化，維度保留
 as.matrix(df[, c("x", "y")])          # data frame → matrix：有字串欄會整個變 character
 ```
 
-> 生資套件把 counts 矩陣、樣本 metadata、基因註解打包成 `SummarizedExperiment`；它的 `assay()` 就是 matrix，`colData()` 是 data frame。見 [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md)。
+> 生資套件把 counts 矩陣、樣本 metadata、基因註解打包成 `SummarizedExperiment`；它的 `assay()` 就是 matrix，`colData()` 是 data frame。見 [Bioconductor 入門](../../biology/bioinformatics-tools/bioconductor.md)。
 
 ## Data Frame
 

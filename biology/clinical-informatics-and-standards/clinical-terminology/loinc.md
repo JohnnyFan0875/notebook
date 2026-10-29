@@ -1,49 +1,42 @@
+[臨床資訊與標準](../README.md) › [臨床術語](README.md) › LOINC
+
 # LOINC
 
-## 1. Overview
+LOINC (Logical Observation Identifiers Names and Codes) 為檢驗項目、臨床量測、問卷與文件類型提供通用代碼。各醫院檢驗系統的本地代碼不同，合併多中心檢驗值時，先把本地代碼對到 LOINC 是最關鍵的一步。
 
-**LOINC** (Logical Observation Identifiers Names and Codes) is a global standard for identifying laboratory and clinical observations. Developed by the **Regenstrief Institute** and maintained in collaboration with the **U.S. National Library of Medicine (NLM)**, LOINC enables consistent exchange and aggregation of clinical results across systems and institutions.
+| 項目 | 內容 |
+| --- | --- |
+| 維護 | Regenstrief Institute |
+| 網站 | [loinc.org](https://loinc.org)、搜尋 [SearchLOINC](https://loinc.org/search/) |
+| 授權 | 免費，下載需註冊帳號 |
+| 發布 | 每年約兩次 |
+| 何時用 | FHIR `Observation.code`、OMOP `measurement`、CDISC `LBLOINC`、公衛通報 |
 
-LOINC provides a **universal code system** for tests, measurements, and observations, allowing healthcare data to be shared unambiguously across different laboratories and EHR systems.
+## LOINC 名稱的六個軸
 
-## 2. Structure of a LOINC Term
+每個 LOINC 代碼由六個軸定義；任何一軸不同就是不同代碼。
 
-Each LOINC entry describes a single, testable observation defined by **six core attributes**:
+| 軸 | 意義 | `2345-7` 的值 |
+| --- | --- | --- |
+| Component | 量什麼 | Glucose |
+| Property | 量的性質 | `MCnc`（質量濃度） |
+| Time | 單一時間點或一段時間 | `Pt`（時間點） |
+| System | 檢體 | `Ser/Plas`（血清或血漿） |
+| Scale | 尺度 | `Qn`（定量） |
+| Method | 方法（可空白） | 空白（不限方法） |
 
-| Attribute     | Description                                                | Example                      |
-| ------------- | ---------------------------------------------------------- | ---------------------------- |
-| **Component** | What is being measured, evaluated, or observed             | _Glucose_                    |
-| **Property**  | The characteristic or attribute measured                   | _MCnc_ (Mass concentration)  |
-| **Time**      | The interval of time over which an observation is made     | _Pt_ (Point in time)         |
-| **System**    | The sample or system on which the measurement is performed | _Ser/Plas_ (Serum or plasma) |
-| **Scale**     | The scale of measurement                                   | _Qn_ (Quantitative)          |
-| **Method**    | The method used to make the measurement (optional)         | _Enzymatic_                  |
+`2345-7` = *Glucose [Mass/volume] in Serum or Plasma*。對照：`1558-6` 是空腹血糖（Component 不同）、`2339-0` 是全血血糖（System 不同）、`14749-6` 是以 `mmol/L` 計的血糖（Property 為 `SCnc` 物質濃度）。
 
-**Example:**
-LOINC code **2345-7** corresponds to:
-**Glucose [Mass/volume] in Serum or Plasma – Point in time – Quantitative – Enzymatic method**
+> 對應本地代碼時最常見的錯誤是**檢體與單位**：血清 vs 全血、質量濃度 vs 莫耳濃度會對到不同 LOINC。對應前先確認檢驗科的檢體類型與報告單位。
 
-## 3. Categories of Use
+## 涵蓋範圍
 
-LOINC codes are widely applied across healthcare:
+| 類別 | 例 |
+| --- | --- |
+| 檢驗 | 生化、血液、微生物、分子檢驗 |
+| 臨床量測 | 生命徵象、身高、體重、BMI |
+| 基因檢測 | `48018-6` Gene studied、`81252-9` Discrete genetic variant、`69548-6` Genetic variant assessment（FHIR Genomics Reporting IG 使用） |
+| 問卷 / 量表 | PHQ-9、PROMIS |
+| 文件類型 | 出院摘要、放射報告、病理報告 |
 
-- **Laboratory tests:** Blood chemistry, hematology, microbiology, molecular diagnostics
-- **Clinical measurements:** Vital signs, height, weight, BMI
-- **Clinical documents:** Discharge summaries, radiology reports, pathology findings
-- **Survey instruments:** Patient questionnaires such as PHQ-9, PROMIS
-
-## 4. LOINC in Interoperability
-
-LOINC is an integral component of modern interoperability frameworks:
-
-| Framework                   | Role of LOINC                                                            |
-| --------------------------- | ------------------------------------------------------------------------ |
-| **HL7 FHIR**                | Used in `Observation.code`, `DiagnosticReport.code` fields               |
-| **OMOP-CDM**                | Maps to measurement and observation tables                               |
-| **Public health reporting** | Enables standardized reporting of laboratory results to national systems |
-
-## 5. Maintenance and Access
-
-- **Maintained by:** Regenstrief Institute & NLM
-- **Update frequency:** Twice yearly (June and December)
-- **Access:** Free download from [https://loinc.org](https://loinc.org)
+單位寫法見 [UCUM](ucum.md)；檢驗值在 FHIR 中的結構見 [FHIR](fhir.md#resource-與範例)。

@@ -17,7 +17,7 @@ LLM 在生資與醫療研究中最可靠的用途是**處理文字**：文獻篩
 | 術語標準化 | 自由文字 → 本體 ID（HPO、MONDO、SNOMED CT） | 低（直接生成 ID 常編造）；搭配檢索則高 | 用 [Ontology Lookup Service](../../biology/clinical-informatics-and-standards/clinical-terminology/ontology-lookup-service.md) 查候選，再讓 LLM 從候選中選 |
 | 寫分析程式 | pandas / R / Snakemake / 繪圖 | 中高；API 版本與參數常過時 | 執行、測試、檢查版本 |
 | 單細胞細胞類型標註 | 給各群的 marker 基因，請模型推測細胞類型 | 中；常見細胞類型尚可，罕見 / 疾病特有狀態不可靠 | 與參考圖譜方法（CellTypist 等）比較、專家確認 |
-| 富集結果解讀 | 把 GO / pathway 結果整理成敘述 | 中；容易過度詮釋 | 結論只能根據實際的 [富集分析](../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/09-annotation-and-functional-enrichment.md) 結果 |
+| 富集結果解讀 | 把 GO / pathway 結果整理成敘述 | 中；容易過度詮釋 | 結論只能根據實際的 [富集分析](../../biology/genomics/workflows/rna-seq/09-annotation-and-functional-enrichment.md) 結果 |
 | 變異解讀 | 詢問變異是否致病 | **低**；不能作為臨床依據 | 以 [ClinVar](../../biology/genetics/databases/variant/clinvar.md)、ACMG 準則與專家判讀為準 |
 | 臨床決策 | 診斷、治療建議 | **不可直接使用** | 屬受監管用途，見 [EU AI Act](../responsible-ai/understanding-the-eu-ai-act.md) |
 

@@ -55,7 +55,7 @@ smf.ols("reading ~ shoe + age", data=df).fit().params    # 控制年齡後 ≈ 0
 | 批次與條件部分交錯 | 可校正 | 把 batch 放進模型（如 DESeq2 `design = ~ batch + condition`），或 ComBat / limma `removeBatchEffect`（後者僅用於視覺化） |
 | 未知的批次 | 隱藏的變異 | SVA（surrogate variable analysis）估計潛在因子 |
 
-用 [PCA](../multivariate-analysis/pca.md) 檢查：樣本若依批次而非生物條件分群，就是警訊。完全混淆時設計矩陣不滿秩的 R 範例見 [RNA-seq 實驗設計](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/06-exploratory-design-and-count-models.md#experimental-design)；eQTL 用 PEER factors / 表現量 PCs 移除隱藏變異，見 [eQTL](../../../biology/genomics/sequencing-and-analysis/genome-wide-analysis/eqtl.md)。
+用 [PCA](../multivariate-analysis/pca.md) 檢查：樣本若依批次而非生物條件分群，就是警訊。完全混淆時設計矩陣不滿秩的 R 範例見 [RNA-seq 實驗設計](../../../biology/genomics/workflows/rna-seq/06-exploratory-design-and-count-models.md#實驗設計-experimental-design)；eQTL 用 PEER factors / 表現量 PCs 移除隱藏變異，見 [eQTL](../../../biology/genomics/genome-wide-analysis/eqtl.md)。
 
 ### 干擾、中介、碰撞：用 DAG 判斷該調整什麼
 

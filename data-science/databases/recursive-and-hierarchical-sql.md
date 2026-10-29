@@ -80,7 +80,7 @@ GROUP BY ancestor
 ORDER BY dist;
 ```
 
-> DAG 中同一祖先會經不同路徑出現多次，先展開、再在外層 `GROUP BY` / `DISTINCT`。資料量大時（整個 GO × 所有基因），預先算好 closure table（`term, ancestor` 全配對）存起來，比每次遞迴快。富集分析本身見 [富集分析](../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/09-annotation-and-functional-enrichment.md)。
+> DAG 中同一祖先會經不同路徑出現多次，先展開、再在外層 `GROUP BY` / `DISTINCT`。資料量大時（整個 GO × 所有基因），預先算好 closure table（`term, ancestor` 全配對）存起來，比每次遞迴快。富集分析本身見 [富集分析](../../biology/genomics/workflows/rna-seq/09-annotation-and-functional-enrichment.md)。
 
 ## 模式三：多跳路徑（圖）
 

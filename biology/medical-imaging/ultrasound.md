@@ -1,13 +1,48 @@
-# Ultrasound
+[Biology](../README.md) › [醫學影像](README.md) › 超音波
 
-Ultrasound uses high-frequency sound waves to produce real-time images.
+# 超音波 (Ultrasound)
 
-## Strengths
+超音波探頭發出高頻聲波，接收組織界面的反射回波，依回波時間與強度即時成像。無游離輻射、可在床邊進行、可動態觀察，但影像品質高度依賴操作者與聲窗 (acoustic window)。
 
-- Bedside and radiation-free
-- Useful for soft tissue, vascular, abdominal, obstetric, and procedural guidance
-- Doppler modes help assess blood flow
+## 頻率與穿透的取捨
 
-## Notes
+| 探頭 | 頻率（約） | 解析度 | 穿透深度 | 用途 |
+| --- | --- | --- | --- | --- |
+| 線性 (linear) | 5–15 MHz | 高 | 淺（數公分） | 甲狀腺、乳房、血管、肌肉骨骼、穿刺導引 |
+| 凸面 (curvilinear) | 2–6 MHz | 中 | 深 | 腹部、婦產 |
+| 相位陣列 (phased array) | 1–5 MHz | 中低 | 深、探頭面小 | 心臟（從肋間看） |
 
-- Image quality depends on operator technique and acoustic windows.
+> 頻率越高波長越短、解析度越好，但衰減越快、看不深；這是選探頭的核心取捨。
+
+## 模式
+
+| 模式 | 顯示 | 用途 |
+| --- | --- | --- |
+| B-mode | 灰階 2D 切面 | 基本成像 |
+| M-mode | 一條掃描線隨時間的變化 | 心臟瓣膜、心室壁運動 |
+| 彩色 Doppler | 血流方向與速度疊在 B-mode 上（朝探頭紅、遠離藍是常見設定） | 血管狹窄、逆流 |
+| 頻譜 Doppler | 速度隨時間的波形 | 定量血流速度、狹窄程度 |
+| 彈性成像 (elastography) | 組織硬度 | 肝纖維化分期、乳房 / 甲狀腺結節 |
+| 顯影超音波 (CEUS) | 微氣泡顯影劑 | 肝腫瘤特性判斷；無腎毒性 |
+
+## 常見假影
+
+| 假影 | 樣子 | 原因 / 判讀用途 |
+| --- | --- | --- |
+| 聲影 (acoustic shadowing) | 強回音後方一片黑 | 結石、鈣化、骨頭幾乎全反射；有助診斷結石 |
+| 後方增強 (posterior enhancement) | 液體後方特別亮 | 液體衰減少；有助判斷囊腫 |
+| 殘響 (reverberation) | 等距重複的亮線 | 兩個強反射面間來回反射（肺的 A-line） |
+| 氣體干擾 | 影像模糊不清 | 氣體幾乎全反射，所以腸氣多時看不清腹部，肺實質一般看不到 |
+
+> 肺部超音波不是直接看肺實質，而是用假影判讀（A-line、B-line、肺滑動），在急重症評估氣胸與肺水腫很常用。
+
+## 資料分析時的注意
+
+| 問題 | 說明 |
+| --- | --- |
+| 操作者依賴 | 切面角度、增益、深度設定不同，影像差異大；資料集常有選擇偏差 |
+| 斑點雜訊 (speckle) | 超音波特有的顆粒狀雜訊，濾波方式與 CT / MRI 不同 |
+| 影像上的標註文字 | 截圖常燒進病人資訊與量測標記，需要裁切或去識別化 |
+| 多為 2D 影片 | 標準切面辨識、時間序列模型（心臟超音波 EF 估計） |
+
+相關：[MRI](mri.md)、[Computer Vision](../../data-science/deep-learning/computer-vision/README.md)。

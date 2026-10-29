@@ -1,35 +1,59 @@
-# Peripheral Blood Mononuclear Cells (PBMCs)
+[Biology](../README.md) › [免疫學](README.md) › PBMC
 
-**Peripheral Blood Mononuclear Cells (PBMCs)** are blood cells with a single round nucleus. They play a critical role in the immune system and are widely used in biomedical research.
+# 周邊血單核細胞 (Peripheral Blood Mononuclear Cells, PBMC)
 
-## Composition
+PBMC 是周邊血中細胞核為單一圓形核的細胞，主要是淋巴球與單核球。採血即可取得、能反映全身免疫狀態，是免疫學研究、單細胞定序與細胞治療最常用的起始材料。
 
-PBMCs include several immune cell types:
+## 組成
 
-- **Lymphocytes**
-  - T cells (CD4⁺ helper T cells, CD8⁺ cytotoxic T cells)
-  - B cells
-  - Natural killer (NK) cells
-- **Monocytes** → precursors of macrophages and dendritic cells.
-- **Dendritic cells** (minor fraction)
+| 細胞 | 約佔 PBMC | 補充 |
+| --- | --- | --- |
+| T 細胞 | 45–70% | CD4 : CD8 約 2 : 1；亞群見 [T 細胞亞群](t-cell-subsets-and-cytokines.md) |
+| B 細胞 | 5–15% | 見 [B 細胞亞群](b-cell-subsets-and-cytokines.md) |
+| NK 細胞 | 5–20% | CD56<sup>dim</sup> 為主 |
+| 單核球 | 10–20% | 巨噬細胞與樹突細胞的前驅 |
+| 樹突細胞 | 1–2% | cDC、pDC |
 
-Unlike red blood cells or granulocytes (neutrophils, eosinophils, basophils), PBMCs have a **single round nucleus**, which defines their category.
+比例隨年齡、感染、用藥與個人差異大，以上只是健康成人的大致範圍。
 
-## Isolation
+> 不包含的細胞：紅血球（無核）、血小板（無核）、顆粒球（嗜中性球、嗜酸性球、嗜鹼性球；分葉核）。嗜中性球佔全血白血球一半以上，卻不在 PBMC 裡，所以 PBMC 資料**不能**直接代表全血的免疫組成。
 
-- Typically isolated from whole blood using **density gradient centrifugation** (e.g., **Ficoll-Paque**).
-- PBMCs separate into a distinct "buffy coat" layer between plasma and red blood cells.
-- Cryopreservation with DMSO allows long-term storage for research.
+## 分離：密度梯度離心
 
-## Applications
+```
+離心前                 離心後（Ficoll-Paque，密度 1.077 g/mL；由上到下）
+  稀釋全血（上層）       血漿 + 血小板
+  ─────────────   ──►   ═════════════  ← PBMC（白色界面層，吸取這層）
+  Ficoll（下層）         Ficoll
+                         顆粒球 + 紅血球（沉底）
+```
 
-- **Immunology research** → studying immune cell function, cytokine secretion, antigen presentation.
-- **Clinical diagnostics** → biomarker discovery, immune monitoring in infectious diseases, cancer, and autoimmune disorders.
-- **Cell therapy** → PBMCs serve as the starting material for advanced therapies like CAR-T cells and dendritic cell vaccines.
-- **Single-cell analysis** → scRNA-seq and flow cytometry profiling of immune subsets.
+| 步驟 | 重點 | 出錯時 |
+| --- | --- | --- |
+| 採血 | 抗凝管（EDTA、heparin、ACD）；**不能用血清管** | 凝血後細胞被困在血塊中 |
+| 處理時間 | 採血後盡快（通常建議 < 8 小時）、室溫 | 放太久顆粒球密度改變，混入 PBMC 層（低密度顆粒球） |
+| 離心 | 室溫、關閉煞車 (brake off) | 煞車會打亂界面層 |
+| 清洗 | 2 次以上低速離心 | 血小板殘留 |
+| 冷凍保存 | 10% DMSO + FBS / 無血清冷凍液，−1 °C/min 降溫後放液態氮 | 解凍存活率低、單核球與顆粒球樣細胞較易損失 |
 
-## Clinical & Research Significance
+> 「buffy coat」是全血直接離心後紅血球與血漿之間的白血球層，含顆粒球；Ficoll 分離後的單核細胞層才是 PBMC。
 
-- Provide a minimally invasive source of immune cells.
-- Reflect the **systemic immune status** of patients.
-- Widely used in **vaccine development**, **cancer immunotherapy trials**, and **infectious disease studies** (e.g., HIV, COVID-19).
+## 應用
+
+| 應用 | 說明 |
+| --- | --- |
+| 免疫功能研究 | 刺激後量細胞激素分泌、增生、抗原呈現 |
+| 免疫監測 | 感染、癌症、自體免疫、疫苗試驗中追蹤免疫細胞組成與抗原專一反應 |
+| 細胞治療 | CAR-T（從 PBMC / apheresis 取 T 細胞改造）、樹突細胞疫苗 |
+| 單細胞分析 | scRNA-seq、CITE-seq、流式細胞術；10x 的 PBMC 資料集是最常見的教學範例 |
+
+## 資料分析時的注意
+
+| 問題 | 影響 | 對策 |
+| --- | --- | --- |
+| 新鮮 vs 冷凍 | 冷凍解凍後單核球比例下降、壓力基因上升 | 同一研究統一處理方式；當作批次變數 |
+| 處理時間差 | 活化 / 壓力基因（*FOS*、*JUN*）改變 | 記錄採血到處理的時間 |
+| 死細胞與破損 | scRNA-seq 粒線體比例高、ambient RNA | QC 過濾、SoupX / CellBender |
+| 批次效應 | 不同天、不同人處理造成系統差異 | 樣本隨機分配到批次；整合（Harmony、scVI） |
+
+相關：[單細胞 RNA-seq](../genomics/sequencing-techniques/single-cell-rna-seq/README.md)、[免疫標記](immune-marker.md)、[血清 vs 血漿](../laboratory-medicine/sample-types/serum-plasma.md)。

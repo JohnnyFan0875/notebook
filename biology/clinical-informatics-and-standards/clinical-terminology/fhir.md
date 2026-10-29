@@ -1,58 +1,41 @@
-# FHIR
+[臨床資訊與標準](../README.md) › [臨床術語](README.md) › FHIR
 
-## 1. Overview
+# HL7 FHIR
 
-**HL7 FHIR** (Fast Healthcare Interoperability Resources) is a modern, web-based standard developed by **Health Level Seven International (HL7)** for exchanging healthcare information electronically.
+FHIR (Fast Healthcare Interoperability Resources) 是 HL7 的病歷資料交換標準：把臨床資料拆成模組化的 **resource**（Patient、Observation、Condition…），用 REST API 與 JSON 傳遞。它規定「資料放哪個欄位、怎麼傳」，欄位裡的代碼則來自 LOINC、SNOMED CT、RxNorm 等術語。
 
-FHIR combines the best features of previous HL7 versions (v2, v3, CDA) with modern API design principles, supporting **RESTful APIs**, **JSON/XML serialization**, and **extensibility** for both clinical and administrative data.
+| 項目 | 內容 |
+| --- | --- |
+| 維護 | HL7 International |
+| 網站 | [hl7.org/fhir](https://hl7.org/fhir)（目前發布版 R5，2023） |
+| 版本 | DSTU2 → STU3 → R4（2019，實務上最廣泛採用）→ R4B → R5；R6 制定中 |
+| 授權 | 開放、免費 |
+| 何時用 | 從 EHR 取資料（API）、跨院交換、SMART on FHIR 應用、臨床基因報告 |
 
-## 2. Core Principles
+## 核心觀念
 
-| Principle                         | Description                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **Resource-based**                | All data are represented as modular, reusable resources (e.g., Patient, Observation, Medication). |
-| **RESTful architecture**          | Supports standard HTTP operations (`GET`, `POST`, `PUT`, `DELETE`).                               |
-| **Interoperability by design**    | Enables systems to share data consistently using global terminologies (LOINC, SNOMED CT, RxNorm). |
-| **Extensibility**                 | Allows customization via extensions without breaking compatibility.                               |
-| **Human and machine readability** | Data can be serialized in JSON, XML, or Turtle (RDF).                                             |
+| 觀念 | 說明 |
+| --- | --- |
+| Resource | 最小交換單位，R5 約有 150 種；每個有固定欄位、可用 `reference` 互相連結 |
+| RESTful API | `GET /Patient/123`、`GET /Observation?patient=123&code=http://loinc.org\|2345-7`、`POST`、`PUT`、`DELETE` |
+| 格式 | JSON（最常用）、XML、RDF/Turtle |
+| Terminology binding | 欄位綁定值集 (value set)，如 `Observation.code` 建議用 LOINC |
+| Profile / IG | 在基礎 resource 上加限制與擴充，形成 Implementation Guide（如 US Core、IPS、Genomics Reporting） |
+| Extension | 標準沒有的欄位用 extension 加，不破壞相容性 |
+| Bundle | 把多個 resource 包成一次傳輸（交易、搜尋結果、文件） |
 
-## 3. FHIR Resource Model
+## Resource 與範例
 
-FHIR organizes healthcare data into more than **150 resource types**. Each resource has a consistent structure (metadata + content + links).
-
-| Resource Type   | Example                                 | Description                    |
-| --------------- | --------------------------------------- | ------------------------------ |
-| **Patient**     | Demographics, identifiers, contact info | Core patient record            |
-| **Observation** | Lab results, vital signs, measurements  | e.g., Glucose, Blood Pressure  |
-| **Condition**   | Clinical diagnosis or finding           | e.g., Diabetes Mellitus        |
-| **Medication**  | Drugs and substances                    | e.g., Metformin 500 mg tablet  |
-| **Procedure**   | Surgical or diagnostic interventions    | e.g., MRI brain scan           |
-| **Encounter**   | Patient visit or admission              | e.g., Hospital admission event |
-
-**Patient example:**
-
-```json
-{
-  "resourceType": "Patient",
-  "id": "123",
-  "identifier": [
-    {
-      "system": "http://hospital.example.org/mrn",
-      "value": "MRN-000123"
-    }
-  ],
-  "name": [
-    {
-      "family": "Chen",
-      "given": ["Alex"]
-    }
-  ],
-  "gender": "male",
-  "birthDate": "1988-07-14"
-}
-```
-
-**Observation example:**
+| Resource | 內容 | 常用代碼 |
+| --- | --- | --- |
+| `Patient` | 人口學、識別碼 | — |
+| `Encounter` | 門診、住院、急診 | — |
+| `Condition` | 診斷、問題清單 | SNOMED CT、ICD-10 |
+| `Observation` | 檢驗、生命徵象、基因變異 | LOINC + UCUM |
+| `MedicationRequest` | 處方 | RxNorm |
+| `Procedure` | 處置、手術 | SNOMED CT、CPT |
+| `DiagnosticReport` | 檢驗 / 影像 / 基因報告，連到多個 Observation | LOINC |
+| `ImagingStudy` | 影像檢查的 metadata，連到 DICOM | DICOM UID |
 
 ```json
 {
@@ -60,62 +43,47 @@ FHIR organizes healthcare data into more than **150 resource types**. Each resou
   "id": "glucose",
   "status": "final",
   "code": {
-    "coding": [
-      {
-        "system": "http://loinc.org",
-        "code": "2345-7",
-        "display": "Glucose [Mass/volume] in Serum or Plasma"
-      }
-    ]
+    "coding": [{ "system": "http://loinc.org", "code": "2345-7",
+                 "display": "Glucose [Mass/volume] in Serum or Plasma" }]
   },
-  "valueQuantity": {
-    "value": 95,
-    "unit": "mg/dL",
-    "system": "http://unitsofmeasure.org",
-    "code": "mg/dL"
-  },
-  "subject": { "reference": "Patient/123" }
+  "subject": { "reference": "Patient/123" },
+  "effectiveDateTime": "2026-10-01T08:30:00+08:00",
+  "valueQuantity": { "value": 95, "unit": "mg/dL",
+                     "system": "http://unitsofmeasure.org", "code": "mg/dL" }
 }
 ```
 
-## 4. Interoperability and Terminology Bindings
+`code.coding` 是陣列：同一筆資料可同時帶院內代碼與 LOINC。`subject` 用 reference 指向 `Patient`，取資料時用 `_include` 或再查一次。
 
-FHIR integrates directly with standardized vocabularies:
+## 讀 FHIR 資料做分析
 
-| Vocabulary    | Role in FHIR                                                             |
-| ------------- | ------------------------------------------------------------------------ |
-| **LOINC**     | Laboratory test identifiers (`Observation.code`)                         |
-| **SNOMED CT** | Diagnoses, findings, and procedures (`Condition.code`, `Procedure.code`) |
-| **RxNorm**    | Medications and drug products (`Medication.code`)                        |
-| **UCUM**      | Units of measure (`Observation.valueQuantity.unit`)                      |
+```python
+import requests
+import pandas as pd
 
-## 5. Implementation Layers
+base = "https://hapi.fhir.org/baseR4"   # 公開測試伺服器，資料為假資料
+r = requests.get(f"{base}/Observation",
+                 params={"code": "http://loinc.org|2345-7", "_count": 50})
+bundle = r.json()
 
-| Layer                     | Example                          | Purpose                                            |
-| ------------------------- | -------------------------------- | -------------------------------------------------- |
-| **RESTful API**           | `/Patient/123`                   | CRUD operations for resources                      |
-| **Profiles & Extensions** | US Core, IPS                     | Customize base resources for national/regional use |
-| **Terminology Services**  | Concept lookup, code translation | Bind FHIR elements to vocabularies                 |
-| **Security**              | OAuth 2.0, SMART on FHIR         | Authentication and authorization framework         |
+rows = [{
+    "patient": e["resource"]["subject"]["reference"],
+    "time": e["resource"].get("effectiveDateTime"),
+    "value": e["resource"].get("valueQuantity", {}).get("value"),
+    "unit": e["resource"].get("valueQuantity", {}).get("code"),
+} for e in bundle.get("entry", [])]
+df = pd.DataFrame(rows)
+# 分頁：bundle["link"] 中 relation == "next" 的 url
+```
 
-## 6. FHIR Versions and Profiles
+FHIR 適合**交換與取用**單一病人或小量資料；大規模分析通常用 Bulk Data API（`$export`，輸出 NDJSON）匯出後轉成 [OMOP-CDM](omop-cdm.md) 或資料倉儲。JSON 這類半結構化資料的處理見 [儲存與資料模型](../../../data-science/data-engineering/storage-and-models.md)。
 
-- **Major releases:** DSTU2 → STU3 → R4 → R5
-- **Profiles:** Constrain and extend base FHIR resources for local contexts (e.g., **US Core**, **International Patient Summary (IPS)**)
-- **Implementation Guides (IGs):** Official specifications for specific workflows (e.g., immunization, oncology, genomics)
+## 與其他標準的關係
 
-## 7. Relationship to Other Standards
-
-| Standard                          | Integration with FHIR                                            |
-| --------------------------------- | ---------------------------------------------------------------- |
-| **openEHR**                       | Archetypes can be mapped to FHIR resources                       |
-| **OMOP-CDM**                      | FHIR data can be ETL-transformed into analytical OMOP structures |
-| **ICD / SNOMED / LOINC / RxNorm** | Used for semantic consistency in resource coding                 |
-| **DICOM**                         | Imaging metadata linked via `ImagingStudy` resources             |
-
-## 8. Governance and Access
-
-- **Maintained by:** HL7 International
-- **Open standard:** Freely available with community-driven updates
-- **Official site:** [https://hl7.org/fhir](https://hl7.org/fhir)
-- **Current release:** check the official HL7 site for the latest stable release and implementation guides
+| 標準 | 關係 |
+| --- | --- |
+| HL7 v2 | 醫院內部仍大量使用的訊息格式（以分隔符號切欄位的文字訊息）；FHIR 常透過介接引擎從 v2 轉換 |
+| [openEHR](open-ehr.md) | openEHR 管系統內部儲存與臨床模型，FHIR 管系統之間交換；archetype 可對到 resource |
+| [OMOP-CDM](omop-cdm.md) | FHIR → ETL → OMOP，做多中心分析 |
+| DICOM | 影像本身用 DICOM；FHIR `ImagingStudy` 只帶 metadata 與連結 |
+| SMART on FHIR | 以 OAuth 2.0 授權第三方 App 讀取 EHR 的 FHIR API |

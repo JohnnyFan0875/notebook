@@ -80,7 +80,7 @@ cbind(sample_info, pca$x[, 1:2]) |>
   coord_fixed()                                     # 兩軸同比例，距離才可比較
 ```
 
-Volcano / MA plot 的判讀見 [RNA-seq 對比與視覺化](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/08-contrasts-testing-and-visualization.md)；PCA 見 [PCA](../../statistics/multivariate-analysis/pca.md)。
+Volcano / MA plot 的判讀見 [RNA-seq 對比與視覺化](../../../biology/genomics/workflows/rna-seq/08-contrasts-testing-and-visualization.md)；PCA 見 [PCA](../../statistics/multivariate-analysis/pca.md)。
 
 ## 尺度、顏色、分面
 

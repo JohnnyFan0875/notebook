@@ -1,13 +1,58 @@
-# Serum vs Plasma
+[Biology](../../README.md) › [檢驗醫學](../README.md) › [檢體類型](README.md) › 血清 vs 血漿
 
-Serum and plasma are related but not interchangeable sample types.
+# 血清 vs 血漿 (Serum vs Plasma)
 
-## Difference
+血清與血漿都是血液的液體部分，但製備方式不同、成分不同，不能任意互換。檢驗項目的說明書會指定可接受的檢體類型；研究資料合併時，檢體類型不同也是一種批次效應。
 
-- Plasma is the liquid fraction collected with anticoagulant and still contains clotting factors.
-- Serum is collected after clotting and does not contain fibrinogen in the same way as plasma.
+## 差異
 
-## Practical Notes
+| 項目 | 血漿 (plasma) | 血清 (serum) |
+| --- | --- | --- |
+| 製備 | 抗凝管採血 → 離心 | 不加抗凝劑，等血液凝固（約 30 分鐘）→ 離心 |
+| 凝血因子 / 纖維蛋白原 | 保留 | 凝血時已消耗 |
+| 處理速度 | 可立即離心 | 需等待凝固 |
+| 體積 | 較多 | 較少（部分留在血塊） |
+| 凝血時釋出的物質 | 少 | 血小板與血球釋出 K⁺、LDH、磷酸鹽 → 這些項目血清略高 |
+| 含添加劑 | 有（EDTA、heparin、citrate…），可能干擾檢驗 | 只有促凝劑 / 分離膠 |
 
-- Assay requirements determine which sample type is acceptable.
-- Tube additives and processing time can affect downstream measurements.
+## 採血管與用途
+
+| 管蓋顏色（常見慣例） | 添加劑 | 檢體 | 常見用途 | 不適合 |
+| --- | --- | --- | --- | --- |
+| 淺藍 | 檸檬酸鈉 (sodium citrate) | 血漿 | 凝血檢查（PT、aPTT）；血液 : 抗凝劑 = 9 : 1，抽不足量會失準 | — |
+| 紅 / 金（含分離膠 SST） | 促凝劑（± 分離膠） | 血清 | 生化、免疫、血清學、藥物濃度 | 需要凝血因子的檢驗 |
+| 綠 | 肝素 (heparin，鋰 / 鈉) | 血漿 | 急診生化（不用等凝固）、血氣 | PCR（heparin 抑制聚合酶）、鋰濃度（鋰肝素管） |
+| 紫 / 粉紅 | EDTA（K₂ / K₃） | 全血 / 血漿 | 全血球計數 (CBC)、HbA1c、血型、DNA 萃取、cfDNA | 鈣、鉀、ALP（EDTA 螯合 Ca²⁺ / Mg²⁺，K-EDTA 汙染使鉀假性升高） |
+| 灰 | 氟化鈉 + 草酸鉀 | 血漿 | 血糖、乳酸（抑制糖解） | 電解質 |
+| 專用 cfDNA 管（如 Streck） | 細胞穩定劑 | 血漿 | 液態切片、NIPT；室溫可放數天 | — |
+
+> 管蓋顏色是廠商慣例，不同廠牌可能不同，以管上標示的添加劑為準。
+
+**抽血順序 (order of draw)**：血液培養 → 檸檬酸管 → 血清管 → 肝素管 → EDTA 管 → 氟化物管。目的是避免前一管的添加劑經針頭帶到下一管（例如 EDTA 帶到血清管造成假性高鉀、低鈣）。
+
+## 分析前變因 (Pre-analytical Variables)
+
+| 變因 | 影響 | 受影響項目 |
+| --- | --- | --- |
+| 溶血 (hemolysis) | 紅血球內容物釋出、光學干擾 | K⁺、LDH、AST 假性升高；部分免疫分析干擾 |
+| 脂血 (lipemia) | 混濁、體積置換 | 光度法檢驗、Na⁺（間接 ISE） |
+| 黃疸 (icterus) | 膽紅素光學干擾 | 部分比色法 |
+| 延遲離心 | 細胞持續代謝、內容物外漏 | 血糖每小時下降（未加氟化物時）、K⁺ 改變；cfDNA 被白血球基因組 DNA 稀釋 |
+| 溫度 | 冷藏全血抑制 Na⁺/K⁺ 幫浦 | K⁺ 假性升高 |
+| 止血帶時間過長 | 血液濃縮 | 蛋白質、鈣、膽固醇偏高 |
+| 反覆凍融 | 蛋白質 / 核酸降解 | 細胞激素、RNA、酵素活性 |
+
+> 檢驗儀器常以 HIL index（hemolysis / icterus / lipemia）自動標示干擾程度，研究資料可把它當作共變數或排除條件。
+
+## 分子與研究用途的檢體選擇
+
+| 目的 | 建議檢體 | 原因 |
+| --- | --- | --- |
+| 生殖細胞 DNA (germline) | EDTA 全血（白血球） | DNA 量多、EDTA 抑制 DNase |
+| cfDNA / ctDNA | EDTA 血漿（盡快離心）或專用 cfDNA 管血漿；兩段離心去除細胞 | 血清凝固時白血球破裂，基因組 DNA 背景高，稀釋 ctDNA，見 [液態切片](../../genomics/sequencing-techniques/liquid-biopsy.md) |
+| RNA | PAXgene / Tempus 等 RNA 穩定管 | 離體後轉錄體快速變化 |
+| PBMC | EDTA / heparin / ACD 全血，不能用血清管 | 見 [PBMC](../../immunology/pbmc.md) |
+| 蛋白質體 / 代謝體 | 血漿或血清皆可，但**整個研究要統一** | 凝血過程改變大量蛋白與代謝物 |
+| 細胞激素 | 通常用血漿，冷藏快速處理 | 凝血時血小板釋出細胞激素（如 VEGF、TGF-β） |
+
+相關：[免疫標記：血清標記](../../immunology/immune-marker.md#血清標記)、[LOINC](../../clinical-informatics-and-standards/clinical-terminology/loinc.md)（檢驗代碼會區分 serum / plasma / blood 檢體）。

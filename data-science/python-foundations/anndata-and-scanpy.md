@@ -149,4 +149,4 @@ pb.X = pb.layers["sum"]                     # 樣本 × 基因的計數矩陣 �
 | `rank_genes_groups` | `FindAllMarkers()` | `scran::findMarkers()` |
 | `.h5ad` ↔ R | `SeuratDisk`、`zellkonverter::readH5AD()` | `zellkonverter` |
 
-相關：[scipy.sparse](scipy-sparse.md)、[匯入資料](importing-data.md)、[PCA](../statistics/multivariate-analysis/pca.md)、[分群](../statistics/multivariate-analysis/clustering.md)、[單細胞 RNA-seq（biology）](../../biology/genomics/sequencing-and-analysis/sequencing-techniques/single-cell-rna-seq/README.md)、[RNA-seq 差異表現](../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/07-differential-expression.md)。
+相關：[scipy.sparse](scipy-sparse.md)、[匯入資料](importing-data.md)、[PCA](../statistics/multivariate-analysis/pca.md)、[分群](../statistics/multivariate-analysis/clustering.md)、[單細胞 RNA-seq（biology）](../../biology/genomics/sequencing-techniques/single-cell-rna-seq/README.md)、[RNA-seq 差異表現](../../biology/genomics/workflows/rna-seq/07-differential-expression.md)。

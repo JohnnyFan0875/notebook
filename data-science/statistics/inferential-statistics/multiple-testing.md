@@ -89,7 +89,7 @@ plt.show()
 | ANOVA 後兩兩比較 | Tukey HSD（變異數不等用 Games-Howell） |
 | 上千個基因 / 特徵 / pathway | BH（FDR 0.05 或 0.1） |
 | GWAS | 慣用全基因體門檻 p < 5 × 10⁻⁸ |
-| 先過濾再檢定（如去除低表現基因） | 過濾條件必須**與檢定統計量獨立**（例如用平均表現量過濾，而不是用組間差異）；RNA-seq 實例見 [低表現過濾](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/05-count-matrix-filtering-normalization.md#low-expression-filtering)、[DE 結果的 FDR](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/08-contrasts-testing-and-visualization.md#multiple-testing)、[富集分析](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/09-annotation-and-functional-enrichment.md#functional-enrichment) |
+| 先過濾再檢定（如去除低表現基因） | 過濾條件必須**與檢定統計量獨立**（例如用平均表現量過濾，而不是用組間差異）；RNA-seq 實例見 [低表現過濾](../../../biology/genomics/workflows/rna-seq/05-count-matrix-filtering-normalization.md#低表現基因過濾-low-expression-filtering)、[DE 結果的 FDR](../../../biology/genomics/workflows/rna-seq/08-contrasts-testing-and-visualization.md#多重檢定-multiple-testing)、[富集分析](../../../biology/genomics/workflows/rna-seq/09-annotation-and-functional-enrichment.md#功能富集分析-functional-enrichment) |
 | A/B 測試同時看很多指標 | 指定一個主要指標；其他指標當作探索性結果並校正 |
 
 > **隱藏的多重比較**：嘗試很多子群體、很多切點、很多模型設定，只報最好的那個，即使沒有正式做多個檢定，也等於做了多重比較（研究者自由度 researcher degrees of freedom）。見 [p-hacking](hypothesis-testing.md#p-hacking-與提早停止)。

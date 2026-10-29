@@ -88,7 +88,7 @@ getMethod("counts", "DESeqDataSet")          # 看實作
 | `DESeqDataSet` | `counts()`、`sizeFactors()`、`design()`、`results()` |
 | `GRanges` | `seqnames()`、`start()`、`end()`、`strand()`、`mcols()` |
 
-> 一律用 accessor，不要直接 `@` 取 slot：內部結構隨版本變動，accessor 會維持相容並做驗證。物件概念見 [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md)。
+> 一律用 accessor，不要直接 `@` 取 slot：內部結構隨版本變動，accessor 會維持相容並做驗證。物件概念見 [Bioconductor 入門](../../biology/bioinformatics-tools/bioconductor.md)。
 
 新一代的 **S7**（R Consortium 開發，CRAN 套件 `S7`）試圖整合 S3 與 S4，目前仍在發展中，讀到時知道它是 S3/S4 的後繼即可。
 

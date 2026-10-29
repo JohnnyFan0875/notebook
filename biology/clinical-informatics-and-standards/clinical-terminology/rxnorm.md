@@ -1,45 +1,50 @@
+[臨床資訊與標準](../README.md) › [臨床術語](README.md) › RxNorm
+
 # RxNorm
 
-## 1. Overview
+RxNorm 是美國 NLM 維護的臨床藥品標準命名，把各家藥品資料庫（First Databank、Micromedex、FDA SPL 等）的同一藥品對到同一個 RxCUI，並記錄成分、劑量、劑型、品牌之間的關係。美國 EHR、電子處方與 OMOP 的藥物標準概念都用它。
 
-**RxNorm** is a standardized nomenclature for **clinical drugs** maintained by the **U.S. National Library of Medicine (NLM)**. It provides normalized names, identifiers, and relationships among drug concepts to ensure semantic interoperability across healthcare systems, e-prescribing networks, and research databases.
+| 項目 | 內容 |
+| --- | --- |
+| 維護 | U.S. National Library of Medicine (NLM) |
+| 網站 / API | [RxNav](https://mor.nlm.nih.gov/RxNav/)、[RxNorm API](https://lhncbc.nlm.nih.gov/RxNav/APIs/RxNormAPIs.html) |
+| 發布 | 每月完整版 + 每週更新 |
+| 授權 | 完整版需 UMLS 授權；Current Prescribable Content 子集不需授權 |
+| 限制 | 以美國上市藥品為主；台灣資料需用健保藥品代碼或 ATC |
 
-RxNorm connects various drug vocabularies—such as First Databank, Micromedex, and the FDA’s Structured Product Labeling (SPL)—into a single, consistent coding framework.
+## 概念類型 (Term Type)
 
-## 2. Structure of RxNorm Concepts
+| TTY | 意義 | 例 |
+| --- | --- | --- |
+| IN | 成分 (Ingredient) | acetaminophen |
+| PIN | 精確成分（鹽類、水合物） | metformin hydrochloride |
+| BN | 品牌名 | Tylenol |
+| DF | 劑型 | Oral Tablet |
+| SCD | 臨床藥品 = 成分 + 劑量 + 劑型 | acetaminophen 500 MG Oral Tablet（RxCUI `198440`） |
+| SBD | 品牌藥品 = SCD + 品牌 | acetaminophen 500 MG Oral Tablet [Tylenol]（RxCUI `209459`） |
 
-RxNorm organizes drugs into a **hierarchical system** of interrelated entities, each represented by a unique **RxCUI (RxNorm Concept Unique Identifier)**.
+```
+IN  acetaminophen ──┐
+DF  Oral Tablet ────┼──► SCD acetaminophen 500 MG Oral Tablet
+BN  Tylenol ────────┘          │
+                               └──► SBD acetaminophen 500 MG Oral Tablet [Tylenol]
+                                     └─ 對應多個 NDC（包裝層級）
+```
 
-| Concept Type                     | Example                          | Description                                                        |
-| -------------------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| **IN (Ingredient)**              | Acetaminophen                    | The active chemical substance                                      |
-| **PIN (Precise Ingredient)**     | Acetaminophen anhydrous          | A more specific ingredient variant                                 |
-| **BN (Brand Name)**              | Tylenol                          | Manufacturer-specific brand name                                   |
-| **SCD (Semantic Clinical Drug)** | Acetaminophen 500 mg Oral Tablet | A precise clinical formulation (ingredient + strength + dose form) |
-| **SBD (Semantic Branded Drug)**  | Tylenol 500 mg Oral Tablet       | Branded version of a clinical drug                                 |
-| **DF (Dose Form)**               | Oral Tablet                      | The physical form and route of administration                      |
+## 常見用途
 
-**Example:**
-`RxCUI 198440` → _Acetaminophen 500 MG Oral Tablet (Tylenol)_
+| 任務 | 做法 |
+| --- | --- |
+| 合併不同來源的用藥紀錄 | NDC / 品牌名 → RxCUI → 往上取 IN，在成分層級分析 |
+| 藥物分類 | RxCUI → ATC、VA Class（RxClass API） |
+| 交互作用 / 過敏檢查 | 系統以 RxCUI 為鍵查詢知識庫 |
+| FHIR | `Medication.code`、`MedicationRequest.medication` |
+| OMOP | `drug_exposure.drug_concept_id`（RxNorm 為藥物 standard vocabulary，美國以外藥品可用 RxNorm Extension） |
 
-## 3. Key Features
+```bash
+# RxNorm REST API：名稱 → RxCUI，再查相關成分
+curl "https://rxnav.nlm.nih.gov/REST/rxcui.json?name=acetaminophen%20500%20MG%20Oral%20Tablet"
+curl "https://rxnav.nlm.nih.gov/REST/rxcui/198440/related.json?tty=IN"   # acetaminophen (RxCUI 161)
+```
 
-- Provides a **standardized drug vocabulary** for EHRs and pharmacy systems.
-- Supports **e-prescribing and medication reconciliation**.
-- Facilitates **drug–drug interaction** and **allergy checking**.
-- Maps to other coding systems, including **NDC (National Drug Code)**, **SNOMED CT**, and **ATC**.
-
-## 4. Integration in Clinical Systems
-
-| Framework               | RxNorm Usage                                                       |
-| ----------------------- | ------------------------------------------------------------------ |
-| **HL7 FHIR**            | `Medication.code` or `MedicationRequest.medicationCodeableConcept` |
-| **OMOP-CDM**            | Populates `drug_concept_id` field in the drug exposure table       |
-| **EHR / e-Prescribing** | Ensures consistent naming and dosage interpretation                |
-| **Drug Databases**      | Links branded and generic drugs through RxCUI relationships        |
-
-## 5. Maintenance and Access
-
-- **Maintained by:** U.S. National Library of Medicine (NLM)
-- **Update frequency:** Weekly (Monday releases)
-- **Access:** Free download or API via [https://rxnav.nlm.nih.gov](https://rxnav.nlm.nih.gov)
+藥物基因體（藥物 × 基因型）見 [藥物基因體資料庫](../../genetics/databases/pharmacogenomics/README.md)。

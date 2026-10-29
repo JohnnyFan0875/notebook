@@ -1,13 +1,51 @@
-# PET
+[Biology](../README.md) › [醫學影像](README.md) › PET
 
-Positron emission tomography (PET) images radiotracer distribution to reflect metabolic or molecular activity.
+# 正子斷層造影 (Positron Emission Tomography, PET)
 
-## Common Use Cases
+PET 注射帶正子放射核種的示蹤劑 (radiotracer)，偵測正子與電子湮滅時射出的成對 511 keV 光子，重建示蹤劑在體內的分布。它看的是**功能與分子活性**（葡萄糖代謝、受體表現），而不是解剖構造，因此幾乎都與 CT 或 MRI 合併成 PET-CT / PET-MRI。
 
-- Oncology staging and response assessment
-- Neurologic and cardiac functional imaging
-- Combined PET-CT for anatomic and functional interpretation
+## 常用示蹤劑
 
-## Notes
+| 示蹤劑 | 標的 | 主要用途 |
+| --- | --- | --- |
+| ¹⁸F-FDG | 葡萄糖代謝（GLUT 攝取、hexokinase 磷酸化後滯留） | 多數癌症分期與療效評估、感染 / 發炎、腦（失智）、心肌存活 |
+| ⁶⁸Ga / ¹⁸F-PSMA | 前列腺特異膜抗原 | 前列腺癌分期、復發、PSMA 放射配體治療前評估 |
+| ⁶⁸Ga-DOTATATE | 體抑素受體 | 神經內分泌腫瘤 |
+| 類澱粉 / tau 示蹤劑 | β-amyloid、tau 蛋白 | 阿茲海默症評估 |
+| ¹⁸F-NaF | 骨代謝 | 骨轉移 |
 
-- FDG is a common tracer, but tracer choice depends on the clinical question.
+> 「診斷用示蹤劑 + 同一標的的治療用核種」稱為 theranostics（例如 PSMA PET 篩選後用 ¹⁷⁷Lu-PSMA 治療）。示蹤劑與適應症的核准狀態依國家而異。
+
+## SUV
+
+標準化攝取值 (standardized uptake value, SUV) 把組織的放射活性用注射劑量與體重標準化：
+
+$$SUV = \frac{\text{組織活性濃度 (kBq/mL)}}{\text{注射劑量 (kBq)} / \text{體重 (g)}}$$
+
+| 指標 | 意義 |
+| --- | --- |
+| SUV<sub>max</sub> | ROI 內最高的單一 voxel；最常用但對雜訊敏感 |
+| SUV<sub>peak</sub> | 最熱點周圍約 1 mL 球體的平均；比 max 穩定 |
+| MTV / TLG | 代謝腫瘤體積 / 總病灶糖解量（MTV × SUV<sub>mean</sub>） |
+| 療效評估 | PERCIST（實體腫瘤）、Deauville 5 分法（淋巴瘤） |
+
+> SUV 受注射到掃描的時間、血糖、體型（肥胖者用 lean body mass 校正的 SUL 較好）、重建參數影響；跨機構或追蹤比較要統一協定（如 EARL 認證）。
+
+## FDG 判讀的陷阱
+
+| 情況 | 結果 | 原因 |
+| --- | --- | --- |
+| 發炎、感染、術後、肉芽腫（結核、類肉瘤） | 偽陽性 | 活化的免疫細胞也大量用葡萄糖 |
+| 生理性攝取：腦、心肌、泌尿道、棕色脂肪、肌肉 | 易誤判 | 正常組織本來就高；FDG 經尿液排出 |
+| 低代謝腫瘤（部分前列腺癌、低惡性度淋巴瘤、黏液性腫瘤、分化良好的神經內分泌腫瘤） | 偽陰性 | 葡萄糖攝取低，需改用專一示蹤劑 |
+| 高血糖 | 腫瘤攝取下降 | 血中葡萄糖與 FDG 競爭；檢查前需禁食 4–6 小時並量血糖 |
+| 病灶 < 解析度（約 5 mm） | 低估 | 部分體積效應 |
+
+## 合併影像
+
+| 組合 | 優點 | 用途 |
+| --- | --- | --- |
+| PET-CT | CT 提供解剖定位與衰減校正；最普及 | 癌症分期、療效 |
+| PET-MRI | 軟組織對比好、輻射較少 | 腦、骨盆、兒童 |
+
+相關：[X 光與 CT](x-ray-ct.md)、[MRI](mri.md)、[癌症基因體](../genomics/cancer-genomics/README.md)。

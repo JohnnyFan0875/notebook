@@ -1,9 +1,26 @@
-# Population Frequency Databases
+[遺傳學](../../README.md) › [資料庫](../README.md) › 族群頻率
 
-Population allele frequency resources used during variant interpretation.
+# 族群頻率資料庫 (Population Frequency Databases)
 
-## Topics
+一個變異在一般族群中有多常見，是判讀罕見疾病變異最有力的過濾條件之一：在健康族群中太常見的變異，不可能造成罕見、高外顯率的疾病（ACMG 的 BA1 / BS1 準則）。這裡的「頻率」是**族群等位基因頻率**，不是單一樣本的 VAF，見 [變異等位基因頻率](../../foundations/variant-allele-frequency.md)。
 
-- [1000 Genomes Project](1000-genomes.md)
-- [gnomAD](gnomad.md)
-- [TaiwanGenomes](taiwangenomes.md)
+| 資料庫 | 族群 | 規模（查詢時） | 何時用 |
+| --- | --- | --- | --- |
+| [gnomAD](gnomad.md) | 多族群（歐、非、拉丁、東亞、南亞、阿什肯納茲、芬蘭、中東） | v4：約 80 萬人（外顯子 + 基因組） | **預設首選**；另有基因限制度指標 |
+| [1000 Genomes](1000-genomes.md) | 26 個族群 | 2,504 人（30× 重新定序擴充到 3,202 人） | 公開基因型、方法開發、填補參考 |
+| [TaiwanGenomes](taiwangenomes.md) | 台灣 | 1,496 人 WGS | 台灣病人的變異判讀 |
+| [HGVD](hgvd.md) | 日本 | 數千人；含 eQTL | 日本 / 東亞族群頻率 |
+| [DGV](dgv.md) | 健康人的結構變異 | — | CNV / SV 判讀時參考良性變異 |
+
+## 使用原則
+
+| 原則 | 說明 |
+| --- | --- |
+| 看族群別頻率 | 總體頻率低但某族群頻率高（創始者效應），仍可能是良性；gnomAD 的 grpmax / FAF 取最高族群 |
+| 族群代表性 | 東亞（尤其台灣）在大型資料庫中樣本較少；本地資料庫可補足 |
+| 頻率門檻依疾病設定 | 依疾病盛行率、外顯率、遺傳模式計算可容許的最高頻率，而不是固定 1% |
+| 「沒出現」不等於致病 | 覆蓋不足、難比對區域、結構變異在資料庫中可能偵測不到 |
+| 基因組版本 | gnomAD v2 是 GRCh37，v3 / v4 是 GRCh38 |
+| 健康對照不等於無病 | gnomAD 排除了嚴重兒科疾病，但仍可能包含成人發病疾病的帶因者 |
+
+> 為什麼致病變異的族群頻率可以比疾病盛行率還高（不完全外顯、保護性等位基因），見 [變異等位基因頻率](../../foundations/variant-allele-frequency.md)。

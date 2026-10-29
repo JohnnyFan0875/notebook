@@ -1,82 +1,67 @@
-# B Cell Subsets and Cytokines
+[Biology](../README.md) › [免疫學](README.md) › B 細胞亞群
 
-## 1. Major B Cell Types and Their Functions
+# B 細胞亞群 (B Cell Subsets)
 
-| Subset                            | Location / Phenotype                        | Main Function                                                            | Typical Markers       |
-| --------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------ | --------------------- |
-| **Naïve B cell**                  | Peripheral blood, secondary lymphoid organs | Antigen recognition via BCR (IgM, IgD)                                   | CD19⁺ CD20⁺ IgM⁺ IgD⁺ |
-| **Activated B cell**              | Secondary lymphoid follicles                | Undergoes clonal expansion and class-switch recombination (CSR)          | CD69⁺ CD86⁺           |
-| **Germinal Center (GC) B cell**   | Germinal centers of lymph nodes and spleen  | Somatic hypermutation (SHM) and affinity maturation                      | BCL6⁺ AID⁺            |
-| **Memory B cell**                 | Circulation and lymphoid tissues            | Long-term antigen memory; rapid reactivation                             | CD27⁺ CD38⁻           |
-| **Plasma cell**                   | Bone marrow, mucosa                         | Secretes antibodies (IgG, IgA, etc.)                                     | CD138⁺ Blimp-1⁺       |
-| **Regulatory B cell (Breg)**      | Peripheral blood, spleen                    | Secretes IL-10, TGF-β; suppresses excessive inflammation                 | CD19⁺ CD24hi CD38hi   |
-| **Marginal Zone (MZ) B cell**     | Spleen marginal zone                        | Rapid antibody response to T-independent antigens (LPS, polysaccharides) | IgMhi CD21hi CD1d⁺    |
-| **Follicular B cell (FO B cell)** | Lymph node follicles                        | T-dependent antibody responses                                           | CD23⁺ IgD⁺            |
+B 細胞從初始 B 細胞出發，經活化、生發中心反應，最後成為分泌抗體的漿細胞或長期存活的記憶 B 細胞；每一步都受 Tfh 與細胞激素調控。調控 B 細胞的細胞激素（IL-4、IL-6、IL-21、BAFF、APRIL…）見 [細胞激素網路](cytokines.md)。
 
-## 2. Cytokines Regulating B Cell Differentiation and Function
+## 主要亞群
 
-| Cytokine        | Source Cell               | Effect on B Cells                                                           | Related Pathway / Function |
-| --------------- | ------------------------- | --------------------------------------------------------------------------- | -------------------------- |
-| **IL-4**        | TH2, Tfh                  | Induces class switching to IgE and IgG1; promotes proliferation             | CSR to IgE; allergy        |
-| **IL-5**        | TH2                       | Promotes B cell differentiation, especially IgA secretion                   | Mucosal immunity           |
-| **IL-6**        | Macrophages, DCs, Tfh     | Supports plasma cell survival and antibody secretion                        | STAT3 pathway              |
-| **IL-10**       | Treg, Breg, macrophage    | Anti-inflammatory; induces Breg function; limits TH1 response               | Immune tolerance           |
-| **IL-21**       | Tfh                       | Key cytokine for germinal center formation and antibody affinity maturation | STAT3–BCL6 axis            |
-| **BAFF (BLyS)** | Follicular DCs, monocytes | Promotes B cell survival, maturation, and tolerance checkpoint              | BAFF–BAFFR signaling       |
-| **APRIL**       | Monocytes, DCs            | Enhances plasma cell longevity in bone marrow                               | APRIL–TACI pathway         |
-| **IFN-γ**       | TH1, NK                   | Drives class switching to IgG2a; enhances opsonizing antibody production    | STAT1–T-bet pathway        |
-| **TGF-β**       | Treg, epithelial cells    | Induces class switching to IgA; contributes to mucosal tolerance            | Smad signaling             |
+| 亞群 | 位置 | 功能 | 常用標記 |
+| --- | --- | --- | --- |
+| 初始 B 細胞 (naïve) | 周邊血、次級淋巴器官 | 以 BCR（IgM、IgD）辨識抗原 | CD19⁺ CD20⁺ IgM⁺ IgD⁺ CD27⁻ |
+| 活化 B 細胞 | 次級淋巴濾泡 | 克隆擴增、開始類別轉換 | CD69⁺ CD86⁺ |
+| 生發中心 B 細胞 (GC B) | 淋巴結、脾臟的生發中心 | 體細胞超突變 (SHM)、親和力成熟 | BCL6⁺ AID⁺ CD38⁺ |
+| 記憶 B 細胞 | 血液、淋巴組織 | 長期記憶，再次接觸抗原時快速反應 | CD27⁺ CD38<sup>lo</sup>；類別轉換者 IgD⁻ |
+| 漿母細胞 (plasmablast) | 血液（免疫後 1 週左右短暫增加） | 剛分化、已開始分泌抗體、仍會增生 | CD27<sup>hi</sup> CD38<sup>hi</sup> |
+| 漿細胞 (plasma cell) | 骨髓、黏膜 | 大量分泌抗體（IgG、IgA…）；長壽型可存活數年 | CD138⁺ BLIMP-1⁺；CD20⁻ |
+| 調節性 B 細胞 (Breg) | 周邊血、脾臟 | 分泌 IL-10、TGF-β，抑制過度發炎 | CD19⁺ CD24<sup>hi</sup> CD38<sup>hi</sup> |
+| 邊緣區 B 細胞 (MZ B) | 脾臟邊緣區 | 對 T 非依賴抗原（多醣、LPS）快速產生 IgM | IgM<sup>hi</sup> CD21<sup>hi</sup> CD1d⁺ |
+| 濾泡 B 細胞 (FO B) | 淋巴結濾泡 | T 依賴抗體反應的主力 | CD23⁺ IgD⁺ |
 
-## 3. B Cell Activation Pathways
+> 漿細胞不表現 CD20，所以 anti-CD20（rituximab）清掉 B 細胞後，已存在的長壽漿細胞與抗體力價仍可維持一段時間。scRNA-seq 中漿細胞的特徵是大量免疫球蛋白轉錄本（*JCHAIN*、*MZB1*、*IGHG*），常主導該群的 UMI 數。
 
-| Activation Type            | Antigen Type               | Requirement                           | Example Antigens                    | Major Outcome                                          |
-| -------------------------- | -------------------------- | ------------------------------------- | ----------------------------------- | ------------------------------------------------------ |
-| **T-dependent activation** | Protein antigens           | Requires Tfh help (CD40–CD40L, IL-21) | Tetanus toxoid, viral proteins      | Isotype switching, affinity maturation, memory B cells |
-| **T-independent type I**   | Polymeric antigens (LPS)   | Direct activation via TLRs            | Bacterial LPS                       | IgM response, no memory                                |
-| **T-independent type II**  | Repetitive polysaccharides | Crosslinking of BCR                   | Pneumococcal capsule polysaccharide | IgM response, minimal memory                           |
+## 活化途徑
 
-## 4. Class-Switch Recombination (CSR) and Associated Cytokines
+| 類型 | 抗原 | 需要 | 例 | 結果 |
+| --- | --- | --- | --- | --- |
+| T 依賴 (TD) | 蛋白質 | Tfh 協助（CD40–CD40L、IL-21） | 破傷風類毒素、病毒蛋白 | 類別轉換、親和力成熟、記憶 B 細胞 |
+| T 非依賴第 I 型 (TI-1) | LPS 等多株活化劑 | 直接經 TLR 活化 | 細菌 LPS | IgM，無記憶 |
+| T 非依賴第 II 型 (TI-2) | 重複結構的多醣 | BCR 大量交聯 | 肺炎鏈球菌莢膜多醣 | IgM 為主，記憶很少 |
 
-| Target Antibody Isotype | Inducing Cytokine(s) | Major Function             |
-| ----------------------- | -------------------- | -------------------------- |
-| **IgM → IgG1 / IgE**    | IL-4                 | Allergy, parasite defense  |
-| **IgM → IgA**           | TGF-β, IL-5          | Mucosal defense            |
-| **IgM → IgG2a**         | IFN-γ                | Antiviral, opsonization    |
-| **IgM → IgG3**          | IL-21                | Complement activation      |
-| **IgM → IgG4**          | IL-10                | Anti-inflammatory response |
+> 純多醣疫苗屬 TI-2，2 歲以下幼兒反應差；把多醣接到蛋白質載體（結合型疫苗）就變成 T 依賴反應，才有記憶與類別轉換。
 
-## 5. Functional Relationship Between T and B Cells
+## 生發中心反應
 
 ```
-Tfh (IL-21, CD40L)
+Tfh（IL-21、CD40L）
         ↓
-B cell activation → Germinal center formation
+B 細胞活化 → 形成生發中心
         ↓
-    Somatic hypermutation (AID)
+體細胞超突變 (AID) → 篩選高親和力 BCR
         ↓
-  Class-switch recombination → Memory B / Plasma cell
+類別轉換重組 (CSR) → 記憶 B 細胞 / 漿細胞
 ```
 
-**Key checkpoints:**
+| 檢查點 | 意義 |
+| --- | --- |
+| CD40–CD40L | T 依賴活化的必要條件；CD40L 缺陷造成高 IgM 症候群（無法類別轉換） |
+| BCL6 vs BLIMP-1 | 互相抑制：BCL6 維持生發中心狀態，BLIMP-1 推向漿細胞 |
+| IL-21 | 推動親和力成熟與漿細胞分化的主要細胞激素 |
+| AID | 同時負責 SHM 與 CSR；也是 B 細胞淋巴瘤脫靶突變的來源 |
 
-- **CD40–CD40L interaction**: essential for T-dependent activation
-- **BCL6–Blimp-1 balance**: determines GC vs plasma cell fate
-- **IL-21**: master cytokine driving antibody affinity maturation
+類別轉換與誘導的細胞激素（含人類與小鼠的差異）見 [細胞激素網路：抗體類別轉換](cytokines.md#抗體類別轉換-class-switching)。
 
-## 6. Regulatory and Pathological Contexts
+## 疾病情境
 
-| Immune Context                          | Key B Cell Type / Cytokine                  | Function / Outcome               |
-| --------------------------------------- | ------------------------------------------- | -------------------------------- |
-| **Autoimmune diseases (e.g., SLE, RA)** | Overactive GC B cells; excessive IL-6, BAFF | Autoantibody production          |
-| **Allergic diseases**                   | TH2 → IL-4 / IL-13 → IgE B cells            | Type I hypersensitivity          |
-| **Mucosal immunity (gut, lung)**        | IgA⁺ plasma cells; TGF-β, IL-5              | Barrier protection               |
-| **Chronic infection**                   | Tfh–B cell overactivation; IL-21            | Persistent GC reaction           |
-| **Cancer (multiple myeloma)**           | Malignant plasma cells; IL-6 dependency     | Excessive monoclonal antibodies  |
-| **Immunoregulation**                    | Breg via IL-10, TGF-β                       | Suppresses TH1/TH17 inflammation |
+| 情境 | 關鍵細胞 / 細胞激素 | 結果 |
+| --- | --- | --- |
+| 自體免疫（SLE、RA） | 過度活化的 GC B 細胞；IL-6、BAFF 過多 | 自體抗體 |
+| 過敏 | TH2 → IL-4 / IL-13 → IgE⁺ B 細胞 | 第 I 型過敏反應 |
+| 黏膜免疫（腸、肺） | IgA⁺ 漿細胞；TGF-β、IL-5 | 屏障保護 |
+| 慢性感染 | Tfh–B 細胞過度活化；IL-21 | 持續的生發中心反應 |
+| 多發性骨髓瘤 | 惡性漿細胞；依賴 IL-6 | 單株抗體（M 蛋白）過量 |
+| 免疫調節 | Breg 分泌 IL-10、TGF-β | 抑制 TH1 / TH17 發炎 |
 
-## Summary
+> B 細胞不只是抗體工廠，也是抗原呈現細胞，並透過 Breg 參與免疫恆定。
 
-- **B cells** progress through distinct stages — naive → activated → germinal center → plasma or memory cells — under cytokine and T cell regulation.
-- **Key cytokines:** IL-4, IL-6, IL-10, IL-21, BAFF, TGF-β, IFN-γ.
-- **Tfh** cells are central regulators, coordinating B cell differentiation via **CD40L and IL-21**.
-- B cells are not only **antibody producers**, but also play regulatory and antigen-presenting roles in immune homeostasis and pathology.
+相關：[T 細胞亞群](t-cell-subsets-and-cytokines.md)、[免疫標記](immune-marker.md)。

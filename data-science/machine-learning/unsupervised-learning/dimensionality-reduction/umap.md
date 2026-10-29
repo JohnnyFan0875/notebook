@@ -58,4 +58,4 @@ digits 資料（1,000 張 8×8 手寫數字）：PCA 是線性投影，各數字
 | 分群要在 PCA / KNN 圖上做，不要在 UMAP 座標上做 | UMAP 的 2D 座標扭曲了距離 |
 | 圖上「分開」的群不一定是不同細胞類型 | 可能是批次、細胞週期、品質；用標記基因與 QC 指標上色驗證 |
 | 參數改變會改變圖的外觀 | 結論不要依賴單一張圖；報告時寫出參數 |
-| 不要從 UMAP 圖推論連續性或軌跡 | 軌跡分析需要專門方法（pseudotime） |
+| 不要從 UMAP 圖推論連續性或軌跡 | 軌跡分析需要專門方法（pseudotime），見 [軌跡分析](../../../../biology/genomics/sequencing-techniques/single-cell-rna-seq/trajectory.md) |

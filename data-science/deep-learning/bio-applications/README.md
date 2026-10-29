@@ -23,3 +23,5 @@
 | 顯微 / 病理 / 醫學影像 | 2D / 3D 影像 | CNN、U-Net、ViT | [電腦視覺](../computer-vision/README.md) |
 | 分子、PPI、空間鄰接 | 圖 | GNN | [圖神經網路](../representation-learning/graph-neural-networks.md) |
 | 臨床表格 / bulk 表現量 | 表格、樣本少 | 通常**不需要 DL**；正則化線性模型、樹模型 | [ML 高維資料](../../machine-learning/foundations/high-dimensional-data.md) |
+
+資料本身的生物背景：[單細胞 RNA-seq](../../../biology/genomics/sequencing-techniques/single-cell-rna-seq/README.md)、[UniProt](../../../biology/molecular-biology/molecular-databases/uniprot.md)、[in-silico 變異預測](../../../biology/genetics/variant-interpretation/in-silico-prediction.md)、[醫學影像](../../../biology/medical-imaging/README.md)。

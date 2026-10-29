@@ -4,7 +4,7 @@
 
 單細胞 RNA-seq 是稀疏的計數矩陣（細胞 × 基因，九成以上為 0），常有數十萬個細胞、多個批次。深度學習在這裡最成熟的用途是**機率式的潛在表示**：用 [VAE](../representation-learning/autoencoders-and-vae.md) 直接對原始計數建模，同時校正批次效應，代表工具是 scvi-tools。
 
-上游流程（QC、標準化、分群、軌跡）見 [單細胞 RNA-seq](../../../biology/genomics/sequencing-and-analysis/sequencing-techniques/single-cell-rna-seq/README.md)。
+上游流程（QC、標準化、分群、軌跡）見 [單細胞 RNA-seq](../../../biology/genomics/sequencing-techniques/single-cell-rna-seq/README.md)。
 
 ## 何時需要 DL
 

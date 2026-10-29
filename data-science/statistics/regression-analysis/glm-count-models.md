@@ -107,7 +107,7 @@ $$
 
 > 這就是為什麼不該對 count 直接做 t 檢定：count 不是常態、變異隨平均增加、樣本間深度不同，NB-GLM 一次處理這三件事。
 
-實際流程見 [RNA-seq：count models](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/06-exploratory-design-and-count-models.md#count-models)、[edgeR / DESeq2 / limma-voom](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/07-differential-expression.md)、[DESeq2 workflow](../../../biology/genomics/sequencing-and-analysis/workflows/rnaseq-differential-expression-with-deseq2.md)；ChIP-seq 差異結合（[DiffBind](../../../biology/genomics/sequencing-and-analysis/sequencing-techniques/chip-seq.md#diffbind-workflow)）也是同一套 NB-GLM。
+實際流程見 [RNA-seq：count models](../../../biology/genomics/workflows/rna-seq/06-exploratory-design-and-count-models.md#計數模型-count-models)、[edgeR / DESeq2 / limma-voom](../../../biology/genomics/workflows/rna-seq/07-differential-expression.md)、[DESeq2 workflow](../../../biology/genomics/workflows/rna-seq/07-differential-expression.md#deseq2)；ChIP-seq 差異結合（[DiffBind](../../../biology/genomics/sequencing-techniques/chip-seq.md#差異結合分析-diffbind)）也是同一套 NB-GLM。
 
 ## 模型診斷
 

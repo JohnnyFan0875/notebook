@@ -2,7 +2,7 @@
 
 # Spark 處理基因體資料 (Spark for Genomics: Glow and Hail)
 
-biobank 規模的變異資料（數十萬樣本 × 數千萬位點）用單機的 bcftools / PLINK 會變慢或吃不下，這時可以用建立在 Spark 上的兩個工具：**Glow** 把 VCF 讀成 Spark DataFrame，與一般 SQL / ETL 流程整合；**Hail** 用專門的 MatrixTable 結構做 QC、GWAS 與族群遺傳分析（gnomAD、All of Us 的分析即以 Hail 為主）。VCF 格式見 [VCF](../../biology/genomics/sequencing-and-analysis/file-format/vcf.md)，GWAS 原理見 [GWAS](../../biology/genomics/sequencing-and-analysis/genome-wide-analysis/gwas-fundamental.md)，Spark 觀念見 [Spark 與 PySpark](spark.md)。
+biobank 規模的變異資料（數十萬樣本 × 數千萬位點）用單機的 bcftools / PLINK 會變慢或吃不下，這時可以用建立在 Spark 上的兩個工具：**Glow** 把 VCF 讀成 Spark DataFrame，與一般 SQL / ETL 流程整合；**Hail** 用專門的 MatrixTable 結構做 QC、GWAS 與族群遺傳分析（gnomAD、All of Us 的分析即以 Hail 為主）。VCF 格式見 [VCF](../../biology/genomics/file-formats/vcf.md)，GWAS 原理見 [GWAS](../../biology/genomics/genome-wide-analysis/gwas-fundamental.md)，Spark 觀念見 [Spark 與 PySpark](spark.md)。
 
 ## 先選工具
 

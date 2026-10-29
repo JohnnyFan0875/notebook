@@ -43,7 +43,7 @@
 | 讀者 | 路線 |
 | --- | --- |
 | 初學 | [認識資料科學](understanding-data-science.md) → [Python 基礎](python-foundations/README.md) → [資料整理與 EDA](data-manipulation-and-eda/README.md) → [統計](statistics/README.md) → [機器學習](machine-learning/README.md) |
-| **生物資訊** | [pandas](python-foundations/pandas/README.md) / [R 基礎](r-foundations/README.md) → [EDA 與缺失值](data-manipulation-and-eda/README.md) → [統計（生資路線）](statistics/README.md#建議路線) → [機器學習](machine-learning/README.md) → [深度學習](deep-learning/README.md) → 依資料型態選 [影像分析](image-analysis/README.md) / [網路分析](network-analysis/README.md) |
+| **生物資訊** | [pandas](python-foundations/pandas/README.md) / [R 基礎](r-foundations/README.md) → [EDA 與缺失值](data-manipulation-and-eda/README.md) → [統計（生資路線）](statistics/README.md#建議路線) → [機器學習](machine-learning/README.md) → [深度學習](deep-learning/README.md) → 依資料型態選 [影像分析](image-analysis/README.md) / [網路分析](network-analysis/README.md)；生物背景、檔案格式與資料庫見 [Biology](../biology/README.md)（[生資速查](../biology/quick-reference.md)） |
 | **機器學習** | [NumPy](python-foundations/numpy/README.md) / [pandas](python-foundations/pandas/README.md) → [EDA](data-manipulation-and-eda/README.md) → [統計（ML 路線）](statistics/README.md#建議路線) → [機器學習](machine-learning/README.md) → [深度學習](deep-learning/README.md) → [LLM 應用](llm/README.md) → [Responsible AI](responsible-ai/README.md) |
 | 工程與 BI（選讀） | [資料庫](databases/README.md) → [資料工程](data-engineering/README.md) → [資料溝通](data-communication/README.md)；資料要自己抓時插入 [網頁爬蟲](web-scraping/README.md) |
 

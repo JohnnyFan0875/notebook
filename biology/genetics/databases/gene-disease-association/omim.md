@@ -1,4 +1,34 @@
-- **OMIM (Online Mendelian Inheritance in Man)**
+[資料庫](../README.md) › [基因–疾病關聯](README.md) › OMIM
 
-  - A catalog of human genes and genetic disorders, providing detailed summaries of gene functions, associated diseases, inheritance patterns, and key literature.
-  - Website: [https://www.omim.org/](https://www.omim.org/)
+# OMIM (Online Mendelian Inheritance in Man)
+
+約翰霍普金斯大學維護的人類基因與遺傳疾病目錄，由專人閱讀文獻撰寫，涵蓋基因功能、相關疾病、遺傳模式、表型描述與關鍵文獻，是孟德爾疾病的標準參考。
+
+| 項目 | 內容 |
+| --- | --- |
+| 網站 | [omim.org](https://www.omim.org/) |
+| 下載 / API | 需註冊取得授權碼（學術免費）；`genemap2.txt`（基因–表型對照）、`mim2gene.txt` |
+| 鏡像 | NCBI 的 OMIM 頁面已停止，以 omim.org 為準 |
+
+## MIM 編號的前綴
+
+| 符號 | 意義 | 例 |
+| --- | --- | --- |
+| `*` | 基因 | `*191170` TP53 |
+| `#` | 表型，分子基礎已知 | `#151623` Li-Fraumeni 症候群 1 |
+| `%` | 表型，分子基礎未知或孟德爾性質未確定 | |
+| `+` | 基因與表型合併的條目（舊格式） | |
+| `^` | 已移除或併入其他條目 | |
+
+## 表型對照的 mapping key
+
+| key | 意義 |
+| --- | --- |
+| (1) | 由關聯研究定位，基因未確定 |
+| (2) | 由連鎖定位，基因未確定 |
+| **(3)** | **分子基礎已知（找到致病基因的突變）** |
+| (4) | 染色體缺失 / 重複症候群 |
+
+遺傳模式縮寫：AD（體顯性）、AR（體隱性）、XLD / XLR（X 連鎖顯性 / 隱性）、Mi（粒線體）、SMu（體細胞突變）。
+
+> OMIM 有列出關聯，不代表證據強度足以臨床使用；證據等級看 [ClinGen](clingen-validity.md) / [GenCC](gencc.md)。
