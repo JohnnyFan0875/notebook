@@ -81,6 +81,8 @@ Tavtigian et al.（2018、2020）把準則轉成點數，更容易處理強度�
 
 ## ClinGen SVI 的重要修訂
 
+SVI 工作組已於 2025 年 4 月退役，建議彙整於 ClinGen Variant Classification Guidance；完整清單見 [ClinGen 指引](clingen-guidelines.md)。
+
 | 準則 | 修訂 |
 | --- | --- |
 | PVS1 | 決策樹（Abou Tayoun 2018）：依 NMD、剪接、exon 是否在關鍵區域等，下調為 Strong / Moderate / Supporting |
