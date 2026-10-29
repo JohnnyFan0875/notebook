@@ -4,7 +4,7 @@ Resources related to safety, quality, and regulatory-facing reference informatio
 
 ## Topics
 
-- [Material Safety and Quality](material-safety-and-quality/README.md)
+- [Material Safety and Quality](../../laboratory-medicine/material-safety-and-quality/README.md)
 - `elsevier-healthcare-hub.md`
 - `european-medicines-agency.md`
 - `fda-drug-database.md`

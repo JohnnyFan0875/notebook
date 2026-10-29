@@ -4,5 +4,5 @@ This section separates biology-specific tools from general computing notes.
 
 ## Sections
 
-- [Bioinformatics](bioinformatics/README.md)
+- [Bioinformatics](ngs-tools/README.md)
 - [Visualization](visualization/README.md)
