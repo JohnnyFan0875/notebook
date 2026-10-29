@@ -2,8 +2,9 @@
 
 suppressPackageStartupMessages(library(readr))
 
-count_file <- commandArgs(trailingOnly = TRUE)[1]
-metadata_file <- commandArgs(trailingOnly = TRUE)[2]
+args <- commandArgs(trailingOnly = TRUE)
+count_file <- args[1]
+metadata_file <- args[2]
 
 counts <- read_csv(count_file, show_col_types = FALSE)
 metadata <- read_csv(metadata_file, show_col_types = FALSE)

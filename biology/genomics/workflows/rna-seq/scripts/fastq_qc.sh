@@ -8,13 +8,16 @@ THREADS=${THREADS:-4}
 mkdir -p "${OUT_DIR}/fastqc" "${OUT_DIR}/multiqc" "${OUT_DIR}/checksums"
 
 find "${FASTQ_DIR}" -name "*.fastq.gz" | sort > "${OUT_DIR}/fastq_files.txt"
+mapfile -t fastqs < "${OUT_DIR}/fastq_files.txt"
+: > "${OUT_DIR}/checksums/md5sum.txt"
 
-while read -r fq; do
+for fq in "${fastqs[@]}"; do
   sample=$(basename "${fq}" .fastq.gz)
-  zcat "${fq}" | head -n 8 > "${OUT_DIR}/checksums/${sample}.head.txt"
+  # head closes the pipe early; zcat's SIGPIPE (141) is expected under pipefail
+  zcat "${fq}" | head -n 8 > "${OUT_DIR}/checksums/${sample}.head.txt" || [[ $? -eq 141 ]]
   md5sum "${fq}" >> "${OUT_DIR}/checksums/md5sum.txt"
-done < "${OUT_DIR}/fastq_files.txt"
+done
 
-fastqc --threads "${THREADS}" --outdir "${OUT_DIR}/fastqc" $(cat "${OUT_DIR}/fastq_files.txt")
+fastqc --threads "${THREADS}" --outdir "${OUT_DIR}/fastqc" "${fastqs[@]}"
 multiqc "${OUT_DIR}/fastqc" --outdir "${OUT_DIR}/multiqc"
 

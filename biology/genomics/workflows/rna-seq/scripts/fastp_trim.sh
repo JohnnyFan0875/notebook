@@ -8,7 +8,7 @@ THREADS=${THREADS:-4}
 
 mkdir -p "${OUT_DIR}/fastq" "${OUT_DIR}/reports"
 
-tail -n +2 "${METADATA}" | while IFS=, read -r sample fastq1 fastq2 group rest; do
+tail -n +2 "${METADATA}" | while IFS=, read -r sample group batch sex age fastq1 fastq2; do
   fastp \
     --in1 "${FASTQ_ROOT}/${fastq1}" \
     --in2 "${FASTQ_ROOT}/${fastq2}" \

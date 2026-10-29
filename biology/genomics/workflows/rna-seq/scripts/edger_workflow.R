@@ -5,9 +5,10 @@ suppressPackageStartupMessages({
   library(edgeR)
 })
 
-count_file <- commandArgs(trailingOnly = TRUE)[1]
-metadata_file <- commandArgs(trailingOnly = TRUE)[2]
-out_dir <- commandArgs(trailingOnly = TRUE)[3]
+args <- commandArgs(trailingOnly = TRUE)
+count_file <- args[1]
+metadata_file <- args[2]
+out_dir <- args[3]
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 counts_tbl <- read_csv(count_file, show_col_types = FALSE)

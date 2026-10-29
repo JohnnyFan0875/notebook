@@ -65,7 +65,7 @@ salmon quant \
 | Parameter | Meaning |
 | --- | --- |
 | `-l A` | 自動推測 library type |
-| `--validateMappings` | selective alignment validation，提高 mapping 精確度 |
+| `--validateMappings` | selective alignment；Salmon 1.0 起已是預設，保留只為相容舊版 |
 | `--seqBias` | 校正 sequence-specific bias |
 | `--gcBias` | 校正 GC bias |
 

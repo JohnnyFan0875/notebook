@@ -10,7 +10,7 @@ mkdir -p "${OUT_DIR}/index" "${OUT_DIR}/quant"
 
 salmon index -t "${TRANSCRIPTS_FA}" -i "${OUT_DIR}/index" -k 31
 
-tail -n +2 "${METADATA}" | while IFS=, read -r sample fastq1 fastq2 group rest; do
+tail -n +2 "${METADATA}" | while IFS=, read -r sample group batch sex age fastq1 fastq2; do
   salmon quant \
     -i "${OUT_DIR}/index" \
     -l A \

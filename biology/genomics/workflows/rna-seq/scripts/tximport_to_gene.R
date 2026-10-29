@@ -5,10 +5,11 @@ suppressPackageStartupMessages({
   library(tximport)
 })
 
-metadata_file <- commandArgs(trailingOnly = TRUE)[1]
-tx2gene_file <- commandArgs(trailingOnly = TRUE)[2]
-quant_dir <- commandArgs(trailingOnly = TRUE)[3]
-out_dir <- commandArgs(trailingOnly = TRUE)[4]
+args <- commandArgs(trailingOnly = TRUE)
+metadata_file <- args[1]
+tx2gene_file <- args[2]
+quant_dir <- args[3]
+out_dir <- args[4]
 
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 metadata <- read_csv(metadata_file, show_col_types = FALSE)

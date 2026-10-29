@@ -105,10 +105,16 @@
 
 ## Phase 4：程式碼實跑驗證
 
-- [ ] 安裝 Bioconductor 套件（DESeq2、edgeR、limma、tximport、clusterProfiler、GenomicRanges、Biostrings、ShortRead），實跑 `rna-seq/scripts/*.R` 與 bioconductor、limma、chip-seq 筆記中的範例（R 4.6.1 在 `C:\Users\johnnyfan\AppData\Local\Programs\R\R-4.6.1`）
+- [x] 安裝 Bioconductor 套件（DESeq2、edgeR、limma、tximport、clusterProfiler、GenomicRanges、Biostrings、ShortRead），實跑 `rna-seq/scripts/*.R` 與 bioconductor、limma 筆記中的範例（R 4.6.1 在 `C:\Users\johnnyfan\AppData\Local\Programs\R\R-4.6.1`）
+  - edgeR / DESeq2 / limma-voom 顯著數（45 / 57 / 25）與前 20 名重疊（18）與 07 章一致；bioconductor.md 註解中的輸出全部相符
+  - 依使用者指示不重跑整條 pipeline：`tximport_to_gene.R`、`enrichment_clusterprofiler.R` 只做語法與樣式檢查；chip-seq 的 DiffBind 範例未實跑（未安裝 DiffBind）
+  - `limma_voom_workflow.R` 的 voom 圖改存到 `out_dir`（原本在工作目錄產生 `Rplots.pdf` 並被 commit，已刪除）；R 腳本統一只呼叫一次 `commandArgs()`
 - [x] 重跑 `scripts/simulate_rnaseq_demo.py`，確認圖與文字數字一致
-- [ ] Shell 腳本（STAR、salmon、fastp…）無法在本機跑，核對參數與官方文件
-- [ ] 連結檢查 → commit
+- [x] Shell 腳本（STAR、salmon、fastp…）無法在本機跑：`bash -n` 語法檢查 + 靜態審查
+  - 修正：`fastp_trim.sh`、`salmon_quant.sh`、`kallisto_quant.sh` 讀 metadata 的欄位順序與 `sample_metadata.csv` 不符（會把 group / batch 當成 FASTQ 路徑）
+  - 修正：`fastq_qc.sh` 在 `pipefail` 下 `zcat | head` 會因 SIGPIPE 中止；FASTQ 清單改用陣列避免路徑斷字
+  - Salmon `--validateMappings` 自 1.0 起為預設（官方文件），04 章說明已更新
+- [x] 連結檢查 → commit
 
 ## 完成後
 

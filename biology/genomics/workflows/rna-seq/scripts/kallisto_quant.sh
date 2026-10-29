@@ -11,7 +11,7 @@ mkdir -p "${OUT_DIR}/index" "${OUT_DIR}/quant"
 
 kallisto index -i "${OUT_DIR}/index/transcripts.idx" "${TRANSCRIPTS_FA}"
 
-tail -n +2 "${METADATA}" | while IFS=, read -r sample fastq1 fastq2 group rest; do
+tail -n +2 "${METADATA}" | while IFS=, read -r sample group batch sex age fastq1 fastq2; do
   kallisto quant \
     -i "${OUT_DIR}/index/transcripts.idx" \
     -b "${BOOTSTRAP}" \

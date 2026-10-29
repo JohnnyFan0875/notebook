@@ -8,9 +8,10 @@ suppressPackageStartupMessages({
   library(enrichplot)
 })
 
-de_file <- commandArgs(trailingOnly = TRUE)[1]
-universe_file <- commandArgs(trailingOnly = TRUE)[2]
-out_dir <- commandArgs(trailingOnly = TRUE)[3]
+args <- commandArgs(trailingOnly = TRUE)
+de_file <- args[1]
+universe_file <- args[2]
+out_dir <- args[3]
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 de <- read_csv(de_file, show_col_types = FALSE)

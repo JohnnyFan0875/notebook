@@ -6,9 +6,10 @@ suppressPackageStartupMessages({
   library(limma)
 })
 
-count_file <- commandArgs(trailingOnly = TRUE)[1]
-metadata_file <- commandArgs(trailingOnly = TRUE)[2]
-out_dir <- commandArgs(trailingOnly = TRUE)[3]
+args <- commandArgs(trailingOnly = TRUE)
+count_file <- args[1]
+metadata_file <- args[2]
+out_dir <- args[3]
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 counts_tbl <- read_csv(count_file, show_col_types = FALSE)
@@ -22,7 +23,9 @@ colnames(design) <- sub("^group", "", colnames(design))
 y <- DGEList(counts = counts)
 y <- y[filterByExpr(y, design), , keep.lib.sizes = FALSE]
 y <- normLibSizes(y)
+png(file.path(out_dir, "voom_mean_variance.png"), width = 800, height = 600)
 v <- voom(y, design, plot = TRUE)
+dev.off()
 fit <- lmFit(v, design)
 contrast <- makeContrasts(treated - control, levels = design)
 fit2 <- contrasts.fit(fit, contrast)
