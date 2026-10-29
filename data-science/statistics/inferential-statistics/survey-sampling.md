@@ -1,456 +1,198 @@
 [Statistics](../README.md) › [推論統計](README.md) › 抽樣設計與調查資料
 
-# 抽樣設計與調查資料分析 (Survey Sampling in R)
+# 抽樣設計與調查資料分析 (Survey Sampling & Survey Data)
 
-用 R 實作 [抽樣與估計](sampling-estimation.md) 的抽樣方法（random / systematic / stratified / weighted / bootstrap），以及有權重的複雜抽樣調查資料（NHANES、`survey` 套件）。
+[抽樣與估計](sampling-estimation.md) 講抽樣方法的概念；這篇是實作：用 R 從 data frame 做各種抽樣，以及分析帶有**分層 (strata)、集群 (PSU)、權重 (weight)** 的複雜抽樣調查資料（如 NHANES）。調查資料若當成普通 data frame 直接算平均與檢定，點估計會偏、標準誤會被低估。
 
-## Sampling in R
+## 抽樣設計速查
 
-這份筆記整理的是 sampling 在 R 裡的實作思路，不是抽樣理論的完整推導。理論背景可搭配統計章節的 sampling、estimation 與 bootstrap 筆記一起看；這裡的重點是你拿到一個 data frame 後，怎麼實際抽樣、重複抽樣、比較估計誤差。
+| 設計 | 做法 | 優點 | 風險 / 注意 | R（dplyr） |
+| --- | --- | --- | --- | --- |
+| 簡單隨機 (simple random) | 每個單位等機率 | 分析最簡單 | 小群體可能抽不到 | `slice_sample(n = 100)` / `prop = 0.1` |
+| 系統 (systematic) | 每隔 k 列取一列 | 快 | 列順序有週期或排序時會帶入偏差 | `slice(seq_len(n) * k)` |
+| 分層 (stratified) | 每層各抽 | 保證各層有代表、通常降低 SE | 分層變數要事先已知 | `group_by(s) \|> slice_sample(prop = 0.1)` |
+| 不等比例分層 | 各層固定筆數 | 小群體也有足夠樣本 | 樣本組成 ≠ 母體，估計母體時要加權 | `group_by(s) \|> slice_sample(n = 15)` |
+| 集群 (cluster) | 先抽群（醫院、學校、地區），再抽群內 | 收集成本低 | 群內相似 → 有效樣本數變小（設計效應 > 1） | 先 `sample()` 群 ID，再 `filter()` |
+| 不等機率 (weighted) | 依權重抽 | 提高稀有群體入樣機率 | 估計時要用入樣機率倒數加權 | `slice_sample(weight_by = w)` |
 
-### `slice_sample()` 與 `sample()`
+> 分層解決的是「代表性」，不會自動消除偏差；樣本本身有選擇偏差（例如只有回覆者），加權或 bootstrap 都修不好。偏差類型見 [抽樣與估計](sampling-estimation.md)。
 
-先分清楚兩個基本工具：
+## R 抽樣實作
 
-- `slice_sample()`：對 data frame / tibble 抽列。
-- `sample()`：對向量抽值。
+`slice_sample()` 對 data frame 抽列，`sample()` 對向量抽值；抽樣單位是一整列觀測時用前者。
 
 ```r
 library(dplyr)
+set.seed(19000113)                               # 抽樣要可重現就固定 seed
 
-coffee_ratings %>%
-  slice_sample(n = 5)
+# 1. 簡單隨機：以筆數或比例
+coffee_ratings |> slice_sample(n = 300)
+coffee_ratings |> slice_sample(prop = 0.25)
 
-cup_points_samp <- sample(coffee_ratings$total_cup_points, size = 10)
+# 2. 系統抽樣：先 shuffle 再等間距取，避免列順序帶入的模式
+pop_size <- nrow(coffee_ratings); n <- 5
+coffee_ratings |>
+  slice_sample(prop = 1) |>                      # shuffle
+  slice(seq_len(n) * (pop_size %/% n))
+
+# 3. 分層：等比例 / 各層固定筆數
+coffee_ratings |> group_by(country_of_origin) |> slice_sample(prop = 0.1) |> ungroup()
+coffee_ratings |> group_by(country_of_origin) |> slice_sample(n = 15) |> ungroup()
+
+# 4. 不等機率：Taiwan 被抽中的機率加倍（不是保證抽到）
+coffee_ratings |>
+  mutate(w = if_else(country_of_origin == "Taiwan", 2, 1)) |>
+  slice_sample(prop = 0.1, weight_by = w)
+
+# 5. 集群：先抽 5 個國家，群內全取
+countries <- sample(unique(coffee_ratings$country_of_origin), size = 5)
+coffee_ratings |> filter(country_of_origin %in% countries)
+
+# 6. 重複抽樣近似抽樣分配：1000 個 n = 30 的樣本平均
+means <- replicate(1000, coffee_ratings |>
+  slice_sample(n = 30) |> pull(total_cup_points) |> mean())
+sd(means)                                        # ≈ 標準誤
+
+# 7. Bootstrap：從單一樣本「放回」重抽（replace = TRUE）
+boot <- replicate(1000, coffee_focus |>
+  slice_sample(prop = 1, replace = TRUE) |> pull(flavor) |> mean())
+quantile(boot, c(0.025, 0.975))                  # percentile 95% CI
 ```
 
-如果你的抽樣單位是一整列觀測，優先用 `slice_sample()`；只有在你真的只想抽單一向量值時，才直接用 `sample()`。
+| 檢查 | 做法 |
+| --- | --- |
+| 系統抽樣前列順序是否有結構 | `ggplot(aes(rowid, y)) + geom_point() + geom_smooth()`，有趨勢或週期就先 shuffle |
+| 抽樣分配、樣本數對精度的影響 | 第 6 段改不同 `n`，比較 `sd(means)`；原理見 [抽樣分配與 CLT](../probability-and-distributions/sampling-distributions.md) |
+| Bootstrap 適用條件、percentile vs BCa | [拔靴法](../probability-and-distributions/monte-carlo-simulation.md#拔靴法-bootstrap) |
 
-### 固定隨機種子
+## 複雜抽樣調查資料
+
+大型調查（NHANES、NHIS、BRFSS、台灣國民營養健康調查）多採**多階段分層集群抽樣**，並刻意超額抽樣特定族群（老人、少數族裔、低收入）。資料會附三種設計變數：
+
+| 設計變數 | NHANES 欄位 | 意義 | 忽略的後果 |
+| --- | --- | --- | --- |
+| 權重 (weight) | `WTINT2YR`（訪談）、`WTMEC2YR`（體檢）、`WTSAF2YR`（空腹子樣本） | 這筆樣本代表母體中多少人（入樣機率倒數，經無回應與事後分層校正） | 點估計偏向被超額抽樣的族群 |
+| 分層 (strata) | `SDMVSTRA` | 抽樣時的層 | SE 通常略被高估（分層本來能降變異） |
+| 集群 (PSU) | `SDMVPSU` | 第一階段抽出的群（郡 / 地區） | SE **被低估**、p 值過小（群內相關被當成獨立） |
+
+> 選權重看分析用到的變數「最窄」來自哪個子樣本：用到體檢量測就用 MEC 權重，用到空腹血糖就用空腹子樣本權重。合併多個 2 年週期時要把權重除以週期數（例如 4 年資料用 `WTMEC2YR / 2`）。
+
+### R：`survey` 套件
+
+先建立 design object，所有估計都透過 `svy*` 函式，不要對原始表直接 `mean()` / `table()`。
 
 ```r
-set.seed(19000113)
+library(survey)
+library(NHANES)                                    # NHANESraw：2009–2012 兩個週期
 
-coffee_ratings %>%
-  slice_sample(n = 5)
+nh <- NHANESraw |> mutate(WTMEC4YR = WTMEC2YR / 2)  # 兩個週期 → 權重除以 2
+des <- svydesign(ids = ~SDMVPSU, strata = ~SDMVSTRA, nest = TRUE,
+                 weights = ~WTMEC4YR, data = nh)
+
+# 1. 類別：加權列聯表、比例、design-based 卡方
+svytable(~Race1, des)                              # 加權次數（估計的母體人數）
+svymean(~Race1, des, na.rm = TRUE)                 # 加權比例 + SE
+svytable(~Race1 + Diabetes, des)
+svychisq(~Race1 + Diabetes, des)                   # Rao-Scott 校正，不是 chisq.test()
+
+# 2. 數值：平均、總量、分位數（都附 SE）
+svymean(~BMI, des, na.rm = TRUE)
+svytotal(~DaysPhysHlthBad, des, na.rm = TRUE)
+svyquantile(~BMI, des, quantiles = 0.5, na.rm = TRUE)
+confint(svymean(~BMI, des, na.rm = TRUE), df = degf(des))  # 自由度 = PSU 數 − 層數
+
+# 3. 子群體：用 subset() 或 svyby()，不要先 filter 原始資料
+svymean(~BMI, subset(des, Age >= 20), na.rm = TRUE)
+svyby(~BMI, ~Gender, des, svymean, na.rm = TRUE)
+
+# 4. 迴歸
+fit <- svyglm(Diabetes ~ BMI + Age + Gender, design = des, family = quasibinomial())
+summary(fit)
+
+# 5. 設計效應：複雜設計的變異 / 同樣本數簡單隨機抽樣的變異
+svymean(~BMI, des, na.rm = TRUE, deff = TRUE)
 ```
 
-抽樣分析如果沒有固定種子，很容易讓 notebook、報告與除錯結果每次都變。不是所有情況都要固定，但在教學、重現與比較方法時通常應該固定。
+| 任務 | 普通寫法（錯） | survey 寫法 |
+| --- | --- | --- |
+| 比例 | `prop.table(table(x))` | `svymean(~x, des)` |
+| 平均 / 中位數 | `mean(x)`、`median(x)` | `svymean()`、`svyquantile()` |
+| 列聯表檢定 | `chisq.test()` | `svychisq()` |
+| 兩組比較 | `t.test()` | `svyttest(y ~ g, des)` |
+| 迴歸 | `glm(..., weights = w)` | `svyglm(..., design = des)` |
+| 子群體 | `filter()` 後再建 design | `subset(des, ...)`、`svyby()` |
 
-### 以數量或比例抽樣
+> 子群體一定要在 design 上 `subset()`：先 `filter()` 原始資料會丟掉某些 PSU / 層的資訊，SE 算錯。`glm(weights = w)` 的點估計與 `svyglm` 相同，但 SE 把權重當成「次數」，完全錯誤。
+
+### 加權的視覺化
+
+| 圖 | 做法 |
+| --- | --- |
+| 類別比例長條圖 | 先 `svymean()` / `svytable()` 算加權比例，再 `geom_col()`；條件比例用 `position = "fill"` |
+| 加權趨勢線 | `geom_smooth(method = "lm", aes(weight = WTMEC4YR))`；點保留原始觀測 |
+| 離散 x 軸散點（如月齡） | `geom_jitter(width = 0.3, height = 0, alpha = 0.3)` 避免重疊 |
 
 ```r
-coffee_ratings %>%
-  slice_sample(n = 300)
-
-coffee_ratings %>%
-  slice_sample(prop = 0.25)
+ggplot(babies, aes(AgeMonths, HeadCirc)) +
+  geom_jitter(width = 0.3, height = 0, alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE, aes(weight = WTMEC4YR))
 ```
 
-- `n =`：指定抽幾列。
-- `prop =`：指定抽母體的幾成。
+把權重映射到 `alpha` 或點大小通常不直觀；讓摘要或模型層吃權重，原始點照常畫。散點的視覺密度是**樣本**密度，不是母體密度。
 
-這兩者最好不要混用在同一個需求敘述裡，因為 sample size 對估計精度有直接影響。
+## Python 對照
 
-### 點估計與 sample size
+statsmodels 沒有 design-based 標準誤；點估計可用 `np.average(weights=)`，要正確的 SE 與 CI 用 `svy`（`samplics` 的後繼套件，`samplics` 已封存）。
 
-最常見的 workflow 是：
+```python
+import numpy as np
+import polars as pl
+import svy
 
-1. 抽一個 sample
-2. 算統計量
-3. 看它和母體參數差多少
+df = pl.read_csv("nhanes.csv").with_columns((pl.col("WTMEC2YR") / 2).alias("WTMEC4YR"))
 
-```r
-population_mean <- coffee_ratings %>%
-  summarize(mean_points = mean(total_cup_points)) %>%
-  pull(mean_points)
+bmi = df.drop_nulls("BMI")
+np.average(bmi["BMI"], weights=bmi["WTMEC4YR"])   # 只有點估計，沒有正確的 SE
 
-sample_mean <- coffee_ratings %>%
-  slice_sample(n = 100) %>%
-  summarize(mean_points = mean(total_cup_points)) %>%
-  pull(mean_points)
+des = svy.Design(stratum="SDMVSTRA", psu="SDMVPSU", wgt="WTMEC4YR")
+s = svy.Sample(df, des)
+s.estimation.mean("BMI", drop_nulls=True)          # est、se、95% CI、cv
+s.estimation.prop("Race1")
+s.estimation.mean("BMI", by="Gender", drop_nulls=True)
 ```
 
-相對誤差可寫成：
-
-```r
-100 * abs(population_mean - sample_mean) / population_mean
-```
-
-實務感受通常很一致：
-
-- sample 太小，點估計很容易飄。
-- sample 變大，估計通常更穩。
-- 但 sample 大不代表抽樣設計合理，偏樣本還是會偏。
-
-### 重複抽樣看 sampling variability
-
-同樣的 `n = 30` 抽樣，每次答案都可能不同。這不是 bug，而是 sampling variability。
-
-```r
-mean_cup_points_1000 <- replicate(
-  n = 1000,
-  expr = coffee_ratings %>%
-    slice_sample(n = 30) %>%
-    summarize(mean_cup_points = mean(total_cup_points)) %>%
-    pull(mean_cup_points)
-)
-```
-
-這樣得到的 1000 個樣本平均，就是 sampling distribution 的模擬近似。
-
-如果想看分布：
-
-```r
-tibble(mean_cup_points = mean_cup_points_1000) %>%
-  ggplot(aes(mean_cup_points)) +
-  geom_histogram(bins = 30)
-```
-
-### Systematic Sampling
-
-Systematic sampling 的想法是每隔固定間距取一列。
-
-```r
-library(tibble)
-
-coffee_ratings <- coffee_ratings %>%
-  rowid_to_column()
-
-sample_size <- 5
-pop_size <- nrow(coffee_ratings)
-interval <- pop_size %/% sample_size
-row_indexes <- seq_len(sample_size) * interval
-
-coffee_ratings %>%
-  slice(row_indexes)
-```
-
-這種方法很快，但有一個前提：資料列順序本身不能帶有你在意的結構模式。
-
-#### 什麼時候 systematic sampling 很危險
-
-如果資料已經依時間、地理、分數或任何週期性結構排序，systematic sampling 很可能把排序模式直接帶進樣本。
-
-可以先檢查：
-
-```r
-coffee_ratings %>%
-  ggplot(aes(x = rowid, y = aftertaste)) +
-  geom_point() +
-  geom_smooth()
-```
-
-如果 row order 有明顯 pattern，systematic sampling 不一定安全。
-
-#### 讓它比較安全的做法
-
-```r
-shuffled <- coffee_ratings %>%
-  slice_sample(prop = 1) %>%
-  select(-rowid) %>%
-  rowid_to_column()
-```
-
-先 shuffle 再 systematic sample，通常就更接近 simple random sampling。
-
-### Stratified Sampling
-
-當你知道某些群體一定要被代表時，stratified sampling 比單純 random sample 更穩。
-
-#### 比例分層抽樣
-
-```r
-coffee_ratings %>%
-  group_by(country_of_origin) %>%
-  slice_sample(prop = 0.1) %>%
-  ungroup()
-```
-
-每個 strata 都抽同樣比例，能大致保留群體結構。
-
-#### 各層固定筆數
-
-```r
-coffee_ratings %>%
-  group_by(country_of_origin) %>%
-  slice_sample(n = 15) %>%
-  ungroup()
-```
-
-這種寫法適合：
-
-- 小群體很重要，不想在比例抽樣時被稀釋掉
-- 想讓各群體比較更公平
-
-但要記得，固定筆數會改變樣本裡各群體的原始占比。
-
-### Weighted Sampling
-
-有時你想讓某些觀測更容易被抽中。
-
-```r
-coffee_ratings_weight <- coffee_ratings %>%
-  mutate(weight = if_else(country_of_origin == "Taiwan", 2, 1))
-
-coffee_ratings_weight %>%
-  slice_sample(prop = 0.1, weight_by = weight)
-```
-
-`weight_by` 不是保證一定抽到，而是改變被抽中的機率。這很適合：
-
-- 模擬不均勻抽樣機制
-- 提高某些稀有但重要群體進樣本的機率
-
-### Stratified 與 Cluster 的差別
-
-在 R 裡兩者都能寫，但目的不同：
-
-- stratified sampling：每個群體都抽一些，重點是覆蓋不同 strata。
-- cluster sampling：先抽群，再把群內個體一起納入或再抽，重點是降低收集成本。
-
-如果你的分析目標是跨群體比較，通常優先考慮 stratified；如果你的收集成本是按群發生，cluster sampling 才比較有現實意義。
-
-### With Replacement vs Without Replacement
-
-一般樣本抽取常是 without replacement：
-
-```r
-sample(1:6, size = 4, replace = FALSE)
-```
-
-bootstrap resampling 則是 with replacement：
-
-```r
-sample(1:6, size = 4, replace = TRUE)
-```
-
-差別不是語法小細節，而是統計意義完全不同：
-
-- without replacement：模擬從母體抽一批不重複觀測
-- with replacement：允許重複抽到同一筆，常用來近似 sampling variability
-
-### Bootstrap in R
-
-概念、適用條件與 percentile vs BCa 見 [抽樣與估計](sampling-estimation.md) 與 [拔靴法](../probability-and-distributions/monte-carlo-simulation.md#拔靴法-bootstrap)。R 寫法：
-
-```r
-bootstrap_means <- replicate(1000, coffee_focus %>%
-  slice_sample(prop = 1, replace = TRUE) %>%
-  summarize(m = mean(flavor)) %>% pull(m))
-
-sd(bootstrap_means)                        # bootstrap SE
-quantile(bootstrap_means, c(0.025, 0.975)) # percentile 95% CI
-```
-
-### 實務提醒
-
-- `slice_sample()` 是 tidyverse 裡最自然的抽樣入口。
-- 抽樣流程若要可重現，記得 `set.seed()`。
-- systematic sampling 只在 row order 沒有結構時才安全。
-- stratified sampling 解決的是 representation，不是自動消除 bias。
-- bootstrap 是從現有樣本近似 sampling variability，不會修復原始樣本本身的偏差。
-
-如果你開始同時思考 sample design、point estimate、sampling variability 與 bootstrap uncertainty，代表你已經不只是在「抽幾筆資料」，而是在建立完整的 inferential workflow。
-
-## Survey Data Analysis in R
-
-survey data 和一般表格資料最大的差別，不是多了一欄 `weight` 而已，而是樣本本身來自特定抽樣設計。只把 survey data 當普通 data frame 做平均、比例與圖表，常會得到偏掉的 population story。
-
-### Why Survey Weights Exist
-
-survey weight 大致可以理解成：
-
-- 一筆樣本在母體中代表多少個單位
-- 抽樣設計與非等機率抽樣留下來的校正資訊
-
-例如某筆 household 的 weight 若是 `25,985`，直覺上表示這筆樣本代表母體中的很多戶，不應和 weight 很小的樣本被等量對待。
-
-Key point: survey weights 不是可有可無的修飾欄位，而是讓 sample estimate 更接近 population estimate 的核心資訊。
-
-### Start With a Survey Design Object
-
-在 R 裡，分析 survey data 最常見的入口是 `survey` 套件。重點不是直接對原始表做 `summarize()`，而是先建立 design object。
-
-課程裡後續所有 weighted 統計都以 `NHANES_design` 為中心，代表：
-
-- 權重資訊已掛進去
-- 抽樣設計的變異估計方式也一起被保留
-
-實務上思路要先固定成：
-
-1. 原始資料表
-2. survey design object
-3. `svy*` 系列函式
-
-而不是：
-
-1. 原始資料表
-2. 普通 `mean()` / `table()`
-3. 最後才想起來 weights
-
-### Unweighted and Weighted Can Tell Different Stories
-
-以 NHANES race 分布為例，未加權時可以這樣做：
-
-```r
-tab_unw <- NHANESraw %>%
-  group_by(Race1) %>%
-  summarize(Freq = n()) %>%
-  mutate(Prop = Freq / sum(Freq)) %>%
-  arrange(desc(Prop))
-```
-
-但 survey 資料更重要的是 weighted version：
-
-```r
-tab_w <- svytable(~Race1, design = NHANES_design)
-```
-
-然後再轉成比例與資料框來畫圖。
-
-Key point: unweighted distribution 描述的是 sample composition；weighted distribution 才更接近你想講的 population composition。
-
-### Weighted Categorical Summaries
-
-類別變數常見的 survey 工作包括：
-
-- weighted one-way table
-- weighted two-way table
-- 比例長條圖
-- survey-adjusted 卡方檢定
-
-例如 race 和 diabetes 的關係：
-
-```r
-svytable(~Race1 + Diabetes, design = NHANES_design)
-svychisq(~Race1 + Diabetes, design = NHANES_design)
-```
-
-這裡值得記住兩件事：
-
-- `svytable()` 幫你做的是 survey-aware 的加權列聯表
-- `svychisq()` 不是把普通 `chisq.test()` 套上 weights，而是使用 survey design 下適合的檢定
-
-如果只是想比較組成比例，常會再配合：
-
-```r
-ggplot(tab_w, aes(x = Race1, fill = Diabetes, y = Freq)) +
-  geom_col(position = "fill")
-```
-
-`position = "fill"` 讓你看條件比例，比較適合比較各族群內的疾病比例結構。
-
-### Weighted Quantitative Summaries
-
-對連續或計數型變數，survey 套件最常用的是：
-
-```r
-svymean(~DaysPhysHlthBad, design = NHANES_design, na.rm = TRUE)
-svytotal(~DaysPhysHlthBad, design = NHANES_design, na.rm = TRUE)
-svyquantile(~DaysPhysHlthBad, design = NHANES_design, na.rm = TRUE, quantiles = 0.5)
-```
-
-這幾個函式很有代表性：
-
-- `svymean()`：population mean 的估計
-- `svytotal()`：population total 的估計
-- `svyquantile()`：weighted median 或其他分位數
-
-輸出裡常會同時看到 estimate 與 `SE`。這提醒我們 survey analysis 不只在估計平均值，也在估計設計下的不確定性。
-
-### Standard Errors Matter
-
-survey data 的另一個核心觀念是：即使 estimate 看起來簡單，標準誤也不能直接沿用 iid sample 的公式。
-
-當你看到：
-
-- `mean`
-- `total`
-- `SE`
-
-要把它理解成：
-
-- 這不是單純把 weights 乘上去而已
-- 抽樣設計會影響變異估計
-
-如果只做 weighted average 卻忽略 `SE`、confidence interval 或設計效果，就只完成了一半分析。
-
-### Visualizing Weighted Categorical Data
-
-課程用 NHANES race 示範了一個實用流程：
-
-1. 先把 weighted table 整成資料框
-2. 算出比例
-3. 依比例排序
-4. 再用 `ggplot2` 畫圖
-
-例如：
-
-```r
-ggplot(tab_w, aes(x = Race1, y = Prop)) +
-  geom_col() +
-  coord_flip()
-```
-
-這裡的重點不是 `geom_col()` 本身，而是圖上的 bar height 應該反映 weighted proportion，而不是 raw count。
-
-### Scatterplots Need Extra Care
-
-連續變數的散點圖也是一樣。課程先用嬰兒月齡與頭圍示範普通散點圖：
-
-```r
-babies <- filter(NHANESraw, AgeMonths <= 6) %>%
-  select(AgeMonths, HeadCirc)
-
-ggplot(babies, aes(x = AgeMonths, y = HeadCirc)) +
-  geom_point()
-```
-
-但因為 `AgeMonths` 是離散整數，點會重疊，所以後續改用：
-
-```r
-ggplot(babies, aes(x = AgeMonths, y = HeadCirc)) +
-  geom_jitter(width = 0.3, height = 0, alpha = 0.3)
-```
-
-這是 survey data 裡很實用的視覺化細節：在離散 x 軸上，`jitter` 比單純散點圖更能看出密度。
-
-### Weighted Smoothers in Plots
-
-課程後面進一步把權重帶進平滑線：
-
-```r
-ggplot(babies, aes(x = AgeMonths, y = HeadCirc, alpha = WTMEC4YR)) +
-  geom_jitter(width = 0.3, height = 0) +
-  guides(alpha = "none") +
-  geom_smooth(method = "lm", se = FALSE, mapping = aes(weight = WTMEC4YR))
-```
-
-這個例子很值得記住，因為它說明兩件事：
-
-- 點可以保留原始觀測值視角
-- 趨勢線可以用 weight 反映母體代表性
-
-不過也要小心：把 weight 映到 `alpha` 或其他美學屬性時，視覺效果不一定直觀，容易誤導。通常比較安全的是讓模型或摘要層吃 weights，而不是每個 aesthetic 都直接映射。
-
-### A Practical Survey Workflow
-
-如果拿到 NHANES、BLS 或其他大型 survey data，可以用這個順序工作：
-
-1. 先確認權重欄位代表什麼母體與哪個子樣本。
-2. 先建立 survey design object。
-3. 做 unweighted EDA 只當資料熟悉用，不拿來當正式人口結論。
-4. 正式的比例、平均數、總量、分位數改用 `svy*` 函式。
-5. 類別關係用 weighted table 與 `svychisq()`。
-6. 視覺化時優先畫 weighted summaries，而不是只畫 raw counts。
-7. 解釋結果時一起看 estimate 和標準誤。
-
-### Common Mistakes
-
-- 看到 `weight` 欄位卻直接忽略。
-- 用 sample proportion 當成 population proportion。
-- 對 survey data 直接跑普通 `chisq.test()`。
-- 只報 weighted mean，不報標準誤或不確定性。
-- 把 raw scatterplot 的視覺密度誤認成母體密度。
-- 不先確認哪個 weight 適用於哪個分析子樣本。
+| R `survey` | Python `svy` |
+| --- | --- |
+| `svydesign(ids=, strata=, weights=)` | `svy.Design(psu=, stratum=, wgt=)` + `svy.Sample(df, design)` |
+| `svymean()` / `svytotal()` / `svyquantile()` | `s.estimation.mean()` / `.total()` / `.quantile()` |
+| `svyby(~y, ~g, des, svymean)` | `s.estimation.mean("y", by="g")` |
+| `svyglm()` | `s.glm` |
+
+> `svy` 仍在快速改版（本筆記以 0.36 驗證 `mean`、`prop`、`by=`），API 可能變動；正式分析仍以 R `survey` 最成熟。
+
+## 生醫情境
+
+| 情境 | 要注意 |
+| --- | --- |
+| 盛行率（如糖尿病、高血壓） | 用加權比例與 design-based CI，否則被超額抽樣族群拉偏 |
+| 族群間比較 | 用 `svyby()` 或 `svyglm()` 的交互作用，不要拆成多個子資料集各自分析 |
+| 風險因子迴歸 | `svyglm`；二元結果用 `quasibinomial()` 避免非整數權重警告；干擾因子見 [干擾與偏誤](../experimental-design/confounding-bias.md) |
+| 合併多個調查週期 | 權重除以週期數；確認各週期變數定義與量測方式一致 |
+| 實驗室子樣本（空腹、尿液） | 換用對應子樣本權重，子群體分析用 `subset(des, ...)` |
+| 用調查資料訓練 ML 模型 | 預測表現看樣本即可；若要宣稱「母體」層級的表現或校準，評估時要加權 |
+| 非調查的臨床 / 世代資料 | 多半沒有抽樣權重；代表性與選擇偏差見 [干擾與偏誤](../experimental-design/confounding-bias.md#偏誤類型-types-of-bias) |
+
+## 常見錯誤
+
+| 錯誤 | 後果 | 修正 |
+| --- | --- | --- |
+| 有 `weight` 欄位卻忽略 | 點估計描述的是樣本組成，不是母體 | 建 design object，用 `svy*` |
+| 只用權重、忽略 strata / PSU | SE 被低估、p 值過小 | `svydesign()` 同時給 `ids`、`strata`、`weights` |
+| 對調查資料跑 `chisq.test()` / `t.test()` | 檢定假設獨立同分布，型一錯誤膨脹 | `svychisq()`、`svyttest()` |
+| 先 `filter()` 子群體再建 design | 子群體 SE 錯誤 | `subset(des, ...)`、`svyby()` |
+| 權重選錯（訪談 vs 體檢 vs 空腹） | 子樣本代表的母體不對 | 依「最窄」的變數來源選權重 |
+| 只報加權平均、不報 SE / CI | 只完成一半分析 | 一起報 estimate、SE 或 CI |
+| 用一般 CI 的 z / 大自由度 | CI 太窄 | 自由度 = PSU 數 − 層數（`degf(des)`） |
+| 把 raw scatterplot 的密度當成母體密度 | 誤讀分布 | 加權摘要或加權平滑線 |
+| 系統抽樣前沒檢查列順序 | 樣本帶入排序模式 | 先 shuffle |
+| 以為 bootstrap 能修正有偏樣本 | bootstrap 只估變異，偏差照樣存在 | 改善抽樣設計或用加權 / 校正 |

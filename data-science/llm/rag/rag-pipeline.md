@@ -1,6 +1,6 @@
-[LLM](../README.md) › [RAG](README.md) › RAG Pipeline
+[LLM](../README.md) › [RAG](README.md) › RAG 流程
 
-# RAG Pipeline
+# RAG 流程 (RAG Pipeline)
 
 RAG 不只是「向量搜尋 + LLM」：結果好壞取決於文件怎麼載入與切分、檢索策略、prompt 是否要求只根據來源回答，以及有沒有評估。前置：[Embedding](embeddings-and-semantic-search.md)、[向量資料庫](vector-databases.md)。
 

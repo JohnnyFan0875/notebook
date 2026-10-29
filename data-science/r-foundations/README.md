@@ -46,7 +46,7 @@
 | [統計函式速查](statistical-functions.md) | `d/p/q/r` 分配函式、描述統計、檢定、`p.adjust()` | 這個檢定在 R 裡怎麼寫？ |
 | [解釋型建模](explanatory-modeling-in-r.md) | `lm()` / `glm()`、broom、模型比較 | 如何建模並解讀係數？ |
 | [tidymodels](../machine-learning/packages/tidymodels/README.md) | recipes、parsnip、workflows、tune | 如何在 R 做 ML pipeline？ |
-| [抽樣與調查資料](../statistics/inferential-statistics/survey-sampling.md) | 分層抽樣、bootstrap、survey 套件 | 如何處理有抽樣設計的資料？ |
+| [抽樣與調查資料](../statistics/inferential-statistics/survey-sampling.md) | 分層 / 集群抽樣、bootstrap、NHANES 權重與 `survey` 套件 | 如何處理有抽樣設計的資料？ |
 
 ## 效能、工程化與報告
 
@@ -55,6 +55,7 @@
 | [寫出有效率的 R](writing-efficient-r-code.md) | 量測、向量化、記憶體 | 程式哪裡慢？ |
 | [Rcpp](rcpp-for-r-performance.md) | 用 C++ 寫熱點函式 | 向量化不夠快時怎麼辦？ |
 | [平行運算](parallel-programming-in-r.md) | parallel、future、foreach | 如何用滿多核心？ |
+| [可重現環境 renv](reproducible-environments-with-renv.md) | `renv::init()` / `snapshot()` / `restore()`、lockfile | 半年後或換電腦，分析還跑得起來嗎？ |
 | [R 套件開發](package-development.md) | usethis、roxygen2、testthat | 如何把函式打包、測試、分享？ |
 | [R Markdown 報告](reporting-with-r-markdown.md) | R Markdown / Quarto、參數化報告 | 如何產出可重跑的分析報告？ |
 

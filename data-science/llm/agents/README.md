@@ -1,6 +1,6 @@
-[Data Science](../../README.md) › [LLM](../README.md) › Agent
+[Data Science](../../README.md) › [LLM](../README.md) › LLM 代理
 
-# LLM Agent
+# LLM 代理 (LLM Agent)
 
 Agent 是能自己決定下一步、呼叫工具、根據結果繼續執行的 LLM 系統。它比固定流程更有彈性，也更難預測、測試與控制；所以先問「真的需要 agent 嗎？」。
 

@@ -1,6 +1,6 @@
-[Data Science](../README.md) › [Databases](README.md) › Window Functions
+[Data Science](../README.md) › [Databases](README.md) › 視窗函數
 
-# Window Functions
+# 視窗函數 (Window Functions)
 
 Window function 在**保留每一列**的同時，附上群組或排序後的計算結果：排名、前後列比較、累計、移動平均。`GROUP BY` 把多列壓成一列；window function 不壓。語法在 PostgreSQL、SQL Server、MySQL 8+、SQLite、DuckDB、Snowflake、BigQuery 大致相同。
 
