@@ -1,239 +1,205 @@
-# Biomedical Image Analysis in Python
+[Data Science](../README.md) › [Image Analysis](README.md) › 生醫影像分析
 
-這份筆記整理的是傳統 biomedical image analysis workflow，不是 CNN 訓練本身，而是影像如何被讀進來、轉成 mask、標記物件、量測結構，最後再做 registration 與 resampling。
+# 生醫影像分析 (Biomedical Image Analysis)
 
-## 為什麼 Biomedical Image 和一般照片不太一樣
+古典生醫影像流程：讀入影像與 metadata、建立 mask、標記物件、量測結構，最後做 registration 與 resampling。和一般照片最大的不同是空間語意：2D 的 pixel、3D 的 voxel 除了強度，還有實際的物理位置與大小。
 
-一般照片常把每個 pixel 當成純視覺資訊，但 biomedical image 通常還帶有空間語意：
+> `shape` 只告訴你陣列大小，不等於真實世界的尺寸；尺寸要靠 spacing。
 
-- 2D 影像是 pixels
-- 3D 影像是 voxels
-- 每個元素除了 intensity，還有 physical location
-
-Key point: 在醫學影像裡，`shape` 只告訴你陣列大小，不等於真實世界的尺寸。
-
-## 載入單張切片與 3D volume
-
-課程內容主要用 `imageio` 示範，重點不是特定套件，而是「影像最後會進到 NumPy array」這件事。
-
-```python
-import imageio
-import numpy as np
-
-im = imageio.imread("body-001.dcm")
-type(im)
-im.shape
-im.dtype
+```
+讀影像與 metadata → 確認 shape / spacing / FOV / 方向 → 用強度建 mask → 形態學修 mask
+  → 標記物件 → 轉成可量測特徵（體積、距離、中心）→ 必要時 registration / resampling
 ```
 
-多張切片可以自己堆成 volume：
+## 檔案格式與讀取
+
+| 格式 | 用途 | Python |
+| --- | --- | --- |
+| DICOM（`.dcm`，每張切片一個檔） | 臨床原始格式，含大量 metadata（含個資） | `pydicom`、SimpleITK |
+| NIfTI（`.nii` / `.nii.gz`） | 研究用 3D / 4D volume（神經影像、分割標籤） | `nibabel`、SimpleITK |
+| NRRD、MHA | 研究與工具間交換 | SimpleITK |
+| TIFF / OME-TIFF、OME-Zarr | 顯微鏡 | `tifffile`、`aicsimageio` |
 
 ```python
-im1 = imageio.imread("chest-000.dcm")
-im2 = imageio.imread("chest-001.dcm")
-im3 = imageio.imread("chest-002.dcm")
+import SimpleITK as sitk
 
-vol = np.stack([im1, im2, im3])
-vol.shape
+img = sitk.ReadImage("ct.nii.gz")                    # DICOM 資料夾：見下
+arr = sitk.GetArrayFromImage(img)                    # NumPy 陣列，軸順序 (z, y, x)
+img.GetSize()                                        # (x, y, z)  ← 順序相反！
+img.GetSpacing()                                     # (dx, dy, dz)，單位 mm
+img.GetOrigin(), img.GetDirection()                  # 物理座標原點與方向
+
+# DICOM 系列 → 3D volume（自動依切片位置排序）
+reader = sitk.ImageSeriesReader()
+reader.SetFileNames(reader.GetGDCMSeriesFileNames("chest_dicom/"))
+vol = reader.Execute()
+
+# NIfTI：nibabel
+import nibabel as nib
+nii = nib.load("brain.nii.gz")
+data = nii.get_fdata()                               # 軸順序 (x, y, z)
+nii.header.get_zooms()                               # voxel 大小
+nii.affine                                           # voxel 索引 → 世界座標的 4×4 矩陣
 ```
 
-或直接把一整個目錄讀成 volume：
+> SimpleITK 的陣列是 `(z, y, x)`，但 `GetSize()` / `GetSpacing()` 是 `(x, y, z)`；nibabel 的陣列是 `(x, y, z)`。把 spacing 套到陣列軸上之前，先確認順序，這是最常見的錯誤之一。
+
+舊教材常用 `imageio.imread` / `imageio.volread` 並從 `vol.meta["sampling"]` 取 spacing；新版 imageio 中這組 API 移到 `imageio.v2`，醫學影像建議改用 SimpleITK 或 nibabel，它們保留完整的方向與座標資訊。自己用 `np.stack` 疊切片時，要確認切片依 `ImagePositionPatient` 排序，而不是依檔名。
+
+## Shape、Spacing、FOV
+
+| 概念 | 意義 | 例子 |
+| --- | --- | --- |
+| Shape | 每軸有幾個 voxel | `(120, 512, 512)` |
+| Spacing / sampling | 每個 voxel 代表多少實際距離（mm） | `(2.5, 0.7, 0.7)`：切片厚、平面內細 |
+| Field of view (FOV) | 每軸覆蓋的實際範圍 = shape × spacing | `(300, 358, 358)` mm |
+| 方向 (direction / affine) | 陣列軸與病人座標（左右、前後、上下）的對應 | 決定左右是否翻轉 |
 
 ```python
-vol = imageio.volread("chest-data")
-vol.shape
+n = np.array(arr.shape)                       # (z, y, x)
+d = np.array(img.GetSpacing())[::-1]          # 轉成 (z, y, x)
+fov = n * d
 ```
 
-## Shape、Sampling、Field of View
+兩個 volume 的 shape 相同，spacing 不同時代表的真實空間大小也不同；各向異性 (anisotropic) 的 voxel（切片厚度遠大於平面解析度）會讓 3D 形態學與距離計算失真。
 
-對 biomedical image 來說，這三件事要分開想：
+## 強度、直方圖與閾值
 
-- `shape`: 每個軸上有幾個 voxel
-- `sampling`: 每個 voxel 代表多少實際距離，例如 mm
-- `field of view`: 整張影像沿每個軸覆蓋的實際空間
-
-```python
-n0, n1, n2 = vol.shape
-d0, d1, d2 = vol.meta["sampling"]
-
-fov = (n0 * d0, n1 * d1, n2 * d2)
-```
-
-Warning: 兩個 volume 就算 `shape` 一樣，若 `sampling` 不同，代表的真實空間大小也可能不同。
-
-## Intensity、Histogram、Threshold Mask
-
-灰階或掃描強度常是最早的分割線索。實務上常先看 intensity histogram，再決定 threshold。
+| 模態 | 強度的意義 | 閾值策略 |
+| --- | --- | --- |
+| CT | Hounsfield unit (HU)，有物理意義：空氣 −1000、水 0、軟組織約 20–80、骨 > 300 | 固定 HU 範圍就能分出組織 |
+| MRI | 任意單位，不同掃描、不同機器間不可比 | 先做強度標準化（z-score、bias field 校正）再閾值 |
+| 螢光顯微鏡 | 相對亮度，受曝光與染色影響 | 同批次固定設定；Otsu 等自動閾值 |
 
 ```python
 import scipy.ndimage as ndi
 
-hist = ndi.histogram(im, min=0, max=255, bins=256)
-mask_soft = im > 32
-mask_bone = im > 64
-band = mask_soft & ~mask_bone
+hist, edges = np.histogram(arr, bins=256)          # 先看直方圖再決定閾值
+soft = (arr > -100) & (arr < 300)                  # CT：軟組織範圍（HU）
+bone = arr > 300
+band = soft & ~bone
+bone_only = np.where(bone, arr, 0)                 # 只保留骨頭強度
 ```
 
-如果只是想保留特定組織或區域，可以直接把 mask 套回原圖：
+閾值假設不同組織在強度上可以分開；造影劑、部分容積效應 (partial volume)、雜訊都會讓這個假設不成立。
+
+## 形態學 (Morphology)
+
+原始閾值 mask 常有洞、鋸齒、斷裂或小雜點，用二值形態學修正，讓後續標記與量測更穩：
+
+| 操作 | 作用 | 用途 |
+| --- | --- | --- |
+| Dilation（膨脹） | 擴張前景 | 補小裂縫 |
+| Erosion（侵蝕） | 收縮前景 | 去小雜點、分開細連接 |
+| Opening = erosion → dilation | 去除比結構元素小的突出與雜點 | 去雜訊 |
+| Closing = dilation → erosion | 填補小洞與縫隙 | 平滑邊界 |
+| Fill holes | 填滿封閉的內部空洞 | 實心器官 mask |
 
 ```python
-import numpy as np
-
-im_bone = np.where(im > 64, im, 0)
+m = arr > 300
+m = ndi.binary_opening(m, iterations=2)
+m = ndi.binary_closing(m, iterations=2)
+m = ndi.binary_fill_holes(m)
 ```
 
-Key point: Thresholding 在 biomedical image 很常見，但它其實是假設不同組織在 intensity 上足夠可分。這個假設不一定總是成立。
+`iterations` 是以 voxel 為單位；spacing 各向異性時，同樣的迭代次數在不同軸代表不同的實際距離。
 
-## 用形態學操作修 mask
-
-原始 threshold mask 常常有洞、鋸齒或斷裂區塊，所以會接 dilation / erosion 這類二值形態學操作。
+## 標記與量測
 
 ```python
-m = np.where(im > 64, 1, 0)
+labels, n = ndi.label(m)                                # 連通區塊 → 整數標籤
+sizes = ndi.sum(m, labels, index=range(1, n + 1))       # 每個區塊的 voxel 數
+largest = labels == (np.argmax(sizes) + 1)              # 保留最大區塊（常是目標器官）
 
-m_dilated = ndi.binary_dilation(m, iterations=5)
-m_eroded = ndi.binary_erosion(m, iterations=5)
+# 距離轉換：前景 voxel 到背景的距離；帶 sampling 才是 mm
+d_vox = ndi.distance_transform_edt(largest)
+d_mm = ndi.distance_transform_edt(largest, sampling=d)  # d 為 (z, y, x) spacing
+max_radius_mm = d_mm.max()
+
+com = ndi.center_of_mass(largest)                       # 中心（voxel 座標）
+
+# 體積 = voxel 數 × 單一 voxel 體積
+voxel_ml = np.prod(d) / 1000                            # mm³ → mL
+volume_ml = largest.sum() * voxel_ml
 ```
 
-- dilation: 擴張前景，補小裂縫
-- erosion: 收縮前景，去小噪點
-
-這兩步通常不是為了「美化」，而是讓後續的 labeling 和 measurement 更穩定。
-
-## Connected Components、Labels、Object Measurement
-
-Segmentation 之後，常見下一步不是直接丟模型，而是把每個連通區塊標成不同物件。
+時間序列 volume（例如心動週期的心室）可以對每個時間點計算體積，得到體積曲線：
 
 ```python
-labels, nlabels = ndi.label(mask)
+ts = np.array([(labels_t[t] == 1).sum() * voxel_ml for t in range(labels_t.shape[0])])
+ejection_fraction = (ts.max() - ts.min()) / ts.max()    # 舒張末期與收縮末期體積
 ```
 
-有了 labels 後，就能對某個特定結構做量測，例如左心室：
+| 量測 | 用途 |
+| --- | --- |
+| 體積、面積 | 腫瘤大小、器官體積、病灶負擔 |
+| 距離轉換 | 最大厚度 / 半徑、到邊界的距離 |
+| 中心 | 粗略定位、初始化 registration |
+| 強度統計（`ndi.mean(arr, labels, index)`） | 病灶內的平均 HU、SUV（PET） |
+
+## Registration 與空間轉換
+
+不同病人、時間點或掃描姿勢的影像要對齊到同一個參考（template 或基線影像），才能比較。
+
+| 轉換 | 自由度（2D） | 包含 | 用途 |
+| --- | --- | --- | --- |
+| 平移 (translation) | 2 | 移動 | 粗略對齊中心 |
+| 剛體 (rigid) | 3 | 平移 + 旋轉 | 同一病人不同時間（形狀不變） |
+| 仿射 (affine) | 6 | + 縮放、剪切 | 不同病人粗對齊 |
+| 非線性 (deformable) | 很多 | 局部變形 | 圖譜對齊、呼吸運動校正 |
 
 ```python
-mask_lv = np.where(labels == 1, 1, 0)
-```
-
-### Distance Transform
-
-Distance transform 可以把每個前景 voxel 轉成「距離背景多遠」。
-
-```python
-d_vox = ndi.distance_transform_edt(mask_lv)
-d_mm = ndi.distance_transform_edt(
-    mask_lv,
-    sampling=vol.meta["sampling"],
-)
-```
-
-Key point: 不帶 `sampling` 時，距離單位是 voxel；帶了 `sampling` 才接近真實空間距離。
-
-### Center of Mass
-
-```python
-com = ndi.center_of_mass(vol, labels, index=1)
-```
-
-這類量測常用來：
-
-- 找結構的大致中心
-- 初始化 registration
-- 把不同 subject 的 ROI 對齊到類似位置
-
-### 從 voxel 數換成實際體積
-
-如果 segmentation 是 3D 或 time-series volume，體積通常來自：
-
-1. 算出目標 label 的 voxel 數
-2. 乘上單一 voxel 的實體體積
-
-```python
-d0, d1, d2, d3 = vol_ts.meta["sampling"]
-dvoxel = d1 * d2 * d3
-
-ts = np.zeros(vol_ts.shape[0])
-for t in range(vol_ts.shape[0]):
-    nvoxels = ndi.sum(1, labels[t], index=1)
-    ts[t] = nvoxels * dvoxel
-```
-
-這種作法很適合把 segmentation 結果轉成可分析的時間序列，例如 cardiac cycle 中每個時間點的 ventricle volume。
-
-## Registration 與 Spatial Transformations
-
-Biomedical image 常來自不同病人、不同時間點、不同掃描姿勢，所以對齊很重要。
-
-Registration 的核心目標是：
-
-- 把影像對到 template 或參考影像
-- 降低空間變異
-- 讓後續比較和量測更有意義
-
-### Translation
-
-一個簡單起點是先把結構中心移到固定位置：
-
-```python
+# scipy.ndimage：簡單轉換（以陣列座標操作）
 com = ndi.center_of_mass(im)
-d0 = 128 - com[0]
-d1 = 128 - com[1]
+centered = ndi.shift(im, shift=[128 - com[0], 128 - com[1]])
+rotated = ndi.rotate(im, angle=25, reshape=False)        # reshape=False 保留大小，但可能裁掉邊角
+mat = [[0.8, 0, -20], [0, 0.8, -10], [0, 0, 1]]
+xfm = ndi.affine_transform(im, mat)                      # 齊次座標矩陣；注意它是「輸出 → 輸入」的映射
 
-xfm = ndi.shift(im, shift=[d0, d1])
+# SimpleITK：以物理座標做真正的 registration（最佳化相似度指標）
+fixed, moving = sitk.Cast(fixed, sitk.sitkFloat32), sitk.Cast(moving, sitk.sitkFloat32)
+init = sitk.CenteredTransformInitializer(fixed, moving, sitk.Euler3DTransform(),
+                                         sitk.CenteredTransformInitializerFilter.GEOMETRY)
+reg = sitk.ImageRegistrationMethod()
+reg.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)   # 不同模態也適用
+reg.SetOptimizerAsGradientDescent(learningRate=1.0, numberOfIterations=200)
+reg.SetInterpolator(sitk.sitkLinear)
+reg.SetInitialTransform(init, inPlace=False)
+tx = reg.Execute(fixed, moving)
+aligned = sitk.Resample(moving, fixed, tx, sitk.sitkLinear, 0.0)
 ```
 
-### Rotation
-
-```python
-xfm = ndi.rotate(im, angle=25)
-xfm_fixed = ndi.rotate(im, angle=25, reshape=False)
-```
-
-Key point: `reshape=False` 會保留原本陣列大小，但也可能裁掉旋轉後超出邊界的內容。
-
-### Affine Transform
-
-Affine transform 是 registration 裡很重要的一層，因為它能同時表達平移、縮放、旋轉、剪切等效果。
-
-```python
-mat = [
-    [0.8, 0.0, -20],
-    [0.0, 0.8, -10],
-    [0.0, 0.0, 1.0],
-]
-
-xfm = ndi.affine_transform(im, mat)
-```
+| 相似度指標 | 適合 |
+| --- | --- |
+| Mean squared error | 同模態、強度可直接比較 |
+| Normalized cross-correlation | 同模態、強度有線性差異 |
+| Mutual information | 不同模態（CT ↔ MRI、MRI T1 ↔ T2） |
 
 ## Resampling 與 Interpolation
 
-當你改變解析度、對齊到另一個 grid、或統一不同掃描時，通常就會發生 resampling。
+改變解析度、對齊到另一個網格、統一不同掃描的 spacing 時都會 resampling：在新的座標網格上重新估計像素值，不只是改 shape。
 
 ```python
-vol_dn = ndi.zoom(vol, zoom=0.5)
+vol_dn = ndi.zoom(arr, zoom=0.5, order=1)                 # 降採樣：省記憶體與計算
+iso = ndi.zoom(arr, zoom=d / 1.0, order=1)                # 重採樣成 1 mm 等向 voxel
+mask_iso = ndi.zoom(mask.astype(np.uint8), zoom=d / 1.0, order=0)   # 標籤用最近鄰
 ```
 
-- downsampling: 降低解析度、減少記憶體與計算量
-- upsampling: 提高 array size，但不會憑空增加新資訊
+| 內插 | `order` / SimpleITK | 用於 |
+| --- | --- | --- |
+| 最近鄰 (nearest neighbor) | `order=0`、`sitkNearestNeighbor` | **分割標籤**、類別 mask |
+| 線性 | `order=1`、`sitkLinear` | 連續強度影像 |
+| B-spline / cubic | `order=3`、`sitkBSpline` | 平滑的強度影像（可能產生超出原範圍的值） |
 
-Key point: Resampling 不是單純改 shape，而是在新的空間座標系上重新估計像素值。
+> 不要用線性或 spline 內插 resample 分割標籤：類別值會被混成小數（標籤 1 和 3 之間出現 2），邊界被破壞。升採樣只是增加陣列大小，不會憑空增加資訊。
 
-這時 interpolation 很重要：
+## 常見錯誤
 
-- nearest-neighbor: 常用於 label mask，避免類別值被混成小數
-- linear / spline: 常用於連續強度影像
-
-Warning: 不要用平滑 interpolation 去 resample segmentation label，否則類別邊界可能被破壞。
-
-## 一個很實用的心智模型
-
-傳統 biomedical image analysis 常可以拆成這條鏈：
-
-1. 讀影像與 metadata
-2. 確認 shape / spacing / field of view
-3. 用 intensity 建 mask
-4. 用 morphology 修 mask
-5. 用 labeling 把結構拆成物件
-6. 把物件轉成可量測特徵
-7. 視需要做 registration / resampling
-
-這條鏈條很值得先熟，因為即使後面改用深度學習做 segmentation，這些空間與量測概念仍然會一直出現。
+| 錯誤 | 後果 |
+| --- | --- |
+| 用 voxel 數比較不同掃描的大小 | 忽略 spacing，數字沒有可比性 |
+| SimpleITK / nibabel 的軸順序搞混 | spacing 套錯軸，體積與距離錯 |
+| 依檔名排序 DICOM 切片 | 切片順序錯亂 |
+| MRI 直接用固定閾值 | 不同掃描的強度單位不同 |
+| 用線性內插 resample 標籤 | 產生不存在的類別 |
+| 分享影像時保留 DICOM header | 洩漏病人姓名、生日、病歷號，見 [匿名化](../responsible-ai/anonymization-in-python.md) |

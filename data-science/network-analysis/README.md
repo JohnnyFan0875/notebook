@@ -1,38 +1,41 @@
-# Network Analysis
+[Data Science](../README.md) › Network Analysis
 
-這個模組整理的是把資料看成 graph 時常見的思考方式。當資料的重點不只在單一列或單一特徵，而在 entities 彼此之間如何連接、穿越、聚集與中介時，network analysis 就會比一般 tabular analysis 更自然。
+# 網路分析 (Network Analysis)
 
-Key point: network analysis 的核心不是畫出一張很酷的圖，而是先定義 node、edge 與 edge meaning，然後再問這個連結結構如何影響重要性、可達性、群聚與推薦。
+當資料的重點是「誰和誰相連」，而不是單一列的特徵時，把資料表示成 graph 比一般表格更自然。核心不是畫出漂亮的圖，而是先定義 node、edge 與 edge 的意義，再問連結結構如何影響重要性、可達性、群聚與推薦。生資中常見的 PPI 網路、基因共表現網路、單細胞 kNN 圖都屬於這一類。
 
-## Topics
+## 建議順序
 
-- [Introduction to Network Analysis](introduction-to-network-analysis.md)
-- [Bipartite and Evolving Networks](bipartite-and-evolving-networks.md)
-- [Directed Networks and Structural Metrics](directed-networks-and-structural-metrics.md)
-- [Network Analysis Case Studies](network-analysis-case-studies.md)
+```
+入門（建圖、centrality、路徑、clique）→ 有向網路與結構指標（隨機基準、社群偵測）
+   → 二分網路與時間演變（projection、時間切片）→ 案例（事件資料 → graph、生資網路）
+```
 
-## 這個模組回答什麼問題
+## 筆記
 
-- 哪些節點在網路裡最重要？
-- 哪些路徑最短、最常被經過，或最有橋接價值？
-- 哪些群體彼此緊密連接，哪些只是鬆散相鄰？
-
-## 建議閱讀順序
-
-1. 先看 [Understanding Data Science](../understanding-data-science.md)，確認 graph 只是資料表示法之一，不是獨立宇宙。
-2. 再看 [Introduction to Network Analysis](introduction-to-network-analysis.md)，把 node、edge、centrality 與 subgraph 直覺建立起來。
-3. 再看 [Bipartite and Evolving Networks](bipartite-and-evolving-networks.md)，把 projection、graph-from-DataFrame 與時間切片分析接起來。
-4. 最後看 [Directed Networks and Structural Metrics](directed-networks-and-structural-metrics.md)，把 directedness、transitivity、random baseline 與 community detection 接到整體結構判讀上。
-5. 補看 [Network Analysis Case Studies](network-analysis-case-studies.md)，把交易、文字互動與移動資料如何落成 graph 的實戰流程接起來。
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [網路分析入門](introduction-to-network-analysis.md) | node / edge 定義、graph 類型、degree / betweenness / closeness / eigenvector、最短路徑、clique、subgraph | 哪些節點重要？重要的意思是什麼？ |
+| [有向網路與結構指標](directed-networks-and-structural-metrics.md) | in / out-degree、density、平均路徑長、transitivity、assortativity、reciprocity、隨機圖基準、社群偵測 | 整張網路的結構特殊嗎？有哪些群體？ |
+| [二分網路與時間演變](bipartite-and-evolving-networks.md) | 二分圖、projection 與權重、edge 過濾、從 DataFrame 建圖、時間切片 | 兩類實體的關係怎麼分析？網路怎麼隨時間改變？ |
+| [網路分析案例](network-analysis-case-studies.md) | 商品、Twitter、單車流動；PPI（STRING）、共表現網路（WGCNA）、單細胞 kNN 圖 + Leiden | 原始事件資料怎麼變成值得分析的 graph？ |
 
 ## 與其他章節的關係
 
-- [Data Manipulation and EDA](../data-manipulation-and-eda/README.md): graph 幾乎總是由表格資料轉換而來，前處理仍然是基本功。
-- [Machine Learning](../machine-learning/README.md): 某些 graph feature 會被拿來做節點分類、風險預測或推薦排序。
-- [流程探勘](../applied-domains/process-mining.md): 如果事件資料被轉成 transition graph 或 handoff network，兩章的分析語言會交會。
+| 主題 | 去哪裡 |
+| --- | --- |
+| graph 從表格轉換而來，前處理仍是基本功 | [Data Manipulation and EDA](../data-manipulation-and-eda/README.md) |
+| 分群（社群偵測與 clustering 的關係） | [Clustering](../machine-learning/unsupervised-learning/clustering/README.md) |
+| 用 graph 結構學節點表示、做節點分類 | [圖神經網路](../deep-learning/representation-learning/graph-neural-networks.md) |
+| 在資料庫中做多跳查詢、階層展開 | [遞迴與階層查詢](../databases/recursive-and-hierarchical-sql.md) |
+| 事件資料轉成流程轉移圖 | [流程探勘](../applied-domains/process-mining.md) |
 
-## 實務提醒
+| 工具 | 語言 | 適合 |
+| --- | --- | --- |
+| NetworkX | Python | 學習、中小型網路（數萬節點）、演算法齊全 |
+| igraph | Python / R | 較大的網路、速度快、社群偵測方法多 |
+| graph-tool、NetworKit | Python | 數百萬節點以上 |
+| Cytoscape | GUI | 生物網路視覺化與註解 |
+| scanpy（`sc.pp.neighbors`、`sc.tl.leiden`） | Python | 單細胞 kNN 圖與分群 |
 
-- graph 長得漂亮不代表分析有意義，node 與 edge 的定義才是第一步。
-- 不同 centrality 指標回答的是不同問題，不應混用成單一「重要性」。
-- 若網路是從表格投影出來，先確認 projection 規則沒有放大假訊號。
+> 圖長得漂亮不代表分析有意義；不同 centrality 回答不同問題，不應混成單一的「重要性」；從表格投影出來的網路要先確認 projection 規則沒有放大假訊號。

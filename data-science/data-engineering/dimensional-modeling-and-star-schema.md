@@ -1,442 +1,149 @@
-# Data Warehousing and Dimensional Modeling
+[Data Science](../README.md) › [Data Engineering](README.md) › 資料倉儲與維度模型
 
-Data warehousing is the practice of collecting, integrating, organizing, and storing data so that it can support large-scale analysis, reporting, and decision-making across an organization.
+# 資料倉儲與維度模型 (Data Warehousing and Dimensional Modeling)
 
-Key point: A data warehouse is not just a bigger database. It is designed for analytical workloads, integrated business views, and historical reporting rather than day-to-day transaction processing.
+資料倉儲 (data warehouse) 收集、整合多個來源的資料，以適合分析的形式長期保存。它不只是更大的資料庫：設計目標是分析查詢、跨部門的整合視角與歷史報表，而不是日常交易。維度模型 (dimensional model) 是倉儲裡最常見的表設計方式。
 
-## What a Data Warehouse Does
+## 倉儲在做什麼
 
-A warehouse gathers data from multiple operational sources and makes it available for analysis in a form that is more consistent and easier to query.
-
-| Warehouse Function | Why It Matters |
+| 功能 | 價值 |
 | --- | --- |
-| Collect data from many systems | Brings fragmented operational data into one analytical environment |
-| Integrate and standardize | Makes cross-functional analysis possible |
-| Preserve historical context | Supports trend analysis, reporting, and business review |
-| Enable BI and analytics | Gives analysts and decision-makers a stable reporting layer |
+| 從多個系統收集資料 | 把分散的營運資料集中到一個分析環境 |
+| 整合與標準化 | 跨單位分析才可行 |
+| 保留歷史 | 支援趨勢分析與回顧 |
+| 支援 BI 與分析 | 提供穩定的報表層，不拖慢交易系統 |
 
-Tip: Warehouses create value by reducing the effort needed to answer recurring business questions across teams.
-
-## Data Warehouse vs Database vs Data Mart vs Data Lake
-
-These systems solve related but different problems.
-
-| System | Main Purpose | Typical Data Shape |
+| 系統 | 主要目的 | 資料形狀 |
 | --- | --- | --- |
-| Transactional database | Run operational applications and store transactions | Structured, row-oriented |
-| Data warehouse | Support organization-wide analytics and reporting | Structured, integrated, analytical |
-| Data mart | Support analysis for a narrower subject area or department | Structured, focused |
-| Data lake | Store large volumes of raw or varied data for flexible future use | Structured and unstructured |
+| 交易資料庫 (OLTP) | 執行應用程式、記錄交易 | 結構化、列式 |
+| 資料倉儲 | 組織層級的分析與報表 | 結構化、整合、分析用 |
+| 資料市集 (data mart) | 特定主題或部門的分析 | 結構化、聚焦 |
+| 資料湖 | 大量原始、多樣資料，保留彈性 | 結構化與非結構化 |
 
-Key point: Warehouses emphasize known analytical use cases and organized structure, while lakes emphasize flexible storage and broader raw-data coverage.
+### OLAP vs OLTP
 
-## Why Organizations Use Data Warehouses
+| 特性 | OLAP | OLTP |
+| --- | --- | --- |
+| 目的 | 分析 | 交易處理 |
+| 查詢型態 | 複雜、讀取為主、掃描大量列的少數欄 | 簡單、頻繁、寫入為主、存取整列 |
+| 資料組織 | 維度模型、欄式儲存 | 正規化、列式儲存 |
+| 角色 | 報表與分析 | 來源系統與應用程式 |
 
-Warehouses are especially useful when organizations need analysis without burdening transactional systems.
+欄式儲存 (column store) 把同一欄的值存在一起，分析查詢只讀需要的欄，壓縮率也高；列式儲存 (row store) 適合一次存取整列的交易。詳見 [NoSQL 基礎](../databases/nosql-foundations.md) 的 row vs column store。
 
-Common reasons include:
+## 倉儲分層
 
-1. support BI and reporting
-2. improve organizational decision-making
-3. avoid slowing down operational databases with large analytical queries
-4. create a stable basis for forecasting, compliance analysis, and growth planning
-
-## Typical Warehouse Layers
-
-Many warehouse architectures can be described with a layered model.
-
-| Layer | Role |
+| 層 | 角色 |
 | --- | --- |
-| Data source layer | Operational systems, logs, files, spreadsheets, and other inputs |
-| Data staging layer | Extraction, transformation, validation, and temporary preparation area |
-| Data storage layer | Warehouse tables and sometimes downstream data marts |
-| Data presentation layer | BI tools, dashboards, data mining tools, and direct analytical queries |
+| 來源層 (source) | 營運系統、log、檔案、試算表 |
+| 暫存層 (staging) | 擷取、轉換、驗證；整合的髒活大多在這裡 |
+| 儲存層 (storage) | 倉儲表，有時再分出 data mart |
+| 展示層 (presentation) | dashboard、BI 工具、分析師直接查詢 |
 
-Tip: The staging layer is where much of the messy integration work happens so that the presentation layer can stay simpler and more reliable.
+Lakehouse 常用 medallion architecture 表達同樣的資料成熟度：
 
-## Presentation Layer Users and Tools
+| 層 | 重點 | 內容 |
+| --- | --- | --- |
+| Bronze | 保留 | 原始資料，盡量維持來源樣貌 |
+| Silver | 清理 | 標準化、去重、型別修正後的資料 |
+| Gold | 可分析 | 給分析與消費的模型，常是 star schema |
 
-The presentation layer exists for people, not just systems.
-
-| Tool Group | Typical Use |
-| --- | --- |
-| Automated reporting and dashboards | Recurring metrics, KPIs, executive and operational reporting |
-| BI and analytics tools | Exploratory analysis and pattern discovery |
-| Direct queries | Advanced analysis by analysts, data scientists, or engineers |
-
-## Warehouse Life Cycle
-
-A warehouse is typically developed and maintained through a recurring life cycle.
-
-| Life Cycle Area | Typical Activities |
-| --- | --- |
-| Planning | Clarify business requirements and reporting needs |
-| Data modeling | Design fact tables, dimensions, and grain |
-| Implementation | Build ETL or ELT pipelines and BI interfaces |
-| Maintenance | Modify, test, deploy, and support the system over time |
-
-Key point: Warehouses are not one-time builds. They are long-lived analytical products that require ongoing maintenance and evolution.
+倉儲不是一次性建置，而是需要持續維護的分析產品：規劃需求 → 建模（fact、dimension、grain）→ 實作 ETL / ELT 與 BI 介面 → 修改、測試、部署、支援。
 
 ## Inmon vs Kimball
 
-Two classic design philosophies appear often in data warehousing.
+| 方法 | 核心想法 | 優點 | 缺點 |
+| --- | --- | --- | --- |
+| Inmon（由上而下） | 先建整合的企業倉儲（正規化），再衍生 data mart | 單一事實來源、下游一致 | 前期設計久、啟動成本高 |
+| Kimball（由下而上） | 從具體業務流程建維度模型 data mart，再逐步擴充 | 交付快、前期成本低，容易先證明價值 | 長期需要協調 ETL；各 mart 定義可能分歧 |
 
-| Approach | Main Idea | Trade-off |
+## Star Schema
+
+star schema 把資料分成兩種表：fact table 記錄事件與度量，dimension table 提供描述與分析脈絡。
+
+```
+              dim_date
+                 │
+dim_patient ── fact_measurement ── dim_gene
+                 │
+              dim_assay (platform, batch)
+```
+
+| 表 | 內容 | 欄位 |
 | --- | --- | --- |
-| Inmon, top-down | Build an integrated enterprise warehouse first, then derive marts | More upfront design effort, stronger enterprise consistency |
-| Kimball, bottom-up | Start with dimensional data marts and grow from business processes | Faster delivery, lower startup cost, but more coordination needed over time |
+| Fact table | 業務事件、交易、量測 | 指向各 dimension 的代理鍵、可聚合的度量 (measures)、少量事件屬性 |
+| Dimension table | 描述業務實體（產品、客戶、樣本、基因） | 代理鍵、自然鍵 / business key、用來篩選分組的屬性 |
 
-### Inmon, Top-Down
+### Kimball 建模四步驟
 
-This approach prioritizes an enterprise-level integrated design before broad consumption.
-
-| Advantage | Disadvantage |
-| --- | --- |
-| Strong single source of truth | Lengthy upfront work |
-| Easier to align downstream marts later | Higher startup cost |
-
-### Kimball, Bottom-Up
-
-This approach starts from concrete business processes and delivers dimensional models early.
-
-| Advantage | Disadvantage |
-| --- | --- |
-| Faster initial delivery | More ETL coordination over time |
-| Lower upfront cost | Greater risk of duplication if domains drift apart |
-
-Tip: Kimball is often attractive when a team needs to prove business impact quickly.
-
-## Why Dimensional Modeling Exists
-
-不是所有分析資料都適合直接用原始交易表來查。當報表與分析需要穩定的彙總、切片與過濾時，團隊通常會把資料整理成比較適合分析的模型。
-
-dimensional modeling 的目標，是把資料整理成：
-
-- 容易理解的 business-facing structure
-- 適合彙總與篩選的分析表
-- 能穩定支援 BI、semantic model 與 SQL analytics 的資料形狀
-
-## Medallion Architecture and the Gold Layer
-
-很多 lakehouse 流程會先用 medallion architecture 管資料成熟度：
-
-- `Bronze`: 原始資料，盡量保留來源樣貌
-- `Silver`: 清理、標準化後的資料
-- `Gold`: 適合分析與消費的資料
-
-在 Fabric 這類平台裡，bronze 和 silver 常落在 lakehouse，而 gold 則可能落在 lakehouse 或 warehouse。
-
-一個很實用的理解方式是：
-
-- bronze 重點是保留
-- silver 重點是清理
-- gold 重點是可分析
-
-而 star schema 常常就是 gold layer 的典型輸出形態。
-
-## What a Star Schema Looks Like
-
-star schema 會把資料分成兩種主要表：
-
-- `fact table`: 記錄事件、交易或可量化活動
-- `dimension table`: 提供描述、分類與分析脈絡
-
-這種設計的核心，不是為了看起來整齊，而是讓分析可以自然地回答：
-
-- 什麼時候發生
-- 在哪裡發生
-- 跟哪個產品、客戶、通路有關
-- 數量、金額、次數是多少
-
-## Dimension Tables
-
-dimension table 用來描述 business entities，例如 product、customer、region。
-
-常見欄位包括：
-
-- `surrogate key`: 內部單欄唯一識別碼
-- `natural key` / `business key`: 來自來源系統的業務識別碼
-- `dimension attributes`: 用來過濾、分組與提供上下文的欄位
-
-surrogate key 很重要，因為分析模型不應過度依賴來源系統的自然鍵直接充當歷史管理與關聯主鍵。
-
-## Fact Tables
-
-fact table 用來描述 business events，例如一次銷售、一筆訂單、一個點擊事件。
-
-常見欄位包括：
-
-- `dimension keys`: 指向相關 dimension 的 surrogate keys
-- `attributes`: 與事件有關，但不是維度也不是度量的欄位
-- `measures`: 可量化、通常可聚合的數值欄位，例如金額、數量、次數
-
-一個實務提醒是：fact table 的 grain 要先講清楚。若 grain 不清楚，後續所有 aggregation 都可能出現看似合理但其實錯誤的結果。
-
-## Kimball Modeling Steps
-
-The extracted material follows a common Kimball-style dimensional design sequence.
-
-1. select the organizational process
-2. declare the grain
-3. identify the dimensions
-4. identify the facts
-
-### 1. Select the Organizational Process
-
-Start from a business process such as billing, purchases, marketing, or product monitoring.
-
-### 2. Declare the Grain
-
-Grain defines the lowest level each fact row represents.
-
-Warning: If grain is vague or inconsistent, every downstream metric becomes harder to trust.
-
-### 3. Identify the Dimensions
-
-Choose the descriptive fields users need to analyze the process, such as time, customer, product, location, or payment method.
-
-### 4. Identify the Facts
-
-Choose the numeric measures that are true at the selected grain, such as sales amount, units sold, or time spent before purchase.
-
-## Star Schema vs. Snowflake Thinking
-
-star schema 通常偏向把分析常用的描述欄位保留在 dimension 內，讓查詢比較直接。
-
-相對地，snowflake schema 會把 dimension 再進一步正規化，減少重複，但查詢與理解成本通常會提高。
-
-如果目標是分析與報表，star schema 往往比較自然；如果目標是極致去重或高度正規化維護，snowflake 才比較可能有吸引力。
-
-在 Power BI 這類 BI 工具裡，這個偏好會更明顯：  
-Power BI 通常更偏好 star schema，而不是讓 dimension 之間再繼續連很多層。
-
-## Slowly Changing Dimensions
-
-dimension 不會永遠不變，所以實務上要先決定歷史如何保留。
-
-最常見的 SCD 類型包括：
-
-- `Type 0`: 不接受變更，保留原始值
-- `Type 1`: 直接覆寫，保留最新值
-- `Type 2`: 新增新列，保留完整歷史
-- `Type 3`: 額外欄位保留有限歷史
-- Snapshot：定期快照整張 dimension，適合較廣泛的歷史報表
-
-課程裡一個很實務的建議是：
-
-- 不需要歷史時，優先考慮 `Type 1`
-- 需要歷史時，優先考慮 `Type 2`
-
-其他類型雖然存在，但複雜度通常較高，沒有明確需求時不必急著用。
-
-## Choosing SCD Type in Practice
-
-可以用這個方式快速判斷：
-
-- 如果資料只需要反映最新狀態，例如補充性的聯絡資訊，`Type 1` 常夠用
-- 如果分析必須回答「某個時間點當時的狀態」，`Type 2` 更合適
-- 如果只想保留極少量前一版本資訊，才考慮 `Type 3`
-
-SCD 決策本質上是在 trade off：
-
-- 歷史保留需求
-- 查詢複雜度
-- 儲存成本
-- 維護成本
-
-## Date and Time Dimensions
-
-date dimension 幾乎是最常見的 conformed dimension，因為大多數 fact table 都會有日期欄位。
-
-常見做法包括：
-
-- natural key 用 date data type
-- surrogate key 用 `YYYYMMDD` 整數格式
-- 預先提供 year、month、day 等分析欄位
-
-它的價值不只是把日期拆欄位而已，還包括：
-
-- 提供穩定 calendar
-- 降低複雜 date logic 分散在報表層
-- 支援 fiscal year 與 calendar year 並存
-- 讓 quarter / month / week slicing 更一致
-
-如果分析需要到一天中的時間粒度，則可以另外建立 time dimension。
-
-time dimension 常見做法：
-
-- natural key 用 time data type
-- surrogate key 用 `HHMM` 或 `HHMMSS`
-- grain 視需求決定是分鐘還是秒
-
-time dimension 通常比 date dimension 少見。  
-很多分析只需要日期層級；只有在 call center、IoT、交易時段或其他高頻事件分析時，time dimension 才會變得特別重要。
-
-date dimension 的建立方式也不只一種。常見做法包括：
-
-- 在 database / warehouse 中集中維護
-- 以 file 形式提供
-- 在 Power BI / DAX 內直接建立
-
-如果多個服務會共用同一份 calendar，集中維護通常比較穩；如果只是單一模型快速建立，DAX 建 date table 也很實用。
-
-## Conformed Dimensions
-
-conformed dimensions 會被多個 fact table 共用。
-
-最典型的例子是：
-
-- sales fact 和 marketing fact 共用 date dimension
-- 多個主題共用 product dimension
-
-它的價值在於讓不同分析主題仍然維持一致的切分方式。若每個主題各自定義日期或產品維度，跨領域比較會很快失真。
-
-一個很實務的提醒是：dimension 比較理想的角色，是被多個 facts 重用，而不是彼此之間到處互連。  
-如果 dimension 之間關聯越來越複雜，很多 BI 報表的 filter behavior 也會開始變得難以預期。
-
-## Role-Playing Dimensions
-
-有些 fact table 會多次引用同一張 dimension，但代表不同角色。
-
-例如同一張 date dimension 可能同時扮演：
-
-- order date
-- shipping date
-- delivery date
-
-這種情況下，不需要複製多份相同維度資料，而是讓同一個 dimension 在模型中扮演不同角色。
-
-這也是為什麼 date dimension 常常和 semantic model 裡的 multiple relationships 一起出現。  
-資料上仍然是同一張日期維度，但在分析語意上，它會同時代表不同事件時間。
-
-## Multivalued Dimensions and Bridge Tables
-
-當 fact 和 dimension 之間不是單純一對一或多對一，而是 many-to-many 時，常需要 bridge table。
-
-bridge table 的用途是：
-
-- 儲存相關 dimension keys 的配對
-- 表達 multivalued relationship
-- 避免把一對多關係硬塞進單一欄位
-
-這類表有時也會被稱為 factless table，因為它主要保存關係，而不是度量值。
-
-## Practical Design Questions
-
-在建 star schema 前，先問：
-
-- fact table 的 grain 是什麼
-- 哪些欄位是描述性維度，哪些才是 measures
-- 來源系統的 business key 是否足夠穩定
-- 哪些 dimension 需要保留歷史
-- 哪些日期或時間角色會重複出現
-- 是否存在 many-to-many 需要 bridge table
-
-## OLAP vs OLTP
-
-Warehouses are commonly associated with `OLAP`, while operational systems are commonly `OLTP`.
-
-| Characteristic | OLAP | OLTP |
+| 步驟 | 內容 | 例子 |
 | --- | --- | --- |
-| Main purpose | Analysis | Transaction processing |
-| Query style | Complex, read-heavy, multi-dimensional | Simple, frequent, write-heavy |
-| Data organization | Often dimensional or analytical | Rows and columns for operations |
-| Typical system role | Reporting and analytics | Source systems and applications |
+| 1. 選業務流程 | 從一個具體流程開始 | 檢驗結果、定序產出、銷售 |
+| 2. 宣告 grain | 一列 fact 代表什麼，寫成 `by ...` | 「每個樣本 × 每個基因 × 每次 assay 一列」 |
+| 3. 找 dimensions | 使用者要用哪些欄位篩選與分組 | 日期、病人、樣本、基因、平台、批次 |
+| 4. 找 facts | 在該 grain 下為真的數值 | 計數、TPM、檢驗值 |
 
-Tip: Moving analytical work into a warehouse helps keep OLTP systems responsive for operational traffic.
+> grain 不清楚或不一致，所有下游指標都難以信任。從現有資料往更細的 grain 拆通常不可能；往較粗的 grain 聚合則能換到更好的效能與更小的模型。
 
-## Row Store vs Column Store
+### Star vs Snowflake
 
-Analytical warehouses often benefit from column-oriented storage.
-
-| Storage Style | Best Fit |
-| --- | --- |
-| Row store | Transactional workloads where full rows are accessed together |
-| Column store | Analytical workloads where queries scan a few columns over many rows |
-
-Column stores often improve analytical performance and compression because related column values are stored together.
-
-## ETL vs ELT
-
-Both are ways to move data into an analytical environment, but the order of operations differs.
-
-| Pattern | Sequence |
-| --- | --- |
-| ETL | Extract -> Transform -> Load |
-| ELT | Extract -> Load -> Transform |
-
-### ETL
-
-| ETL Strength | ETL Limitation |
-| --- | --- |
-| Lower warehouse storage needs | Transformation fixes may require re-pulling data |
-| Can help with PII handling before loading | Often needs separate processing infrastructure |
-
-### ELT
-
-| ELT Strength | ELT Limitation |
-| --- | --- |
-| Transformations can be rerun from loaded raw data | Raw-data storage needs are higher |
-| Fits cloud scaling and near real-time needs well | Privacy and compliance controls must be carefully enforced inside the warehouse |
-
-Key point: ELT becomes more attractive when cloud platforms make storage and compute scalable, but ETL can still be useful when early transformation or stricter pre-load control is needed.
-
-## Data Cleaning in Warehouse Pipelines
-
-Warehouse quality depends heavily on data cleaning in the pipeline.
-
-| Cleaning Task | Purpose |
-| --- | --- |
-| Format normalization | Standardize dates, categories, and capitalization |
-| Address parsing | Split and validate address fields into components |
-| Validation | Check ranges, types, and business-rule compliance |
-| De-duplication | Remove repeated records that distort analysis |
-
-Tip: A warehouse can only be as trustworthy as the rules used to clean and validate the incoming data.
-
-## On-Premise, Cloud, and Hybrid Deployment
-
-Warehouses can be deployed in different infrastructure models.
-
-| Model | Strength | Main Trade-off |
+| | Star schema | Snowflake schema |
 | --- | --- | --- |
-| On-premise | High control and custom optimization | High upfront cost and more maintenance burden |
-| Cloud | Fast scaling and less infrastructure maintenance | Less low-level control and potentially variable cost |
-| Hybrid | Useful for backup, recovery, or mixed constraints | Operational complexity increases |
+| Dimension | 反正規化，描述欄位集中在一張表 | 再正規化成多層 |
+| 查詢 | 直接、join 少 | join 多、較難理解 |
+| 適合 | 分析與 BI（Power BI 等強烈偏好 star） | 維度極大、重複很多時 |
 
-## Choosing a Practical Approach
+## 緩慢變化維度 (SCD)
 
-Real warehouse design choices depend on business context.
+dimension 會變（病人轉院、產品改類別），要先決定歷史怎麼保留。
 
-Useful decision questions include:
+| 類型 | 做法 | 適合 |
+| --- | --- | --- |
+| Type 0 | 不接受變更，保留原值 | 出生日期等不應變動的屬性 |
+| Type 1 | 直接覆寫 | 只需最新狀態（更正錯字、聯絡資訊） |
+| Type 2 | 新增一列，加 `valid_from` / `valid_to` / `is_current` | 需要回答「當時的狀態是什麼」 |
+| Type 3 | 多一欄保留前一個值 | 只需要有限的前一版本 |
+| Snapshot | 定期快照整張 dimension | 大範圍的歷史報表 |
 
-1. do we need fast visible business impact or a longer enterprise foundation
-2. do we expect raw data to be retained for reprocessing
-3. is cloud scalability more valuable than infrastructure control
-4. which business process should be modeled first
-5. which history policy is required for changing dimensions
+> 不需要歷史就用 Type 1，需要歷史就用 Type 2；其他類型沒有明確需求時不必用。SCD 太晚決定，之後補歷史很痛。dbt 的 [snapshot](dbt-foundations.md#snapshot) 可以實作 Type 2。
 
-Warning: There is no single best warehouse design. The right choice depends on workload, team size, governance needs, and time-to-value expectations.
+## 常見的 dimension 模式
 
-## Minimum Standard for a Usable Warehouse Design
+| 模式 | 內容 | 例子 |
+| --- | --- | --- |
+| Date dimension | 預先建好的日曆表；自然鍵用 date 型別、代理鍵用 `YYYYMMDD` 整數；含年、季、月、週、會計年度 | 幾乎所有 fact 都用到；集中維護比各報表各自算日期穩 |
+| Time dimension | 一天內的時間，代理鍵 `HHMM` 或 `HHMMSS` | 只有高頻事件（IoT、call center）才需要 |
+| Conformed dimension | 多個 fact table 共用同一張 dimension | sales 與 marketing 共用 date、product；不同 assay 共用 sample |
+| Role-playing dimension | 同一張 dimension 在 fact 中扮演多個角色 | date 同時是採檢日、收件日、報告日 |
+| Bridge table | 表達多對多；只存 key 配對，也稱 factless table | 一個病人多個診斷、一個樣本多個 run |
 
-Before calling a warehouse design credible, you should be able to explain:
+> dimension 應該被多個 fact 重用，而不是彼此之間到處互連；dimension 之間的關聯越複雜，BI 報表的篩選行為越難預期。
 
-1. which business processes the warehouse supports
-2. which source systems feed it and how the layers interact
-3. which dimensional model, grain, facts, and dimensions were chosen
-4. whether ETL or ELT is being used and why
-5. how the design supports analytical performance, quality, and maintainability
+## 倉儲 pipeline 的清理與部署
 
-## Practical Reminders
+| 清理工作 | 目的 |
+| --- | --- |
+| 格式標準化 | 日期、類別、大小寫一致 |
+| 拆解與驗證複合欄位 | 地址、檢體編號拆成組成部分 |
+| 驗證 | 範圍、型別、業務規則 |
+| 去重 | 重複記錄會扭曲分析 |
 
-- star schema 不是為了教科書漂亮，而是為了讓分析更穩定、更好查。
-- gold layer 的價值通常不是再做一次清理，而是把資料整理成可被穩定消費的分析模型。
-- SCD 選型如果太晚決定，後面補歷史通常很痛。
-- date dimension 幾乎永遠值得好好設計，因為它會被大量下游共用。
-- granularity 要先講成明確的 `by ...` 敘述，例如 `by customer, by product, by day`，不然後面 aggregation 很容易失真。
-- 從既有資料去做更細的 grain 通常不現實；往較粗 grain 聚合則常能換到更好的效能與更小的模型。
-- 若不同 fact tables 沒有共享 conformed dimensions，跨主題分析很容易失真。
-- 如果目標下游是 Power BI 或 semantic model，優先讓 fact / dimension 關係清楚，再考慮是否真的需要 snowflake 化。
+| 部署 | 優點 | 代價 |
+| --- | --- | --- |
+| 地端 (on-premise) | 控制度高、可客製最佳化 | 前期成本與維護負擔高 |
+| 雲端 | 擴充快、少維護 | 底層控制少、成本變動 |
+| 混合 | 備援、資料不能出境時 | 營運複雜度增加 |
 
-[Back to Data Engineering](README.md)
+ETL vs ELT 的取捨見 [處理與 Pipeline](processing-and-pipelines.md#etl-與-elt)。
+
+## 設計檢查清單
+
+| 問題 | 為什麼 |
+| --- | --- |
+| 支援哪些業務流程？由哪些來源餵入？ | 範圍與分層 |
+| fact table 的 grain 是什麼？ | 決定所有聚合是否正確 |
+| 哪些欄位是 dimension 屬性，哪些是 measure？ | measure 才能聚合 |
+| 來源的 business key 夠穩定嗎？ | 決定是否需要代理鍵 |
+| 哪些 dimension 要保留歷史？ | SCD 策略 |
+| 有沒有重複出現的日期角色、多對多關係？ | role-playing、bridge table |
+| 不同 fact 是否共用 conformed dimensions？ | 沒有共用，跨主題分析會失真 |

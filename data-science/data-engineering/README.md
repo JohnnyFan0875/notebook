@@ -1,52 +1,66 @@
-# Data Engineering
+[Data Science](../README.md) › Data Engineering
 
-資料工程關注的是讓資料可以被穩定地擷取、儲存、轉換與交付，而不只是把資料先「放進某個資料庫」。如果 data science 比較常聚焦在分析與建模，data engineering 更像是在建立整條資料供應鏈，確保下游拿到的資料是最新、正確、可追蹤、可擴充的。
+# 資料工程 (Data Engineering)
 
-## 建議閱讀順序
+資料工程讓資料能被穩定地擷取、儲存、轉換與交付：分析與模型要能每天重跑、出錯時查得到原因，靠的是這一層。對生資與 ML 工作者最實用的部分是檔案格式、超出記憶體的處理、資料品質檢查與可重跑的 pipeline；平台（Databricks、雲端 warehouse）在需要時再讀。
 
-1. 先讀核心觀念：從 [Foundations](foundations.md)、[Storage and Models](storage-and-models.md)、[Ingestion](ingestion.md)、[Processing and Pipelines](processing-and-pipelines.md) 建立資料流的基本語言。
-2. 再讀資料模型：用 [Data Modeling Foundations](data-modeling-foundations.md) 與 [Data Warehousing and Dimensional Modeling](dimensional-modeling-and-star-schema.md) 建立分析資料表設計能力。
-3. 再補可擴展、品質與治理：讀 [Scalable Processing and Out-of-Core Workflows](scalable-processing-and-out-of-core.md)、[Data Quality Checks](data-quality-checks.md)、[Data Governance](governance.md)、[Data Versioning and DVC](../machine-learning/production/dvc.md)。
-4. 接著選平台路線：偏資料平台走 [Spark](spark.md) / [Databricks](databricks.md) / [Cloud Data Warehouses](cloud-data-warehouses.md)；偏即時資料流看 [Streaming](streaming.md)；偏 BI 交付看 [BI Tools](../data-communication/bi-tools/README.md)。
+## 建議順序
 
-## 主題分組
+```
+核心觀念 → 儲存與格式 → 擷取 → Pipeline
+                               ↓
+         資料建模 → 維度模型          大資料：out-of-core → Spark → 基因體 Spark
+                               ↓
+                  資料品質 → 治理          平台：Databricks / 雲端 warehouse / dbt / 串流
+```
 
-### 核心觀念與管線基礎
+## 筆記
 
-- [Foundations](foundations.md): data engineer 的角色、big data 與資料管線的基本脈絡
-- [Storage and Models](storage-and-models.md): structured、semi-structured、unstructured data，以及 database、warehouse、lake 的差異
-- [Ingestion](ingestion.md): 常見資料來源、flat files、JSON、web requests 與擷取時的資料型態判斷
-- [Processing and Pipelines](processing-and-pipelines.md): ETL / ELT 三階段、batch vs. stream、scheduling vs orchestration、pipeline testing、parallel 與 cloud processing
+### 核心觀念
 
-### 資料建模、品質與治理
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [資料工程基礎](foundations.md) | 角色分工、資料生命週期、現代 vs 傳統架構 | 資料工程做什麼？什麼時候需要 pipeline？ |
+| [儲存與資料模型](storage-and-models.md) | 結構化程度、database / warehouse / lake / lakehouse、Delta、檔案格式 | 資料該放哪裡、存成什麼格式？ |
+| [資料擷取](ingestion.md) | 檔案、資料庫、API 來源；型別、編碼、checksum、增量擷取 | 資料進來時要先確認什麼？ |
+| [處理與 Pipeline](processing-and-pipelines.md) | ETL / ELT、batch vs stream、排程與編排、冪等、測試 | 怎麼把一次性腳本變成可重跑的流程？ |
 
-- [Data Modeling Foundations](data-modeling-foundations.md): entity / attribute / relationship、cardinality、primary / foreign key、ER modeling（正規化見 [Database Normalization](../databases/database-normalization.md)）
-- [Data Warehousing and Dimensional Modeling](dimensional-modeling-and-star-schema.md): warehouse vs lake / mart、分層、Inmon vs Kimball、medallion 到 gold layer、fact / dimension、SCD、OLAP vs OLTP、ETL vs ELT
-- [Data Quality Checks](data-quality-checks.md): 品質維度、detective vs preventative rules、閾值與告警、remediation，以及用 Great Expectations 寫成可執行檢查
-- [Data Governance](governance.md): data catalog、lineage、access control、encryption、分類標籤，以及治理計畫的角色、策略與衡量
-- [Data Versioning and DVC](../machine-learning/production/dvc.md): data lineage、reproducibility、`params.yaml`、`dvc.yaml` 與資料版本管理
+### 建模、品質與治理
 
-### 可擴展處理與分散式工作流
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [資料建模基礎](data-modeling-foundations.md) | entity / attribute / relationship、cardinality、key、ER model | 資料表之間怎麼連？ |
+| [資料倉儲與維度模型](dimensional-modeling-and-star-schema.md) | warehouse 分層、Inmon vs Kimball、medallion、star schema、grain、SCD | 分析用的表要怎麼設計？ |
+| [資料品質檢查](data-quality-checks.md) | 品質維度、偵測 vs 預防規則、閾值與告警、pandera / Great Expectations | 怎麼把「資料要乾淨」變成可執行的檢查？ |
+| [資料治理](governance.md) | metadata、catalog、lineage、存取控制、分類標籤、治理計畫 | 誰能用哪些資料？出錯時影響到誰？ |
+| [資料版本與 DVC](../machine-learning/production/dvc.md) | 資料版本、`dvc.yaml`、`params.yaml` | 怎麼重現某次分析用的資料？ |
 
-- [Scalable Processing and Out-of-Core Workflows](scalable-processing-and-out-of-core.md): RAM 限制、disk-backed structures、chunk-wise processing 與 split-apply-combine
-- [Spark and PySpark](spark.md): 分散式處理心智模型、RDD、DataFrame、partition、清理與特徵工程，以及 Spark SQL（`spark.sql()`、temp view、window functions）
-- [Spark with sparklyr](sparklyr.md): `spark_connect()`、`compute()` / `collect()`、`DBI` SQL、`sdf_` / `ft_` / `ml_` 與 R 介面的 Spark workflow
-- [Scala Fundamentals](../../computing/programming-languages/scala-fundamentals.md): Scala 的語言定位、腳本 vs 應用程式、靜態型別與 Spark / JVM 生態的關聯
+### 大資料處理
 
-### 資料平台與雲端 Warehouse
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [超出記憶體的處理](scalable-processing-and-out-of-core.md) | 分塊處理、split-apply-combine、可合併的部分結果、Polars / DuckDB / R 工具 | 資料大於 RAM 但不想上叢集怎麼辦？ |
+| [Spark 與 PySpark](spark.md) | 分散式模型、DataFrame、lazy evaluation、清理、特徵工程、Spark SQL | 什麼時候需要 Spark？怎麼寫才不會慢？ |
+| [sparklyr](sparklyr.md) | R 的 Spark 介面、`compute()` vs `collect()`、`sdf_` / `ft_` / `ml_` | R 使用者怎麼用 Spark？ |
+| [Spark 處理基因體資料](spark-for-genomics.md) | Glow、Hail：讀 VCF、variant / sample QC、GWAS、PCA | 數十萬樣本的變異資料怎麼分析？ |
 
-- [Databricks](databricks.md): lakehouse、Delta、Unity Catalog、clusters vs SQL warehouses、managed vs unmanaged tables、time travel、Databricks SQL（`MERGE`、`OPTIMIZE`、`Z-ORDER`）
-- [dbt Foundations](dbt-foundations.md): dbt project 結構、`profiles.yml`、models、`dbt run`、`ref()`、documentation 與 lineage
-- [Cloud Data Warehouses](cloud-data-warehouses.md): Snowflake / BigQuery / Redshift 比較表，virtual warehouse、`project.dataset.table`、`DISTKEY` / `SORTKEY` 等平台細節
+### 平台
 
-### 串流與即時資料
+| 筆記 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [Databricks](databricks.md) | lakehouse、Delta、Unity Catalog、compute、time travel、`MERGE` / `OPTIMIZE` | Databricks 上的資料怎麼管理？ |
+| [雲端資料倉儲](cloud-data-warehouses.md) | Snowflake / BigQuery / Redshift 比較、計費與效能陷阱 | 三大雲端 warehouse 差在哪？ |
+| [dbt](dbt-foundations.md) | model、`ref()` / `source()`、測試、seed、snapshot、文件 | 怎麼讓 SQL 轉換可測試、可追蹤？ |
+| [串流處理](streaming.md) | Kafka（topic / partition / consumer group）、Structured Streaming、AWS Kinesis + Lambda | 什麼時候真的需要即時處理？ |
 
-- [Streaming](streaming.md): event streaming、Kafka 的 topic / partition / replication、Celery vs Kafka vs Spark Streaming，以及 AWS Kinesis + Firehose + Lambda
+## 與其他章節的關係
 
-## Why It Matters
-
-- 分析做得再好，如果資料沒有穩定進來、格式不一致，模型和報表都會失效。
-- 許多團隊的瓶頸不是演算法，而是資料延遲、品質不穩、欄位定義混亂、流程無法重跑。
-- 資料工程的核心價值是把一次性的資料處理，變成可以自動化、監控、擴充的系統。
-
-[Back to Data Science](../README.md)
+| 想做的事 | 去哪裡 |
+| --- | --- |
+| SQL 查詢、資料庫設計、DuckDB | [Databases](../databases/README.md) |
+| 單機 pandas / Polars 效能 | [記憶體與儲存格式](../python-foundations/pandas/memory-and-storage.md)、[Polars](../python-foundations/performance-and-scaling/polars.md) |
+| 生資 workflow（Nextflow）、Airflow 排程 | [Workflow Engines](../../computing/workflow-engines/README.md) |
+| 模型部署與監控 | [MLOps](../machine-learning/production/README.md) |
+| 報表與 BI 工具 | [Data Communication](../data-communication/README.md) |
+| 個資、受控存取、去識別化 | [Responsible AI](../responsible-ai/README.md) |
+| Scala 語言基礎 | [Scala Fundamentals](../../computing/programming-languages/scala-fundamentals.md) |

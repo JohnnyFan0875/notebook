@@ -24,8 +24,8 @@
 
 | 章節 | 核心內容 | 回答的問題 |
 | --- | --- | --- |
-| [影像分析](image-analysis/README.md) | scikit-image、mask、物件量測、registration（古典方法，非 DL） | 不訓練模型時，如何從顯微鏡或醫學影像抽出可量測的結構？ |
-| [網路分析](network-analysis/README.md) | graph、centrality、路徑、cliques、二分網路 | 資料核心是「誰和誰相連」時，如何找重要節點與群體結構？ |
+| [影像分析](image-analysis/README.md) | scikit-image、細胞核分割（watershed）、regionprops、DICOM / NIfTI spacing、mask、registration（古典方法，非 DL） | 不訓練模型時，如何從顯微鏡或醫學影像抽出可量測的結構？ |
+| [網路分析](network-analysis/README.md) | graph、centrality、路徑、隨機基準、社群偵測、二分網路；PPI（STRING）、WGCNA、單細胞 kNN + Leiden | 資料核心是「誰和誰相連」時，如何找重要節點與群體結構？ |
 | [Responsible AI](responsible-ai/README.md) | 倫理與治理、偏誤（含 GWAS / EHR）、隱私與法規（GDPR / HIPAA / 個資法 / EU AI Act 醫材）、基因資料受控存取、匿名化與差分隱私、AI 資安 | 模型進入真實決策時，如何可控、可問責、合規？ |
 | [應用領域](applied-domains/README.md) | finance、行銷反應模型、最佳化、process mining | 通用方法放進特定領域時要注意什麼？ |
 
@@ -35,7 +35,7 @@
 | --- | --- | --- |
 | [資料庫](databases/README.md) | SQL 查詢、window functions、交易、效能、方言對照、SQLAlchemy、DuckDB / Parquet、PyMongo | 如何在資料庫端先篩選、聚合再抽取？ |
 | [網頁爬蟲](web-scraping/README.md) | Scrapy、BeautifulSoup / Selenium、rvest | 資料不在 API 或 CSV 時，如何合法抓取？ |
-| [資料工程](data-engineering/README.md) | ingestion、pipelines、Spark、Databricks、雲端資料倉儲、串流、治理、資料品質 | 資料如何穩定流進分析與模型，而不是每次手動整理？ |
+| [資料工程](data-engineering/README.md) | ingestion、檔案格式、pipelines、out-of-core、Spark、[Glow / Hail 基因體資料](data-engineering/spark-for-genomics.md)、Databricks、雲端資料倉儲、dbt、串流、治理、資料品質 | 資料如何穩定流進分析與模型，而不是每次手動整理？ |
 | [資料溝通](data-communication/README.md) | 問題定義、結果溝通、dashboard 設計、[BI 工具](data-communication/bi-tools/README.md)（Power BI / Tableau） | 如何把模糊需求翻成分析問題，並讓結果回到決策？ |
 
 ## 建議路線

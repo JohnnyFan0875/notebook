@@ -1,204 +1,140 @@
-# Introduction to Network Analysis
+[Data Science](../README.md) › [Network Analysis](README.md) › 網路分析入門
 
-network analysis 適合處理的，不是單點數值高低，而是關係結構本身。當你真正關心的是「誰和誰有連結」、「資訊或流量怎麼穿越網路」、「哪些節點在中間扮演橋樑」，graph 就會是比普通表格更好的語言。
+# 網路分析入門 (Introduction to Network Analysis)
 
-Key point: 一張 network 的資訊量不只在 nodes 和 edges 的清單，而在它們組成的結構。分析的目標通常是把這個結構轉成可解讀的問題，例如重要性、路徑、群聚與推薦。
+網路分析處理的是關係結構本身：誰和誰有連結、資訊或流量怎麼穿越網路、哪些節點扮演橋樑。網路的資訊不只在 node 與 edge 的清單，而在它們組成的結構；分析目標是把結構轉成可解讀的問題，例如重要性、路徑、群聚與推薦。
 
-## Networks Start With A Modeling Choice
+## 先做建模選擇
 
-要做 network analysis，第一步不是算 centrality，而是先定義:
+算任何指標之前，先定義：
 
-- node 代表什麼 entity
-- edge 代表什麼 relation
-- edge 是否有方向
-- edge 是否有權重
+| 決定 | 問題 | 例子 |
+| --- | --- | --- |
+| Node | 代表什麼實體？ | 人、站點、蛋白質、基因、細胞 |
+| Edge | 代表什麼關係？ | 互動、可通行路線、物理結合、共表現、相似度 |
+| 方向 | 關係有方向嗎？ | 追蹤、引用、轉錄調控（TF → target）有方向；PPI、好友無方向 |
+| 權重 | 關係有強度、距離或成本嗎？ | 互動次數、相關係數、信心分數、運輸成本 |
 
-例如:
+node 與 edge 的語意沒先釐清，後面所有指標都可能失去意義。
 
-- social network: nodes 是人，edges 是互動或關係
-- transportation network: nodes 是站點，edges 是可通行路線
-- collaboration network: nodes 是使用者，edges 是共同參與同一個專案或 repo
+| 網路類型 | Node | Edge | 典型問題 |
+| --- | --- | --- | --- |
+| 社交網路 | 人 | 互動或關係 | 誰有影響力？ |
+| 交通網路 | 站點 | 可通行路線 | 最有效率的路徑？ |
+| 合作網路 | 使用者 | 共同參與同一個 repo / 專案 | 誰跨越多個合作圈？該推薦誰合作？ |
+| PPI 網路 | 蛋白質 | 物理或功能交互作用 | 哪些蛋白是 hub？哪些模組對應 complex？ |
+| 基因調控網路 | 轉錄因子、基因 | 調控關係（有向） | 哪些 TF 是 master regulator？ |
 
-如果 node 和 edge 的語意沒有先釐清，後面的所有 graph metric 都可能失去意義。
+## Graph 類型
 
-## Why Use Graphs At All
+| 類型 | 意義 | NetworkX | 影響 |
+| --- | --- | --- | --- |
+| 無向 (undirected) | 關係雙向 | `nx.Graph()` | degree 只有一種 |
+| 有向 (directed) | 關係有方向 | `nx.DiGraph()` | in-degree 與 out-degree 回答不同問題；路徑要順著方向走 |
+| 多重圖 (multigraph) | 同一對節點可有多條邊 | `nx.MultiGraph()` / `MultiDiGraph()` | 多次互動不該被壓成單一連結 |
+| 加權 (weighted) | 邊帶強度或成本 | edge attribute `weight` | 最短路徑可能不是邊數最少，而是成本最低 |
 
-network analysis 常處理幾類典型問題:
+```python
+import networkx as nx
 
-- important entities: 例如 social network 中的 influencers
-- pathfinding: 例如交通或物流中的最有效路徑
-- local structure: 例如朋友群、團隊或合作圈
-- recommendation: 例如應該和誰連結、合作或互動
+G = nx.Graph()
+G.add_node("TP53", type="TF")
+G.add_edges_from([("TP53", "MDM2"), ("TP53", "CDKN1A"), ("MDM2", "MDM4")])
+G.add_edge("TP53", "ATM", weight=0.9, source="STRING")      # edge attribute
 
-這些問題之所以適合 graph，不是因為 graph 比較炫，而是因為它把「關係」變成一級公民。
+G.number_of_nodes(), G.number_of_edges()     # (5, 4)
+G.nodes(data=True); G.edges(data=True)        # 連同屬性
+list(G.neighbors("TP53"))                    # ['MDM2', 'CDKN1A', 'ATM']
 
-## Building Graphs In NetworkX
+# 從 edge list DataFrame 建圖（最常見）
+G = nx.from_pandas_edgelist(edges, source="protein1", target="protein2",
+                            edge_attr="combined_score")
+```
 
-這份入門材料大量使用 `networkx`。在 Python 裡，最先要熟的通常是:
+建好圖後先檢查 node / edge 數量、屬性與連通分量是否合理，再算指標。
 
-- 建立 graph 物件
-- 加入 nodes 與 edges
-- 為 nodes 或 edges 加上 attributes
-- 讀取基本結構資訊，例如 `G.nodes()`、`G.edges()`
+## 中心性 (Centrality)
 
-這些操作看起來簡單，但很重要，因為很多分析其實都建立在「圖是否被正確建起來」。
+| 指標 | 直覺 | 回答 | 注意 |
+| --- | --- | --- | --- |
+| Degree | 直接連了多少邊 | 誰最活躍 / 最多直接連結？ | 只看鄰居，會高估「熱鬧但不關鍵」的節點 |
+| Betweenness | 多常出現在其他節點對的最短路徑上 | 誰是橋樑、瓶頸？ | 計算量大（大圖用 `k=` 抽樣近似） |
+| Closeness | 到其他所有節點的平均距離倒數 | 誰能最快觸及全網？ | 不連通圖要小心定義 |
+| Eigenvector / PageRank | 連到重要節點的節點也重要 | 誰在核心圈？ | 有向圖用 PageRank |
 
-## Graph Type Changes The Question
+```python
+deg = nx.degree_centrality(G)                  # degree / (n - 1)
+btw = nx.betweenness_centrality(G)             # 大圖：nx.betweenness_centrality(G, k=500, seed=0)
+clo = nx.closeness_centrality(G)
+pr = nx.pagerank(G)
 
-不是所有 graph 都一樣。最基本的差異包括:
+top = sorted(btw, key=btw.get, reverse=True)[:10]
+```
 
-- undirected graph: 關係雙向，例如 Facebook friendship
-- directed graph: 關係有方向，例如 Twitter follow
-- multigraph / multidigraph: 同一對節點之間可以有多條邊
-- weighted graph: 邊帶有強度、距離、成本或頻率
+![Degree vs betweenness](src/introduction-to-network-analysis-degree-vs-betweenness.png)
 
-這個分類會直接改變你能問的問題。
+兩個緊密群體以一條路徑相連：群內節點 degree 高，但橋樑節點（以及兩端的 0、7）betweenness 最高。degree 低不代表不重要；移除橋樑節點，網路就斷成兩半。
 
-例如:
+> 生資網路中 hub（高 degree）常是研究較多的基因：文獻研究偏差 (study bias) 會讓熱門基因累積更多已知交互作用。比較 degree 前，考慮用資料驅動的網路或校正研究次數。
 
-- 在 directed network 裡，in-degree 和 out-degree 回答不同問題
-- 在 weighted network 裡，最短路徑不一定是邊數最少，而可能是成本最低
-- 在 multigraph 裡，多次互動不應該被壓成單一無差別連結
+## 路徑
 
-## Degree Is The Simplest Importance Signal
+| 問題 | NetworkX |
+| --- | --- |
+| 兩點最短路徑 | `nx.shortest_path(G, a, b)`、加權：`weight="cost"` |
+| 所有最短路徑 | `nx.all_shortest_paths(G, a, b)` |
+| 最短路徑長度 | `nx.shortest_path_length(G, a, b)` |
+| 是否連通、連通分量 | `nx.is_connected(G)`、`nx.connected_components(G)` |
 
-degree centrality 可以先當成最直觀的節點重要性。
+最短路徑的定義要和 edge 意義一致：權重代表距離或成本時，不能只看 hop 數；權重代表**相似度或信心**時（相關係數、STRING score），要先轉成距離（例如 `1 - score` 或 `-log(score)`）再算最短路徑，否則會找到「最不相似」的路徑。
 
-- undirected graph: 看一個 node 接了多少邊
-- directed graph: 可以再拆成 in-degree 與 out-degree
+## Clique 與 Subgraph
 
-它適合回答:
+clique 是一組兩兩完全相連的節點，最小的非平凡 clique 是三角形。maximal clique 是無法再加入任何節點而仍是 clique 的 clique，常用來找緊密群體（如蛋白質複合體）的起點。
 
-- 誰和最多人有直接連結？
-- 哪些節點最活躍或最受歡迎？
+```python
+cliques = list(nx.find_cliques(G))                    # 所有 maximal cliques
+largest = max(cliques, key=len)
 
-但 degree 只看直接鄰居，不看整體網路結構，所以它很容易高估「熱鬧但不關鍵」的節點。
+# 大圖先聚焦局部：某節點及其鄰居的子圖
+nodes = [hub] + list(G.neighbors(hub))
+sub = G.subgraph(nodes).copy()                        # subgraph 預設是 view，要修改時 copy
+ego = nx.ego_graph(G, hub, radius=2)                  # 兩步內的鄰域
+```
 
-## Betweenness Captures Bridge Value
+真實網路太大時，直接看全圖只是一團毛球。常見節奏：全圖找重要節點 → 取鄰居建子圖 → 在局部檢查社群、橋接或推薦機會。
 
-betweenness centrality 的核心直覺是:
+## 視覺化是推理工具，不是裝飾
 
-- 某個 node 會不會經常出現在別人的 shortest path 上
+視覺化可以快速看出團塊、橋樑、緊密區域與局部鄰域是否合理，但 layout 不是數學事實：換一個 layout 或 seed，圖看起來可能完全不同，相近的位置也不代表相近的關係。判斷要回到指標。
 
-它適合找的是:
+```python
+import matplotlib.pyplot as plt
+pos = nx.spring_layout(G, seed=0)                     # 固定 seed 才能重現
+nx.draw(G, pos, node_size=[300 * btw[n] + 20 for n in G], with_labels=False)
+```
 
-- 橋接不同社群的中介節點
-- 少數連起兩大團塊的 bottleneck
-- degree 不高、但一旦移除就會讓網路斷裂的重要節點
+大型或需要註解的生物網路用 Cytoscape 或 Gephi 畫較方便。
 
-這也是為什麼一個 node 可能:
+## 工作流程
 
-- degree centrality 不高
-- betweenness centrality 卻很高
+1. 定義 node、edge、方向與權重
+2. 建圖，檢查節點、邊、屬性、連通分量
+3. 判斷是有向、無向、加權還是多重圖問題
+4. 先算 degree，再看 betweenness 與最短路徑
+5. 圖太大時切子圖做局部檢查
+6. 懷疑有緊密群體時看 clique 或[社群偵測](directed-networks-and-structural-metrics.md#社群偵測-community-detection)
+7. 回到原本的任務：影響力、路徑、社群或推薦
 
-這種節點未必「朋友很多」，但可能「誰要跨群溝通都得經過它」。
+推薦不一定要從 user-item 矩陣出發，也可以從 graph 結構出發：例如推薦「朋友的朋友」中共同鄰居最多的人（`nx.common_neighbors`、`nx.jaccard_coefficient`）。
 
-## Paths Answer Reachability Questions
+## 常見錯誤
 
-network analysis 很常在問 path 問題。
-
-常見版本包括:
-
-- shortest path between two nodes
-- all shortest paths
-- 哪些 nodes 最常出現在 shortest paths 上
-
-在交通、供應鏈或資訊傳播語境中，pathfinding 幾乎就是最直接的業務問題翻譯。
-
-提醒: shortest path 的定義一定要和 edge meaning 對齊。若 edge weight 代表距離、成本或阻力，最短路徑不應只看 hops 數量。
-
-## Cliques Capture Tightly Connected Groups
-
-clique 是一組彼此完全連通的 nodes。
-
-最簡單的複雜 clique 可以先想成 triangle。它的重要性在於:
-
-- 它比一般高 degree 更強，因為每個成員彼此都互連
-- 它常代表緊密群體、強合作圈或高度重疊的社交結構
-
-network analysis 裡常見的不是只找 clique，而是找 maximal clique，也就是:
-
-- 再多加一個 node 就不再是 clique 的 clique
-
-這種結構常被拿來做:
-
-- community finding 的起點
-- 緊密合作團體探索
-- 局部高密度區域辨識
-
-## Subgraphs Help You Zoom In
-
-真實 network 很容易太大，直接看全圖通常只會變成一團毛球。
-
-subgraph 的用途就是:
-
-- 聚焦某個 node 周邊的鄰居
-- 看某個局部社群的關係
-- 從大圖中切出比較可讀的片段
-
-一個很常見的分析節奏是:
-
-1. 先在全圖上找重要 node。
-2. 再取該 node 的 neighbors。
-3. 建立對應 subgraph。
-4. 用局部圖檢查社群、橋接或推薦機會。
-
-這比一開始就試圖解讀整張大圖通常有效得多。
-
-## Graph Visualization Is For Reasoning, Not Decoration
-
-課程裡反覆示範 visualizing networks，原因不是因為圖漂亮，而是因為 visualization 可以幫你快速看出:
-
-- 節點是否分成幾個團塊
-- 某些 node 是否明顯扮演橋樑
-- clique 或 dense area 是否存在
-- local neighborhood 是否合理
-
-但也要記住:
-
-- 視覺 layout 不是數學事實
-- layout 改了，圖看起來就可能很不一樣
-
-所以圖像適合拿來探索與溝通，真正的判斷仍要回到 graph metrics。
-
-## A Practical Workflow For Intro Network Analysis
-
-入門 network analysis 可以先固定走這條路:
-
-1. 定義 nodes、edges、direction 與 weights。
-2. 建好 graph，先檢查 nodes / edges / attributes 是否合理。
-3. 判斷這是 directed、undirected、weighted 還是 multigraph 問題。
-4. 先算 degree、再看 betweenness 與 shortest paths。
-5. 若圖太大，切 subgraphs 做局部檢查。
-6. 若懷疑有緊密群體，再看 cliques 或 clique-like structure。
-7. 最後回到真實任務，例如 influence、routing、community 或 recommendation。
-
-這個順序很重要，因為很多人會太早跳去複雜 metric，卻還沒確認 graph 是否被正確表示。
-
-## Example Use Case: Collaboration Network
-
-這份課程最後用 GitHub collaboration network 當案例，很適合入門。
-
-設定方式很直覺:
-
-- nodes: users
-- edges: 共同參與同一個 repository 的合作關係
-
-這樣的 network 可以回答:
-
-- 哪些使用者在 collaboration graph 中最核心？
-- 哪些人橫跨多個合作圈？
-- 哪些使用者之間可能值得推薦建立合作？
-
-這也提醒我們: recommendation system 不一定只能從 user-item matrix 出發，也可以從 graph structure 出發。
-
-## Common Failure Modes
-
-- 把任何關聯資料都硬畫成 graph，卻沒有清楚 edge meaning
-- 忽略 directed vs undirected 的差異
-- 把高 degree 誤解成所有形式的重要性
-- 只看 visualization，不看 metric
-- 把全圖擠在一起，卻不切 subgraph 做局部理解
-- 把 clique 或 community 當成絕對真實群體，而不是依賴建模定義的結構
-
-如果 graph representation 錯了，後面的 centrality、path 與 recommendation 幾乎都會一起失真。
+| 錯誤 | 後果 |
+| --- | --- |
+| 把任何關聯資料都硬畫成 graph，沒有清楚的 edge 意義 | 指標無法解讀 |
+| 忽略有向 vs 無向 | in / out 角色混在一起、走不通的路徑被算進去 |
+| 把高 degree 當成所有形式的重要性 | 漏掉橋樑節點 |
+| 只看視覺化不看指標 | 被 layout 誤導 |
+| 不切子圖，硬讀全圖 | 看不出結構 |
+| 把 clique 或社群當成絕對真實的群體 | 它們取決於建模定義與演算法 |

@@ -1,196 +1,106 @@
-# Spark with `sparklyr`
+[Data Science](../README.md) › [Data Engineering](README.md) › sparklyr
 
-`sparklyr` 是 R 連接 Apache Spark 的主要介面之一。它的價值不是把 Spark 變成另一套完全不同的系統，而是讓 R 使用者能沿用熟悉的 `dplyr`、formula 與 pipe workflow，把資料留在 Spark 叢集內處理。
+# sparklyr
 
-Key point: `sparklyr` 的核心優勢不是「R 也能跑 Spark」這句話本身，而是它把 Spark DataFrame、SQL、feature engineering 與 MLlib 接到 R 的資料分析語言裡。
+`sparklyr` 是 R 連接 Apache Spark 的介面：沿用 `dplyr`、formula 與 pipe 的寫法，但資料留在 Spark 裡處理。價值不在「R 也能跑 Spark」，而在把 Spark DataFrame、SQL、特徵工程與 MLlib 接進 R 的分析流程。Spark 的核心觀念（lazy evaluation、partition、shuffle）見 [Spark 與 PySpark](spark.md)。
 
-## The Core Lifecycle
-
-最基本的節奏很簡單：
-
-1. connect
-2. work in Spark
-3. disconnect
+## 生命週期
 
 ```r
 library(sparklyr)
+library(dplyr)
 
-sc <- spark_connect(master = "local")
+# spark_install(version = "3.5")          # 本機第一次使用時安裝 Spark
+sc <- spark_connect(master = "local")     # 叢集：master = "yarn"；Databricks：method = "databricks_connect"
 
-# do work
+# ... 工作 ...
 
 spark_disconnect(sc)
 ```
 
-這個生命週期很值得刻意記住，因為 Spark connection 不是一般本地 data frame。它代表你正在對一個分散式運算環境發送操作。
+`sc` 不是本地資料，而是一個連到分散式運算環境的連線；操作是送到 Spark 執行。
 
-## Why `sparklyr` Feels Familiar
+## 本地 tibble vs Spark table
 
-`sparklyr` 最容易上手的地方，是很多資料操作長得像 `dplyr`：
-
-- `select()`
-- `filter()`
-- `arrange()`
-- `mutate()`
-- `group_by()`
-- `summarise()`
-
-這種熟悉感很重要，但不要因此忘記一件事：
-
-- 語法像 `dplyr`
-- 執行位置卻常常在 Spark
-
-也就是說，這些操作通常不是先把大表拉回 R 再算，而是先翻譯成 Spark 端可執行的工作。
-
-## Local Tibble vs Spark Table
-
-很多 `sparklyr` workflow 會從本地 tibble 開始，再把資料複製進 Spark。
+| 物件 | 在哪裡 | 怎麼得到 |
+| --- | --- | --- |
+| local tibble / data.frame | R session 記憶體 | `collect()` 的結果、一般 R 讀檔 |
+| Spark table（`tbl_spark`） | Spark 執行環境 | `copy_to()`、`spark_read_*()`、`tbl(sc, "name")` |
 
 ```r
-local_tbl <- tibble::tibble(
-  agnetha = 1:3,
-  benny = pi ^ c(1, 4, 9),
-  bjorn = month.name[1:3],
-  anni_frid = c(TRUE, FALSE, TRUE)
-)
+# 1. 把資料放進 Spark
+expr_tbl <- spark_read_parquet(sc, name = "expr", path = "expr_parquet/")   # 大檔：直接由 Spark 讀
+meta_tbl <- copy_to(sc, meta_df, "meta", overwrite = TRUE)                  # 小表：從 R 複製過去
+
+# 2. dplyr 語法 → 翻譯成 Spark SQL，在 Spark 端執行
+summary_tbl <- expr_tbl |>
+  inner_join(meta_tbl, by = "sample_id") |>
+  filter(tpm > 1) |>
+  group_by(tissue, gene) |>
+  summarise(mean_log_tpm = mean(log2(tpm + 1), na.rm = TRUE), n = n(), .groups = "drop")
+
+show_query(summary_tbl)                 # 看翻譯出的 SQL
 ```
 
-接著再讓它進入 Spark 世界，例如透過 `copy_to()` 或讀取外部來源。
-
-心智模型可以這樣分：
-
-- local tibble: 在 R session 記憶體裡
-- Spark table / Spark DataFrame: 在 Spark 執行環境裡
+能翻譯的只有 Spark SQL 支援的函式；R 專屬函式（如自訂函式、`stringr` 的部分功能）會報錯或需要 `spark_apply()`（逐分區跑 R，慢）。
 
 ## `compute()` vs `collect()`
 
-這是 `sparklyr` 最常見、也最容易混淆的兩個動作之一。
+| 函式 | 結果在哪 | 用途 |
+| --- | --- | --- |
+| `compute("name")` | 留在 Spark，materialize 成可重用的中間表 | 同一中間結果要用很多次 |
+| `collect()` | 拉回 R 記憶體 | 結果已經夠小，要畫圖或用 R 套件分析 |
+| `sdf_register()` | 在 Spark 註冊名稱，不 materialize | 讓 SQL 可以查到它 |
 
 ```r
-intermediate_data <- initial_data %>%
-  # some calculations
-  compute("an_intermediate_result")
-
-results <- intermediate_data %>%
-  # some more calculations
-  collect()
+summary_tbl <- summary_tbl |> compute("tissue_gene_summary")   # 留在 Spark
+top <- summary_tbl |> slice_max(mean_log_tpm, n = 20) |> collect()   # 只拉回小結果
 ```
 
-可以先這樣理解：
+> 太早 `collect()` 等於丟掉分散式處理的好處，還可能讓 R session 記憶體爆掉。
 
-- `compute()`: 把目前的轉換結果 materialize 在 Spark 端，通常形成可重用的中介結果
-- `collect()`: 把結果拉回 R 端記憶體
-
-Key point: `compute()` 是留在 Spark，`collect()` 是離開 Spark。
-
-Warning: `collect()` 很方便，但只適合結果已經夠小、真的需要回到 R 時再用。太早 `collect()`，等於把分散式處理的好處提早丟掉。
-
-## SQL via `DBI`
-
-`sparklyr` 不只支援 `dplyr` 風格，也能透過 `DBI` 直接下 SQL。
+## 用 DBI 寫 SQL
 
 ```r
-sql_query <- "SELECT agnetha, bjorn FROM abba WHERE anni_frid"
-results <- DBI::dbGetQuery(sc, sql_query)
+DBI::dbGetQuery(sc, "SELECT tissue, count(*) AS n FROM meta GROUP BY tissue")
 ```
 
-這很適合：
+`dplyr` 與 SQL 可以混用：臨時查詢或某些 join / window 用 SQL 較好寫時就用 SQL。
 
-- 臨時查詢
-- 團隊比較習慣 SQL
-- 某些 join / aggregation 用 SQL 比較好表達
+## 三個函式家族
 
-實務上不需要把 `dplyr` 和 SQL 當成二選一。很多 Spark workflow 本來就會混用兩種表達方式。
+| 前綴 | 用途 | 例子 |
+| --- | --- | --- |
+| `sdf_` | Spark DataFrame 工具 | `sdf_nrow()`、`sdf_sample()`、`sdf_random_split()`、`sdf_pivot()`、`sdf_register()` |
+| `ft_` | 特徵轉換（Spark MLlib feature） | `ft_string_indexer()`、`ft_one_hot_encoder()`、`ft_bucketizer()`、`ft_vector_assembler()`、`ft_standard_scaler()` |
+| `ml_` | 機器學習 | `ml_logistic_regression()`、`ml_random_forest()`、`ml_gradient_boosted_trees()`、`ml_predict()`、`ml_pipeline()` |
 
-## Three Function Families Worth Remembering
+記住命名規則比背單一 API 更有方向感。
 
-這門課最有價值的整理之一，是把 `sparklyr` 常見功能分成三個命名家族：
-
-- `sdf_`: Spark DataFrame helpers
-- `ft_`: feature transformation helpers
-- `ml_`: machine learning helpers
-
-這個命名規則很好用，因為它比背單一 API 更能幫你建立方向感。
-
-## `sdf_`: Spark DataFrame Helpers
-
-`sdf_` 系列偏向 Spark 內部資料表操作與 Spark-native dataset 工作。
-
-你可以把它理解成：
-
-- 比純 `dplyr` 更貼近 Spark 物件本身
-- 不是所有事情都要經過一般 tabular verbs
-
-Key point: 如果 `dplyr` 比較像「表格轉換語言」，`sdf_` 比較像「Spark DataFrame 工具箱」。
-
-## `ft_`: Feature Transformations
-
-`ft_` 系列對應 Spark MLlib 之前的特徵處理階段。
-
-常見用途包括：
-
-- 類別轉索引
-- 數值分箱
-- 特徵向量組裝
-- 其他模型前的欄位轉換
-
-這在 Spark workflow 裡很重要，因為大規模資料的 feature engineering 最好也維持在 Spark 端完成，而不是先拉回本機再加工。
-
-## `ml_`: Machine Learning on Spark
-
-`ml_` 系列對應 Spark MLlib 的建模介面。
-
-課程示意像這樣：
+## 在 Spark 上建模
 
 ```r
-model_formula <- reformulate(features, response = "response")
+splits <- sdf_random_split(model_tbl, training = 0.8, testing = 0.2, seed = 42)
 
-model <- training_data %>%
-  ml_gradient_boosted_trees(model_formula)
+model <- splits$training |>
+  ml_gradient_boosted_trees(response ~ age + tissue + mean_log_tpm, type = "classification")
 
-predicted <- ml_predict(model, testing_data) %>%
-  dplyr::pull(prediction)
+pred <- ml_predict(model, splits$testing)          # 仍在 Spark，含原欄位 + prediction / probability_*
+ml_binary_classification_evaluator(pred, label_col = "response", raw_prediction_col = "rawPrediction")
 
-results <- testing_data %>%
-  dplyr::select(response) %>%
-  collect() %>%
-  dplyr::mutate(predicted_response = predicted)
+result <- pred |> select(response, prediction) |> collect()   # 只拉回需要比較的欄
 ```
 
-這段流程反映了 Spark 上機器學習的一個常見節奏：
+> 不要把 `ml_predict()` 的 `prediction` 單獨 `pull()` 出來，再和另外 `collect()` 的測試資料按順序綁在一起：Spark 不保證列順序，結果可能錯位。直接從 `pred` 一起取出。
 
-1. 在 Spark 中準備 training / testing data
-2. 用 `ml_` 系列訓練模型
-3. 用 `ml_predict()` 在 Spark 端做推論
-4. 只把最終需要比較或視覺化的小結果拉回 R
+formula 介面讓 R 使用者不必改用陌生的建模語言，但底層是 Spark MLlib，不是所有 R 建模套件都有對應。隨機切分只適合獨立樣本；有病人、批次或時間結構時要依群組或時間切，見 [交叉驗證](../machine-learning/workflow/cross-validation.md)。
 
-## Formula Interface Still Matters
+## 什麼時候用 sparklyr
 
-對 R 使用者來說，`reformulate()` 或 formula-style 模型指定是很自然的工作方式。
+| 適合 | 不適合 |
+| --- | --- |
+| 已在 R 生態、資料大到不適合放本地記憶體 | 資料放得進記憶體：直接用 `dplyr` / `data.table` / `arrow` / `duckdb` |
+| 想保留 `dplyr` 風格，而不是整個改寫成 PySpark | 需要大量 R 專屬套件的分析（只能 `collect()` 後做） |
+| 要在 Databricks / 叢集上和 PySpark 使用者共用同一份資料 | |
 
-這也是 `sparklyr` 的一個實務優勢：
-
-- 你不一定要完全改成另一套陌生建模語言
-- 可以沿用 R 裡常見的 formula 思維
-
-但也要記得，底層仍然是 Spark MLlib，不是本地 R 的所有 modeling package 都能直接等價替換。
-
-## When `sparklyr` Is a Good Fit
-
-`sparklyr` 特別適合這些情境：
-
-- 你本來就在 R 生態工作
-- 資料已經大到不適合全放本地記憶體
-- 想保留 `dplyr` 風格而不是整個轉去 PySpark
-- 想把 SQL、feature engineering、MLlib 與 R 分析 workflow 接在一起
-
-## Practical Reminders
-
-- `spark_connect()` / `spark_disconnect()` 是最基本的 session lifecycle。
-- `dplyr` 語法在 `sparklyr` 裡常常代表 Spark 端運算，而不是本地 R 運算。
-- `compute()` 是把中介結果留在 Spark，`collect()` 是把結果帶回 R。
-- `DBI::dbGetQuery()` 讓 SQL 仍然是第一級入口，不必和 `dplyr` 對立。
-- `sdf_`、`ft_`、`ml_` 這三個命名家族比單背函式更重要。
-- 在 Spark 上建模時，盡量把 feature engineering 和 prediction 也留在 Spark 端，最後再只拉回小結果。
-
-[Back to Data Engineering](README.md)
+R 的單機大資料選項見 [超出記憶體的處理](scalable-processing-and-out-of-core.md)。

@@ -1,226 +1,104 @@
-# Forming Analytical Questions
+[Data Science](../README.md) › [Data Communication](README.md) › 形成分析問題
 
-Forming analytical questions is the discipline of translating a broad business concern into a question that data, analysis, and a specific method can realistically answer.
+# 形成分析問題 (Forming Analytical Questions)
 
-Key point: `business question -> analytical question -> analytical solution -> business decision` 是一條完整鏈條。只做其中一段，通常無法真正產生價值。
+把廣泛的業務或研究關切，轉成資料與特定方法能實際回答的問題。問題一開始沒有界定對象、時間範圍或判斷標準，分析很容易變成「做了很多圖，卻沒有回答決策問題」。
 
-## Why This Matters
+```
+業務 / 研究問題 → 分析問題 → 分析方法 → 結果 → 決策
+（為什麼流失增加？）（過去 6 個月哪些客群流失率最高？）（描述性分析）
+```
 
-Business teams often ask broad questions such as:
+只做其中一段通常無法產生價值。
 
-- Why is churn increasing?
-- What campaigns should we run to attract new customers?
-- How can we reduce costs?
+## 業務問題 vs 分析問題
 
-These are important questions, but they are usually too broad to answer directly with one dataset or one technique. The analytics job is to translate them into narrower questions with clear scope, data requirements, and an answer format that supports action.
-
-Warning: 如果問題一開始沒有界定對象、時間範圍或判斷標準，後面的分析很容易變成「做了很多圖，但仍然沒有回答決策問題」。
-
-## The Translation Workflow
-
-A practical workflow looks like this:
-
-1. understand the strategic goal and team-level goal
-2. identify the business question that needs to be answered
-3. translate it into one or more analytical questions
-4. select analytical solutions that can answer those questions
-5. feed the analytical results back into business decision-making
-
-| Stage | What happens | Typical output |
+| 面向 | 業務 / 研究問題 | 分析問題 |
 | --- | --- | --- |
-| Business context | Clarify goals, constraints, and the business environment | A business question |
-| Analytical framing | Narrow the question into measurable parts | One or more analytical questions |
-| Method selection | Match the question to a suitable technique | Descriptive, diagnostic, predictive, or prescriptive approach |
-| Decision support | Convert findings into recommendations | Inputs for action, prioritization, or experimentation |
+| 範圍 | 廣、開放、以決策為導向 | 具體、聚焦、可回答 |
+| 語言 | 業務 / 臨床語言 | 資料與分析語言 |
+| 證據 | 可能包含直覺、經驗、專家意見 | 需要資料與明確的分析方法 |
+| 產出 | 方向 | 支持該方向、可衡量的洞察 |
 
-## Business Questions vs Analytical Questions
+| 業務 / 研究問題 | 分析問題 |
+| --- | --- |
+| 該用哪些活動吸引新客戶？ | 過去 6 個月哪些客群帶來最多 / 最少營收？過去活動對各客群銷量的影響為何？ |
+| 這個藥對哪些病人有效？ | 在 2020–2024 年的 cohort 中，治療組 vs 對照組的 12 個月無惡化存活率，依生物標記狀態分層是否不同？ |
+| 這批 scRNA-seq 有什麼發現？ | 疾病組相較健康組，哪些細胞類型的比例改變？各細胞類型內哪些基因差異表現（樣本層級 pseudobulk）？ |
 
-Business questions and analytical questions differ along two main dimensions: scope and methodology.
+## 好的分析問題
 
-| Dimension | Business question | Analytical question |
+| 特性 | 檢查 | 弱 → 強 |
 | --- | --- | --- |
-| Scope | Broad, open-ended, decision-oriented | Specific, focused, answerable |
-| Language | Business terms | Data and analysis terms |
-| Evidence | May include intuition, experience, or expert opinion | Requires data and an explicit analytical method |
-| Output | High-level direction | Measurable insight that supports the direction |
+| 具體 (specific) | 聚焦問題的一部分 | 「哪些客戶最重要？」→「哪個客群營收最高 / 最低？」 |
+| 可衡量 (measurable) | 能用可觀測的資料回答 | 指出確切的指標或結果 |
+| 可行動 (actionable) | 答案會影響決策 | 不同答案會導致不同做法 |
+| 相關 (relevant) | 連回原本的目標 | — |
+| 有時限 (time-bound) | 界定期間或預測範圍 | 「…在過去 6 個月」 |
 
-Example:
+接近規劃常用的 SMART 原則。
 
-- Business question: What campaigns should we use to attract new customers?
-- Analytical question: Which customer groups generated the most and least revenue over the last 6 months?
-- Analytical question: How did past campaigns affect sales volume for each customer group?
+## 先釐清真正重要的是什麼
 
-Those analytical questions can then be answered with descriptive analysis and data visualization, and their outputs become inputs to a broader campaign discussion.
+設計分析問題前，先和利害關係人釐清：
 
-## What Makes a Good Analytical Question
+| 要問清楚 | 例子 |
+| --- | --- |
+| 他們想知道什麼？ | 流失原因、治療反應的預測因子 |
+| 要做什麼決策？ | 調整活動預算、決定下一個實驗 |
+| 誰會用結果？ | 主管、臨床醫師、實驗室 |
+| 有哪些限制與脈絡？ | 資料可得性、時程、倫理審查、樣本數 |
 
-A strong analytical question is usually:
+| 溝通習慣 | 作用 |
+| --- | --- |
+| 開放式提問（「多說一點…」「是什麼讓你想到…」） | 挖出背後的需求 |
+| 用自己的話複述並確認 | 在變成分析工作前抓出隱藏假設 |
+| 對話結束前總結關鍵發現 | 雙方對範圍有共識 |
 
-- specific: it focuses on a clear part of the problem
-- measurable: it can be answered with observable data
-- actionable: the answer can influence a decision
-- relevant: it ties back to the business objective
-- time-bound: it defines a period or horizon
+## 從問題到分析問題
 
-This is close to the SMART logic often used in planning.
+```
+1. 抽出業務問題的關鍵元素 → 2. 拆成較小、可回答的部分
+   → 3. 精煉成分析問題 → 4. 確認每個分析問題仍與原決策相關
+```
 
-Example:
+| 檢查 | |
+| --- | --- |
+| 要改善或解釋的結果是什麼？ | 結果變數 |
+| 範圍內的族群、客群、產品、流程？ | 分析單位 |
+| 哪個期間？ | 時間範圍 |
+| 需要什麼資料？現有資料能回答嗎？ | 可行性 |
+| 需要哪種答案：描述、解釋、預測、建議？ | 分析類型 |
 
-- Weak: Which customers matter most?
-- Stronger: Which customer group generated the most and least revenue in the last 6 months?
+## 四種分析類型
 
-The stronger version identifies the target, metric, and time window, which makes method selection much easier.
+| 類型 | 核心問題 | 例子 | 方法 |
+| --- | --- | --- | --- |
+| 描述性 (descriptive) | 發生了什麼？ | 過去 3 個月最常見的病人抱怨；哪些供應商延遲最多 | 摘要統計、分組比較、dashboard、視覺化 |
+| 診斷性 (diagnostic) | 為什麼發生？ | 過去兩年入學率下降的因素；哪些製程造成瑕疵率上升 | drill-down、根因分析、假設檢定、相關、迴歸 |
+| 預測性 (predictive) | 會發生什麼？ | 產品需求預測；理賠是否詐欺；哪些病人有風險 | 時間序列預測、分類、預測模型 |
+| 處方性 (prescriptive) | 該怎麼做？ | 即時調整機票價格；推薦下一個產品；給高流失風險客戶哪種挽留策略 | 推薦演算法、最佳化、決策規則 |
 
-## Discover What Really Matters
+一個業務問題常需要多種類型，而且通常有先後順序：
 
-Before drafting analytical questions, clarify the problem with stakeholders. A clearly defined problem should usually answer:
+| 業務問題：哪些貸款申請最可能違約？ | |
+| --- | --- |
+| 描述性 | 過去哪些申請違約了？ |
+| 診斷性 | 為什麼某些申請容易違約？ |
+| 預測性 | 能否從申請資料預測違約機率？ |
 
-1. what the business wants to know
-2. what decisions need to be made
-3. who will use the results
-4. what other context or constraints matter
+> 團隊常直接跳到預測，卻還沒理解基準與驅動因子。四種類型不是互相競爭的選擇，而是常形成一個序列。
 
-Useful communication habits:
+診斷性問題容易被誤讀成因果結論：觀察性資料的相關與迴歸只能說明關聯，要回答「如果我們這樣做會怎樣」需要實驗或因果推論設計，見 [Experimental Design](../statistics/experimental-design/README.md)；預測問題見 [Machine Learning](../machine-learning/README.md)。
 
-- ask open-ended questions such as `Tell me more about...` or `What led you to this...?`
-- paraphrase the problem in your own words and confirm it back with stakeholders
-- summarize the key discoveries from the conversation before moving into analysis design
+## 常見失敗
 
-Tip: Paraphrasing is not just politeness. It is a fast validation step that catches hidden assumptions before they become analysis work.
+| 失敗 | 修正 |
+| --- | --- |
+| 從偏好的方法出發，而不是從需求出發 | 先寫下要支持的決策 |
+| 問了現有資料無法回答的問題 | 擷取前先確認資料可得性與樣本數 |
+| 問題太大，一個分析週期做不完 | 拆成多個分析問題 |
+| 統計上正確，但對決策沒用 | 檢查不同答案是否會改變做法 |
+| 沒確認利害關係人對結果的解讀相同 | 交付前複述結論並確認 |
 
-## A Practical Process For Forming The Question
-
-When the business question is still vague, this sequence works well:
-
-1. extract the key elements from the business question
-2. break the business question into smaller answerable parts
-3. refine those parts into analytical questions
-4. confirm that each analytical question still matters to the original decision
-
-Checklist:
-
-- What outcome are we trying to improve or explain?
-- Which population, segment, product, or process is in scope?
-- What time period matters?
-- What data would be needed?
-- What kind of answer would be useful: description, explanation, prediction, or recommendation?
-
-## Match The Question To The Right Type Of Analysis
-
-Many analytical questions become clearer once you decide what kind of answer is needed.
-
-| Analytical type | Core question | Example techniques |
-| --- | --- | --- |
-| Descriptive | What happened? | Summary metrics, descriptive analysis, dashboards, visualization |
-| Diagnostic | Why did it happen? | Drill-down analysis, root cause analysis, hypothesis testing, correlation or regression |
-| Predictive | What will happen? | Forecasting, classification, predictive modeling |
-| Prescriptive | What should we do? | Recommendation systems, optimization, decision rules |
-
-### Descriptive Analytics
-
-Use descriptive analytics when the first job is to understand patterns, trends, or performance.
-
-Examples:
-
-- What are the most common patient complaints in the last 3 months?
-- Which suppliers had the most delayed deliveries in the last 6 months?
-- Which customer segments generated the most and least revenue in the last 6 months?
-
-Common techniques:
-
-- descriptive summaries
-- grouping and comparison
-- dashboards
-- data visualization
-
-### Diagnostic Analytics
-
-Use diagnostic analytics when you need to identify the drivers or root causes behind a change.
-
-Examples:
-
-- What factors contributed to the decline in enrollment rates over the last 2 years?
-- Which manufacturing processes contributed to the rising defect rate?
-- What variables are associated with declining email open rates?
-
-Common techniques:
-
-- drill-down analysis
-- root cause analysis
-- hypothesis testing
-- correlation analysis
-- regression analysis
-
-### Predictive Analytics
-
-Use predictive analytics when the business needs an estimate of what is likely to happen next.
-
-Examples:
-
-- What is the predicted demand for product X based on historical demand and related variables?
-- What is the likelihood that a claim is fraudulent based on historical claims data?
-- Can we predict which patients are at risk for a certain health condition?
-
-Common techniques:
-
-- time-series forecasting
-- classification models
-- predictive modeling
-
-### Prescriptive Analytics
-
-Use prescriptive analytics when the organization wants a suggested action, not just an estimate.
-
-Examples:
-
-- How should prices be adjusted in real time to maximize airline sales?
-- Which product should be recommended to a customer next?
-- Which retention strategy should be prescribed for customers at high risk of churn?
-
-Common techniques:
-
-- recommendation algorithms
-- optimization methods
-- decision policies and rules
-
-## One Business Problem Can Produce Several Analytical Questions
-
-A single business problem often requires multiple analytical lenses.
-
-Example:
-
-- Business question: How can we identify which loan applications are most likely to default?
-- Descriptive question: Which loan applications defaulted in the past?
-- Diagnostic question: Why do certain applications tend to default?
-- Predictive question: Can we predict the probability of default from application variables?
-
-This pattern matters because teams often jump straight to prediction before first understanding the baseline and the drivers.
-
-Key point: Descriptive, diagnostic, predictive, and prescriptive work are not competing choices. They often form a sequence.
-
-## Common Failure Modes
-
-- Starting from a preferred method instead of the business need
-- Asking a question that the available data cannot answer
-- Keeping the question too broad for one analysis cycle
-- Producing an answer that is statistically correct but not decision-useful
-- Forgetting to confirm whether stakeholders interpret the result the same way
-
-## Practical Heuristics
-
-If you are unsure whether the question is ready, ask:
-
-- Can I point to the exact metric or outcome?
-- Do I know which entity or segment is being studied?
-- Do I know the relevant time horizon?
-- Can I name a realistic dataset?
-- Can I describe the likely analysis family?
-- Will the answer change a real decision?
-
-If several answers are still `no`, the question probably needs another round of refinement.
-
-## Related Notes
-
-- If the task becomes causal or experimental, continue into [Experimental Design](../statistics/experimental-design/README.md).
-- If the task becomes forecasting or prediction, connect this note with [Machine Learning](../machine-learning/README.md).
-- If the task becomes chart design and message delivery, connect this note with [Visualization](../data-manipulation-and-eda/visualization/README.md).
+問題準備好了嗎？能指出確切的指標、研究的對象、時間範圍、可用的資料集、可能的分析類型，而且答案會改變一個真實決策。有幾項答不出來，就再精煉一輪。

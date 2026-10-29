@@ -1,211 +1,115 @@
-# Directed Networks and Structural Metrics
+[Data Science](../README.md) › [Network Analysis](README.md) › 有向網路與結構指標
 
-當 graph 有方向時，很多原本看起來熟悉的 network 指標都會換一個意思。這也是為什麼 network analysis 不能只停在「有沒有連到」，還要進一步問 edge 是否有方向、整體結構是否比隨機圖更聚集、以及 nodes 是否傾向和相似的對象互連。
+# 有向網路與結構指標 (Directed Networks and Structural Metrics)
 
-Key point: directed network 讓 edge meaning 更精細，而 structural metrics 則讓你從整體層級判斷這張圖到底是鬆散、集中、互惠、同質，還是存在清楚社群。
+有方向時，很多熟悉的指標會換一個意思；而網路層級的結構指標回答「這張網路整體是鬆散還是緊密、是否互惠、是否同質相連、有沒有清楚的社群」。所有結構指標都要和隨機基準比較才有意義。
 
-## Adjacency Matrix And Edge List Are Different Working Views
+## 兩種表示法
 
-同一張 graph，常見的兩種資料表示方式是:
+| 表示法 | 適合 | 注意 |
+| --- | --- | --- |
+| Edge list（source, target, 屬性） | 從表格建圖、加 edge metadata、與 pandas 串接 | 實務最常用 |
+| Adjacency matrix（n × n） | 看對稱性、稀疏度、矩陣運算 | 大網路用稀疏矩陣（`nx.to_scipy_sparse_array`） |
 
-- adjacency matrix
-- edge list
+有向圖的 adjacency matrix 不對稱：`A[i, j] = 1` 表示 i → j。
 
-adjacency matrix 適合強調:
+## 有向網路
 
-- 哪些 node pairs 之間有沒有連結
-- 關係是否對稱
-- 以矩陣角度做運算
+在有向圖中 `A → B` 與 `B → A` 是不同事件，這會改變問題：誰主動指向很多人？誰被很多人指向？哪些路徑其實走不通？
 
-edge list 則更適合:
+| 指標 | 意義 | 社交 / 引用網路 | 基因調控網路 |
+| --- | --- | --- | --- |
+| In-degree | 多少邊指向這個節點 | 受關注、被引用、被依賴 | 受多少 TF 調控 |
+| Out-degree | 這個節點指向多少節點 | 活躍、主動接觸、擴散 | 調控多少 target（master regulator） |
 
-- 從 tabular data 建 graph
-- 加入 edge-level metadata
-- 和 pandas 或 tidy data workflow 串接
+```python
+D = nx.DiGraph()
+D.add_edges_from([("A", "B"), ("A", "E"), ("B", "A"), ("C", "A")])
 
-實務上 edge list 通常更方便，但 adjacency matrix 很適合幫助你看出 directedness 與 sparsity。
+dict(D.in_degree()), dict(D.out_degree())    # A: in 2, out 2
+D.has_edge("A", "E"), D.has_edge("E", "A")   # (True, False)
+list(D.successors("A")), list(D.predecessors("A"))
+nx.pagerank(D)                               # 有向圖的重要性
+```
 
-## Directedness Changes The Question
+只報一個總 degree 會把兩種角色混在一起。後續的 centrality 與路徑結論都建立在方向沒建錯的前提上，先抽查幾條邊。
 
-在 undirected graph 裡，`A -- B` 和 `B -- A` 沒有差別；但在 directed graph 裡，`A -> B` 和 `B -> A` 是不同事件。
+## 網路層級指標
 
-這會立刻改變分析問題:
+| 指標 | 意義 | NetworkX | 解讀 |
+| --- | --- | --- | --- |
+| Density | 實際邊數 / 可能邊數 | `nx.density(G)` | 稀疏或稠密；真實網路通常非常稀疏 |
+| 平均最短路徑長 | 任兩點平均要走幾步 | `nx.average_shortest_path_length(G)` | 短 → 容易穿越（只對連通圖定義） |
+| Global transitivity | 封閉三角形比例（朋友的朋友也是朋友） | `nx.transitivity(G)` | 局部是否形成團塊 |
+| Local clustering | 單一節點的鄰居彼此相連的比例 | `nx.clustering(G)`、`nx.average_clustering(G)` | 節點所在的圈子是否緊密 |
+| Assortativity | 節點是否傾向連到相似的節點 | `nx.degree_assortativity_coefficient(G)`、`nx.attribute_assortativity_coefficient(G, "type")` | > 0 同質相連；< 0 異質相連（生物網路的 hub 常連到低 degree 節點） |
+| Reciprocity | 有 A → B 時 B → A 也存在的比例 | `nx.reciprocity(D)` | 單向關注 vs 雙向互動 |
 
-- 誰主動指向很多人？
-- 誰被很多人指向？
-- 哪些路徑可走，哪些其實走不通？
+density 單獨看不夠：高 density 不代表有群聚，也不代表資訊傳播快；兩張密度相近的網路，平均路徑長可能差很多。
 
-所以 directedness 不是技術細節，而是 network semantics 的一部分。
+## 和隨機圖比較
 
-## In-Degree And Out-Degree Answer Different Things
+單一指標幾乎不該脫離基準解讀。做法：產生許多與原圖節點數、邊數相同的隨機圖，計算同一指標，把原圖的值放進這個分布。
 
-一旦 graph 有方向，degree 最好拆開來看:
+```python
+import numpy as np
 
-- in-degree: 有多少 edges 指向這個 node
-- out-degree: 這個 node 指向多少其他 nodes
+n, m = G.number_of_nodes(), G.number_of_edges()
+obs = nx.transitivity(G)
+rng = np.random.default_rng(42)
+null = [nx.transitivity(nx.gnm_random_graph(n, m, seed=int(rng.integers(1e9)))) for _ in range(1000)]
+p = (np.sum(np.array(null) >= obs) + 1) / (len(null) + 1)     # 經驗 p 值
 
-兩者通常代表不同角色。
+# 保留每個節點 degree 的隨機化（更嚴格的基準）
+R = nx.double_edge_swap(G.copy(), nswap=10 * m, max_tries=100 * m, seed=0)
+```
 
-例如在社交或引用 network 裡:
+![Random baseline](src/directed-networks-and-structural-metrics-random-baseline.png)
 
-- 高 in-degree 可能代表受關注、被提及或被依賴
-- 高 out-degree 可能代表活躍、擴散或主動接觸很多對象
+Zachary 空手道俱樂部網路（34 人、78 條邊）的 transitivity 0.26，1000 張相同大小的 G(n, m) 隨機圖平均約 0.13，沒有一張達到觀察值：這個網路確實比隨機更聚集。平均路徑長 2.41 則落在隨機分布中央：「路徑短」本身不特別，隨機圖也一樣短。
 
-如果只報一個總 degree，很容易把這兩種角色混在一起。
+| 基準 | 保留 | 適合 |
+| --- | --- | --- |
+| G(n, m)（Erdős–Rényi） | 節點數、邊數 | 第一個基準 |
+| Configuration model / degree-preserving swap | 每個節點的 degree | 問「這個結構是否只是 degree 分布造成的」；生物網路的 hub 結構很強時必用 |
 
-## Directed Queries Need Local Inspection Too
+## 社群偵測 (Community Detection)
 
-directed network 很常需要做局部檢查，例如:
+網路出現多個緊密區塊時，社群偵測把結構切成可解讀的群組。
 
-- `A` 是否真的指向 `E`
-- 哪些 edges 和某個 node incident
-- 一條 edge 的起點與終點各是誰
+| 方法 | 原理 | NetworkX / 其他 | 特性 |
+| --- | --- | --- | --- |
+| Girvan–Newman（edge betweenness） | 反覆移除 betweenness 最高的邊（跨群的橋），網路逐步分裂 | `nx.community.girvan_newman` | 直觀、能看出撐住社群間連接的邊；慢，只適合小圖 |
+| Louvain | 貪婪最大化 modularity | `nx.community.louvain_communities(G, seed=0)` | 快、常用；可能產生內部不連通的社群 |
+| Leiden | 改良 Louvain，保證社群內部連通 | `leidenalg`、igraph、scanpy | 單細胞分群的標準 |
+| Label propagation | 節點採用鄰居中最多的標籤 | `nx.community.label_propagation_communities` | 非常快、結果不穩定 |
+| Leading eigenvector | modularity 矩陣的特徵向量切分 | igraph | 確定性 |
 
-這些問題看起來很基礎，但很重要，因為很多後續 centrality 或 path 結論都建立在 edge direction 沒有被建錯的前提上。
+```python
+comms = nx.community.louvain_communities(G, weight="weight", resolution=1.0, seed=0)
+nx.community.modularity(G, comms)              # 0.3–0.7 通常表示明顯社群結構
+```
 
-## Network-Level Metrics Describe The Whole Graph
+| 注意 | 說明 |
+| --- | --- |
+| resolution 參數決定群的大小與數量 | 沒有唯一正確值；在單細胞分析中同樣如此 |
+| 不同方法、不同 seed 結果不同 | 比較多種方法，看哪些群穩定存在（例如以 ARI 比較） |
+| 社群是結構假說，不是最終答案 | 用外部資訊（功能註解、metadata）驗證 |
 
-除了 node-level centrality，也需要一些 graph-level summary 來描述整體結構。這份材料特別適合補上的，是下面幾個指標:
+## 結構分析的閱讀順序
 
-- density
-- average path length
-- transitivity
-
-它們不是在問「誰重要」，而是在問「這張網路整體長什麼樣」。
-
-## Density Tells You How Full The Network Is
-
-density 可以先理解成:
-
-- 實際存在的 edges
-- 占理論上可能 edges 的比例
-
-它很適合回答:
-
-- 這張圖是稀疏還是稠密？
-- 同樣規模的圖之間，哪一張更容易形成連結？
-
-但 density 單獨看不夠，因為高 density 不代表一定有清楚群聚，也不代表資訊一定能快速傳播。
-
-## Average Path Length Captures Reachability At Scale
-
-average path length 關心的是:
-
-- 任兩點之間平均要經過多少步才走得到
-
-它幫你從全圖層級理解 reachability。
-
-直覺上:
-
-- 平均路徑短，代表網路比較容易穿越
-- 平均路徑長，代表不同區塊之間可能更疏遠
-
-這個指標特別適合和 density 一起看，因為兩張密度相近的網路，平均路徑長仍可能差很多。
-
-## Transitivity Measures Local Closure
-
-transitivity 可以先把它想成 triangle closure 的比例，也就是:
-
-- 你的朋友的朋友，是否也常回頭連到你或彼此
-
-這份課程同時區分了:
-
-- global transitivity: 從全圖角度看 closed triplets 的比例
-- local transitivity: 從單一 node 周邊看鄰居之間是否互相連接
-
-這個指標很有用，因為它比單純 degree 更能反映「局部圈子有沒有真的形成團塊」。
-
-## Compare To Random Graphs Before Telling A Story
-
-這份課程最值得保留的一個觀念，是不要只看原始 network 的數值，而要和 random baseline 比較。
-
-一個常見流程是:
-
-1. 建立多張和原圖擁有相同節點數、近似 density 的 random graphs。
-2. 對每張 random graph 計算某個指標，例如 average path length。
-3. 把原始網路的數值放進這個隨機分佈中比較。
-
-這樣你才知道:
-
-- 原圖的結構只是隨機也會出現
-- 還是真的比較短、比較聚集、比較特殊
-
-Key point: 單一 graph metric 幾乎永遠不該脫離 baseline 單獨解讀。
-
-## Assortativity Asks Whether Similar Nodes Prefer Each Other
-
-assortativity 描述的是:
-
-- nodes 是否傾向和「相似」的 nodes 相連
-
-這個相似可以是:
-
-- categorical attribute
-- numerical attribute
-- degree 本身
-
-因此 assortativity 適合回答的不是「有沒有群體」，而是:
-
-- 相同類型的人是否更常互連
-- 高 degree nodes 是否傾向連到其他高 degree nodes
-
-這能幫你分辨網路是偏同質連結，還是更混合、異質的結構。
-
-## Reciprocity Matters Only When Direction Matters
-
-reciprocity 是 directed graph 很重要的補充指標。它關心的是:
-
-- 若 `A -> B` 存在，`B -> A` 是否也常存在
-
-這個指標常見於:
-
-- communication network
-- social following network
-- trade or exchange network
-
-它能區分:
-
-- 單向關注或單向依賴
-- 雙向互動或互惠關係
-
-如果你的 network 本質上有方向，卻不檢查 reciprocity，就很容易漏掉關係是否真正對等。
-
-## Community Detection Turns Dense Structure Into Groups
-
-當網路開始出現多個緊密區塊時，community detection 可以幫助你把整體結構切成較可解讀的 groups。
-
-這份課程用 edge betweenness 的想法來做社群偵測，核心直覺是:
-
-- 跨群的橋接 edges
-- 通常更常出現在不同群之間的 shortest paths 上
-
-所以如果逐步移除高 edge-betweenness 的 edges，原本的大圖就可能分裂成較自然的 communities。
-
-這種方法的價值不只是輸出群組編號，而是讓你更清楚:
-
-- 哪些 edges 在撐住不同社群之間的連接
-- 社群邊界大致落在哪裡
-
-## A Practical Reading Order For Structural Analysis
-
-如果你已經會基本 centrality，接下來可以用這個順序判讀更完整的 network structure:
-
-1. 先確認 graph 是 directed 還是 undirected。
-2. 對 directed graph 分開看 in-degree 與 out-degree。
-3. 用 density 與 average path length 看整體連通程度。
-4. 用 global / local transitivity 看局部閉合與群聚。
-5. 再和 random graph baseline 比較，避免過度解讀。
-6. 若懷疑有同質連結，看 assortativity。
-7. 若關係有互惠可能，看 reciprocity。
-8. 若圖呈現多團塊，再做 community detection。
-
-## Common Failure Modes
-
-- 把 directed graph 當 undirected graph 解讀，忽略關係方向
-- 只報 degree，卻不區分 in-degree 與 out-degree
-- 看到高 transitivity 就直接說存在穩定社群，卻沒和其他指標一起看
-- 用 density 或 average path length 單獨講故事，沒有 random baseline
-- 在 directed network 裡忽略 reciprocity，誤把單向連結當雙向互動
-- 把 community detection 輸出的群組當成絕對真實邊界，而不是方法依賴的結構切分
-
-如果你想從「圖上有哪些 node」走到「這張網路整體怎麼運作」，directedness 與 structural metrics 幾乎就是中間最重要的一層。
+1. 確認有向或無向
+2. 有向圖分開看 in-degree 與 out-degree
+3. 用 density 與平均路徑長看整體連通程度
+4. 用 global / local transitivity 看局部閉合
+5. 和隨機基準比較，避免過度解讀
+6. 懷疑同質相連時看 assortativity；關係可能互惠時看 reciprocity
+7. 呈現多團塊時做社群偵測，並比較多種方法
+
+| 常見錯誤 | |
+| --- | --- |
+| 把有向圖當無向圖解讀 | 忽略方向，誤把單向連結當雙向互動 |
+| 只報 degree，不分 in / out | 角色混淆 |
+| 看到高 transitivity 就說有穩定社群 | 要和其他指標、隨機基準一起看 |
+| 用 density 或路徑長單獨講故事 | 沒有基準 |
+| 把社群偵測的輸出當成絕對邊界 | 方法與參數依賴 |
