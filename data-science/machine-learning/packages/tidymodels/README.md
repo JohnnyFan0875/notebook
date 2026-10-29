@@ -1,181 +1,170 @@
-# Modeling with tidymodels
+[Machine Learning](../../README.md) › [套件](../README.md) › tidymodels
 
-`tidymodels` 是一組把機器學習 workflow 拆成多個明確階段的套件集合。重點不是記住某一個模型函式，而是把資料切分、前處理、模型定義、預測與評估串成可重跑的分析流程。
+# tidymodels
 
-## Core Packages
+R 的預測建模套件集合，定位等同 Python 的 [scikit-learn](../scikit-learn/README.md)：把資料切分、前處理、模型定義、調參與評估拆成可替換的元件，再串成一個 workflow。概念（交叉驗證、資料洩漏、指標選擇）見 ML 各主題筆記，這裡只整理 R 的寫法。以預測為目標時用這裡；要解讀係數與 p 值見 [R 解釋型建模](../../../r-foundations/explanatory-modeling-in-r.md)。
 
-- `rsample`: 資料切分與 resampling。
-- `parsnip`: 用統一語法定義模型。
-- `recipes`: 前處理與特徵工程。
-- `workflows`: 把模型與前處理綁成同一個 pipeline。
-- `yardstick`: 評估指標。
+> 本筆記的程式碼未在本機執行驗證（無 R 環境），API 依 tidymodels 1.x 官方文件整理。
 
-## Basic Workflow
+## 核心套件
 
-1. 先把資料切成 training / test。
-2. 用 `parsnip` 宣告模型類型、engine 與 mode。
-3. 用 `recipes` 定義前處理。
-4. 用 `workflow()` 把模型與 recipe 合併。
-5. fit 在 training data，再用 test data 做評估。
+| 套件 | 負責 | 主要函式 | scikit-learn 對應 |
+| --- | --- | --- | --- |
+| `rsample` | 切分、重抽樣 | `initial_split()`、`vfold_cv()`、`group_vfold_cv()`、`bootstraps()` | `train_test_split`、`KFold`、`GroupKFold` |
+| `recipes` | 前處理、特徵工程 | `recipe()`、`step_*()`、`prep()`、`bake()` | `ColumnTransformer` + transformers |
+| `parsnip` | 統一的模型語法 | `logistic_reg()`、`rand_forest()`、`set_engine()`、`set_mode()` | 各 estimator 類別 |
+| `workflows` | 綁定前處理與模型 | `workflow()`、`add_recipe()`、`add_model()` | `Pipeline` |
+| `tune` | 調參、重抽樣評估 | `tune()`、`tune_grid()`、`fit_resamples()`、`select_best()`、`last_fit()` | `GridSearchCV`、`cross_validate` |
+| `yardstick` | 評估指標 | `metric_set()`、`roc_auc()`、`accuracy()`、`rmse()` | `sklearn.metrics` |
 
-這種拆法的好處是模型規格、前處理規格與資料切分彼此分離，之後換演算法或新增步驟時不需要重寫整段分析。
+## 完整流程
 
-## Splitting Data with rsample
-
-最常見的起點是 `initial_split()`：
+```
+initial_split ──► training ──► vfold_cv ──► tune_grid（每折內 prep recipe + fit）
+      │                                         │
+      │                                   select_best
+      │                                         │
+      └──────── testing ◄── last_fit（training 全部重 fit，test 評估一次）
+```
 
 ```r
 library(tidymodels)
+data(cells, package = "modeldata")         # 細胞影像特徵；class = PS / WS
+cells <- cells |> select(-case)
 
-mpg_split <- initial_split(mpg, prop = 0.75, strata = hwy)
-mpg_training <- training(mpg_split)
-mpg_test <- testing(mpg_split)
-```
+# 1. 切分：先切 test，之後所有估計都只用 training
+set.seed(42)
+split <- initial_split(cells, prop = 0.8, strata = class)
+train <- training(split)
+folds <- vfold_cv(train, v = 5, strata = class)
 
-- `prop = 0.75` 表示 75% 拿去 training。
-- `training()` 與 `testing()` 會從 split 物件取出兩側資料。
-- `strata =` 可在切分時維持某欄位的分布，比較適合類別不平衡或連續變數分布需要近似保留的情境。
+# 2. 前處理：只是「規格」，實際參數在每折的 analysis set 上估計
+rec <- recipe(class ~ ., data = train) |>
+  step_zv(all_predictors()) |>                       # 移除零變異欄位
+  step_corr(all_numeric_predictors(), threshold = 0.9) |>
+  step_normalize(all_numeric_predictors())
 
-切分必須先做，因為後面的前處理也應該只從 training data 學習參數，避免資料洩漏。
-
-## Defining Models with parsnip
-
-`parsnip` 把模型拆成三件事：
-
-- 模型類型，例如 `linear_reg()`、`logistic_reg()`、`decision_tree()`。
-- 計算引擎，例如 `"lm"`、`"glm"`、`"rpart"`。
-- 問題模式，例如 `"regression"` 或 `"classification"`。
-
-```r
-log_model <- logistic_reg() %>%
-  set_engine("glm") %>%
+# 3. 模型：tune() 標記要調的參數
+spec <- logistic_reg(penalty = tune(), mixture = 1) |>  # mixture = 1：Lasso
+  set_engine("glmnet") |>
   set_mode("classification")
 
-log_fit <- log_model %>%
-  fit(purchased ~ total_visits + total_time, data = leads_training)
+wf <- workflow() |> add_recipe(rec) |> add_model(spec)
+
+# 4. 調參：每組參數 × 每折都重新 prep recipe 再 fit
+res <- tune_grid(
+  wf, resamples = folds,
+  grid = grid_regular(penalty(), levels = 20),
+  metrics = metric_set(roc_auc, mn_log_loss)
+)
+collect_metrics(res)                     # 每組參數的平均與標準誤
+show_best(res, metric = "roc_auc", n = 3)
+best <- select_best(res, metric = "roc_auc")   # 或 select_by_one_std_err()
+
+# 5. 最終模型：用整個 training 重 fit，test 只評估這一次
+final <- finalize_workflow(wf, best) |> last_fit(split)
+collect_metrics(final)                   # test 上的指標
+collect_predictions(final)               # .pred_class、.pred_PS、.pred_WS
+fitted_wf <- extract_workflow(final)     # 之後 predict(fitted_wf, new_data) 用
 ```
 
-- `set_engine()` 決定底層用哪個套件計算。
-- `set_mode()` 用來區分同一個模型族在 regression / classification 間的用途。
-- `fit()` 才會真正把模型估計到資料上。
+不調參、只想估計一個固定模型的 CV 表現時，把第 4 步換成 `fit_resamples(wf, resamples = folds)`。
 
-這種做法把「模型概念」和「實作 engine」分開，之後若要替換底層引擎，通常不需要改掉整體 workflow。
+## recipes 與資料洩漏
 
-## Making Predictions
+`step_normalize()` 的平均與標準差、`step_impute_*()` 的補值、`step_corr()` 要刪哪些欄位，都是**從資料估計出來的參數**。放在 workflow 裡交給 `tune_grid()` / `fit_resamples()` 時，每一折只用該折的 analysis set 估計，assessment set 不會洩漏進去；這和 sklearn 把 scaler 放進 `Pipeline` 是同一件事（見 [資料洩漏](../../foundations/data-leakage.md)）。
 
-`predict()` 的回傳格式會依 `type =` 改變：
+| 寫法 | 洩漏？ | 說明 |
+| --- | --- | --- |
+| recipe 放進 workflow → `tune_grid()` / `fit_resamples()` / `last_fit()` | 否 | 每折各自 `prep()` |
+| 先對全部資料 `mutate(x = scale(x))`，再切分 | 是 | test 的分布資訊進了訓練 |
+| `prep(rec, training = cells)`（整份資料）後 `bake()` 再做 CV | 是 | 前處理參數看過所有折 |
+| 手動 `prep(rec, training = train)` → `bake(new_data = test)` | 對 test 不洩漏 | 但對 CV 內部仍洩漏；只用於檢查 recipe 產出 |
 
 ```r
-class_pred <- predict(log_fit, new_data = leads_test, type = "class")
-prob_pred <- predict(log_fit, new_data = leads_test, type = "prob")
+# 檢查 recipe 的輸出長什麼樣子（除錯用，不用於建模）
+prepped <- prep(rec, training = train)
+bake(prepped, new_data = NULL)           # 處理後的 training
+tidy(prepped, number = 2)                # 第 2 步（step_corr）刪了哪些欄位
 ```
 
-- `type = "class"` 會產生 `.pred_class`。
-- `type = "prob"` 會產生每個類別對應的機率欄位，例如 `.pred_yes`、`.pred_no`。
+### 常用 `step_*`
 
-常見做法是把 prediction 與真實標籤合併後再評估：
+| 需求 | step | 選擇器 |
+| --- | --- | --- |
+| 補值 | `step_impute_median()`、`step_impute_knn()` | `all_numeric_predictors()` |
+| 標準化 | `step_normalize()` | `all_numeric_predictors()` |
+| log 轉換 | `step_log(base = 10, offset = 1)` | 指定欄位 |
+| 類別 → dummy | `step_dummy()` | `all_nominal_predictors()` |
+| 罕見類別合併 | `step_other(threshold = 0.05)` | `all_nominal_predictors()` |
+| 移除零 / 近零變異 | `step_zv()`、`step_nzv()` | `all_predictors()` |
+| 移除高相關 | `step_corr(threshold = 0.9)` | `all_numeric_predictors()` |
+| PCA | `step_pca(num_comp = 10)` | `all_numeric_predictors()` |
+| 類別不平衡 | `themis::step_downsample()`、`step_smote()` | 只在訓練折內作用（`skip = TRUE`） |
+
+> 舊寫法 `step_dummy(all_nominal(), -all_outcomes())` 可改成 `all_nominal_predictors()`；舊版 `step_knnimpute()` 等已改名為 `step_impute_*()`。
+
+## parsnip：模型 = 類型 + engine + mode
+
+| 模型 | 函式 | 常用 engine | 可調參數 |
+| --- | --- | --- | --- |
+| 線性 / 邏輯斯迴歸 | `linear_reg()`、`logistic_reg()` | `"lm"` / `"glm"`、`"glmnet"` | `penalty`、`mixture`（0 = Ridge、1 = Lasso） |
+| 決策樹 | `decision_tree()` | `"rpart"` | `cost_complexity`、`tree_depth`、`min_n` |
+| 隨機森林 | `rand_forest()` | `"ranger"` | `mtry`、`trees`、`min_n` |
+| Boosting | `boost_tree()` | `"xgboost"`、`"lightgbm"`（需 bonsai） | `trees`、`learn_rate`、`tree_depth` |
+| SVM | `svm_rbf()` | `"kernlab"` | `cost`、`rbf_sigma` |
+| KNN | `nearest_neighbor()` | `"kknn"` | `neighbors` |
+
+同一個模型類型換 engine 不必改 workflow 其他部分；`translate(spec)` 可看實際呼叫的底層函式。
+
+## 預測與評估
 
 ```r
-pred_results <- leads_test %>%
-  bind_cols(class_pred, prob_pred)
+predict(fitted_wf, new_data = test_df)                 # .pred_class
+predict(fitted_wf, new_data = test_df, type = "prob")  # .pred_PS、.pred_WS
+
+# yardstick 吃「truth 欄 + .pred_* 欄」的 tibble
+preds <- collect_predictions(final)
+cls_metrics <- metric_set(roc_auc, accuracy, sens, spec)
+preds |> cls_metrics(truth = class, estimate = .pred_class, .pred_PS)
 ```
 
-`tidymodels` 的很多評估函式都假設資料已經整理成這種「truth 欄位 + `.pred_*` 欄位」的 tibble。
+| 陷阱 | 說明 |
+| --- | --- |
+| 正類別是**第一個 factor level** | yardstick 預設 `event_level = "first"`；結果是 `no` / `yes` 時，要 `relevel` 或設 `event_level = "second"`，否則 sensitivity、AUC 都算成反類別 |
+| 機率指標要給機率欄 | `roc_auc()`、`mn_log_loss()` 傳 `.pred_<正類別>`；`accuracy()`、`sens()` 傳 `.pred_class` |
+| `metric_set` 混用類別與機率指標 | `estimate =` 給類別、機率欄放在後面的位置參數 |
 
-## Preprocessing with recipes
+指標怎麼選見 [模型評估](../../evaluation/README.md)、[類別不平衡](../../evaluation/class-imbalance.md)。
 
-`recipes` 用來把前處理步驟顯式化，而不是零散地寫在資料清理腳本裡：
+## 重抽樣策略
 
-```r
-leads_recipe <- recipe(purchased ~ ., data = leads_training) %>%
-  step_log(total_time, base = 10)
-```
+| 資料結構 | rsample | 對應筆記 |
+| --- | --- | --- |
+| 一般 i.i.d. | `vfold_cv(v = 5 or 10, strata = y)` | [交叉驗證](../../workflow/cross-validation.md) |
+| 重複 CV（小樣本降低變異） | `vfold_cv(v = 10, repeats = 5)` | 同上 |
+| 同病人多筆樣本 | `group_vfold_cv(group = patient_id)` | 同上 |
+| 時間序列 | `sliding_period()`、`rolling_origin()` | 同上 |
+| Nested CV | `nested_cv(outside = vfold_cv(5), inside = vfold_cv(5))` | 同上 |
+| Bootstrap / OOB | `bootstraps(times = 100)` | [抽樣與估計](../../../statistics/inferential-statistics/sampling-estimation.md) |
 
-- `recipe(outcome ~ ., data = ...)` 會建立欄位角色資訊。
-- `summary(leads_recipe)` 可檢查每個變數的 `role`、`type` 與來源。
-- 常見步驟包含缺值處理、轉換、標準化、dummy encoding 與欄位篩選。
+> 高維小樣本（如 n = 80、p = 20 000 的表現量資料）：特徵篩選（`step_corr`、依變異挑基因）必須放在 recipe 裡讓每折各自做，在 CV 外先挑好特徵是生資最常見的洩漏來源（見 [高維資料](../../foundations/high-dimensional-data.md)）。
 
-例如：
+## scikit-learn ↔ tidymodels 對照
 
-```r
-leads_recipe <- recipe(purchased ~ ., data = leads_training) %>%
-  step_corr(all_numeric(), threshold = 0.9) %>%
-  step_normalize(all_numeric()) %>%
-  step_dummy(all_nominal(), -all_outcomes())
-```
+| 任務 | scikit-learn | tidymodels |
+| --- | --- | --- |
+| 切 train / test | `train_test_split(X, y, stratify=y)` | `initial_split(df, strata = y)` |
+| K-fold | `StratifiedKFold(5)` | `vfold_cv(train, v = 5, strata = y)` |
+| 前處理 | `ColumnTransformer([...])` | `recipe(y ~ .) \|> step_*()` |
+| 學參數 / 套用 | `fit` / `transform` | `prep()` / `bake()` |
+| 模型 | `LogisticRegression(penalty="l1", C=...)` | `logistic_reg(penalty = ..., mixture = 1) \|> set_engine("glmnet")` |
+| Pipeline | `Pipeline([("prep", ct), ("clf", model)])` | `workflow() \|> add_recipe() \|> add_model()` |
+| 標記要調的參數 | `param_grid={"clf__C": [...]}` | `penalty = tune()` |
+| Grid search | `GridSearchCV(pipe, grid, cv=folds)` | `tune_grid(wf, resamples = folds, grid = ...)` |
+| CV 分數 | `cross_validate(pipe, X, y, cv=folds)` | `fit_resamples(wf, folds)` + `collect_metrics()` |
+| 最佳參數 | `search.best_params_` | `select_best(res, metric = "roc_auc")` |
+| 最終 fit + test | `best_estimator_.fit` 後在 test 上評分 | `finalize_workflow()` \|> `last_fit(split)` |
+| 指標 | `roc_auc_score(y, p)` | `roc_auc(df, truth, .pred_yes)` |
 
-- `step_corr()` 移除高度相關的數值欄位。
-- `step_normalize()` 做中心化與標準化。
-- `step_dummy()` 把類別欄位轉成 dummy variables。
-
-`prep()` 與 `bake()` 是 `recipes` 的核心：
-
-```r
-trained_recipe <- prep(leads_recipe, training = leads_training)
-train_processed <- bake(trained_recipe, new_data = NULL)
-test_processed <- bake(trained_recipe, new_data = leads_test)
-```
-
-- `prep()` 會在 training data 上估計前處理需要的參數。
-- `bake(..., new_data = NULL)` 取出處理後的 training data。
-- `bake(..., new_data = leads_test)` 把同一套規則套到 test data。
-
-重點不是把資料變乾淨，而是確保 training、test 與未來新資料都用同一套轉換規則。
-
-## Combining Steps with workflows
-
-如果模型與前處理分開管理，很容易在預測時忘記先套 recipe。`workflow()` 就是用來避免這種錯誤：
-
-```r
-dt_model <- decision_tree() %>%
-  set_engine("rpart") %>%
-  set_mode("classification")
-
-dt_workflow <- workflow() %>%
-  add_model(dt_model) %>%
-  add_recipe(leads_recipe)
-```
-
-- `add_model()` 加入 `parsnip` 模型。
-- `add_recipe()` 加入前處理規則。
-- 如果問題很簡單，也可以改用 `add_formula()`。
-
-workflow 的價值在於把「先 recipe、再 fit、再 predict」的順序固定下來，降低手動串接時出錯的機會。
-
-## Evaluation with yardstick
-
-完成 workflow 後，可以直接用 split 做最後評估：
-
-```r
-dt_last_fit <- dt_workflow %>%
-  last_fit(split = leads_split)
-
-collect_metrics(dt_last_fit)
-collect_predictions(dt_last_fit)
-```
-
-- `last_fit()` 會用 training side fit model，並在 test side 做最終評估。
-- `collect_metrics()` 取回指標摘要。
-- `collect_predictions()` 取回逐列 prediction 結果。
-
-如果想一次算多個指標，可以先定義 metric set：
-
-```r
-cls_metrics <- metric_set(roc_auc, sens, spec)
-
-pred_results %>%
-  cls_metrics(truth = purchased, estimate = .pred_class, .pred_yes)
-```
-
-實務上要注意每個指標需要的欄位型別不同：
-
-- 像 `accuracy()` 這類指標通常吃類別預測。
-- 像 `roc_auc()` 則通常需要正類別機率欄位。
-
-## Practical Notes
-
-- 不要在 full data 上先做前處理再切 training / test，這會造成 leakage。
-- `parsnip` 的重點是統一模型語法，不是取代統計理解；仍要知道模型假設與輸入需求。
-- `recipes` 適合把前處理寫成可檢查、可重跑、可替換的步驟，而不是散落在多個 `mutate()` 裡。
-- `workflow()` 適合當分析專案的主幹，因為它把模型與前處理綁成單一物件。
-- 當 workflow 開始需要 cross-validation、tuning 或多模型比較時，tidymodels 的模組化設計會比手寫流程更容易維護。
+> 正則化參數方向相反：sklearn 的 `C` 越大懲罰越弱；glmnet 的 `penalty`（λ）越大懲罰越強。

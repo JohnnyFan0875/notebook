@@ -15,7 +15,7 @@
 | 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
 | [抽樣與估計](sampling-estimation.md) | 抽樣方法、點估計、估計量的偏誤與變異 | 樣本如何代表母體？ |
-| [抽樣設計與調查資料](survey-sampling.md) | R 抽樣實作、bootstrap、survey weights（`survey`） | 有權重的調查資料怎麼分析？ |
+| [抽樣設計與調查資料](survey-sampling.md) | R 抽樣實作、NHANES 權重 / 分層 / PSU、`survey` 套件與 Python 對照 | 有權重的調查資料怎麼分析？ |
 | [信賴區間](confidence-intervals.md) | 平均數 / 比例的 CI、正確解讀 | 真值可能落在哪個範圍？ |
 | [假設檢定](hypothesis-testing.md) | H₀ / H₁、p 值、型一 / 型二錯誤、檢定力、效果量 | 效果是真的還是雜訊？ |
 | [多重檢定校正](multiple-testing.md) | Bonferroni、Holm、FDR (Benjamini-Hochberg) | 一次做上千個檢定怎麼辦？ |
