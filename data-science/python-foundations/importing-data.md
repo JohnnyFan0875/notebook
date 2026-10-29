@@ -28,8 +28,8 @@
 | SAM / BAM / CRAM | `pysam` | 需要 `.bai` 索引才能依區間查詢 |
 | VCF / BCF | `pysam.VariantFile`、`cyvcf2`；`scikit-allel` 轉成 array | |
 | BED / GTF / GFF | `pd.read_csv(sep="\t", header=None, comment="#")`、`pyranges`、`gtfparse` | BED 是 0-based、GTF 是 1-based |
-| 計數矩陣（TSV / MTX） | `pd.read_csv`、`scipy.io.mmread`（稀疏） | 10x 輸出用 `scanpy.read_10x_mtx` |
-| `.h5ad`（單細胞） | `anndata.read_h5ad` / `scanpy` | HDF5 為底；`backed="r"` 不全部載入 |
+| 計數矩陣（TSV / MTX） | `pd.read_csv`、`scipy.io.mmread`（[稀疏](scipy-sparse.md)） | 10x 輸出用 `scanpy.read_10x_mtx` |
+| `.h5ad`（單細胞） | `anndata.read_h5ad` / `scanpy`，見 [AnnData 與 scanpy](anndata-and-scanpy.md) | HDF5 為底；`backed="r"` 不全部載入 |
 | Zarr / 大型陣列 | `zarr`、`xarray` | 雲端友善、可分塊 |
 
 ## CSV / TSV：`pd.read_csv`

@@ -80,6 +80,8 @@ glmer(y ~ treatment + (1 | batch), family = binomial, data = df)   # 廣義混�
 | 單細胞比較組別 | 細胞巢套在樣本內；或先 pseudobulk 再做 NB-GLM |
 | 二元 / 計數結果 + 群集 | GLMM（`glmer`、`BinomialBayesMixedGLM`） |
 | 只關心族群平均效果，不需個體預測 | GEE（`smf.gee`）也是選項 |
+| RNA-seq paired / 重複量測 | subject 當 blocking factor，或 limma `duplicateCorrelation()` / `dream()`，見 [RNA-seq 實驗設計](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/06-exploratory-design-and-count-models.md#experimental-design) |
+| QTL / GWAS 有親緣關係 | kinship 矩陣當隨機效應（GEMMA、BOLT-LMM），見 [QTL mapping](../../../biology/genomics/sequencing-and-analysis/genome-wide-analysis/qtl-analysis-and-mapping.md#相關統計方法) |
 
 ## 注意事項
 

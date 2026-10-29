@@ -45,6 +45,8 @@
 | [匯入資料](importing-data.md) | CSV、Excel、JSON、Parquet、HDF5、生資格式、格式互轉 | 這個檔案該用什麼讀？讀完要檢查什麼？ |
 | [API 與 HTTP](api-http.md) | requests、狀態碼、重試、分頁、認證 | 如何穩定地從 Ensembl / NCBI 抓資料？ |
 | [scipy.stats 速查](scipy-stats.md) | `default_rng`、機率分配、檢定、R 對照 | 這個統計方法在 Python 裡怎麼寫？ |
+| [scipy.sparse](scipy-sparse.md) | CSR / CSC / COO、`*_array` vs `*_matrix`、保持稀疏的運算 | 大部分是 0 的矩陣怎麼存、怎麼算才不爆記憶體？ |
+| [AnnData 與 scanpy](anndata-and-scanpy.md) | `.h5ad` 結構、view、QC → HVG → PCA → Leiden、pseudobulk、Seurat 對照 | 單細胞資料在 Python 裡怎麼組織與分析？ |
 | [效能與擴展](performance-and-scaling/README.md) | 量測、向量化、Numba、multiprocessing、Dask、Polars | 程式太慢或資料太大怎麼辦？ |
 
 ## 相關章節

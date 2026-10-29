@@ -120,7 +120,7 @@ cor(MEs, traits, use = "p")                      # 模組 ↔ 表型
 
 ### 單細胞 kNN 圖 + Leiden
 
-單細胞分群本身就是網路分析：node 是細胞，edge 連到表現量空間（PCA 後）中最近的 k 個鄰居，再用 Leiden 社群偵測切出細胞群。
+單細胞分群本身就是網路分析：node 是細胞，edge 連到表現量空間（PCA 後）中最近的 k 個鄰居，再用 Leiden 社群偵測切出細胞群。完整的 scanpy 流程見 [AnnData 與 scanpy](../python-foundations/anndata-and-scanpy.md)。
 
 ```python
 import scanpy as sc

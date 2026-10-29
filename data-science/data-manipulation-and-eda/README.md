@@ -12,7 +12,7 @@ Profiling → 缺失機制 → 單變數 / 雙變數圖 → 記錄要修的欄�
 | --- | --- | --- |
 | [EDA 流程](eda-workflow.md) | profiling 檢查表、起手式程式碼、omics 矩陣的 QC、判讀訊號 | 拿到新資料第一步看什麼？ |
 | [缺失機制](missing-data.md) | MCAR / MAR / MNAR、刪除策略、生資常見的缺失型態 | 缺值能直接刪嗎？會造成什麼偏誤？ |
-| [視覺化](visualization/README.md) | 圖表設計原則、Matplotlib、Seaborn、pandas plotting | 什麼問題配什麼圖？怎麼畫才不誤導？ |
+| [視覺化](visualization/README.md) | 圖表設計原則、Matplotlib、Seaborn、pandas plotting、ggplot2 | 什麼問題配什麼圖？怎麼畫才不誤導？ |
 | [地理空間資料](geospatial-data-in-python.md)（選讀） | GeoPandas、geometry、CRS、空間 join | 資料有經緯度時要注意什麼？ |
 
 | 相關 | 連結 |

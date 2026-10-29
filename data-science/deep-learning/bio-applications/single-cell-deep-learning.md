@@ -38,6 +38,8 @@
 
 ## 使用方式
 
+AnnData 結構與 scanpy 前處理見 [AnnData 與 scanpy](../../python-foundations/anndata-and-scanpy.md)。
+
 ```python
 import scanpy as sc
 import scvi

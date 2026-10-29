@@ -80,6 +80,8 @@ pca <- prcomp(t(log_cpm), scale. = FALSE)
 
 圖 8. Mean-variance trend。RNA-seq count 的 variance 通常隨 mean 增加，這是需要 count-aware model 的主要原因。
 
+PCA 的原理、variance explained 與 loading 解讀見 [PCA](../../../../../data-science/statistics/multivariate-analysis/pca.md#生資應用基因表現-pca)。
+
 Tip: outlier 不能只靠一張 PCA 排除。應同時檢查 FASTQ QC、mapping QC、gene body coverage、library size、metadata、sample handling record 與是否有合理生物原因。
 
 ## Experimental Design
@@ -133,7 +135,7 @@ design_bad <- model.matrix(~ group + batch, bad)
 qr(design_bad)$rank < ncol(design_bad)
 ```
 
-這種情況下，group effect 與 batch effect 沒有辦法由資料分開。把 batch 放進 model 不會 magically 修正 confounding。
+這種情況下，group effect 與 batch effect 沒有辦法由資料分開。把 batch 放進 model 不會 magically 修正 confounding。批次效應與干擾的設計層面見 [干擾與偏誤](../../../../../data-science/statistics/experimental-design/confounding-bias.md#生資最常見的干擾批次效應-batch-effect)；paired design 中 subject 當 blocking factor 與 [混合效應模型](../../../../../data-science/statistics/regression-analysis/mixed-effects-models.md) 的隨機截距是同一個想法（limma 用 `duplicateCorrelation()`、`dream()` 處理重複量測）。
 
 ## Count Models
 
@@ -163,5 +165,5 @@ $$
 | Shrinkage / empirical Bayes | 用全基因資訊穩定 individual gene estimates |
 | Quasi-likelihood | edgeR QL framework，對 gene-level uncertainty 更保守 |
 
-Key point: replicate 數少時，單一 gene 的 dispersion 很難穩定估計，因此 edgeR、DESeq2、limma-voom 都會借用全基因資訊做 shrinkage 或 empirical Bayes。
+Key point: replicate 數少時，單一 gene 的 dispersion 很難穩定估計，因此 edgeR、DESeq2、limma-voom 都會借用全基因資訊做 shrinkage 或 empirical Bayes。Poisson、過度離散與負二項 GLM 的一般理論見 [GLM 計數模型](../../../../../data-science/statistics/regression-analysis/glm-count-models.md#過度離散與負二項迴歸)。
 

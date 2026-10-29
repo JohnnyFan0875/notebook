@@ -106,7 +106,7 @@ gapminder |>
 | 組間分布比較 | `geom_boxplot()` / `geom_violin()` | 原始列（long） |
 | 類別計數 | `geom_bar()`（自己數）/ `geom_col()`（已摘要） | 原始 / 摘要後 |
 
-圖表選擇原則見 [圖表設計原則](../data-manipulation-and-eda/visualization/chart-design-principles.md)。
+圖表選擇原則見 [圖表設計原則](../data-manipulation-and-eda/visualization/chart-design-principles.md)；尺度、分面、主題、輸出與生資常見圖（volcano、PCA）見 [ggplot2](../data-manipulation-and-eda/visualization/ggplot2.md)。
 
 ## 一切皆物件（給 SAS / SPSS 使用者）
 

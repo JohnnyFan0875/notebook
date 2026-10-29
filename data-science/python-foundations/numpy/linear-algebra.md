@@ -70,4 +70,4 @@ np.linalg.norm(c, ord=1)                # 6.0：L1 norm
 | `svd` | 任何矩陣；PCA 的實際計算方式（對中心化資料做 SVD，比對共變異數矩陣做 `eigh` 數值更穩） |
 | `norm` | 向量長度、矩陣範數；L1 / L2 正則化的懲罰項 |
 
-PCA 的實作與解讀見 [PCA](../../statistics/multivariate-analysis/pca.md)。資料大且稀疏（單細胞計數矩陣）時，改用 `scipy.sparse` 與 `scipy.sparse.linalg.svds`，不要轉成稠密 array。
+PCA 的實作與解讀見 [PCA](../../statistics/multivariate-analysis/pca.md)。資料大且稀疏（單細胞計數矩陣）時，改用 [`scipy.sparse`](../scipy-sparse.md) 與 `scipy.sparse.linalg.svds`，不要轉成稠密 array。

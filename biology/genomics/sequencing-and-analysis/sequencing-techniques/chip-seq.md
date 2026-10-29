@@ -162,6 +162,8 @@ This encodes several important ideas:
 
 Key point: differential binding usually requires a consensus peak universe before comparing counts. Otherwise each sample is being measured on different regions.
 
+`dba.analyze()` 預設用 DESeq2 對 consensus peak 的 read counts 做負二項 GLM，所以 RNA-seq 的統計觀念直接適用：[GLM 計數模型](../../../../data-science/statistics/regression-analysis/glm-count-models.md#過度離散與負二項迴歸)、[多重檢定（FDR）](../../../../data-science/statistics/inferential-statistics/multiple-testing.md)、[批次效應](../../../../data-science/statistics/experimental-design/confounding-bias.md#生資最常見的干擾批次效應-batch-effect)。
+
 ## Sample Similarity and QC
 
 Before trusting differential results, sample-level similarity should be checked.
@@ -193,7 +195,7 @@ DiffBind commonly exposes:
 
 These plots answer slightly different questions:
 
-- PCA: overall sample-level separation
+- PCA: overall sample-level separation（見 [PCA](../../../../data-science/statistics/multivariate-analysis/pca.md)）
 - heatmap: structured signal differences at selected regions
 - MA plot: effect size vs average abundance
 - volcano plot: effect size vs significance

@@ -12,7 +12,7 @@
 
 | 章節 | 核心內容 | 回答的問題 |
 | --- | --- | --- |
-| [Python 基礎](python-foundations/README.md) | 語法、函式、腳本、[NumPy](python-foundations/numpy/README.md)、[pandas](python-foundations/pandas/README.md)、[效能與擴展](python-foundations/performance-and-scaling/README.md) | 如何有效率地讀取、整理與轉換資料？ |
+| [Python 基礎](python-foundations/README.md) | 語法、函式、腳本、[NumPy](python-foundations/numpy/README.md)、[pandas](python-foundations/pandas/README.md)、[scipy.sparse](python-foundations/scipy-sparse.md)、[AnnData / scanpy](python-foundations/anndata-and-scanpy.md)、[效能與擴展](python-foundations/performance-and-scaling/README.md) | 如何有效率地讀取、整理與轉換資料？ |
 | [R 基礎](r-foundations/README.md) | 資料結構、tidyverse、data.table、函數式程式設計、R Markdown | 如何在 R 裡整理資料、重用邏輯並產出可重現報告？ |
 | [資料整理與 EDA](data-manipulation-and-eda/README.md) | EDA 流程、資料剖析、缺失值、[視覺化](data-manipulation-and-eda/visualization/README.md) | 資料可信嗎？分布、關係與問題欄位在哪？ |
 | [統計](statistics/README.md) | 推論、迴歸、多重檢定、貝氏、時間序列、多變量、實驗設計、存活分析 | 這個差異或趨勢可靠嗎？不確定性多大？ |
