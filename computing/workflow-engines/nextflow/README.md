@@ -68,3 +68,8 @@ nextflow run main.nf
 - `running-pipelines/command-line-interface.md`
 - `running-pipelines/configuration.md`
 - DSL2 concepts such as channels, processes, modules, and workflows
+
+## Related
+
+- Pipelines commonly run with Nextflow / nf-core: [RNA-seq analysis](../../../biology/genomics/workflows/rna-seq/README.md), [variant calling](../../../biology/genomics/workflows/variant-calling.md)
+- Tools wrapped in typical processes: [NGS tools](../../../biology/bioinformatics-tools/ngs-tools/README.md)

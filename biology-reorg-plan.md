@@ -101,7 +101,7 @@
 - [x] **批次 9　clinical-informatics**（約 25 篇）：clinical-terminology（FHIR、OMOP、SNOMED、ICD、LOINC…，補比較與對應關係）、clinical-databases、regulatory-databases
 - [x] **批次 10　immunology、laboratory-medicine、medical-imaging**（約 16 篇）：細胞激素整合；影像模態比較表（連 data-science 的 image-analysis）；blood-bank 依網站內容補充
 - [x] **批次 11　molecular-biology、microbiome**（約 20 篇）：實驗方法比較（blot 類型、qPCR 定量）、蛋白質資料庫、16S vs shotgun
-- [ ] **批次 12　頂層與跨領域**：`biology/README.md`（模組表、建議路線、速查頁）、各領域 README 補漏、biology ↔ data-science / computing 交叉連結
+- [x] **批次 12　頂層與跨領域**：`biology/README.md`（模組表、建議路線、速查頁）、各領域 README 補漏、biology ↔ data-science / computing 交叉連結
 
 ## Phase 4：程式碼實跑驗證
 
