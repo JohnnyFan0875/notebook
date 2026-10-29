@@ -1,423 +1,192 @@
-# Data Quality Checks
+[Data Science](../README.md) › [Data Engineering](README.md) › 資料品質檢查
 
-Data quality is the practice of ensuring that data is fit for its intended business use through defined dimensions, rules, monitoring, and remediation processes.
+# 資料品質檢查 (Data Quality Checks)
 
-This note focuses on **organization-level data quality operations**: dimensions, rules, monitoring, ownership, and remediation. If you are cleaning a dataset before analysis, start with [Statistics: Data Quality](../statistics/descriptive-statistics/data-quality.md).
+資料品質是確保資料「適合預期用途」的持續作業：定義品質維度、寫成可測試的規則、設定閾值與告警、指定誰負責修。本篇是組織與 pipeline 層級的做法；分析前清理單一資料集見 [Statistics：資料品質](../statistics/descriptive-statistics/data-quality.md)，程式內的 assert 見 [錯誤與斷言](../python-foundations/errors-and-assertions.md)。
 
-Key point: Data quality is not only about cleaning bad rows. It is an operating discipline that connects business expectations, technical validation, alerting, and accountable issue resolution.
+> 資料品質不只是清掉壞列，而是把業務期待、技術驗證、告警與負責人串起來的作業紀律。來源會變、規則會變、用途會變，所以它是持續的流程。
 
-## Why Data Quality Matters
+## 品質維度
 
-Organizations use data for reporting, operations, compliance, and AI, but poor-quality data quietly weakens all of them.
+| 維度 | 定義 | 一般例子 | 生資例子 |
+| --- | --- | --- | --- |
+| 完整性 (completeness) | 該有的記錄與欄位都在 | 必填欄位有值 | 每個樣本都有 metadata；計數矩陣沒有整欄缺失 |
+| 有效性 (validity) | 值符合格式、範圍、業務條件 | 出生日期在過去；狀態只能是 `Open` / `Closed` | 計數 ≥ 0 且為整數；染色體在允許集合內；Phred 分數範圍 |
+| 唯一性 (uniqueness) | 該唯一的不重複 | 客戶 ID 唯一 | 樣本 ID 唯一；同一基因不重複列 |
+| 一致性 (consistency) | 跨表、跨系統、跨時間相符 | 帳戶表的客戶 ID 都存在於客戶表；今日筆數在昨日 ±5% | metadata 樣本 ID 集合 = 矩陣欄名集合；登記性別與 X / Y 表現量相符 |
+| 及時性 (timeliness) | 在需要時已到位 | 每日資料 9:00 前載入 | 定序結果在 tumor board 前完成 |
+| 準確性 (accuracy) | 與現實或可信來源相符 | 地址與報稅資料一致 | 樣本身分與基因型指紋 (SNP fingerprint) 相符 |
 
-| Data Quality Outcome | Why It Matters |
-| --- | --- |
-| Better decisions | Reports and models are less likely to be distorted |
-| Safer operations | Downstream processes fail less often because of missing or invalid data |
-| Stronger trust | Users are more willing to rely on governed data assets |
-| Faster issue resolution | Known rules and ownership reduce confusion when problems appear |
+完整性可分資料集層級（所有預期記錄都載入）與欄位層級（必填欄位有值）。有效性幾乎都需要業務脈絡：格式正確的值仍可能對流程無效。資料完整、有效但太晚到，對營運仍然沒用。
 
-Tip: The business value of data quality often appears indirectly through fewer escalations, less rework, and more credible reporting.
+## 品質規則
 
-## Activities for Good Data Quality
+規則把「資料要乾淨」這類模糊期待轉成可以測試的條件。
 
-Data used for decisions and business processes should meet a small set of operational expectations.
-
-| Activity | Practical Meaning |
-| --- | --- |
-| Monitoring | Data is checked continuously instead of only during one-time cleanup |
-| Timely issue resolution | Problems have a defined path to remediation |
-| Shared understanding | Producers and consumers understand how quality is defined |
-| Ongoing process | Quality work is repeated as data, systems, and use cases change |
-
-Key point: A data quality process is continuous because new source changes, business rules, and downstream uses keep creating new failure modes.
-
-## Core Data Quality Dimensions
-
-A common way to make quality measurable is to define dimensions that describe what "fit for purpose" means.
-
-| Dimension | Practical Definition | Example Question |
+| 維度 | 資料集層級規則 | 欄位層級規則 |
 | --- | --- | --- |
-| Completeness | Expected records or fields are present | Are all customer records loaded, and are required fields populated? |
-| Validity | Values meet allowed formats, ranges, or business criteria | Is the birth date in a valid format and logically possible? |
-| Uniqueness | Records that should be unique are not duplicated | Does each customer have one true identifier? |
-| Consistency | Related values agree across records or systems | Does a referenced customer ID also exist in the customer table? |
-| Timeliness | Data arrives when it is needed | Was the daily dataset loaded before the reporting cutoff? |
-| Accuracy | Data matches reality or an accepted source of truth | Does the address match the verified tax form? |
+| 完整性 | 所有來源記錄都載入目標表 | `sample_id`、`tissue`、`batch` 不可為空 |
+| 有效性 | — | `collection_date` 是有效日期且不在未來；`sex` ∈ {F, M, unknown} |
+| 唯一性 | — | `sample_id` 唯一 |
+| 一致性 | 今日筆數在昨日 ±5% | 結果表的 `sample_id` 都存在於樣本表 |
+| 及時性 | 每日資料 9:00 前載入 | 報告送出前 `qc_status` 已填 |
+| 準確性 | 通常靠對帳 (reconciliation) | 與可信來源文件比對 |
 
-### Completeness
+### 偵測型 vs 預防型規則
 
-Completeness can be measured at both the dataset level and the data-element level.
+| 類型 | 目的 | 行為 | 適合 |
+| --- | --- | --- | --- |
+| 偵測型 (detective) | 資料載入後監控 | 告警、調查、修正 | 不立即修也不會造成重大傷害、問題複雜難以快速修、影響的記錄少 |
+| 預防型 (preventative) | 阻止壞資料往下游流 | 擋下載入直到問題解決 | 資料對流程關鍵、會立即造成傷害、能快速修、影響的記錄多 |
 
-| Level | Meaning |
-| --- | --- |
-| Dataset level | All expected records are present |
-| Data element level | Required fields are populated when expected |
+> 剛開始先偵測、累積經驗；等業務影響與修正路徑都清楚後再改成預防。
 
-Business issues from poor completeness often include skewed reporting and direct customer impact.
+### 閾值與告警
 
-### Validity
-
-Validity asks whether values satisfy business and technical rules.
-
-| Validity Need | Example |
-| --- | --- |
-| Allowed format | Date must follow a required pattern |
-| Allowed domain | Account status must be `Open`, `Closed`, or `Pending` |
-| Logical correctness | A birth date must be in the past |
-
-Tip: Validity almost always requires business context. A technically well-formed value can still be invalid for the process.
-
-### Uniqueness
-
-Uniqueness protects data from duplicated entities and events.
-
-| Uniqueness Check | Example |
-| --- | --- |
-| Single-key uniqueness | Customer ID must be unique |
-| Composite uniqueness | Name, birth date, and address together should not repeat unexpectedly |
-
-### Consistency
-
-Consistency checks whether data agrees across systems, records, and time.
-
-| Consistency Check | Example |
-| --- | --- |
-| Cross-table agreement | Account table customer IDs must exist in the customer table |
-| Volume consistency | Today's load count should stay within an expected range of yesterday's load |
-
-### Timeliness
-
-Timeliness measures whether data is available early enough for the business use case.
-
-| Timeliness Check | Example |
-| --- | --- |
-| Dataset timeliness | Daily customer data must load by `9:00 AM` |
-| Element timeliness | Tax ID must be populated by the time an account becomes `Open` |
-
-Warning: Data can be complete and valid but still operationally useless if it arrives too late.
-
-### Accuracy
-
-Accuracy compares stored values to a trusted reference or real-world condition.
-
-| Accuracy Check | Example |
-| --- | --- |
-| External source comparison | Customer identity fields match a tax form |
-| Verified reference comparison | Stored address matches the approved source record |
-
-## Data Quality Rules
-
-A data quality rule is a business rule that validates whether data meets requirements.
-
-| Rule Scope | Meaning |
-| --- | --- |
-| Dataset level | Checks the dataset as a whole, such as record counts or arrival time |
-| Data element level | Checks field-level expectations, such as required values or valid formats |
-
-Key point: Good data quality rules translate vague expectations like "clean data" into conditions that can actually be tested.
-
-## Example Rules by Dimension
-
-| Dimension | Dataset-Level Example | Data-Element Example |
+| 層級 | 意義 | 回應 |
 | --- | --- | --- |
-| Completeness | All expected source records must load into the target table | All records must have `Customer ID`, `Customer Name`, and `Account Type` populated |
-| Validity | None required in every case | `Birth Date` must be valid and in the past; `Account Status` must be in an allowed list |
-| Uniqueness | None required in every case | `Customer ID` must be unique |
-| Consistency | Today's record count must be within `+/- 5%` of yesterday's | All `Customer ID` values in the account table must exist in the customer table |
-| Timeliness | Daily customer data must load by `9:00 AM` | Tax ID must be populated before an account is first marked `Open` |
-| Accuracy | Often measured through reconciliation | Customer profile fields must match a trusted source document |
+| Level 1：警告 | 超過閾值但不需立即修 | 監控、排入清理 |
+| Level 2：嚴重告警 | 超過閾值且需快速修正 | 升級處理、盡快修 |
+| Level 3：嚴重阻擋 | 超過閾值且不應繼續往下游 | 擋下 pipeline 或發布 |
 
-## Detective vs Preventative Rules
+閾值是失敗筆數或比例的上限，依關鍵程度設定：越關鍵的欄位閾值越嚴。閾值設計同時是業務決策：它決定哪些缺陷可以容忍。
 
-Not every quality problem should be handled the same way.
+### 異常偵測
 
-| Rule Type | Purpose | Typical Behavior |
+規則之外，也可以用異常偵測 (anomaly detection) 監控大量資料：設定成本低、能抓到固定閾值漏掉的分布漂移。但它只找出可疑模式，不能取代關鍵控制的業務規則。
+
+## 角色與修正流程
+
+| 角色 | 責任 |
+| --- | --- |
+| 資料產生者 (producer) | 實作規則、修正來源或 pipeline 的技術問題 |
+| 資料使用者 (consumer) | 提出規則、使用前了解資料是否合用、回報問題 |
+| 治理團隊 | 定義政策與角色、監控 dashboard、提供工具與訓練 |
+
+```
+使用者發現問題或缺少的規則 → 產生者實作 / 更新規則並修正 → 治理團隊追蹤進度
+```
+
+同一個人常在不同步驟同時是 producer 與 consumer，所以每個交接點的負責人要明確。
+
+## 用程式實作：pandera
+
+[pandera](https://pandera.readthedocs.io/) 用 schema 宣告 DataFrame 的欄位型別與檢查，適合分析程式與中小型 pipeline。
+
+```python
+import pandas as pd
+import pandera.pandas as pa          # 舊版：import pandera as pa
+
+sample_schema = pa.DataFrameSchema(
+    {
+        "sample_id": pa.Column(str, unique=True, nullable=False),
+        "patient_id": pa.Column(str, nullable=False),
+        "sex": pa.Column(str, pa.Check.isin(["F", "M", "unknown"])),
+        "age": pa.Column(float, pa.Check.in_range(0, 120), nullable=True),
+        "batch": pa.Column(str),
+        "rin": pa.Column(float, pa.Check.ge(0) & pa.Check.le(10), nullable=True),
+    },
+    strict=True,             # 不允許多出來的欄位（上游偷改欄名時會報錯）
+    coerce=True,             # 先嘗試轉型
+)
+
+meta = sample_schema.validate(meta, lazy=True)   # lazy=True：收集所有錯誤一次回報
+```
+
+## 生資資料的一致性檢查
+
+型別與範圍之外，最常出事的是表與表之間對不上：
+
+```python
+import numpy as np
+
+counts = pd.read_parquet("counts.parquet")       # genes × samples
+meta = pd.read_csv("samples.tsv", sep="\t", dtype={"sample_id": "string"})
+
+# 1. 樣本對齊：集合相同，而且順序一致（很多工具依位置對應）
+missing_in_meta = set(counts.columns) - set(meta["sample_id"])
+missing_in_counts = set(meta["sample_id"]) - set(counts.columns)
+assert not missing_in_meta and not missing_in_counts, (missing_in_meta, missing_in_counts)
+meta = meta.set_index("sample_id").loc[counts.columns]
+
+# 2. 計數矩陣本身
+assert counts.index.is_unique                        # 基因不重複
+assert (counts.values >= 0).all()                    # 無負值
+assert np.allclose(counts.values, counts.values.round())   # 原始計數應為整數（TPM 不是）
+lib_size = counts.sum()
+assert (lib_size > 1e6).all(), lib_size[lib_size <= 1e6]   # 定序深度門檻依實驗設定
+
+# 3. 跨資料的準確性：登記性別 vs XIST / Y 染色體基因表現
+```
+
+| 檢查 | 抓到的問題 |
+| --- | --- |
+| metadata ↔ 矩陣樣本 ID | 樣本漏掉、命名不一致、多一個 Undetermined |
+| 欄位順序對齊 | 標籤錯位（最危險：不會報錯、結果全錯） |
+| 基因 ID 格式一致 | 有些帶版本號 `.17`、有些是 symbol |
+| 性別 vs 性染色體表現 | 樣本調換 (sample swap) |
+| SNP fingerprint | 同一病人的 tumor / normal 是否真的同一人 |
+| 批次 × 組別交叉表 | 批次與實驗組完全混淆（無法分開效應） |
+
+更多 omics QC 見 [EDA](../data-manipulation-and-eda/README.md)；批次效應見 [Statistics](../statistics/README.md)。
+
+## 用程式實作：Great Expectations
+
+Great Expectations（GX）把品質規則寫成 expectation，對每批新資料重複驗證，並產生給非工程人員看的 Data Docs。適合同一份資料要反覆驗證、規則要在團隊間共享、失敗要觸發告警的情況；一次性探索清理則不必用。
+
+| 概念 | 意義 |
+| --- | --- |
+| Data Context | GX 的入口，管理設定與元件 |
+| Data Source / Data Asset / Batch Definition | 資料從哪來、哪一份、如何切成批次 |
+| Expectation | 一條可驗證的斷言 |
+| Expectation Suite | 一組 expectation，對應一份資料或一個用途 |
+| Validation Definition | 把 batch 與 suite 綁在一起 |
+| Checkpoint | 執行一或多個 validation 並觸發後續動作（通知、更新文件） |
+| Data Docs | 人可讀的 suite 與驗證結果 |
+
+```python
+import great_expectations as gx      # GX Core 1.x 的 API；0.x 版差異很大
+
+context = gx.get_context()
+batch_def = (context.data_sources.add_pandas("pandas")
+             .add_dataframe_asset("samples")
+             .add_batch_definition_whole_dataframe("all"))
+
+suite = context.suites.add(gx.ExpectationSuite(name="samples_critical"))
+suite.add_expectation(gx.expectations.ExpectColumnValuesToNotBeNull(column="sample_id"))
+suite.add_expectation(gx.expectations.ExpectColumnValuesToBeUnique(column="sample_id"))
+suite.add_expectation(gx.expectations.ExpectColumnValuesToBeInSet(column="sex", value_set=["F", "M", "unknown"]))
+suite.add_expectation(gx.expectations.ExpectColumnValuesToBeBetween(column="rin", min_value=0, max_value=10))
+
+vd = context.validation_definitions.add(
+    gx.ValidationDefinition(name="samples_vd", data=batch_def, suite=suite))
+result = vd.run(batch_parameters={"dataframe": meta})
+result.success                         # False 時擋下 pipeline 或告警
+```
+
+| Expectation 類型 | 例子 | 對應維度 |
 | --- | --- | --- |
-| Detective rule | Monitor data after it has been loaded downstream | Alert, investigate, and remediate |
-| Preventative rule | Stop bad data from moving further in the pipeline | Block loading until the issue is addressed |
+| 逐列 | `ExpectColumnValuesToNotBeNull`、`ExpectColumnValuesToBeOfType`、`ExpectColumnValuesToBeBetween`、`ExpectColumnValuesToMatchRegex` | 完整性、有效性 |
+| 聚合 | `ExpectColumnDistinctValuesToEqualSet`、`ExpectColumnUniqueValueCountToBeBetween`、`ExpectColumnMostCommonValueToBeInSet` | 一致性 |
+| 唯一性 | `ExpectColumnValuesToBeUnique`、`ExpectCompoundColumnsToBeUnique` | 唯一性 |
+| 及時性 / 準確性 | 通常在 GX 之外處理，或寫自訂 expectation 比對參考資料 | — |
 
-### When Detective Rules Make Sense
+suite 要聚焦：一個 suite 描述一份穩定的品質契約（例如「阻擋型關鍵檢查」與「建議型檢查」分開），而不是收集所有可能的檢查。
 
-Detective rules are useful when:
+## 工具選擇
 
-1. the issue will not cause significant harm if it is not fixed immediately
-2. the issue is too complex to remediate quickly
-3. the issue affects a relatively small number of records
-
-### When Preventative Rules Make Sense
-
-Preventative rules are useful when:
-
-1. the data is critical to business processes and an issue would cause immediate harm
-2. the issue can be fixed quickly
-3. the issue affects a large number of records
-
-Tip: Detect first when learning, prevent later when the business impact and remediation path are both clear.
-
-## Anomaly Detection for Data Quality
-
-Rule-based checks are not the only option. Some teams use anomaly detection to identify unexpected quality problems at scale.
-
-| Benefit | Why It Helps |
-| --- | --- |
-| Scale | Can monitor more data than a small manual ruleset |
-| Lower setup friction | Requires less explicit business-rule specification at the start |
-| Drift detection | Can surface pattern changes that fixed thresholds miss |
-
-Anomaly detection is most useful when large amounts of data need monitoring and manual review alone no longer scales.
-
-Warning: Anomaly detection helps find suspicious patterns, but it does not replace business-defined rules for critical controls.
-
-## Thresholds and Alerts
-
-Rules become operational only when teams decide what level of failure should trigger action.
-
-| Concept | Meaning |
-| --- | --- |
-| Alert threshold | A count or percentage limit for rule failures |
-| Alert owner | Usually the data producer, consumer, or both |
-| Trigger | Action starts when failures exceed the allowed threshold |
-
-Thresholds should reflect the criticality, priority, and impact of the issue. More critical fields usually require stricter thresholds.
-
-### Common Alert Levels
-
-| Level | Meaning | Typical Response |
+| 工具 | 語言 | 適合 |
 | --- | --- | --- |
-| Level 1: Warning | Threshold breached but no rapid remediation required | Monitor and plan cleanup |
-| Level 2: Critical issue alert | Threshold breached and rapid remediation required | Escalate and fix quickly |
-| Level 3: Critical issue prevent | Threshold breached and downstream movement should stop | Block the pipeline or release |
-
-Key point: Threshold design is a business decision as much as a technical one, because it decides which defects are tolerable and which are not.
-
-## Roles and Responsibilities
-
-Data quality work usually spans producers, consumers, and governance functions.
-
-| Role | Typical Responsibilities |
-| --- | --- |
-| Data producer | Implement rules, own technical fixes, and remediate issues in source or pipeline logic |
-| Data consumer | Recommend rules, understand data fitness before use, and report issues |
-| Data governance team | Define policy, clarify roles, monitor dashboards, and ensure tools and training exist |
-
-Tip: Many people are both producers and consumers at different points in the same pipeline, so ownership should be explicit for each handoff.
-
-## A Practical Remediation Flow
-
-One useful operating pattern is:
-
-1. a consumer identifies a quality issue or a missing rule
-2. the producer implements or updates the rule and remediates the issue
-3. the governance function oversees the process and tracks it in dashboards
-
-This keeps quality from becoming either "only a business complaint" or "only an engineering cleanup."
-
-## Minimum Standard for a Healthy Data Quality Practice
-
-Before calling a data quality practice operational, you should be able to explain:
-
-1. which quality dimensions matter for the dataset and why
-2. which dataset-level and element-level rules are enforced
-3. when the pipeline should detect issues versus prevent downstream loading
-4. how thresholds and alerts are set by criticality
-5. who owns remediation, escalation, and monitoring
-
-## Executable Checks with Great Expectations
-
-Great Expectations, often abbreviated `GX`, is a data quality platform for expressing expectations about data, validating new batches, and documenting results for teams.
-
-Key point: `GX` turns data quality from a vague review activity into executable checks that can run repeatedly in notebooks, pipelines, and production validation flows.
-
-### Where Great Expectations Fits
-
-This tool is most useful after a team already knows which quality dimensions matter and wants to enforce them consistently.
-
-| Need | How GX Helps |
-| --- | --- |
-| Repeatable validation | Turns quality rules into reusable expectations |
-| Shared quality language | Stores business assumptions in named suites |
-| Pipeline checks | Validates new batches before or after downstream use |
-| Human-readable reporting | Publishes validation outcomes through Data Docs |
-
-Tip: Use a plain `data-quality.md` page to define the operating model, then use GX to implement the most important checks in code.
-
-### Core Concepts
-
-The extracted material and the current GX documentation point to a small set of concepts that matter most.
-
-| Concept | Practical Meaning |
-| --- | --- |
-| Data Context | Main GX entry point for configuration and component management |
-| Expectation | A verifiable assertion about data |
-| Expectation Suite | A group of expectations for one dataset or one use case |
-| Validation Definition | A link between a batch of data and an expectation suite |
-| Checkpoint | A reusable object that runs validations and optional actions |
-| Data Docs | Human-readable documentation for suites and validation results |
-
-Warning: GX terminology and APIs have changed across versions, so keep the concepts stable and verify exact syntax against the version you are using.
-
-### Data Context
-
-The Data Context is the operational home for a GX deployment.
-
-| Data Context Responsibility | Why It Matters |
-| --- | --- |
-| Manage data sources | Connects GX to the data you want to validate |
-| Store expectation suites | Keeps validation logic versionable and reusable |
-| Run or organize validations | Supports repeatable quality checks |
-| Access Data Docs and results | Helps teams inspect outcomes and history |
-
-In practice, the Data Context is the place where validation assets stop being ad hoc notebook code and become a shared quality system.
-
-### Expectations
-
-An expectation is a verifiable assertion about data.
-
-Common examples include checks for:
-
-1. null values
-2. duplicate values
-3. allowed sets or ranges
-4. string formatting
-5. schema shape
-6. unusual distributions
-
-Key point: Expectations are only useful when they encode actual business assumptions, not just generic linting.
-
-### Expectation Suites
-
-Expectation Suites group related checks together so they can be run and maintained as one quality contract.
-
-| Suite Design Choice | Example |
-| --- | --- |
-| Dataset-oriented suite | Customer master data validation |
-| Use-case-oriented suite | Reporting-safe subset for finance dashboards |
-| Severity-oriented suite | Critical blocking checks vs advisory checks |
-
-Tip: Keep suites coherent. One suite should describe one stable quality contract rather than every possible check you might ever want.
-
-### Validation Definitions and New Data
-
-Once expectations exist, they need to be applied to specific batches of data.
-
-| Object | Role |
-| --- | --- |
-| Batch | The concrete data being checked |
-| Validation Definition | Associates a batch with an expectation suite |
-| Validation Result | The outcome of running that validation |
-
-This makes it easier to rerun the same rules on new incoming data without redefining expectations every time.
-
-### Checkpoints and Actions
-
-Checkpoints help operationalize validation.
-
-| Checkpoint Benefit | Practical Use |
-| --- | --- |
-| Reusability | Run multiple validations with shared parameters |
-| Automation | Trigger follow-up actions based on results |
-| Consistency | Standardize how validations are executed across jobs |
-
-Actions can send notifications, update documentation, or integrate with workflow tools after validation completes.
-
-### Data Docs
-
-Data Docs turn quality metadata into readable documentation.
-
-| Data Docs Use | Why It Helps |
-| --- | --- |
-| Browse expectation suites | Makes validation intent easier to review |
-| Inspect validation results | Shows what passed, failed, and changed |
-| Share with non-engineers | Gives business and governance teams a readable surface |
-
-Tip: Data Docs are especially valuable when data consumers need visibility into quality without reading pipeline code.
-
-### Common Expectation Patterns
-
-The course material emphasized a few practical expectation families.
-
-#### Row-Level Expectations
-
-These are applied to each row independently.
-
-| Check Type | Common Goal |
-| --- | --- |
-| Missingness | Required values should not be null |
-| Type | Values should match the expected type |
-| Numeric range | Values should stay within allowed bounds |
-| String pattern | Text should match valid formatting rules |
-
-Example expectation names often include:
-
-- `ExpectColumnValuesToNotBeNull`
-- `ExpectColumnValuesToBeOfType`
-- `ExpectColumnValuesToBeBetween`
-
-#### Aggregate-Level Expectations
-
-These summarize behavior across the whole column or dataset.
-
-| Check Type | Common Goal |
-| --- | --- |
-| Distinct-value set | Only approved categories should appear |
-| Unique-value count | Cardinality should stay in an expected range |
-| Uniqueness | Key columns should not duplicate |
-| Most common value | Dominant categories should remain plausible |
-
-Example expectation names often include:
-
-- `ExpectColumnDistinctValuesToEqualSet`
-- `ExpectColumnUniqueValueCountToBeBetween`
-- `ExpectColumnValuesToBeUnique`
-- `ExpectColumnMostCommonValueToBeInSet`
-
-### A Practical GX Workflow
-
-For notebook or pipeline work, a simple sequence is usually enough:
-
-1. create or load a Data Context
-2. define an Expectation Suite for the dataset
-3. add expectations that reflect business-critical rules
-4. create a Validation Definition for the data to be checked
-5. run the validation on a new batch
-6. inspect the Validation Result or publish Data Docs
-7. wrap repeatable production checks in a Checkpoint
-
-Key point: The value is not in collecting many expectations. The value is in running a small, meaningful set repeatedly on the data that actually matters.
-
-### Example Relationship to Data Quality Dimensions
-
-GX is most effective when its checks are mapped back to business quality dimensions.
-
-| Data Quality Dimension | GX-Friendly Example |
-| --- | --- |
-| Completeness | Required columns must not be null |
-| Validity | Values must belong to an allowed set or format |
-| Uniqueness | Primary key values must be unique |
-| Consistency | Schema or category expectations stay stable across batches |
-| Timeliness | Often handled outside GX, then combined with validation workflows |
-| Accuracy | Usually needs external reference comparison or custom logic |
-
-Warning: Not every data quality problem can be solved with built-in expectations alone. Accuracy and business-context checks often need reference data or custom expectations.
-
-### When to Use Great Expectations
-
-GX is a strong fit when:
-
-1. the same datasets are validated repeatedly
-2. teams need shared documentation of quality rules
-3. validation needs to live inside engineering workflows
-4. rule failures should trigger alerts, dashboards, or downstream actions
-
-It is a weaker fit when the problem is mostly one-time exploratory cleanup with no need for repeatable enforcement.
-
-### Minimum Standard for a Useful GX Setup
-
-Before calling a GX deployment useful, you should be able to explain:
-
-1. which expectation suites exist and which datasets they protect
-2. which expectations are critical versus advisory
-3. how new data is linked to suites through validations
-4. which checkpoints or actions operationalize the checks
-5. where validation results and Data Docs are reviewed
+| `assert` / 自寫檢查函式 | Python / R | 分析腳本、少量關鍵條件 |
+| pandera | Python（pandas、Polars、PySpark） | 以 schema 宣告型別與檢查，輕量 |
+| Great Expectations | Python | 團隊共享規則、驗證歷史、Data Docs |
+| dbt tests | SQL | warehouse 內的表，見 [dbt 測試](dbt-foundations.md#測試) |
+| `pointblank`、`validate` | R | R 的資料驗證與報告 |
+
+## 健全的品質作業應該說得出
+
+1. 這份資料重要的品質維度是哪些、為什麼
+2. 執行了哪些資料集層級與欄位層級的規則
+3. 什麼時候只偵測、什麼時候阻擋下游
+4. 閾值與告警依關鍵程度怎麼設定
+5. 誰負責修正、升級與監控

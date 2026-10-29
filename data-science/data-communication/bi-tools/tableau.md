@@ -1,205 +1,83 @@
+[Data Communication](../README.md) › [BI 工具](README.md) › Tableau
+
 # Tableau
 
-Tableau 是偏向分析與溝通交界處的 BI 工具：把資料來源、計算欄位、分析視角與 dashboard 交付串成一個工作流。
+Tableau 是視覺分析工具：拖放探索、快速迭代問題與圖表、交付互動式 dashboard。它最適合放在分析與溝通的交界，當作分析流程的交付層，而不只是畫圖介面。好的 Tableau 作品從分析問題開始，而不是從空白 dashboard 開始。
 
-## Overview and Workflow
+## 工作流程
 
-### What Tableau Is Good At
+```
+形成問題 → 連接資料 → 定義欄位 → 分析 → 組成 dashboard → 溝通決策
+```
 
-Tableau is a visual analytics tool built for interactive exploration, fast prototyping, and stakeholder-facing dashboards.
-
-Its practical strengths are:
-
-- low-friction visual exploration through drag-and-drop
-- fast iteration on questions and chart design
-- interactive dashboards for self-serve analysis
-- a workflow that connects data prep, calculation, and presentation
-
-### Where Tableau Fits in the Analytics Process
-
-A useful Tableau mental model is:
-
-`question framing -> connect data -> define fields -> analyze -> compose dashboard -> communicate decisions`
-
-This matters because Tableau is most effective when it is treated as the delivery layer of an analysis workflow, not just a charting surface.
-
-### Typical Workflow
-
-| Step | Main question |
+| 步驟 | 問題 |
 | --- | --- |
-| Connect | Which data sources and tables are needed? |
-| Prepare | Do fields need cleaning, recoding, or regrouping? |
-| Calculate | Which metrics or derived fields are missing? |
-| Analyze | Which dimensions and measures reveal the pattern? |
-| Present | Which worksheet or dashboard best supports the decision? |
+| 連接 (Connect) | 需要哪些資料來源與表？ |
+| 準備 (Prepare) | 欄位需要清理、重新編碼或分組嗎？ |
+| 計算 (Calculate) | 缺哪些指標或衍生欄位？ |
+| 分析 (Analyze) | 哪些 dimension 與 measure 能揭露模式？ |
+| 呈現 (Present) | 哪個 worksheet 或 dashboard 最能支持決策？ |
 
-### Dimensions and Measures
+## Dimension 與 Measure
 
-Tableau relies heavily on the distinction between dimensions and measures.
-
-| Type | Meaning |
-| --- | --- |
-| Dimension | Categorical or qualitative field used to group, slice, or label |
-| Measure | Numeric field that is usually aggregated |
-
-One common modeling task is reclassifying fields when a numeric value should behave like a label instead of an aggregatable metric.
-
-### Why People Use Tableau
-
-- accessible to both analysts and business users
-- strong support for exploratory analysis
-- fast path from prototype to stakeholder-ready dashboard
-- suitable for turning business questions into interactive visual products
-
-### Dashboard Role
-
-Dashboards in Tableau combine multiple worksheets into one interactive decision surface.
-
-They are most useful when the goal is not just to show one chart, but to support:
-
-- drill-down
-- comparison across segments
-- KPI monitoring
-- guided exploration
-
-The broader design principles still live in [Dashboard Design](../dashboard-design.md).
-
-### Practical Takeaways
-
-- Tableau is strongest when it sits between analysis and communication.
-- Good Tableau work starts with the analytical question, not with a blank dashboard.
-- Dimensions, measures, calculated fields, and data relationships determine what the visuals can say.
-- Dashboards are most valuable when they support decisions, not when they simply showcase interactivity.
-
-## Connecting and Combining Data
-
-### Why Data Combination Matters
-
-In Tableau, visual quality depends heavily on whether the underlying data is combined correctly. A clean worksheet can still mislead if joins or unions were chosen incorrectly.
-
-### Two Common Combination Patterns
-
-| Pattern | Use when | Result |
+| 類型 | 意義 | 在視覺中 |
 | --- | --- | --- |
-| Union | Tables share the same columns and should be stacked vertically | More rows |
-| Join | Tables contain complementary columns and should be matched by keys | More columns |
+| Dimension | 類別 / 質性欄位，用來分組、切分、標籤 | 產生標題列 / 分組（藍色＝離散） |
+| Measure | 數值欄位，通常會被聚合（預設 `SUM`） | 產生軸（綠色＝連續） |
 
-### Union
+常見的建模工作是把數值欄位改成 dimension：郵遞區號、樣本編號、年份這類「數字」不應該被加總。
 
-A union appends records from multiple tables with the same schema.
+## 合併資料
 
-Use it when:
+視覺再整齊，底層資料合併錯了一樣會誤導。
 
-- data is split across months, regions, or files
-- each source has the same column structure
-- you want one longer table for consistent downstream analysis
+| 方式 | 用途 | 結果 |
+| --- | --- | --- |
+| Union | 欄位相同的表縱向堆疊（依月份、地區、檔案拆開的資料） | 列變多；主要風險是各檔 schema 不一致 |
+| Join | 依 key 橫向合併互補的欄位 | 欄變多；在資料來源層合併成一張表 |
+| Relationship（Tableau 2020.2 起的預設） | 定義表之間的邏輯關係，依視覺用到的欄位才在查詢時 join | 各表保留自己的 grain，較不會因 join 重複計算 |
 
-The main risk is schema inconsistency across files.
-
-### Join
-
-A join combines tables horizontally based on matching keys.
-
-Typical join types:
-
-| Join type | Effect |
+| Join 類型 | 保留 |
 | --- | --- |
-| Inner join | Keep only matched rows |
-| Left join | Keep all rows from the left table plus matches |
-| Right join | Keep all rows from the right table plus matches |
-| Full join | Keep matched and unmatched rows from both sides |
+| Inner | 兩邊都配對到的列 |
+| Left | 左表全部 + 配對到的右表 |
+| Right | 右表全部 + 配對到的左表 |
+| Full outer | 兩邊所有列 |
 
-### Choosing the Right Join
+選 join 前先問：key 是什麼？分析單位 (grain) 是什麼？需要沒配對到的列嗎？會不會意外重複列？錯誤的 join 是計數膨脹與聚合錯誤的常見來源，見 [JOIN 列數膨脹](../../databases/sql-joins-and-set-operations.md#列數膨脹-fan-out)。不同 grain 的表（訂單 vs 訂單明細）優先用 relationship 而非 join。
 
-The join decision should be driven by the business question and the expected grain of the data.
+## 計算欄位 (Calculated Fields)
 
-Ask:
+計算欄位用既有資料建立新的分析邏輯：補上缺少的指標、轉換欄位、重新編碼或分箱、把業務規則放進視覺層。
 
-- what is the key?
-- what is the unit of analysis?
-- do I need unmatched rows?
-- will the join duplicate records unexpectedly?
+| 類型 | 意義 | 例子 |
+| --- | --- | --- |
+| 列層級 (row-level) | 對每筆記錄個別計算 | `[Sales] - [Cost]`、`DATEPART('year', [Order Date])` |
+| 聚合 (aggregate) | 對目前視覺中的一組記錄計算 | `SUM([Profit]) / SUM([Sales])` |
+| LOD 運算式 | 在指定的 grain 聚合，不受視覺當前的層級影響 | `{FIXED [Customer ID] : MIN([Order Date])}`（每位客戶的首購日） |
+| Table calculation | 對視覺中已算好的值再計算 | 累計總和、排名、與前期差異、佔總計比例 |
 
-Incorrect joins are a common source of inflated counts and broken aggregates.
+```
+// 列層級 vs 聚合：利潤率要先聚合再相除
+Profit Ratio (錯)  = [Profit] / [Sales]                  // 每列算比率，視覺再加總 → 比率被加總
+Profit Ratio (對)  = SUM([Profit]) / SUM([Sales])
 
-### Practical Tableau Prep Questions
+// 條件分類
+IF [Sales] >= 10000 THEN "High" ELSEIF [Sales] >= 1000 THEN "Mid" ELSE "Low" END
 
-Before building views, check:
+// LOD：客戶層級的指標，再拿來分群
+{FIXED [Customer ID] : SUM([Sales])}
+```
 
-- do any fields need refinement?
-- are there enough categorical fields for slicing and grouping?
-- do some numeric fields belong in dimensions instead of measures?
-- are additional calculated fields needed to tell the story?
-
-### Practical Takeaways
-
-- Use unions to stack like-with-like tables.
-- Use joins to enrich one table with fields from another.
-- Join type changes the row set, so it changes every downstream visual.
-- Data modeling choices in Tableau are analytical decisions, not just UI actions.
-
-## Calculated Fields
-
-### Why Calculations Matter
-
-Calculated fields let you create new analytical logic from data that already exists in the source.
-
-They are commonly used to:
-
-- create missing metrics
-- transform existing fields
-- recode or bucket categories
-- build business logic directly into the visualization layer
-
-### Main Calculation Types
-
-Tableau calculations are often grouped into four broad categories:
-
-| Type | Main idea |
+| 常見錯誤 | 說明 |
 | --- | --- |
-| Row-level calculations | Evaluated on each record individually |
-| Aggregate calculations | Evaluated over a set of records in the current view |
-| Level of Detail expressions | Define aggregation at a specific grain independent of the visible view |
-| Table calculations | Compute across already rendered values in the worksheet |
+| 混用列層級與聚合 | 「無法在同一運算式中混合聚合與非聚合引數」 |
+| 函式套用到不相容的型別 | 文字欄當數字算、日期未轉型 |
+| 語法 | 漏 `END`、逗號、括號 |
+| 計算層級與業務意義不符 | 公式有效但分析上錯誤（比率被加總） |
 
-### Row-Level vs Aggregate Logic
+先決定邏輯屬於列層級還是分組層級；公式保持小而可組合；以業務意義命名；用在 dashboard 前先手動抽查結果。
 
-This distinction is one of the most important Tableau concepts.
+## Dashboard
 
-| Type | Meaning |
-| --- | --- |
-| Row-level | Works record by record before aggregation |
-| Aggregate | Works on grouped data such as `SUM()` or `AVG()` |
-
-Many Tableau calculation errors happen because row-level and aggregate logic are mixed incorrectly.
-
-### Typical Use Cases
-
-- derived margins or ratios
-- date part extraction
-- customer segmentation buckets
-- conditional labels
-- comparison fields used in dashboards
-
-### Common Error Patterns
-
-Watch for:
-
-- mixing row-level and aggregate expressions unintentionally
-- applying functions to incompatible data types
-- syntax problems such as missing `END`, commas, or brackets
-
-A valid formula can still be analytically wrong if the aggregation level does not match the business meaning.
-
-### Good Practices
-
-- decide first whether the logic belongs at row level or grouped level
-- keep formulas small and composable when possible
-- name calculated fields by business meaning, not just implementation
-- verify the result against a manual spot-check before using it in a dashboard
-
-### Practical Takeaways
-
-- Calculated fields are part of the analytical model, not just convenience helpers.
-- The most important design choice is often the level at which the calculation should happen.
-- Strong Tableau work depends on aligning formulas with business grain, aggregation, and interpretation.
+Tableau dashboard 把多個 worksheet 組成一個互動的決策畫面，支援 drill-down、跨分群比較、KPI 監控、引導式探索（filter action、highlight action、parameter）。價值在於支持決策，而不是展示互動功能；設計原則見 [Dashboard 設計](../dashboard-design.md)。

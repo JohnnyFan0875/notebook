@@ -337,7 +337,7 @@ Key point: 很多 AWS 自動化工作的價值，不在於自己重新實作模�
 
 - [AWS Services Overview](aws-services-overview.md)
 - [AWS Security and Cost Management](aws-security-and-cost-management.md)
-- [Streaming: Kinesis and Lambda](../../data-science/data-engineering/streaming.md#aws-streaming-with-kinesis-and-lambda)
+- [Streaming: Kinesis and Lambda](../../data-science/data-engineering/streaming.md#awskinesis--firehose--lambda)
 - [API and HTTP in Python](../../data-science/python-foundations/api-http.md)
 
 [Back to Cloud](README.md)

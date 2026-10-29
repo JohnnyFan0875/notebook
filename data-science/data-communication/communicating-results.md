@@ -1,607 +1,192 @@
-# Communicating Results
+[Data Science](../README.md) › [Data Communication](README.md) › 溝通分析結果
 
-分析結果要產生影響，得經過兩步：先把洞察整理成受眾能理解、信任、記住的訊息（audience、視覺化、data story、credibility），再選對交付形式（書面報告、簡報、可重現報告）。
+# 溝通分析結果 (Communicating Results)
 
-Key point: 好的分析不只要「說得懂」，還要「交付得對」；而對技術讀者來說，「可重現」本身就是溝通品質的一部分。
+分析要產生影響得經過兩步：先把洞察整理成讀者能理解、信任、記住的訊息，再選對交付形式（書面報告、簡報、可重現報告）。對技術讀者來說，「可重現」本身就是溝通品質的一部分。
 
-## Communicating Insights
+## 洞察的流程
 
-Communicating data insights means turning analysis into a message that a specific audience can understand, trust, remember, and use.
+```
+收集資訊 → 整理 → 分析 → 決定行動方案 → 溝通行動方案 → 觀察結果
+```
 
-Key point: 洞察本身不會自動產生影響。只有當它被放進對的格式、對的情境、對的敘事裡，才會真正支持決策。
+洞察 (insight) 不只是一個事實或統計量，而是對情境更深的理解，能指出價值並引導行動。少了溝通與後續追蹤，流程就不完整。
 
-### Start With The Audience
+## 從讀者開始
 
-Audience needs should shape the communication before chart selection, wording, or layout decisions.
+| 問題 | 影響 |
+| --- | --- |
+| 讀者的角色？已經知道什麼、需要知道什麼？ | 背景要給多少 |
+| 期待什麼格式？ | 報告、簡報、dashboard、email |
+| 誰是決策者？ | 結論要對誰說 |
+| 信任與熟悉程度？ | 要多少證據與方法說明 |
 
-Useful questions:
+| 讀者類型 | 需要 |
+| --- | --- |
+| 非技術讀者 | 少術語、多視覺、結論先講；「簡單」不等於看輕讀者 |
+| 技術讀者（審稿人、生資同事） | 方法細節、假設、限制、可重現性 |
+| 營運 (operational) | 較多細節，支援日常行動 |
+| 策略 (strategic) | 較少技術深度，高度連結決策與責任 |
 
-- What role does the audience have?
-- What do they already know?
-- What do they need to know?
-- What format do they expect?
-- How much trust or familiarity already exists?
-- Who is the decision maker?
+同一份分析常需要給操作人員、主管、高層不同的版本，而且給的不只是不同措辭，而是不同的發現。
 
-If you ignore these questions, even correct analysis can fail because the message is either too technical, too vague, or mismatched to the decision context.
+溝通是多種方式的組合：書面（聚焦、結構、補充說明）、視覺（模式與比較）、口頭（即時調整語氣、回應問題）、非語言（判斷訊息是否被接收），強的資料溝通很少只靠一張圖。
 
-Tip: The same analysis may need different versions for operators, managers, and executives.
+## 核心原則
 
-#### Technical vs Non-technical Audiences
+| 原則 | 做法 |
+| --- | --- |
+| 連回目標 | 每個發現說明與業務 / 研究目標的關係 |
+| 給足證據 | 不只靠情境敘述，附上支持的數據 |
+| 保持簡單 | 複雜的洞察拆成小概念；一次只講一個重點 |
+| 維持預期格式 | 讀者熟悉的圖表與版面降低認知負擔 |
+| 懂到能用白話解釋 | 解釋不出來，可能是自己還沒消化好 |
 
-One useful distinction is whether the audience is technically informed or non-technical.
+## 視覺化
 
-- non-technical audiences often need less jargon and more visuals
-- technical audiences may tolerate more method detail, but still benefit from clarity
-- even non-technical stakeholders may hear technical briefings regularly, so "simple" should not mean patronizing
+視覺化把大量資訊簡化、凸顯趨勢與模式，比原始表格更快理解。但精緻的圖不等於有資訊量：壞的視覺化隱藏結構的能力和揭露結構一樣強。
 
-Another helpful distinction is between operational and strategic communication:
-
-- operational insights often require more technical detail and support day-to-day action
-- strategic insights often need less technical depth but higher decision relevance and accountability
-
-### Communication Is More Than The Chart
-
-This course frames communication as a mix of several modes:
-
-- written communication
-- visual communication
-- verbal communication
-- nonverbal communication
-
-Each mode contributes something different:
-
-- written communication creates focus, structure, and supporting explanation
-- visual communication makes patterns and comparisons easier to grasp
-- verbal communication lets you adapt tone and respond in real time
-- nonverbal communication signals whether the message is landing
-
-In practice, strong data communication usually combines several of these instead of relying on a chart alone.
-
-### What A Data Insight Is
-
-An insight is more than a fact or statistic. It is a deeper understanding of a business situation that helps uncover value and guide action.
-
-A practical insight workflow:
-
-1. collect information
-2. organize information
-3. analyze information
-4. determine an action plan
-5. communicate the action plan
-6. observe the outcome
-
-Key point: If communication and follow-up are missing, the workflow is incomplete. Analysis is only one stage in insight generation.
-
-### Core Principles For Communicating Insights
-
-Several principles appeared repeatedly in the source material:
-
-- tie insights back to business objectives
-- do not rely on business context alone; provide enough supporting evidence
-- keep the message simple
-- break complex insights into smaller ideas
-- create a clear focus
-- maintain expected formats when possible
-- know the subject well enough to explain it in basic terms
-
-These principles all reduce cognitive load for the audience and increase the odds that the message will be used correctly.
-
-If you cannot explain the idea in plain language, the audience may be struggling because the concept is still under-processed, not because they are inattentive.
-
-### Why Visualizations Matter
-
-Visualizations are often the front line of data communication because they:
-
-- simplify large volumes of information
-- highlight trends and patterns
-- provide a faster route to understanding than raw tables
-- help decision makers see a more complete picture than simple aggregates alone
-
-Potential benefits:
-
-- faster decision making
-- better decision making
-- broader appeal across stakeholders
-- easier comparison and pattern detection
-
-Warning: A chart is not automatically informative just because it looks polished. A bad visual can hide structure as easily as it can reveal it.
-
-### Keep Visuals Simple
-
-The notebook version of this topic should stay close to a simple rule: do not ask one chart to do too much.
-
-Practical heuristics:
-
-- prefer simplicity over novelty
-- remove nonessential gridlines, decorations, and color noise
-- choose a familiar chart form unless there is a strong reason not to
-- use complex chart types sparingly
-- make incremental changes and gather audience feedback
-
-Ask yourself:
-
-- Is there anything I can remove?
-- Does this visual support one main message?
-- Am I highlighting trends and patterns, or overwhelming the reader with detail?
-
-### Choose Basic Charts Well
-
-This course used a small set of foundational chart types as the core toolkit:
-
-- bar chart
-- histogram
-- scatter plot
-
-These are useful because they cover many common questions clearly:
-
-| Chart type | Best for | Common mistake |
+| 圖表 | 適合 | 常見錯誤 |
 | --- | --- | --- |
-| Bar chart | Comparing categories | Using it for continuous distributions |
-| Histogram | Showing a numeric distribution | Treating it like a category comparison |
-| Scatter plot | Showing relationship between two numeric variables | Overlooking overplotting, scale, or outliers |
-| Line chart | Showing change over time | Using inconsistent intervals or overloading too many series |
+| 長條圖 | 比較類別 | 用在連續分布 |
+| 直方圖 | 數值分布 | 當成類別比較 |
+| 散布圖 | 兩個數值變數的關係 | 忽略 overplotting、尺度、離群值 |
+| 折線圖 | 隨時間的變化 | 時間間隔不一致、塞太多條線 |
+| 圓餅圖 | 很少是最佳選擇 | 想用時先考慮長條圖，比較類別較省力 |
 
-One explicit reminder from the material: bar charts and histograms can look similar, but they answer different questions because they are built for different data types.
+| 簡化的問題 | |
+| --- | --- |
+| 有什麼可以拿掉？ | 多餘的格線、裝飾、無意義的顏色 |
+| 這張圖支持單一主要訊息嗎？ | 一張圖不要做太多事 |
+| 是凸顯模式，還是用細節淹沒讀者？ | 複雜圖表少用，熟悉的圖形優先 |
 
-Additional chart heuristics:
+> 只報摘要統計可能抹掉真正重要的模式：平均數與標準差相同的資料，形狀可以完全不同（見 [Anscombe's Quartet](../statistics/descriptive-statistics/bivariate.md#先畫圖散布圖)）。
 
-- if you are tempted to use a pie chart, consider a bar chart first because category comparison usually requires less effort from the audience
-- use scatter plots when the main question is the relationship between two quantitative variables
-- use line charts when the main question is how performance changes over time
+圖表設計、顏色與常見誤導的細節見 [圖表設計原則](../data-manipulation-and-eda/visualization/chart-design-principles.md)。
 
-### Visuals Protect Against Misleading Summaries
+## 資料故事 (Data Storytelling)
 
-One of the strongest lessons in the source was that identical summary statistics can hide very different underlying data shapes.
+資料故事是針對特定讀者、以一條主軸敘事傳達資料洞察的方法：比孤立的數字更容易理解、記住，也更容易促成行動。它不是「在圖表上加字」。
 
-That is why visual exploration matters:
+| 組成 | 作用 |
+| --- | --- |
+| 視覺化 | 讓讀者以熟悉、有效率的方式看到模式 |
+| 脈絡 | 說明為什麼重要、和更大的目標有什麼關係 |
+| 敘事 | 給資料方向、順序與意義 |
 
-- means and standard deviations may match while patterns differ
-- aggregates can conceal clusters, outliers, or nonlinear relationships
-- charts can reveal structure that summary tables miss
+| 框架規則 | |
+| --- | --- |
+| 一個故事一個問題、一個洞察 | 不要把所有有趣的發現塞進同一份簡報 |
+| 用一兩句話定義問題 | 開場說明「我們為什麼在這裡」 |
+| 盡早說明和讀者的關係 | 問題本身、範圍、處理方向 |
+| 文字精簡 | 少數重點、清楚例子；技術細節放附註或附錄 |
 
-Tip: If you only report summary statistics, you may accidentally erase the very pattern that matters.
+> 情緒應該支持理解與行動，而不是扭曲證據；清楚永遠優先。
 
-### Story Framing Matters
+## 可信度
 
-Data stories work better when they are organized around one problem at a time.
+| 提升可信度 | 避免 |
+| --- | --- |
+| 誠實的視覺慣例 | 長條圖截斷 y 軸（必須截斷時明確標示） |
+| 引用可信來源 | 折線圖軸的間隔不一致 |
+| 用詞與設計一致 | 干擾解讀的雜訊與裝飾 |
+| 需要領域權威時找專家 | 沒有意義的額外顏色 |
+| 報告不確定性 | 只給點估計，不給信賴區間或樣本數 |
+| 說明限制 | 隱藏反例或失敗的分析 |
 
-Useful framing rules:
+對生醫讀者，可信度還包括：明確區分探索性與確認性分析、說明多重檢定校正、區分統計顯著與效果大小、區分關聯與因果，見 [多重檢定](../statistics/inferential-statistics/multiple-testing.md)、[效果量](../statistics/inferential-statistics/post-hoc-effect-size.md)。
 
-- define the problem in one or two sentences
-- avoid trying to investigate multiple problems in one story
-- open with the challenge: why are we here?
-- make the relevance to the audience explicit early
+## 交付：先決定格式
 
-A strong story opening often contains:
+交付前先回答四件事：讀者是誰、目的是什麼、主要訊息是什麼、哪種格式最適合。
 
-- the problem itself
-- the scope of the problem
-- the implied method or path for addressing it
-
-### Data Storytelling
-
-Data storytelling is not just "adding words to charts." A useful definition is:
-
-Data storytelling is a method of communicating data insights tailored to a specific audience with an overarching narrative.
-
-Its main advantages:
-
-- easier to understand
-- more likely to inspire action
-- easier to remember than isolated numbers
-
-The source material also emphasized that stories can increase engagement compared with raw data alone.
-
-### Parts Of A Good Data Story
-
-Three core parts showed up repeatedly:
-
-- visualization: gives the audience a familiar and efficient way to see the pattern
-- context: explains why the result matters and how it fits a larger effort
-- narrative: gives the data direction, sequence, and meaning
-
-Another helpful phrase from the course was that a story should tell a single insight.
-
-That idea is useful because many weak presentations try to fit every interesting finding into one deck, one dashboard, or one chart. Stronger stories usually revolve around one main message at a time.
-
-Good story text should also stay concise:
-
-- highlight only a few main points
-- use clear examples
-- move technical details into footnotes or appendix material when possible
-- aim for short, high-signal statements rather than dense explanation
-
-### What Makes A Story Stick
-
-Two reasons data stories work well:
-
-- they create engagement
-- they improve retention
-
-People tend to remember stories more easily than isolated numbers. This does not mean you should replace evidence with emotion. It means you should package evidence in a form that human attention and memory can handle.
-
-Warning: Emotion should support understanding and action, not distort the evidence. Clarity still comes first.
-
-### Credibility And Trust
-
-Good communication is not just about being noticed. It is also about being believed.
-
-Credibility improves when you:
-
-- keep visual conventions honest
-- cite credible sources
-- stay consistent in wording and design
-- preserve a reputation for integrity over time
-- bring in subject matter experts when interpretation needs domain authority
-
-Trust is especially important in data storytelling because the audience is not only receiving information. They are deciding whether to accept the message and act on it.
-
-#### Avoid Common Credibility Errors
-
-- avoid truncating the y-axis on bar charts unless you clearly note it
-- keep intervals consistent on axes, especially in line charts
-- do not use clutter or decoration that makes interpretation harder
-- do not use extra colors unless they carry meaning
-
-### A Practical Workflow For Presenting Insights
-
-When preparing a communication deliverable, this sequence works well:
-
-1. identify the audience and desired decision
-2. define the single main insight
-3. choose the simplest visualization that supports that insight
-4. add the business context needed to interpret it
-5. write or present a short narrative around the implication
-6. remove clutter and test whether the message is still clear
-7. gather audience feedback and refine
-
-### Common Failure Modes
-
-- leading with charts before defining the message
-- presenting too many insights at once
-- using complex visuals to impress rather than clarify
-- assuming the audience interprets a chart the same way you do
-- forgetting to connect the result back to a business objective
-- ignoring audience feedback when a visualization is confusing
-
-### Quick Checklist
-
-Before sharing an insight, check:
-
-- Who is this for?
-- What one thing should they remember?
-- What action or decision should this support?
-- Is the chart type appropriate for the data?
-- Can I remove anything unnecessary?
-- Have I added enough context for correct interpretation?
-
-## Reports and Presentations
-
-Reports and presentations are the delivery layer of data communication. After the question is framed and the insight is clarified, you still need to decide what to show, what to leave out, and which format best supports the audience's decision.
-
-Key point: 好的分析不只要「說得懂」，還要「交付得對」。同一組分析結果，交給 technical colleague、manager、customer 的形式可能完全不同。
-
-### Start With The Delivery Question
-
-Before building a report, deck, or memo, clarify four things:
-
-1. who is the audience
-2. what is the purpose
-3. what is the main message
-4. what format best fits the situation
-
-This is the practical planning layer that sits between insight generation and final communication.
-
-### Use Personas To Guide Selection
-
-Persona thinking helps decide what level of detail belongs in the deliverable.
-
-Questions to ask:
-
-- Is the audience technical, non-technical, or mixed?
-- Are they making a strategic decision or handling an operational task?
-- How much background do they already have?
-- How much time do they have?
-- Are they the decision maker, reviewer, or implementer?
-
-Tip: Different personas should often get different findings, not just different wording.
-
-### Select Findings, Not Everything
-
-A common mistake is trying to present every result that came out of the analysis. Stronger communication selects only the findings that support the main point.
-
-Useful rules:
-
-- include the minimal amount of information needed to support the story
-- prioritize relevant findings over interesting side results
-- use statistics only when they help interpretation
-- tailor the depth of detail to the audience
-
-For example:
-
-- a general audience may need the business meaning of a result
-- a technical audience may also need method details, assumptions, and limitations
-
-Warning: Data abundance often causes message dilution. More results do not automatically produce more clarity.
-
-### Match The Format To The Goal
-
-Different communication goals imply different formats.
-
-| Purpose | Typical use | Best-fit format |
+| 目的 | 用途 | 格式 |
 | --- | --- | --- |
-| Informative | Share current status or findings | Summary report, dashboard review, short presentation |
-| Instructional | Explain process or method | Technical report, workshop, walkthrough |
-| Persuasive | Drive action or change | Executive memo, decision deck, recommendation presentation |
+| 告知 (informative) | 分享現況或發現 | 摘要報告、dashboard 回顧、短簡報 |
+| 說明 (instructional) | 解釋流程或方法 | 技術報告、工作坊、walkthrough |
+| 說服 (persuasive) | 推動行動或改變 | 決策備忘錄、建議簡報 |
 
-The choice of format should follow the decision context, not personal preference.
-
-### Choose Between Written Reports And Presentations
-
-Written reports and oral presentations solve different problems.
-
-| Format | Best when | Main strength |
+| 格式 | 適合 | 強項 |
 | --- | --- | --- |
-| Written report | The reader may revisit details later | Precision, completeness, reproducibility |
-| Presentation | The audience needs guided attention in real time | Focus, pacing, persuasion, interaction |
+| 書面報告 | 讀者之後會回頭查細節 | 精確、完整、可重現 |
+| 簡報 | 需要即時引導注意力 | 聚焦、節奏、說服、互動 |
 
-In many real settings, the two should support each other rather than compete:
+兩者常互補：報告保存細節，簡報把注意力帶到關鍵訊息。
 
-- the report preserves detail
-- the presentation drives attention to the key message
+> 選發現，不要全部丟出來。只放支持主要訊息所需的最少資訊；有趣但無關的結果放附錄。資料越多不代表越清楚，反而稀釋訊息。
 
-### Written Reports
+## 書面報告
 
-A written report should be clear, precise, and reproducible.
-
-Key qualities:
-
-- readable by the intended audience
-- explicit about context and findings
-- structured enough to be scanned
-- reproducible and properly sourced
-
-#### Common Report Types
-
-| Report type | Focus | Typical audience |
+| 類型 | 重點 | 讀者 |
 | --- | --- | --- |
-| Summary report | Key findings and recommendations | Managers, executives, busy stakeholders |
-| Final or analytical report | Full analysis, method, interpretation, evidence | Technical stakeholders, reviewers, project archive |
-| Informational report | Status or descriptive information | Operational teams, monitoring use cases |
-
-#### Summary Report Structure
-
-A practical summary report can often be organized as:
-
-1. contextual information
-2. key findings
-3. interpretation
-4. recommendations or next steps
-
-The point is not to reproduce the entire analysis. The point is to make the most important conclusions retrievable quickly.
-
-#### Analytical Report Structure
-
-An analytical or final report usually needs more depth:
-
-1. problem and background
-2. data and methods
-3. analysis and results
-4. interpretation
-5. limitations
-6. conclusions and recommendations
-7. references or appendix
-
-Tip: Many readers scan the introduction and conclusion first. Make sure those sections stand on their own.
-
-### Reproducibility Belongs In Communication
-
-Reproducibility is not separate from reporting quality. If a result cannot be traced, checked, or recreated, the communication is weaker even if the writing sounds polished.
-
-A reproducible report should make it possible to answer:
-
-- Where did the data come from?
-- What transformations were applied?
-- What method or model was used?
-- What assumptions were made?
-- How can someone locate the sources?
-
-Helpful practices:
-
-- cite data sources and publications
-- name datasets, time windows, and variables clearly
-- separate findings from interpretation
-- make supporting information available and retrievable
-
-### Executable Reports And Literate Analysis
-
-Some reporting workflows go beyond static documents and combine narrative, code, figures, and metadata in one reproducible artifact.
-
-Common examples include:
-
-- R Markdown（實作見 [Reporting with R Markdown](../r-foundations/reporting-with-r-markdown.md)）
-- Quarto
-- Jupyter-based reporting workflows
-
-The tool matters less than the operating idea:
-
-- analysis and explanation live together
-- figures are regenerated from code instead of pasted manually
-- document metadata controls title, author, date, and output format
-- the same source can sometimes render to multiple outputs
-
-This approach is especially useful when a report needs to stay:
-
-- reproducible
-- updateable
-- reviewable by technical collaborators
-
-Tip: If a report is regenerated repeatedly for new time windows, regions, or segments, parameterized reporting is often better than copying and editing slides or docs by hand.
-
-### Write Precisely And Clearly
-
-Good reports reduce ambiguity.
-
-Practical habits:
-
-- prefer direct sentences over decorative phrasing
-- define the point before expanding on it
-- remove statements that add no information
-- explain technical terms when the audience may not know them
-- keep recommendations specific enough to act on
-
-If a sentence cannot help the reader understand, decide, or verify, it probably does not belong.
-
-### Plan Presentations Before Building Slides
-
-Do not start with slides. Start with structure.
-
-A simple planning frame:
-
-- purpose
-- audience
-- message
-
-This is often enough to prevent slide sprawl and unclear pacing.
-
-### Presentation Types
-
-Presentations often fall into three broad types:
-
-- informative: explain what is happening
-- instructional: explain how something works
-- persuasive: argue for action or change
-
-Knowing which one you are giving changes the content mix, tone, and call to action.
-
-### Define The Central Message
-
-The audience will forget most details. The message should therefore be compressible into one sentence.
-
-Useful framing:
-
-- opening statement: catches attention
-- central message: the core takeaway
-- closing statement: reinforces the takeaway and next step
-
-Example pattern:
-
-- opening: negative ratings are hurting the business
-- central message: delayed shipping is the main driver
-- closing: immediate action is needed to reverse the trend
-
-Key point: If the message cannot fit into one sentence, the presentation is probably trying to do too much.
-
-### Presentation Structure
-
-A simple presentation structure works in many cases:
-
-1. introduction
-2. methods, analysis, and outputs
-3. conclusions and takeaways
-
-The introduction should:
-
-- provide background
-- catch attention
-- preview what is coming
-
-The ending should:
-
-- return to the opening problem
-- summarize the takeaway
-- include next steps or a call to action when appropriate
-
-### Keep The Outline Tight
-
-Aim for a small number of sections. The source material suggested five or fewer smaller parts, which is a good practical ceiling for many presentations.
-
-A workable outline might be:
-
-1. reason for the analysis
-2. exploratory analysis
-3. core model or method
-4. conclusions
-5. follow-up actions
-
-### Build Better Slides
-
-Slides should support the story, not replace it.
-
-Useful heuristics:
-
-- one message per slide
-- keep slides short and dynamic
-- judge slide quality by clarity, not by slide count
-- use visuals to support the spoken narrative
-
-Warning: Slide count and timing are weak quality metrics. A short deck can still be confusing, and a longer deck can still be coherent.
-
-### Design Choices That Affect Readability
-
-Color and layout choices influence comprehension directly.
-
-Practical rules:
-
-- use color to convey meaning, not decoration
-- keep good contrast between text and background
-- avoid relying on red and green combinations
-- keep the palette limited, often no more than three main colors
-- design for inclusive readability, including color-vision deficiencies
-
-### Handling Time And Audience Size
-
-Presentations should adapt to logistics as well as content.
-
-Consider:
-
-- small meeting vs large conference
-- workshop vs executive update
-- short slot vs extended session
-
-These affect:
-
-- level of detail
-- number of examples
-- interactivity
-- time available for questions
-
-### A Practical Delivery Workflow
-
-Use this sequence when preparing a deliverable:
-
-1. identify audience persona
-2. define purpose and decision context
-3. write the main message in one sentence
-4. select only the findings that support that message
-5. choose the right format
-6. structure the report or presentation
-7. add supporting visuals and evidence
-8. verify clarity, credibility, and reproducibility
-
-### Common Failure Modes
-
-- mixing multiple problems into one deliverable
-- choosing findings because they are interesting rather than relevant
-- overloading non-technical audiences with technical detail
-- hiding method details when technical review is required
-- treating slide count as a quality metric
-- writing reports that cannot be traced back to data and method
-
-### Quick Checklist
-
-Before sharing a report or presentation, ask:
-
-- Who is this for?
-- What decision should this support?
-- What is the one-sentence message?
-- Did I include only the findings needed for that message?
-- Is the format appropriate?
-- Is the result clear, precise, and reproducible?
-
-## Related Notes
-
-- 問題還模糊時，先讀 [Forming Analytical Questions](forming-analytical-questions.md)。
-- 圖表機制與繪圖流程見 [Visualization](../data-manipulation-and-eda/visualization/README.md)；多圖組成決策畫面見 [Dashboard Design](dashboard-design.md)。
-- 可重現報告的實作見 [Reporting with R Markdown](../r-foundations/reporting-with-r-markdown.md)（R Markdown / Quarto、參數化報告）。
+| 摘要報告 | 關鍵發現與建議 | 主管、忙碌的利害關係人 |
+| 分析 / 最終報告 | 完整分析、方法、解讀、證據 | 技術讀者、審查者、專案存檔 |
+| 資訊報告 | 狀態或描述性資訊 | 營運團隊、監控 |
+
+| 摘要報告結構 | 分析報告結構 |
+| --- | --- |
+| 1. 背景 | 1. 問題與背景 |
+| 2. 關鍵發現 | 2. 資料與方法 |
+| 3. 解讀 | 3. 分析與結果 |
+| 4. 建議 / 下一步 | 4. 解讀 |
+| | 5. 限制 |
+| | 6. 結論與建議 |
+| | 7. 參考文獻 / 附錄 |
+
+很多讀者只看引言與結論，這兩段要能獨立成立。寫作上：直接的句子、先講重點再展開、刪掉沒有資訊的句子、解釋讀者可能不懂的術語、建議要具體到可以執行。不能幫讀者理解、決策或驗證的句子就不需要。
+
+### 可重現性是溝通的一部分
+
+| 讀者應該能回答 | 做法 |
+| --- | --- |
+| 資料從哪來？ | 引用資料來源、版本、存取日期（GEO / SRA accession） |
+| 做了哪些轉換？ | 寫明篩選條件、時間範圍、變數定義 |
+| 用了什麼方法與參數？ | 套件版本、seed、模型設定 |
+| 有哪些假設？ | 分開陳述發現與解讀 |
+| 怎麼找到支持資料？ | 程式碼與中間結果放在可取得的位置 |
+
+可執行報告（R Markdown、Quarto、Jupyter）把敘述、程式碼、圖與 metadata 放在同一個來源：圖由程式重新產生而不是手動貼上，同一來源可輸出多種格式。需要針對不同期間、地區、樣本群反覆產生時，用參數化報告比手動複製修改簡報好，見 [R Markdown 與 Quarto](../r-foundations/reporting-with-r-markdown.md)、[可重現環境 renv](../r-foundations/reproducible-environments-with-renv.md)。
+
+## 簡報
+
+先規劃結構（目的、讀者、訊息），再做投影片，可以避免投影片無限增生與節奏不清。
+
+| 元素 | 例子 |
+| --- | --- |
+| 開場：抓住注意力 | 負評正在傷害營收 |
+| 核心訊息：一句話的重點 | 出貨延遲是主要原因 |
+| 結尾：強化重點與下一步 | 需要立即處理以扭轉趨勢 |
+
+> 核心訊息塞不進一句話，簡報多半想做太多事。
+
+| 結構 | 內容 |
+| --- | --- |
+| 引言 | 背景、抓住注意力、預告內容 |
+| 主體（方法、分析、產出） | 不超過約五個小段落，例如：分析動機 → 探索分析 → 核心模型 → 結論 → 後續行動 |
+| 結尾 | 回到開場的問題、總結重點、下一步或行動呼籲 |
+
+| 投影片原則 | |
+| --- | --- |
+| 一張投影片一個訊息 | 標題直接寫結論（「出貨延遲 > 3 天的訂單負評率是 4 倍」） |
+| 用清楚度評估，不用張數 | 張數與時間都是弱的品質指標 |
+| 顏色傳達意義而非裝飾 | 主要顏色約三種以內 |
+| 對比足夠、避免紅綠配色 | 考慮色覺差異的讀者 |
+| 依場地調整 | 小型會議 vs 大型研討會、工作坊 vs 主管簡報：細節、例子、互動、問答時間都不同 |
+
+## 交付前檢查
+
+| 問題 | |
+| --- | --- |
+| 給誰看？要支持什麼決策？ | 讀者與目的 |
+| 一句話的訊息是什麼？ | 單一重點 |
+| 只放了支持訊息的發現嗎？ | 刪掉無關結果 |
+| 圖表類型適合資料嗎？還能拿掉什麼？ | 簡化 |
+| 脈絡足以正確解讀嗎？ | 背景、比較基準、不確定性 |
+| 格式適合嗎？結果清楚、精確、可重現嗎？ | 交付形式 |
+
+| 常見失敗 | |
+| --- | --- |
+| 先放圖，還沒定義訊息 | 一次給太多洞察 |
+| 用複雜圖表炫技而非說明 | 以為讀者和自己用同樣方式解讀圖表 |
+| 沒有連回目標 | 對非技術讀者塞太多細節，或在需要技術審查時藏起方法 |
+| 忽略讀者對圖表困惑的回饋 | 報告無法追溯回資料與方法 |
