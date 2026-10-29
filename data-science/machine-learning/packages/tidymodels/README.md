@@ -4,7 +4,7 @@
 
 R 的預測建模套件集合，定位等同 Python 的 [scikit-learn](../scikit-learn/README.md)：把資料切分、前處理、模型定義、調參與評估拆成可替換的元件，再串成一個 workflow。概念（交叉驗證、資料洩漏、指標選擇）見 ML 各主題筆記，這裡只整理 R 的寫法。以預測為目標時用這裡；要解讀係數與 p 值見 [R 解釋型建模](../../../r-foundations/explanatory-modeling-in-r.md)。
 
-> 本筆記的程式碼未在本機執行驗證（無 R 環境），API 依 tidymodels 1.x 官方文件整理。
+> 本筆記的程式碼以 tidymodels 1.5（tune 2.1）實跑驗證；數字來自 `modeldata::cells`、`set.seed(42)`。
 
 ## 核心套件
 
@@ -45,11 +45,11 @@ rec <- recipe(class ~ ., data = train) |>
   step_normalize(all_numeric_predictors())
 
 # 3. 模型：tune() 標記要調的參數
-spec <- logistic_reg(penalty = tune(), mixture = 1) |>  # mixture = 1：Lasso
+lasso_spec <- logistic_reg(penalty = tune(), mixture = 1) |>  # mixture = 1：Lasso
   set_engine("glmnet") |>
   set_mode("classification")
 
-wf <- workflow() |> add_recipe(rec) |> add_model(spec)
+wf <- workflow() |> add_recipe(rec) |> add_model(lasso_spec)
 
 # 4. 調參：每組參數 × 每折都重新 prep recipe 再 fit
 res <- tune_grid(
@@ -59,11 +59,13 @@ res <- tune_grid(
 )
 collect_metrics(res)                     # 每組參數的平均與標準誤
 show_best(res, metric = "roc_auc", n = 3)
-best <- select_best(res, metric = "roc_auc")   # 或 select_by_one_std_err()
+best <- select_best(res, metric = "roc_auc")   # penalty ≈ 0.0023、CV AUC 0.870
+# 較保守：1-SE 規則內挑最簡單（penalty 最大）的模型
+# select_by_one_std_err(res, desc(penalty), metric = "roc_auc")
 
 # 5. 最終模型：用整個 training 重 fit，test 只評估這一次
 final <- finalize_workflow(wf, best) |> last_fit(split)
-collect_metrics(final)                   # test 上的指標
+collect_metrics(final)                   # test 上的指標：roc_auc 0.908、accuracy 0.819（另附 brier_class）
 collect_predictions(final)               # .pred_class、.pred_PS、.pred_WS
 fitted_wf <- extract_workflow(final)     # 之後 predict(fitted_wf, new_data) 用
 ```
@@ -115,7 +117,7 @@ tidy(prepped, number = 2)                # 第 2 步（step_corr）刪了哪些�
 | SVM | `svm_rbf()` | `"kernlab"` | `cost`、`rbf_sigma` |
 | KNN | `nearest_neighbor()` | `"kknn"` | `neighbors` |
 
-同一個模型類型換 engine 不必改 workflow 其他部分；`translate(spec)` 可看實際呼叫的底層函式。
+同一個模型類型換 engine 不必改 workflow 其他部分；`translate(lasso_spec)` 可看實際呼叫的底層函式。
 
 ## 預測與評估
 
@@ -131,6 +133,7 @@ preds |> cls_metrics(truth = class, estimate = .pred_class, .pred_PS)
 
 | 陷阱 | 說明 |
 | --- | --- |
+| 物件取名 `spec`、`sens`、`rmse` | 會蓋掉同名的 yardstick 指標函式，`metric_set(..., spec)` 直接報錯「must be functions」；模型規格取名 `lasso_spec`、`rf_spec` |
 | 正類別是**第一個 factor level** | yardstick 預設 `event_level = "first"`；結果是 `no` / `yes` 時，要 `relevel` 或設 `event_level = "second"`，否則 sensitivity、AUC 都算成反類別 |
 | 機率指標要給機率欄 | `roc_auc()`、`mn_log_loss()` 傳 `.pred_<正類別>`；`accuracy()`、`sens()` 傳 `.pred_class` |
 | `metric_set` 混用類別與機率指標 | `estimate =` 給類別、機率欄放在後面的位置參數 |

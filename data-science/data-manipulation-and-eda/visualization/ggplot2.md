@@ -2,7 +2,7 @@
 
 # ggplot2
 
-R 的標準作圖套件，依「圖形文法 (grammar of graphics)」把圖拆成資料、映射、幾何物件、尺度、分面、主題等圖層，用 `+` 疊起來。Python 的對應是 Seaborn（快速統計圖）+ Matplotlib（細節）；plotnine 則是 ggplot2 語法的 Python 移植。
+R 的標準作圖套件，依「圖形文法 (grammar of graphics)」把圖拆成資料、映射、幾何物件、尺度、分面、主題等圖層，用 `+` 疊起來。Python 的對應是 Seaborn（快速統計圖）+ Matplotlib（細節）；plotnine 則是 ggplot2 語法的 Python 移植。本筆記的程式碼以 ggplot2 4.0 實跑驗證（模擬資料）。
 
 ## 圖形文法
 
@@ -86,7 +86,7 @@ Volcano / MA plot 的判讀見 [RNA-seq 對比與視覺化](../../../biology/gen
 
 | 需求 | 寫法 |
 | --- | --- |
-| log 軸 | `scale_x_log10()`、`scale_y_continuous(trans = "log2")` |
+| log 軸 | `scale_x_log10()`、`scale_y_continuous(transform = "log2")`（3.5.0 前的參數名是 `trans`） |
 | 百分比 / 千分位標籤 | `scale_y_continuous(labels = scales::percent)`、`scales::comma` |
 | 類別顏色 | `scale_color_brewer(palette = "Set2")`、`scale_color_manual(values = c(a = "steelblue", b = "tomato"))` |
 | 連續顏色（色盲友善） | `scale_fill_viridis_c()` |
