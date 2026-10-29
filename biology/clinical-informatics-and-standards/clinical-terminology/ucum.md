@@ -1,47 +1,37 @@
+[臨床資訊與標準](../README.md) › [臨床術語](README.md) › UCUM
+
 # UCUM
 
-## 1. Overview
+UCUM (Unified Code for Units of Measure) 是計量單位的機器可讀寫法。檢驗值的單位在不同系統常寫成 `mg/dl`、`mg/dL`、`mg%`，UCUM 規定唯一的正式寫法，並能把單位拆解成基本單位，讓程式能檢查兩個單位是否可互換。
 
-The **Unified Code for Units of Measure (UCUM)** is a standardized system designed to ensure the **consistent representation of measurement units** across electronic health records (EHRs), laboratory systems, and medical data exchanges.
+| 項目 | 內容 |
+| --- | --- |
+| 維護 | Regenstrief Institute（與 LOINC 同單位） |
+| 網站 | [ucum.org](https://ucum.org)（規格、線上驗證工具） |
+| 授權 | 免費 |
+| 何時用 | FHIR `Quantity`（`system = http://unitsofmeasure.org`）、OMOP `unit_concept_id`、LOINC 範例單位 |
 
-Developed by **Regenstrief Institute** (the same organization behind LOINC), UCUM provides a computer-readable format for expressing all physical measurement units used in healthcare, science, and engineering.
+## 語法規則
 
-## 2. Purpose
+| 規則 | 例 | 說明 |
+| --- | --- | --- |
+| 大小寫敏感 | `mm`（毫米）vs `Mm`（百萬米）；莫耳濃度寫 `mol/L`，不寫 `M` | 也有大小寫不敏感的變體，但交換時用敏感版 |
+| 乘號用 `.` | `kg.m/s2` | 指數直接接在後面（`s2` = s²） |
+| 10 的次方用 `10*n` | `10*3/uL` | 白血球「千 / 微升」 |
+| 特殊單位用方括號 | `[iU]`、`[in_i]`、`mm[Hg]` | 國際單位、英寸、毫米汞柱 |
+| 大括號是註解 | `{cells}/uL`、`{score}` | 不影響換算，等同 1 |
+| 溫度 | `Cel`、`[degF]` | 攝氏寫 `Cel` 不是 `°C` |
+| 微 | `u` | `ug`、`uL`（不用 µ） |
 
-In clinical and laboratory data, units such as `mg/dL`, `mmol/L`, or `µg/m³` are essential for interpreting quantitative results. However, variations in notation (e.g., `mg/dl` vs. `mg/dL`) can cause data incompatibility.
-UCUM solves this problem by defining a **formal syntax** and **canonical representation** for all units.
+## 常見檢驗單位
 
-## 3. Key Features
+| UCUM | 意義 | 常見檢驗 |
+| --- | --- | --- |
+| `mg/dL` | 毫克 / 分升 | 血糖、膽固醇、肌酸酐 |
+| `mmol/L` | 毫莫耳 / 升 | 血糖（SI）、電解質 |
+| `g/dL` | 克 / 分升 | 血紅素、白蛋白 |
+| `10*3/uL` | 千 / 微升 | 白血球、血小板 |
+| `[iU]/L` / `U/L` | 國際單位 / 升 | 酵素（ALT、AST） |
+| `%` | 百分比 | HbA1c（NGSP） |
 
-| Feature                      | Description                                                         |
-| ---------------------------- | ------------------------------------------------------------------- |
-| **Comprehensive coverage**   | Includes SI, ISO, and non-SI units (e.g., mg, mL, IU)               |
-| **Machine-readable**         | Designed for automated data validation and exchange                 |
-| **Compatible with LOINC**    | Used in laboratory result units (e.g., glucose [Mass/volume] mg/dL) |
-| **Case-sensitive syntax**    | Differentiates between `m` (meter) and `M` (molar)                  |
-| **Dimensionally consistent** | Each derived unit can be expressed in base units                    |
-
-## 4. Syntax Examples
-
-| Expression | Meaning                                    |
-| ---------- | ------------------------------------------ |
-| `mg/dL`    | milligram per deciliter                    |
-| `mmol/L`   | millimole per liter                        |
-| `kg.m/s2`  | kilogram meter per second squared (Newton) |
-| `10*3/uL`  | thousand per microliter                    |
-| `Cel`      | degree Celsius                             |
-
-## 5. Integration in Health IT Standards
-
-| Framework    | UCUM Role                                                                        |
-| ------------ | -------------------------------------------------------------------------------- |
-| **LOINC**    | Defines the units of measurement for quantitative lab tests                      |
-| **FHIR**     | Standard unit representation in `Quantity.value` and `Observation.valueQuantity` |
-| **OMOP-CDM** | Harmonizes unit data in the `measurement` table                                  |
-| **DICOM**    | Supports consistent unit display for imaging-related measurements                |
-
-## 6. Governance and Access
-
-- **Maintained by:** Regenstrief Institute
-- **Current release:** UCUM 1.9 (Ongoing updates)
-- **Access and documentation:** [https://unitsofmeasure.org](https://unitsofmeasure.org)
+> UCUM 只能換算**同一量綱**的單位（`mg/dL` ↔ `g/L`）。`mg/dL` ↔ `mmol/L` 需要分子量（血糖 ÷ 18.016），不同物質不同，必須依 LOINC 的 Component 決定，不能只靠 UCUM。

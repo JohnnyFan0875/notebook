@@ -1,4 +1,34 @@
+[臨床資訊與標準](../README.md) › [臨床術語](README.md) › 健保支付標準
+
 # 全民健康保險醫療服務給付項目及支付標準
 
-- The official Taiwanese National Health Insurance website detailing medical service coverage and payment standards.
-- Website: [https://www.nhi.gov.tw/ch/cp-5943-f1cce-2821-1.html](https://www.nhi.gov.tw/ch/cp-5943-f1cce-2821-1.html)
+台灣健保署公告的醫療服務收費代碼與支付點數，涵蓋診察、檢查檢驗、處置、手術、麻醉等。功能接近美國的 [CPT / HCPCS](cpt-hcpcs.md)：分析健保資料庫或院內申報資料時，處置與檢驗項目就是用這套代碼記錄。
+
+| 項目 | 內容 |
+| --- | --- |
+| 主管 | 衛生福利部中央健康保險署 |
+| 網站 | [健保署：醫療服務給付項目及支付標準](https://www.nhi.gov.tw/ch/cp-5943-f1cce-2821-1.html)（公告全文與代碼檔下載） |
+| 單位 | 「點」而非新台幣；每點實際金額依總額預算浮動（點值） |
+| 更新 | 不定期修訂，以公告生效日為準 |
+| 何時用 | 健保資料庫研究（處置 / 檢驗 / 手術）、院內成本分析、新檢測的給付查詢 |
+
+## 和其他代碼的分工
+
+| 資料 | 台灣健保使用 |
+| --- | --- |
+| 診斷 | ICD-10-CM（2016 年起，之前為 ICD-9-CM） |
+| 住院處置 | ICD-10-PCS |
+| 醫療服務、檢驗、手術計價 | 本支付標準（代碼如 `09005C` 為血液葡萄糖檢驗） |
+| 藥品 | 健保藥品代碼（另有藥品給付規定） |
+| 特材 | 特殊材料代碼 |
+
+## 使用注意
+
+| 注意 | 說明 |
+| --- | --- |
+| 計價 ≠ 臨床語意 | 代碼代表一個收費項目；同一碼可能涵蓋不同方法或檢體，做檢驗值分析時要另對 [LOINC](loinc.md) |
+| 版本 | 項目會新增、刪除或改點數；跨年度研究需依就醫日期對應當時版本 |
+| 適用條件 | 部分項目限定醫院層級、適應症或需事前審查；有代碼不代表任何情況都給付 |
+| 基因檢測 | 健保近年陸續將部分癌症次世代定序 (NGS) 檢測納入給付，細節（癌別、檢測範圍、限制）以健保署最新公告為準 |
+
+研究用的健保資料由衛福部衛生福利資料科學中心提供申請；台灣族群的基因資料見 [TaiwanGenomes](../../genetics/databases/population-frequency/taiwangenomes.md)，台灣罕病資源見 [台灣罕見疾病](../../genetics/databases/gene-disease-association/rare-disease-taiwan.md)。

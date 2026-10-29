@@ -1,64 +1,43 @@
-# UMLS (Unified Medical Language System)
+[臨床資訊與標準](../README.md) › [臨床術語](README.md) › UMLS
 
-## 1. Overview
+# 統一醫學語言系統 (UMLS)
 
-The **Unified Medical Language System (UMLS)** is an integrated biomedical terminology system developed by the **U.S. National Library of Medicine (NLM)**.
-Its goal is to **link diverse medical vocabularies and standards**—such as LOINC, SNOMED CT, MeSH, RxNorm, and ICD—into a unified framework that supports semantic interoperability, data integration, and natural language processing (NLP) in healthcare and biomedical research.
+UMLS (Unified Medical Language System) 是 NLM 把上百套生醫術語（SNOMED CT、ICD、LOINC、RxNorm、MeSH…）整合在一起的系統：不同術語中意義相同的詞被歸到同一個概念 (CUI)。它是跨術語對應與醫療 NLP 的基礎資源。
 
-## 2. Core Components
+| 項目 | 內容 |
+| --- | --- |
+| 維護 | U.S. National Library of Medicine (NLM) |
+| 網站 | [nlm.nih.gov/research/umls](https://www.nlm.nih.gov/research/umls/)、[UTS 瀏覽與 API](https://uts.nlm.nih.gov/uts/) |
+| 規模 | 2026AA 版約 353 萬個概念、195 套來源術語 |
+| 發布 | 每年兩次（`AA` 約 5 月、`AB` 約 11 月） |
+| 授權 | 免費，但需申請個人 UMLS 授權與 UTS 帳號；部分來源術語（如 SNOMED CT、CPT）另有使用限制 |
 
-UMLS is composed of three major knowledge sources:
+## 三個組成
 
-| Component                      | Description                                                                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Metathesaurus**              | A massive database of biomedical and health-related concepts, synonyms, and relationships aggregated from 200+ vocabularies.   |
-| **Semantic Network**           | Defines the high-level semantic types (e.g., _Disease or Syndrome_, _Pharmacologic Substance_) and relationships between them. |
-| **SPECIALIST Lexicon & Tools** | Provides linguistic resources for NLP, including morphological and syntactic information on biomedical terms.                  |
+| 組成 | 內容 | 用途 |
+| --- | --- | --- |
+| Metathesaurus | 概念 (CUI)、各術語的詞 (AUI)、同義詞、關係 | 跨術語對應 |
+| Semantic Network | 約 130 種語意類型 (semantic type) 與其間關係 | 給每個概念分大類（如 *Disease or Syndrome*、*Pharmacologic Substance*） |
+| SPECIALIST Lexicon & Lexical Tools | 詞形變化、拼寫變體 | NLP 的詞彙正規化 |
 
-## 3. The Metathesaurus
+## CUI 如何串起不同術語
 
-The **UMLS Metathesaurus** is the core component, containing over 3 million biomedical concepts. Each concept is assigned a **Concept Unique Identifier (CUI)** that links equivalent terms across different terminologies.
+| 術語 | 代碼 | 名稱 |
+| --- | --- | --- |
+| UMLS CUI | `C0011860` | Diabetes Mellitus, Non-Insulin-Dependent |
+| SNOMED CT | `44054006` | Diabetes mellitus type 2 |
+| ICD-10-CM | `E11` | Type 2 diabetes mellitus |
+| MeSH | `D003924` | Diabetes Mellitus, Type 2 |
 
-| Example                                                                           | Description                     |
-| --------------------------------------------------------------------------------- | ------------------------------- |
-| **CUI:** C0011849                                                                 | Concept for _Diabetes Mellitus_ |
-| **Linked vocabularies:** SNOMED CT (`44054006`), ICD-10 (`E11`), MeSH (`D003920`) |                                 |
+> 同一個 CUI 底下的代碼「意義相同」是 UMLS 編輯的判斷，粒度不一定完全一致；做正式對應（例如申報、法規）仍應使用各術語官方的 map。
 
-This crosswalk allows data coded in different systems to be aligned under one unified concept.
+## 常見用途
 
-## 4. Semantic Network
+| 任務 | 做法 |
+| --- | --- |
+| 跨術語對應 | 代碼 → CUI → 目標術語的代碼（UTS API 或下載 `MRCONSO.RRF`） |
+| 臨床文字 NLP | 用 MetaMap、cTAKES、scispaCy 等把自由文字對到 CUI |
+| 依語意類型過濾 | `MRSTY.RRF` 取出某類概念（如所有 *Neoplastic Process*） |
+| LLM 術語標準化 | 先用 UMLS / OLS 檢索候選概念，再讓模型從候選中選，見 [生醫 LLM](../../../data-science/llm/bio-and-medical-llm.md) |
 
-The **Semantic Network** provides a conceptual backbone for the UMLS, defining the semantic relationships among biomedical entities.
-
-| Example Relationship                         | Meaning |
-| -------------------------------------------- | ------- |
-| _Insulin_ → _treats_ → _Diabetes Mellitus_   |         |
-| _Bacteria_ → _causes_ → _Infectious Disease_ |         |
-
-These relationships enable advanced reasoning, data mining, and AI applications in medical informatics.
-
-## 5. SPECIALIST Lexicon & NLP Tools
-
-The **SPECIALIST Lexicon** contains morphological and syntactic data on biomedical terms, supporting:
-
-- Text mining and named-entity recognition (NER)
-- Clinical documentation analysis
-- Concept extraction from free-text EHR notes
-
-The **Lexical Tools API** helps map natural-language text to UMLS concepts.
-
-## 6. Integration and Applications
-
-| Application Area              | Example Usage                                       |
-| ----------------------------- | --------------------------------------------------- |
-| **Clinical data integration** | Map ICD, SNOMED CT, and LOINC codes to shared CUIs  |
-| **NLP / text mining**         | Identify biomedical entities in clinical narratives |
-| **Ontology alignment**        | Harmonize concepts across datasets and standards    |
-| **FHIR Terminology Services** | Provide mappings for concept translation            |
-
-## 7. Governance and Access
-
-- **Maintained by:** U.S. National Library of Medicine (NLM)
-- **Updates:** Twice per year (January and July)
-- **Access:** [https://www.nlm.nih.gov/research/umls](https://www.nlm.nih.gov/research/umls)
-  (UMLS license required for download and API use)
+研究用本體（HPO、MONDO、GO）多不在 UMLS 或版本較舊，改用 [Ontology Lookup Service](ontology-lookup-service.md)。

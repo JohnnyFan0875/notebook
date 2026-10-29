@@ -1,82 +1,58 @@
+[臨床資訊與標準](../README.md) › [臨床術語](README.md) › openEHR
+
 # openEHR
 
-## 1. Overview
+openEHR 是開放的電子病歷 (EHR) 建模與儲存規格。它的核心是**兩層建模 (two-level modeling)**：底層的參考模型 (Reference Model) 固定不變，臨床內容由臨床人員用 archetype 定義，因此新增臨床欄位不必改資料庫 schema。FHIR 解決系統之間的交換，openEHR 解決系統內部的長期儲存。
 
-**openEHR** is an open, standards-based framework for designing, storing, and exchanging **electronic health records (EHRs)**.
-It focuses on **semantic interoperability**, ensuring that clinical data can be shared, interpreted, and reused across different systems, institutions, and countries.
+| 項目 | 內容 |
+| --- | --- |
+| 維護 | openEHR International |
+| 網站 | [openehr.org](https://openehr.org)、archetype 庫 [Clinical Knowledge Manager (CKM)](https://ckm.openehr.org) |
+| 授權 | 規格與 CKM 中的 archetype 開放 |
+| 何時用 | 建置或研究以 openEHR 為核心的臨床資料平台（北歐、英國、德國等地較常見） |
 
-Unlike message-based standards (e.g., HL7 v2, FHIR), openEHR defines how clinical information is **modeled and persisted** in databases using a robust two-level modeling architecture.
+## 兩層建模
 
-## 2. Key Concepts
-
-| Concept                  | Description                                                                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Two-level modeling**   | Separates the technical data structure (Reference Model) from the clinical content definitions (Archetypes and Templates).           |
-| **Archetype**            | A reusable, machine-readable model that defines the structure and semantics of a clinical concept (e.g., blood pressure, diagnosis). |
-| **Template**             | Combines multiple archetypes to create a use-case-specific structure (e.g., discharge summary, encounter note).                      |
-| **Reference Model (RM)** | Defines the fundamental building blocks (e.g., data types, composition, observations).                                               |
-| **EHR Persistence**      | openEHR defines how structured data is stored for long-term semantic stability.                                                      |
-
-## 3. openEHR Architecture
+| 層 | 內容 | 例 | 誰維護 |
+| --- | --- | --- | --- |
+| Reference Model (RM) | 資料型別、版本控制、稽核、Composition / Entry 等結構 | `DV_QUANTITY`、`OBSERVATION` | 規格 |
+| Archetype | 一個臨床概念的完整定義（最大集合） | `openEHR-EHR-OBSERVATION.blood_pressure.v2` | 社群 / 臨床人員（CKM） |
+| Template | 依用途組合、裁剪 archetype | 生命徵象表單、出院摘要 | 各機構 |
 
 ```
-+--------------------------------------------------+
-|   Applications (UI, EHR systems, analytics)      |
-+--------------------------------------------------+
-|   Templates (composed of archetypes)             |
-+--------------------------------------------------+
-|   Archetypes (clinical concept definitions)       |
-+--------------------------------------------------+
-|   Reference Model (core data structures)          |
-+--------------------------------------------------+
-|   Data persistence / versioning / audit trail     |
-+--------------------------------------------------+
+Applications（表單、決策支援、分析）
+        │  AQL 查詢
+Templates（用途專屬：生命徵象 = 血壓 + 心率 + 體溫）
+        │
+Archetypes（臨床概念：blood_pressure.v2）
+        │
+Reference Model（固定的資料結構與型別）
+        │
+儲存（版本化、稽核紀錄）
 ```
 
-This design allows openEHR systems to evolve clinically (by updating archetypes) without changing underlying database schemas.
-
-## 4. Archetypes and Templates
-
-### Archetype Example – Blood Pressure
-
 ```
-openEHR-EHR-OBSERVATION.blood_pressure.v1
- ├── systolic: Quantity (mmHg)
- ├── diastolic: Quantity (mmHg)
- ├── position: Coded text
- ├── time: DateTime
+openEHR-EHR-OBSERVATION.blood_pressure.v2
+ ├── systolic      DV_QUANTITY (mm[Hg])
+ ├── diastolic     DV_QUANTITY (mm[Hg])
+ ├── position      DV_CODED_TEXT（站 / 坐 / 臥）
+ └── time          DV_DATE_TIME
 ```
 
-### Template Example – Vital Signs
+## 查詢：AQL
 
-Combines multiple archetypes:
+openEHR 用 Archetype Query Language (AQL) 依 archetype 路徑查資料，不依實體表格：
 
-- Blood Pressure
-- Heart Rate
-- Body Temperature
+```sql
+SELECT o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude AS systolic
+FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.blood_pressure.v2]
+WHERE o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude > 140
+```
 
-## 5. Interoperability
+## 與其他標準的關係
 
-| Standard            | Relationship with openEHR                                                            |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| **HL7 FHIR**        | openEHR can export or map archetypes to FHIR resources (e.g., Observation, Patient). |
-| **LOINC**           | Used within archetypes for lab test identifiers.                                     |
-| **SNOMED CT / ICD** | Integrated for coded value sets and clinical terminology bindings.                   |
-| **OMOP-CDM**        | Can be used as a downstream analytical model for harmonized data export.             |
-
-## 6. Governance and Tools
-
-| Component            | Description                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------ |
-| **Maintained by**    | openEHR International Foundation                                                     |
-| **Modeling tools**   | Archetype Designer, Template Designer, Archetype Editor                              |
-| **Programming APIs** | Available in Java, .NET, Python, and REST APIs                                       |
-| **Repositories**     | Clinical Knowledge Manager (CKM): [https://ckm.openehr.org](https://ckm.openehr.org) |
-
-## 7. Advantages
-
-- Long-term semantic stability
-- Clinician-driven data modeling
-- Fully open specification and governance
-- Support for multilingual, multi-domain health records
-- Compatible with FHIR, SNOMED CT, and LOINC
+| 標準 | 關係 |
+| --- | --- |
+| [FHIR](fhir.md) | 交換時把 composition 轉成 FHIR resource |
+| [SNOMED CT](snomed-ct.md) / [LOINC](loinc.md) | archetype 的節點可綁定術語代碼 |
+| [OMOP-CDM](omop-cdm.md) | 研究分析時從 openEHR 匯出、ETL 成 OMOP |
