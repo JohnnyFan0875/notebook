@@ -72,6 +72,8 @@
 
 ## Phase 2：合併重複
 
+> 合併後的檔案都要整篇改寫，所以每項合併**在 Phase 3 對應批次內一起做**（合併 → 改寫 → 修連入），不先粗略拼接。各項標註所屬批次。
+
 - [ ] `genomics/ngs-qc/base-quality.md` + `quality-score.md` → `base-quality-scores.md`
 - [ ] `genomics/ngs-qc/vqsr.md` → 併入新的 `genomics/workflows/variant-calling.md`（Phase 3 批次 5 補全）
 - [ ] `liquid-biopsy/cfdna-ctc.md` + `cfdna-ctdna.md` → `genomics/sequencing-techniques/liquid-biopsy.md`
@@ -88,7 +90,7 @@
 
 每批：讀範例 → 改寫 → 補內容 / 補圖 → 連結檢查 → commit `Rewrite biology: batch N <範圍>`。
 
-- [ ] **批次 1　bioinformatics-tools**（約 18 篇）：ngs-tools 依任務整理（「想做 X → 指令」）、bioconductor、primer-design（README 放設計準則表）、visualization；空殼工具補用途與替代方案
+- [x] **批次 1　bioinformatics-tools**（約 18 篇）：ngs-tools 依任務整理（「想做 X → 指令」）、bioconductor、primer-design（README 放設計準則表）、visualization；空殼工具補用途與替代方案
 - [ ] **批次 2　genomics 基礎**（約 16 篇）：`file-formats/`（補 FASTA、GTF/GFF）、`reference-data/`、`ngs-qc/`（補圖：Phred 分數、覆蓋度分布、GC bias）
 - [ ] **批次 3　定序技術與驗證**（約 10 篇）：新增 `sequencing-platforms.md`（Illumina / ONT / PacBio、錯誤型態 → QC 指標）、chip-seq、liquid-biopsy、targeted-panels、single-cell（README 補 scRNA-seq 流程，連 data-science 的 AnnData / scanpy）、`assay-validation/`
 - [ ] **批次 4　RNA-seq**（12 篇）：`rna-seq/` 系列 + `limma-differential-expression.md`；移除寫死路徑；資料與圖保留在 `data/`、`src/`

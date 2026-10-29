@@ -1,105 +1,98 @@
-# SAMtools
+[生資工具](../README.md) › [NGS 工具](README.md) › samtools
 
-## Overview
+# samtools
 
-**SAMtools** is a suite of programs for interacting with high-throughput sequencing data in SAM, BAM, and CRAM formats. It is commonly used for viewing, filtering, indexing, and summarizing alignment files in bioinformatics pipelines.
+處理 SAM / BAM / CRAM 比對檔的標準工具：排序、索引、篩選、統計、計算深度。格式說明見 [BAM](../../genomics/file-formats/bam.md)。
 
-SAMtools supports compressed and indexed formats and is optimized for efficient access and manipulation of large alignment datasets.
+## 指令速查
 
-## Generate Alignment Statistics
+| 想做 | 指令 |
+| --- | --- |
+| 依座標排序 | `samtools sort -@ 8 -o sorted.bam in.bam` |
+| 建索引（`.bai`） | `samtools index sorted.bam` |
+| 每條染色體的 reads 數 | `samtools idxstats sorted.bam` |
+| 快速比對摘要 | `samtools flagstat sorted.bam` |
+| 完整統計 + 圖 | `samtools stats sorted.bam > s.stats && plot-bamstats -p plots/ s.stats` |
+| 取某區域（需索引） | `samtools view -b -o sub.bam sorted.bam chr12:25200000-25300000` |
+| 依 BED 取區域 | `samtools view -b -L targets.bed -o sub.bam sorted.bam` |
+| 過濾低 MAPQ、未比對、次要比對 | `samtools view -b -q 20 -F 0x904 -o filt.bam sorted.bam` |
+| BAM → SAM（含 header） | `samtools view -h -o out.sam in.bam` |
+| BAM → FASTQ | `samtools fastq -1 R1.fq.gz -2 R2.fq.gz -n in.bam`（先 `samtools collate`） |
+| BAM ↔ CRAM | `samtools view -C -T ref.fa -o out.cram in.bam` |
+| 每個區域的深度總和 | `samtools bedcov regions.bed sorted.bam` |
+| 每個鹼基的深度 | `samtools depth -a -b regions.bed sorted.bam` |
+| 每條染色體的覆蓋率摘要 | `samtools coverage sorted.bam` |
+| 參考序列索引、取序列 | `samtools faidx ref.fa`、`samtools faidx ref.fa chr1:100-200` |
+| 標記重複 | 見下方 `markdup` 流程 |
 
-### `samtools stats` Method
+| 常用參數 | 意義 |
+| --- | --- |
+| `-@ N` | 額外執行緒數 |
+| `-b` / `-C` / `-h` | 輸出 BAM / 輸出 CRAM / 輸出含 header |
+| `-q INT` | 最低 MAPQ（見 [Mapping Quality](../../genomics/ngs-qc/mapping-quality.md)） |
+| `-f` / `-F FLAG` | 只留 / 排除含該 FLAG 的 reads；FLAG 意義可查 [Explain SAM Flags](https://broadinstitute.github.io/picard/explain-flags.html) |
+| `-a`（depth） | 連深度為 0 的位置也輸出；否則 0 深度位置被略過，平均深度會高估 |
 
-```bash
-samtools stats -@ threads_no input.bam > input.bam.stats
-plot-bamstats -p prefix_name input.bam.stats  # -p test/ will create files in test folder
-```
-
-### `samtools flagstats` Method
-
-```bash
-samtools flagstats input.bam > input.bam.stats
-```
-
-**Output**
-
-```bash
-363458 + 0 in total (QC-passed reads + QC-failed reads) # Total number of reads including other such as supplementary
-363458 + 0 primary                                      # Total number of reads that were provided as input for mapping
-0 + 0 secondary                                         # One of the many places a multimapper can align. Note that multimappers will have one primary and 0 or more such secondary alignments.
-0 + 0 supplementary                                     # For chimeric/fusion/non-linear alignments, this is the location of one part of the alignment. For reads that align in a chimeric fashion, one segment will be designated as primary and the remainder supplementary.
-0 + 0 duplicates                                        # If you've marked possible PCR duplicates, then this will be set. The definition of a duplicate is somewhat dependent on the tool used (N.B., aligners don't typically set this flag, it's down by picard's markDuplicates command or similar).
-0 + 0 primary duplicates                                # primary reads that were marked as duplicates
-362756 + 0 mapped (99.81% : N/A)                        # number of mapped reads including supplementary
-362756 + 0 primary mapped (99.81% : N/A)                # number of mapped reads that are labelled primary (just the number of mapped reads out of the input reads). i.e. excludes the number of reads that are supplementary.
-0 + 0 paired in sequencing                              # This is the number of paired reads. If you used only paired reads after trimming, this will be the same as the number in the primary field
-0 + 0 read1                                             # This is the number of forward (R1) reads. If you used only paired reads after trimming, this will be half of the number in the primary field
-0 + 0 read2                                             # This is the number of reverse (R2) reads. If you used only paired reads after trimming, this will be the same as the read1 field.
-0 + 0 properly paired (N/A : N/A)                       # This is the number of reads that map in a way that makes sense (Not too far apart, on different chromosomes, R1 read maps to the forward strand and R2 to the reverse strand etc. depending on the aligner). See this for some more information. This is suitable if you want to be very conservative with the number of reads that you consider mapped.
-0 + 0 with itself and mate mapped                       # Number of reads with its corresponding reverse / forward read also mapped. This is less strict that properly paired but more that primary mapped.
-0 + 0 singletons (N/A : N/A)                            # This is the number of reads that are mapped but their corresponding reverse / forward read did not map. (primary mapped - with itself and mate mapped = singletons)
-0 + 0 with mate mapped to a different chr               # This is the number of reads that are mapped but their corresponding reverse / forward read mapped to a different chromosome. Remove these from properly paired to get an even more conservative estimate of number of mapped reads.
-0 + 0 with mate mapped to a different chr (mapQ>=5)     # This is the number of reads that are mapped but their corresponding reverse / forward read mapped to a different chromosome with good quality for the alignment. Remove these from properly paired to get a more conservative estimate of number of mapped reads.
-```
-
-- Reference: [Biostars](https://www.biostars.org/p/268550/)
-
-## Create Smaller BAM File by a Given Region
+## 重複標記（samtools 版本）
 
 ```bash
-regions="chr1:1-100"
-samtools view -h -b -o bam_file.selected.bam bam_file "$regions"
+samtools collate -@ 8 -O -u in.bam \
+  | samtools fixmate -m -u - - \
+  | samtools sort -@ 8 -u - \
+  | samtools markdup -@ 8 -f dup_stats.txt - dedup.bam   # -r 直接移除重複
+samtools index dedup.bam
 ```
 
-- `-h`: Output BAM includes the SAM header (e.g., @SQ, @PG, etc.)
-- `-b`: Output in BAM format
+`fixmate -m` 補上 mate score，`markdup` 才能判斷重複；也可以改用 [Picard MarkDuplicates](picard-markduplicates.md)。
 
-## Calculate Coverage by a BED File
-
-### Region-level Coverage
-
-```bash
-samtools bedcov regions.bed input.bam > coverage_output.txt
-```
-
-**Output**:
-
-Columns 1–5 from the BED file + total read depth across the region
+## 讀懂 `flagstat`
 
 ```text
-chr12   25358179        25362845        KRAS    1       0
-chr12   25378547        25378707        KRAS    1       709757
-chr12   25380167        25380346        KRAS    1       501596
-chr12   25398207        25398329        KRAS    1       877467
+363458 + 0 in total (QC-passed reads + QC-failed reads)
+363458 + 0 primary
+     0 + 0 secondary
+     0 + 0 supplementary
+     0 + 0 duplicates
+362756 + 0 mapped (99.81% : N/A)
+362756 + 0 primary mapped (99.81% : N/A)
+     0 + 0 paired in sequencing
+     0 + 0 properly paired (N/A : N/A)
+     0 + 0 singletons (N/A : N/A)
+     0 + 0 with mate mapped to a different chr
 ```
 
-### Per-base Coverage
+| 欄位 | 意義 | 判讀 |
+| --- | --- | --- |
+| `+` 前 / 後 | 通過 / 未通過 QC 的 reads | 後者通常是 0 |
+| primary | 每條輸入 read 的主要比對 | ≈ 輸入 reads 數 |
+| secondary | multi-mapper 的其他候選位置 | STAR / HISAT2 會輸出；BWA 預設不輸出 |
+| supplementary | 嵌合比對（chimeric）的其他片段 | 融合基因、結構變異的線索 |
+| duplicates | 被標記為重複的 reads | 比對器不會標，要先跑 markdup |
+| mapped | 比對到的 reads（**含 supplementary**） | 比對率看 primary mapped 較準 |
+| properly paired | 兩端方向與距離都合理 | 最保守的「好 reads」數 |
+| singletons | 自己有比對、mate 沒有 | 偏高時檢查 adapter / 污染 |
+| mate mapped to a different chr | 兩端在不同染色體 | 少量正常；過多可能是嵌合 library 或易位 |
 
-```bash
-samtools depth -b regions.bed input.bam > per_base_coverage.txt
-```
+上例是單端資料（paired 為 0），primary mapped 99.81% 屬正常。解讀參考：[Biostars](https://www.biostars.org/p/268550/)。
+
+## 深度輸出
 
 ```text
-# output
-chr12   25378548        4909
-chr12   25378549        4903
-chr12   25378550        4907
+# samtools bedcov：BED 欄位 + 該區域所有鹼基深度的「總和」（不是 reads 數）
+chr12   25378547   25378707   KRAS   1   709757     # ÷ 160 bp ≈ 平均深度 4436×
+
+# samtools depth：每個位置一列（1-based）
+chr12   25378548   4909
 ```
 
-- Per-base Coverage by sambamba: [sambamba depth base](sambamba.md#per-base-coverage)
+平均深度 = `bedcov` 總和 ÷ 區域長度。要附鹼基組成（A/C/G/T 計數）用 [sambamba depth base](sambamba.md#每個鹼基的深度)；大量樣本求速度可用 mosdepth。深度與均勻度的指標見 [定序深度與覆蓋度](../../genomics/ngs-qc/sequencing-depth-coverage.md)。
 
-## Convert BAM to SAM
+## 常見錯誤
 
-```bash
-samtools view -h -o output.sam input.bam
-```
-
-- Add `-h` to include the SAM header.
-
-## Indexing BAM Files
-
-To enable fast random access (e.g., viewing reads in a specific genomic window), indexing is required. The extension of BAM file index is `.bai`:
-
-```bash
-samtools index sample.bam
-```
+| 錯誤 | 原因 / 修正 |
+| --- | --- |
+| `view` 取區域報錯 | 沒有 `.bai`，或 BAM 未排序；先 `sort` 再 `index` |
+| 區域查不到 reads | 染色體名稱不同（`chr12` vs `12`）；用 `samtools view -H in.bam \| grep @SQ` 確認 |
+| `flagstat` 的 mapped 比例看起來偏高 | 包含 supplementary；看 primary mapped |
+| `depth` 平均深度偏高 | 沒加 `-a`，0 深度位置被略過 |
+| `samtools flagstats` 找不到指令 | 正確名稱是 `flagstat`（無 s） |

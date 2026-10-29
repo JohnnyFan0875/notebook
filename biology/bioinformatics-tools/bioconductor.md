@@ -1,207 +1,143 @@
-# Introduction to Bioconductor
+[Biology](../README.md) › [生資工具](README.md) › Bioconductor
 
-`Bioconductor` is an R ecosystem for genomics, transcriptomics, and other high-dimensional biological data. The practical value is not only the package collection itself, but also a shared set of data structures that make sequencing workflows composable.
+# Bioconductor 入門 (Introduction to Bioconductor)
 
-R prerequisites (vector / matrix / list, factor reference levels, joins, importing): [R Foundations](../../data-science/r-foundations/README.md); see especially [Data Structures](../../data-science/r-foundations/data-structures.md) and [Importing Data](../../data-science/r-foundations/importing-data.md#生資檔案格式).
+Bioconductor 是 R 的基因體學套件生態系。它的價值不只是套件數量，而是一組**共用的資料結構**：序列、基因體區間、表現量矩陣都有標準物件，DESeq2、edgeR、limma、ChIP-seq 工具因此能互相銜接。R 基礎（vector / list、factor 參考組、join、匯入）見 [R Foundations](../../data-science/r-foundations/README.md)，特別是 [資料結構](../../data-science/r-foundations/data-structures.md) 與 [匯入資料](../../data-science/r-foundations/importing-data.md#生資檔案格式)。
 
-## Installation
+> 本筆記的程式碼以 R 4.6.1 / Bioconductor 3.23（Biostrings 2.80、GenomicRanges 1.64、ShortRead 1.70、SummarizedExperiment 1.42）實跑驗證。
 
-Most packages are installed through `BiocManager`:
+## 安裝
 
 ```r
 install.packages("BiocManager")
-BiocManager::install("GenomicRanges")
-BiocManager::install("Biostrings")
-BiocManager::install("ShortRead")
+BiocManager::install(c("Biostrings", "GenomicRanges", "ShortRead", "SummarizedExperiment"))
+BiocManager::version()      # Bioconductor 版本與 R 版本綁定；不要混用 install.packages() 裝 Bioc 套件
+BiocManager::valid()        # 檢查套件版本是否一致
 ```
 
-## What Bioconductor Tries to Represent
+## 核心物件
 
-Bioconductor workflows usually describe biology in terms of structured objects:
+| 物件 | 套件 | 表示什麼 | 常用操作 |
+| --- | --- | --- | --- |
+| `DNAString` / `DNAStringSet` | Biostrings | 一條 / 多條序列（另有 RNA、AA 版本） | `reverseComplement()`、`translate()`、`letterFrequency()` |
+| `IRanges` | IRanges | 整數區間（還沒有染色體） | `width()`、`shift()`、`reduce()` |
+| `Rle` | S4Vectors | run-length 編碼的長向量 | `runLength()`、`runValue()` |
+| `GRanges` | GenomicRanges | 基因體區間：染色體 + 區間 + 股別 + metadata | `findOverlaps()`、`subsetByOverlaps()`、`reduce()` |
+| `ShortReadQ` | ShortRead | FASTQ reads 與品質 | `readFastq()`、`sread()`、`quality()`、`qa()` |
+| `SummarizedExperiment` | SummarizedExperiment | 表現量矩陣 + 樣本資訊 + 特徵資訊 | `assay()`、`colData()`、`rowData()`、`rowRanges()` |
 
-- sequence strings
-- genomic intervals
-- aligned reads
-- feature-level measurements
-- metadata attached to each observation
+> 一律用 accessor（`seqnames()`、`assay()`），不要用 `@` 直接取 slot：內部結構隨版本變動，accessor 會維持相容。S4 物件概念見 [物件導向：S3 與 R6](../../data-science/r-foundations/object-oriented-programming-s3-r6.md)。
 
-This matters because many sequencing tasks are really operations on structured biological coordinates rather than plain tables.
-
-## `Biostrings` for Biological Sequences
-
-`Biostrings` provides memory-efficient containers for sequence data.
-
-- `XString`: virtual base class for a single sequence
-- `DNAString`, `RNAString`, `AAString`: typed single-sequence containers
-- `XStringSet`: collection of many sequences
-- `DNAStringSet`, `RNAStringSet`, `AAStringSet`: typed sequence collections
-
-Example:
+## 序列：Biostrings
 
 ```r
 library(Biostrings)
-dna_seq <- DNAString("ATGATCTCGTAA")
+dna <- DNAString("ATGATCTCGTAA")
+reverseComplement(dna)                         # TTACGAGATCAT
+translate(dna)                                 # MIS*
+letterFrequency(dna, "GC", as.prob = TRUE)     # 0.333
+
+genome <- readDNAStringSet("ref.fa")           # 多條序列（FASTA）
 ```
 
-Useful mental model: use ordinary R strings for light text work, but use `Biostrings` objects once the sequence itself becomes an analysis object.
+只是少量文字處理用一般字串即可；序列本身成為分析對象（反向互補、比對、計算組成）時再用 Biostrings。
 
-## `IRanges` for Coordinate Arithmetic
-
-`IRanges` is the foundation for interval-style work. A range is defined by genomic-like coordinates, even before chromosome names are introduced.
-
-```r
-library(IRanges)
-
-IRanges(start = 20, end = 30)
-IRanges(start = c(1, 20), width = c(30, 11))
-IRanges(start = c(1, 20), end = 30)
-```
-
-Important relation:
-
-```text
-width = end - start + 1
-```
-
-`IRanges` also works naturally with logical runs. This is useful when you have long vectors of repeated values and want to recover contiguous positive segments.
-
-```r
-Rle(c(FALSE, FALSE, TRUE, TRUE, FALSE))
-IRanges(start = c(FALSE, FALSE, TRUE, TRUE))
-```
-
-## `Rle` for Repetitive Vectors
-
-`Rle` means run-length encoding. It stores long repeated vectors efficiently and appears throughout Bioconductor objects.
-
-Why it matters:
-
-- chromosome labels are repetitive
-- strand labels are repetitive
-- coverage-like vectors often contain long repeated runs
-
-So `Rle` is both a storage optimization and part of the object model for genomic data.
-
-## `GRanges` for Genomic Intervals
-
-`GRanges` extends interval logic from abstract ranges to genomic coordinates.
+## 區間：IRanges、Rle、GRanges
 
 ```r
 library(GenomicRanges)
+
+# 1. IRanges：width = end - start + 1（1-based、含頭尾）
+IRanges(start = 20, end = 30)                       # width 11
+IRanges(start = c(1, 20), width = c(30, 11))
+IRanges(c(FALSE, FALSE, TRUE, TRUE, FALSE, TRUE))   # 邏輯向量 → TRUE 的連續區段：3-4、6-6
+
+# 2. Rle：重複值很多的向量（染色體名、股別、覆蓋度）
+Rle(c("chr1", "chr1", "chr1", "chr2"))              # lengths 3 1
+
+# 3. GRanges：從字串或 data frame 建立
 GRanges("chr1:200-300")
+genes <- makeGRangesFromDataFrame(df, seqnames.field = "chrom",
+                                  keep.extra.columns = TRUE)   # df 有 chrom、start、end、gene
+
+# 4. 區間運算
+peaks <- GRanges(c("chr1:120-130", "chr1:500-600"))
+findOverlaps(peaks, genes)            # 哪個 peak 與哪個基因重疊（Hits 物件）
+subsetByOverlaps(peaks, genes)        # 只留與基因重疊的 peak：chr1:120-130
+reduce(c(genes, peaks))               # 合併重疊區間
 ```
 
-A `GRanges` object typically contains:
+> GRanges 是 **1-based、含頭尾**；BED 是 0-based、半開。`rtracklayer::import("x.bed")` 會自動轉換，自己用 `read.table()` 讀 BED 再建 GRanges 時，start 要 +1。見 [座標系統](../genomics/file-formats/zero-one-based.md)。
 
-- `seqnames`: chromosome or contig
-- `ranges`: interval coordinates
-- `strand`
-- metadata columns such as score, GC content, annotation, or sample-level summaries
+| bedtools | GenomicRanges |
+| --- | --- |
+| `intersect -u` | `subsetByOverlaps(a, b)` |
+| `intersect -wa -wb` | `findOverlaps(a, b)` + 索引 |
+| `merge` | `reduce()` |
+| `subtract` | `setdiff()` |
+| `closest` | `nearest()`、`distanceToNearest()` |
+| `slop` | `resize()`、`flank()`、`a + 100` |
 
-You can also convert tabular coordinates into genomic ranges:
+命令列版本見 [bedtools](ngs-tools/bedtools.md)。
 
-```r
-myGR <- as(df, "GRanges")
-```
-
-This is one of the most important Bioconductor ideas. Reads, peaks, exons, SNPs, and binding sites can all be treated as genomic intervals, which makes overlap, annotation, and summarization workflows much easier to compose.
-
-## `ShortRead` for FASTA and FASTQ
-
-`ShortRead` provides I/O and QC-oriented containers for short sequencing reads.
-
-FASTA example:
+## Reads：ShortRead
 
 ```r
 library(ShortRead)
-fasample <- readFasta(dirPath = "data/", pattern = "fasta")
-writeFasta(fasample, file = "data/sample.fasta")
+
+fq <- readFastq("data", pattern = "fastq.gz")       # 整個讀進記憶體
+sampler <- FastqSampler("data/sample.fastq.gz", n = 1e5)
+sub <- yield(sampler); close(sampler)               # 大檔先隨機抽樣
+
+sread(fq)[1]                                        # 序列（DNAStringSet）
+quality(fq)[1]                                      # ASCII 品質字串
+qs <- as(PhredQuality(quality(quality(fq))), "IntegerList")   # 轉成數值 Phred 分數
+qs[[1]][1:4]                                        # 40 40 20 2（'I' '5' '#' 的 Phred+33）
+
+abc <- alphabetByCycle(sread(fq))                   # 每個 cycle 的 A/C/G/T 計數（看組成偏差）
+qa_res <- qa(fq, lane = "1")                        # QC 摘要：readCounts、baseQuality、perCycle、
+report(qa_res)                                      # frequentSequences、adapterContamination… 產生 HTML
 ```
 
-FASTQ example:
+ASCII 品質編碼與 Phred 換算見 [鹼基品質分數](../genomics/ngs-qc/base-quality.md)。實務上 FASTQ QC 多用命令列的 [FastQC](ngs-tools/fastqc.md) / [fastp](ngs-tools/fastp.md)；ShortRead 適合在 R 裡做客製化檢查。
+
+## 表現量矩陣：SummarizedExperiment
+
+RNA-seq、甲基化、蛋白質體的「特徵 × 樣本」矩陣，加上樣本資訊與特徵資訊，打包成一個物件；**切子集時三者自動同步**，不會發生 metadata 與欄位錯位。
+
+```
+              colData（樣本：cell、dex、batch…）
+              ┌───────────────┐
+ rowData /    │  assay(se)    │   counts、log-CPM 等，可存多個 assay
+ rowRanges    │  基因 × 樣本  │
+ （基因資訊）  └───────────────┘
+```
 
 ```r
-fqsample <- readFastq(dirPath = "data/", pattern = "fastq")
-writeFastq(fqsample, file = "data/sample.fastq.gz")
+library(SummarizedExperiment)
+data(airway, package = "airway")      # 氣道平滑肌細胞 ± dexamethasone 的 RNA-seq
+airway                                # dim: 63677 8；assays: counts
+assay(airway, "counts")[1:3, 1:3]
+colData(airway)[, c("cell", "dex")]   # 樣本資訊
+rowRanges(airway)                     # 每個基因的 exon 位置（GRangesList）
+
+trt <- airway[, airway$dex == "trt"]  # 63677 × 4，colData 同步切
+expressed <- airway[rowSums(assay(airway)) > 0, ]
+
+# 自己建
+se <- SummarizedExperiment(assays = list(counts = count_mat),
+                           colData = sample_info, rowData = gene_info)
 ```
 
-Typical object types:
+`DESeqDataSet`（DESeq2）是 SummarizedExperiment 的子類別；單細胞的 `SingleCellExperiment` 也是。Python 的對應是 [AnnData](../../data-science/python-foundations/anndata-and-scanpy.md)。下游分析見 [RNA-seq 分析](../genomics/workflows/rna-seq/README.md)。
 
-- `ShortRead`: FASTA-oriented read container
-- `ShortReadQ`: FASTQ container with base qualities
+## 常見錯誤
 
-For large FASTQ files, sampling is often more practical than loading everything at once:
-
-```r
-sampler <- FastqSampler("data/SRR1971253.fastq", 500)
-sample_small <- yield(sampler)
-```
-
-## Reading Sequence and Quality Together
-
-`ShortRead` makes the sequence and its qualities accessible as linked data:
-
-```r
-sread(fqsample)[1]
-quality(fqsample)[1]
-```
-
-Quality strings are ASCII-encoded. They can be converted to numeric Phred scores:
-
-```r
-pq <- PhredQuality(quality(fqsample))
-qs <- as(pq, "IntegerList")
-```
-
-This is useful when you want to move from "the file stores a quality line" to "the workflow reasons about per-base quality scores".
-
-## Built-in QC Summary
-
-`ShortRead` also provides a quality assessment summary:
-
-```r
-qaSummary <- qa(fqsample, lane = 1)
-names(qaSummary)
-report(qaSummary)
-```
-
-The summary can expose:
-
-- read counts
-- base calls
-- read quality scores
-- per-cycle patterns
-- frequent sequences
-- adapter contamination
-
-This makes `ShortRead` useful not only for file parsing, but also for compact in-R QC inspection.
-
-## Base Composition by Cycle
-
-Per-cycle summaries help detect sequencing bias or chemistry drift.
-
-```r
-abc <- alphabetByCycle(sread(fullSample))
-```
-
-A common next step is to inspect how `A`, `C`, `G`, and `T` proportions change across cycles.
-
-## Practical Workflow
-
-A compact Bioconductor-centered sequencing workflow often looks like this:
-
-1. install the relevant package family with `BiocManager`
-2. represent sequences with `Biostrings`
-3. represent intervals with `IRanges`
-4. promote genomic coordinates to `GRanges`
-5. load FASTA or FASTQ reads with `ShortRead`
-6. inspect qualities before downstream analysis
-7. hand structured objects to downstream packages such as `limma`, `GenomicAlignments`, or peak-calling and annotation workflows
-
-## Common Mistakes
-
-- treating Bioconductor packages as isolated tools instead of a shared object system
-- keeping genomic coordinates as plain data frames longer than necessary
-- ignoring `Rle` and `GRanges` accessors, then writing unnecessary manual parsing code
-- loading large FASTQ files eagerly when sampling or streaming would be enough
-- treating ASCII quality strings as opaque text instead of converting them when numeric scores are needed
+| 錯誤 | 修正 |
+| --- | --- |
+| 把 Bioconductor 套件當成獨立工具，各自轉成 data frame | 盡量在 GRanges / SummarizedExperiment 中完成運算，最後才轉出 |
+| 座標長期存成 data frame，手寫重疊判斷 | 轉成 GRanges 用 `findOverlaps()` |
+| `seqnames` 不一致（`chr1` vs `1`）導致重疊結果為空 | `library(GenomeInfoDb)` 後 `seqlevelsStyle(gr) <- "UCSC"`（Bioc 3.22 起 GenomicRanges 改依賴輕量的 Seqinfo，這個函式要另外載入 GenomeInfoDb） |
+| 大型 FASTQ 一次讀入記憶體 | `FastqSampler` 抽樣或 `FastqStreamer` 分批讀 |
+| 樣本資訊與 count 矩陣分開存，排序不一致 | 包成 SummarizedExperiment，並檢查 `all(colnames(counts) == rownames(sample_info))` |
+| 用 `install.packages()` 裝 Bioc 套件或混用版本 | 一律 `BiocManager::install()`，`BiocManager::valid()` 檢查 |
