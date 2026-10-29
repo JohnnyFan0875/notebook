@@ -1,6 +1,6 @@
-[資料處理與 EDA](../README.md) › [視覺化](README.md) › pandas Plotting
+[資料處理與 EDA](../README.md) › [視覺化](README.md) › pandas 繪圖
 
-# pandas Plotting
+# pandas 繪圖 (pandas Plotting)
 
 `Series.plot()` / `DataFrame.plot()` 直接從資料畫圖，是 EDA 最快的第一眼：index 自動當 x 軸、每欄一條線、回傳 Matplotlib `Axes` 可以繼續調整。需要分組統計圖改用 [Seaborn](seaborn/README.md)，細節控制用 [Matplotlib](matplotlib/README.md)；存活曲線見 [存活分析視覺化](../../statistics/survival-analysis/visualization.md)。
 

@@ -1,6 +1,6 @@
-[Data Science](../README.md) › [LLM](README.md) › Prompt Engineering
+[Data Science](../README.md) › [LLM](README.md) › 提示工程
 
-# Prompt Engineering
+# 提示工程 (Prompt Engineering)
 
 Prompt 是任務規格書：說清楚要做什麼、依據什麼、輸出成什麼樣子。目標不是找出神奇措辭，而是讓任務明確到模型不必猜，且輸出容易檢查。在程式中呼叫時的 message 結構見 [API 模式](integration/llm-api-patterns.md)。
 
