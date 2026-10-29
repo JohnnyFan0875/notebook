@@ -11,7 +11,6 @@ Variant-oriented resources for interpretation, annotation, and evidence lookup.
 - [GWAS Catalog](gwas-catalog.md)
 - [HGMD](../gene-disease-association/hgmd.md)
 - [BRCA Exchange](brca-exchange.md)
-- [HGVD](hgvd.md)
 - [HGVS](../../variant-interpretation/hgvs-nomenclature.md)
 - [OpenCRAVAT](opencravat.md)
 - [PMKB](pmkb.md)

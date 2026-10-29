@@ -82,7 +82,7 @@
 - [x] `workflows/rnaseq-differential-expression-with-deseq2.md` → 獨特內容（size factors、vst / rlog、`lfcShrink`、常見錯誤）併入 `rna-seq/06`、`07`；更新 data-science 的 2 個連入與 `#pca-for-sample-structure` anchor
 - [x] `genomics/reference-data/`：7 個 annotation / FASTA 空殼 + `download-exon-from-fasta.md` → `reference-genomes.md`（UCSC / Ensembl / NCBI 版本、chr 命名、下載）與 `gene-annotations.md`（GTF / GFF、GENCODE、RefSeq、refGene）；`ncbi-reference-standard.md`（GIAB）→ `genomics/assay-validation/reference-standard.md`；`ena.md` → `raw-data-repositories.md`（SRA / ENA / GEO）
 - [ ] immunology：cytokine 內容統一到 `cytokines.md`（`cytokine-network-summary.md` 改寫），T / B 細胞筆記只留亞群並連過去
-- [ ] `genetics/databases/functional-expression/README.md`：UniProt / InterPro / HPA 只保留連結，不重複描述
+- [x] `genetics/databases/functional-expression/README.md`：UniProt / InterPro / HPA 只保留連結，不重複描述
 - [x] `workflows/pmbio.md` → `genomics/README.md` 的學習資源表
 - [ ] 連結檢查 → commit `Restructure biology: phase 2 merges`
 
@@ -95,7 +95,7 @@
 - [x] **批次 3　定序技術與驗證**（約 10 篇）：新增 `sequencing-platforms.md`（Illumina / ONT / PacBio、錯誤型態 → QC 指標）、chip-seq、liquid-biopsy、targeted-panels、single-cell（README 補 scRNA-seq 流程，連 data-science 的 AnnData / scanpy）、`assay-validation/`
 - [x] **批次 4　RNA-seq**（12 篇）：`rna-seq/` 系列 + `limma-differential-expression.md`；移除寫死路徑；資料與圖保留在 `data/`、`src/`
 - [x] **批次 5　變異呼叫、全基因體分析、癌症基因體**（約 12 篇）：新增 `workflows/variant-calling.md`（比對 → 去重 → BQSR → HaplotypeCaller / Mutect2 → VQSR / hard filter → VEP）；GWAS / QTL / colocalization；TCGA / GDC、mutational signatures、NCCN
-- [ ] **批次 6　genetics 資料庫 I**（約 17 篇）：gene、population-frequency（gnomAD、TaiwanGenomes、DGV…）、functional-expression、pharmacogenomics（PharmGKB + CPIC）
+- [x] **批次 6　genetics 資料庫 I**（約 17 篇）：gene、population-frequency（gnomAD、TaiwanGenomes、DGV…）、functional-expression、pharmacogenomics（PharmGKB + CPIC）
 - [ ] **批次 7　genetics 資料庫 II**（約 25 篇）：variant（ClinVar、dbSNP、VEP、COSMIC、CIViC、VarSome…）、gene-disease-association（OMIM、HPO、ClinGen、GenCC、PanelApp…）
 - [ ] **批次 8　genetics 基礎與變異判讀**（約 10 篇）：修正 VAF 與族群頻率的混用；新增 `variant-interpretation/acmg-amp.md`（criteria 表、證據組合規則、ClinGen SVI 調整）；HGVS、in-silico 預測、ACGS、ClinGen 指引
 - [ ] **批次 9　clinical-informatics**（約 25 篇）：clinical-terminology（FHIR、OMOP、SNOMED、ICD、LOINC…，補比較與對應關係）、clinical-databases、regulatory-databases

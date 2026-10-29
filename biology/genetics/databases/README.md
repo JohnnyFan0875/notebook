@@ -1,34 +1,32 @@
-# Genetics Databases
+[Biology](../../README.md) › [遺傳學](../README.md) › 資料庫
 
-Genetics and genomics databases answer different questions. A good lookup usually moves from a stable gene or variant identifier, to disease evidence, population frequency, functional annotation, and then to domain-specific resources such as pharmacogenomics or cancer databases.
+# 遺傳學資料庫 (Genetics Databases)
 
-## Where This Fits
+不同資料庫回答不同問題。查一個基因或變異時，通常依序：確認正確的 ID → 疾病證據 → 族群頻率 → 功能預測與表現 → 特定領域（癌症、藥物）。
 
-The content from `~/project/source.txt` belongs here rather than under `data-science/statistics`: it is about biomedical reference databases, not statistical methods. The closest notebook location is `biology/genetics/databases`, with some cross-links to molecular biology and genomics pages when the resource is protein- or genome-browser-centered.
+## 模組
 
-## Modules
+| 模組 | 主要資料庫 | 回答的問題 |
+| --- | --- | --- |
+| [基因](gene/README.md) | HGNC、NCBI Gene、Ensembl、UCSC、GeneCards | 這個基因的正式名稱、位置、轉錄本是什麼？ |
+| [基因–疾病關聯](gene-disease-association/README.md) | OMIM、ClinGen、GenCC、HPO、GeneReviews、PanelApp、HGMD | 這個基因與哪些疾病有關？證據多強？ |
+| [變異](variant/README.md) | ClinVar、dbSNP、VEP、COSMIC、CIViC、GWAS Catalog、VarSome | 這個變異被怎麼判讀過？預測影響是什麼？ |
+| [族群頻率](population-frequency/README.md) | gnomAD、1000 Genomes、TaiwanGenomes、HGVD、DGV | 這個變異在族群中多常見？ |
+| [藥物基因體](pharmacogenomics/README.md) | ClinPGx（PharmGKB）、CPIC | 這個變異影響用藥嗎？ |
+| [功能與表現](functional-expression/README.md) | GTEx、KEGG；蛋白質見 [分子生物學資料庫](../../molecular-biology/molecular-databases/README.md) | 基因在哪個組織表現？屬於哪條通路？蛋白質做什麼？ |
 
-| Module | Core Databases | Main Questions |
-| ------ | -------------- | -------------- |
-| [Gene Databases](gene/README.md) | NCBI Gene, HGNC, GeneCards, Ensembl, UCSC Genome Browser | What is this gene, where is it located, and what identifiers or transcripts should I use? |
-| [Gene-Disease Association](gene-disease-association/README.md) | OMIM, ClinGen, GenCC, HPO, GeneReviews, HGMD | Which diseases or phenotypes are associated with this gene, and how strong is the evidence? |
-| [Variant Databases](variant/README.md) | ClinVar, dbSNP, GWAS Catalog, COSMIC, VEP, VarSome, OpenCRAVAT | What is this variant, how has it been interpreted, and what functional impact is predicted? |
-| [Population Frequency](population-frequency/README.md) | gnomAD, 1000 Genomes, Taiwan Biobank/TaiwanGenomes, HGVD | How common is this variant in reference populations? |
-| [Pharmacogenomics](pharmacogenomics/README.md) | PharmGKB, CIViC | Does the variant or gene affect drug response or treatment evidence? |
-| [Functional and Expression Databases](functional-expression/README.md) | GTEx, KEGG, UniProt, InterPro, Human Protein Atlas | Where is the gene expressed, what pathway is it in, and what does the protein do? |
+## 查詢流程
 
-## Practical Lookup Workflow
+| 步驟 | 用 | 為什麼 |
+| --- | --- | --- |
+| 1. 確認基因 / 變異 | HGNC、NCBI Gene、Ensembl、dbSNP | 避免別名、過時符號、基因組版本錯誤 |
+| 2. 統一變異寫法 | HGVS + MANE 轉錄本，見 [HGVS 命名](../variant-interpretation/hgvs-nomenclature.md) | 不同轉錄本的 `c.` 位置不同 |
+| 3. 臨床證據 | ClinVar、OMIM、ClinGen、GenCC、GeneReviews | 區分經審閱的關聯與只是被提及 |
+| 4. 族群頻率 | gnomAD、族群專屬資料庫（台灣、日本） | 太常見的變異不可能造成罕見孟德爾疾病 |
+| 5. 功能證據 | VEP、in-silico 預測、UniProt、GTEx | 連到轉錄本、蛋白質結構、組織表現 |
+| 6. 特定領域 | COSMIC、CIViC、ClinPGx、GWAS Catalog | 癌症、藥物反應、複雜疾病各有獨立的證據體系 |
+| 7. 綜合判讀 | ACMG/AMP 準則 | 見 [ACMG/AMP 變異分級](../variant-interpretation/acmg-amp.md) |
 
-| Step | Use | Why It Matters |
-| ---- | --- | -------------- |
-| Identify the gene or variant | NCBI Gene, HGNC, Ensembl, dbSNP | Prevents errors from aliases, deprecated symbols, and genome-build mismatches |
-| Check clinical evidence | ClinVar, OMIM, ClinGen, GenCC, GeneReviews | Separates curated disease relationships from broad database mentions |
-| Check population frequency | gnomAD, 1000 Genomes, local population databases | Common variants are usually less likely to explain rare Mendelian disease |
-| Review predicted or observed function | VEP, UniProt, InterPro, GTEx, KEGG | Connects genomic change to transcript, protein, tissue, and pathway context |
-| Add domain-specific evidence | COSMIC, PharmGKB, CIViC, GWAS Catalog | Cancer, drug response, and complex-trait interpretation often require separate evidence streams |
+> 不要把單一資料庫當最終證據：交叉核對 ID、基因組版本、轉錄本版本、表型用語與證據等級。需付費的資料庫（如 HGMD Professional）要在流程中註明版本與授權。查詢結果附上**查詢日期**，因為資料庫持續更新，同一變異的分類可能改變。
 
-## Notes
-
-- Do not treat one database as final evidence. Cross-check identifiers, genome build, transcript version, phenotype terminology, and evidence level.
-- Gene-level resources are useful for orientation, but clinical interpretation usually depends on variant-level evidence and disease context.
-- Subscription databases such as HGMD can be useful, but access restrictions and licensing should be documented in any reproducible workflow.
+整合多個資料庫的工具（VarSome、MARRVEL、OpenCRAVAT）可快速瀏覽，但正式判讀仍應回到原始資料庫，見 [變異資料庫](variant/README.md)。
