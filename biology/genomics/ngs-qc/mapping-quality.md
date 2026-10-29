@@ -43,7 +43,7 @@ samtools view -c -q 1 in.bam                          # MAPQ ≥ 1 的 reads 數
 | --- | --- |
 | MAPQ 0 比例高 | 重複區多（如著絲點附近）、read 太短、參考基因體含 alt contig 卻未用 alt-aware 比對 |
 | 某基因的變異只出現在 MAPQ 低的 reads | 假基因干擾（例：*PMS2* / *PMS2CL*、*SMN1* / *SMN2*、*CYP2D6* / *CYP2D7*） |
-| 變異的 MAPQ（VCF 的 `MQ`）偏低 | 偽陽性風險高，VQSR 與硬過濾都會參考 `MQ`、`MQRankSum`（見 [VQSR](vqsr.md)） |
+| 變異的 MAPQ（VCF 的 `MQ`）偏低 | 偽陽性風險高，VQSR 與硬過濾都會參考 `MQ`、`MQRankSum`（見 [變異過濾](../workflows/variant-calling.md#變異過濾vqsr-vs-硬過濾)） |
 
 > 臨床上，低 MAPQ 區域（假基因、片段重複）是短讀定序的已知盲區，報告需註明；需要時改用長距離 PCR、MLPA 或長讀定序確認。
 

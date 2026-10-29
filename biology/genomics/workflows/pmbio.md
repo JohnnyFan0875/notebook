@@ -15,7 +15,7 @@ Griffith Lab（McDonnell Genome Institute, WashU）製作的免費線上課程�
 | Setup | AWS、UNIX、軟體安裝 | [computing](../../../computing/README.md) |
 | Inputs | 參考基因組、註解、索引、原始資料、比對前 QC | [參考資料](../reference-data/README.md)、[FastQC](../../bioinformatics-tools/ngs-tools/fastqc.md) |
 | Alignment | 比對、IGV、比對後 QC | [samtools](../../bioinformatics-tools/ngs-tools/samtools.md)、[IGV](../../bioinformatics-tools/visualization/igv.md) |
-| Germline | SNV / indel 呼叫、過濾、註解、複核 | [VQSR vs 硬過濾](../ngs-qc/vqsr.md)、[VCF](../file-formats/vcf.md) |
+| Germline | SNV / indel 呼叫、過濾、註解、複核 | [VQSR vs 硬過濾](../workflows/variant-calling.md#變異過濾vqsr-vs-硬過濾)、[VCF](../file-formats/vcf.md) |
 | Somatic | SNV / indel、SV、CNV、LOH | [癌症基因體](../cancer-genomics/README.md) |
 | RNAseq | 表現量估計、差異表現、kallisto、融合基因 | [RNA-seq 分析](rna-seq/README.md) |
 | Clinical | germline 與 somatic 變異的臨床解讀 | [變異判讀](../../genetics/variant-interpretation/README.md) |

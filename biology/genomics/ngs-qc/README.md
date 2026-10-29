@@ -20,7 +20,7 @@
 | [定序深度與覆蓋度](sequencing-depth-coverage.md) | 深度 vs 覆蓋度、需要多少 reads、各應用的建議深度 | 夠不夠深？有沒有漏掉的區域？ |
 | [均勻度](uniformity.md) | fold-80、≥0.2× mean 比例 | 深度是不是平均分布？ |
 | [GC 偏差](gc-bias.md) | 成因、指標、對 CNV 與表現量的影響 | 高 / 低 GC 區域是否被低估？ |
-| [VQSR vs 硬過濾](vqsr.md) | 變異品質過濾的兩種策略 | 哪些變異呼叫是真的？ |
+| [變異過濾](../workflows/variant-calling.md#變異過濾vqsr-vs-硬過濾) | VQSR vs 硬過濾（在變異呼叫流程筆記中） | 哪些變異呼叫是真的？ |
 
 ## 指標速查
 

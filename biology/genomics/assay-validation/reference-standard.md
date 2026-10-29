@@ -55,4 +55,4 @@ hap.py HG002_GRCh38_benchmark.vcf.gz my_calls.vcf.gz \
 | 用比對工具，不要自己 `diff` | 同一個變異有不同寫法（見 [VCF：同一個變異的不同寫法](../file-formats/vcf.md#同一個變異的不同寫法)）；hap.py / RTG vcfeval 會處理 |
 | 流程改版就重跑 | 保留每版的結果做回歸測試 |
 
-指標定義見 [檢測確效](README.md)；變異呼叫流程見 [VQSR vs 硬過濾](../ngs-qc/vqsr.md)。中文說明參考：[參考標準品（yourgene）](https://yourgene.pixnet.net/blog/posts/7118001727)。
+指標定義見 [檢測確效](README.md)；變異呼叫流程見 [VQSR vs 硬過濾](../workflows/variant-calling.md#變異過濾vqsr-vs-硬過濾)。中文說明參考：[參考標準品（yourgene）](https://yourgene.pixnet.net/blog/posts/7118001727)。

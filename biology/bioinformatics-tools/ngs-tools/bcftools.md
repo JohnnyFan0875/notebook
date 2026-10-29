@@ -69,7 +69,7 @@ bcftools view -f PASS -v snps filtered.vcf.gz \
   | bcftools query -f '%CHROM\t%POS\t%REF\t%ALT[\t%GT:%AD]\n' > pass_snvs.tsv
 ```
 
-硬過濾的閾值與 VQSR 的取捨見 [VQSR vs Hard Filtering](../../genomics/ngs-qc/vqsr.md)。
+硬過濾的閾值與 VQSR 的取捨見 [VQSR vs Hard Filtering](../../genomics/workflows/variant-calling.md#變異過濾vqsr-vs-硬過濾)。
 
 ## 常見錯誤
 
