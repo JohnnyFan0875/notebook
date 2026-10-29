@@ -1,18 +1,34 @@
-# Virus Detection Methods
+[分子生物學](../README.md) › [實驗方法](README.md) › 病毒檢測方法
 
-Virus detection methods differ in whether they detect nucleic acid, antigen, antibody response, or whole viral particles.
+# 病毒檢測方法 (Virus Detection Methods)
 
-## Common Categories
+病毒檢測依「量的是什麼」分成四類：病毒核酸、病毒蛋白（抗原）、宿主抗體、完整具感染力的病毒。感染階段不同，各類標記出現的時間不同，選錯方法或時間點就會得到偽陰性。
 
-- PCR or RT-PCR for viral nucleic acid
-- Antigen tests for rapid protein detection
-- Serology for host antibody response
-- Sequencing for characterization, surveillance, and variant analysis
+## 方法比較
 
-## Practical Notes
+| 方法 | 偵測對象 | 適合時間點 | 靈敏度 | 時效 | 典型用途 |
+| --- | --- | --- | --- | --- | --- |
+| 核酸檢測 (NAAT：[RT-qPCR](qpcr.md)、LAMP、TMA) | 病毒 DNA / RNA | 最早（症狀前即可陽性） | 最高 | 1–4 小時（快速分子檢測更短） | 確診、病毒量追蹤、篩檢血品 |
+| 抗原快篩 (lateral flow / [ELISA](elisa.md)) | 病毒蛋白 | 症狀期、病毒量高時 | 中（病毒量低時偽陰性） | 15–30 分鐘 | 照護現場、居家自我檢測 |
+| 血清學（IgM / IgG ELISA、化學冷光） | 宿主抗體 | IgM 約 1 週後、IgG 約 2 週後 | 視時間點 | 數小時 | 過去感染、疫苗反應、流行病學調查 |
+| 病毒培養 | 具感染力的病毒 | 急性期 | 低 | 數天至數週 | 判斷是否仍具傳染力、藥物敏感性；需高等級生物安全實驗室 |
+| 定序（標的 / 全基因體 / mNGS） | 病毒基因體 | 有核酸時 | 依深度 | 1–數天 | 分型、變異株監測、抗藥突變、群聚追蹤、未知病原（metagenomic NGS） |
 
-- Method choice depends on timing, sample type, sensitivity needs, and turnaround constraints.
+```text
+感染 ──► 核酸可測 ──► 抗原可測（病毒量高峰）──► IgM ──► IgG（可持續數月至數年）
+         │← 空窗期：抗體尚未出現，血清學偽陰性 →│
+```
 
-## Reference
+## 判讀注意
 
-- [Method overview](https://www.acebiolab.com/EN/news/39)
+| 議題 | 說明 |
+| --- | --- |
+| Ct 值與病毒量 | Ct 越低病毒量越高，但不同平台、檢體類型、採檢品質下 Ct 不可直接比較 |
+| 核酸陽性 ≠ 具傳染力 | 康復後可長期檢出殘留 RNA；需要時以培養或亞基因體 RNA 判斷 |
+| 空窗期 (window period) | 輸血篩檢加做 NAT 可縮短 HIV、HBV、HCV 的空窗期，見[血庫與輸血](../../laboratory-medicine/blood-bank-and-transfusion/README.md) |
+| 盛行率與預測值 | 低盛行率時即使特異性高，陽性預測值仍可能偏低；確認用另一方法複驗 |
+| 變異株 | 引子 / 探針結合處突變可造成標的脫落（如 SARS-CoV-2 Alpha 的 S gene target failure）|
+
+方法的靈敏度、特異性與確效流程見[檢測確效](../../genomics/assay-validation/README.md#評估指標)。
+
+<sub>參考：[病毒檢測方法概述](https://www.acebiolab.com/EN/news/39)</sub>

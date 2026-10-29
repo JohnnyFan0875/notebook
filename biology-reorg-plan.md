@@ -100,7 +100,7 @@
 - [x] **批次 8　genetics 基礎與變異判讀**（約 10 篇）：修正 VAF 與族群頻率的混用；新增 `variant-interpretation/acmg-amp.md`（criteria 表、證據組合規則、ClinGen SVI 調整）；HGVS、in-silico 預測、ACGS、ClinGen 指引
 - [x] **批次 9　clinical-informatics**（約 25 篇）：clinical-terminology（FHIR、OMOP、SNOMED、ICD、LOINC…，補比較與對應關係）、clinical-databases、regulatory-databases
 - [x] **批次 10　immunology、laboratory-medicine、medical-imaging**（約 16 篇）：細胞激素整合；影像模態比較表（連 data-science 的 image-analysis）；blood-bank 依網站內容補充
-- [ ] **批次 11　molecular-biology、microbiome**（約 20 篇）：實驗方法比較（blot 類型、qPCR 定量）、蛋白質資料庫、16S vs shotgun
+- [x] **批次 11　molecular-biology、microbiome**（約 20 篇）：實驗方法比較（blot 類型、qPCR 定量）、蛋白質資料庫、16S vs shotgun
 - [ ] **批次 12　頂層與跨領域**：`biology/README.md`（模組表、建議路線、速查頁）、各領域 README 補漏、biology ↔ data-science / computing 交叉連結
 
 ## Phase 4：程式碼實跑驗證

@@ -1,100 +1,64 @@
-# Intestinal Permeability
+[Biology](../README.md) › [微生物體](README.md) › 腸道通透性
 
-## 1. Overview
+# 腸道通透性 (Intestinal Permeability)
 
-The intestinal barrier plays a critical role in maintaining homeostasis by controlling the selective transport of nutrients, electrolytes, and water, while preventing the passage of harmful antigens and pathogens. Disruption of this barrier, often referred to as **"leaky gut syndrome" (increased intestinal permeability)**, is associated with various gastrointestinal and systemic diseases, including inflammatory bowel disease (IBD), irritable bowel syndrome (IBS), celiac disease, metabolic disorders, and autoimmune conditions.
+腸道上皮在吸收營養、水與電解質的同時，必須阻擋腸腔內的抗原、毒素與微生物。屏障受損、通透性增加的現象在乳糜瀉、發炎性腸病 (IBD)、NSAID 腸病變、重症 / 敗血症中都有記錄；量測它最常用的非侵入方法是**乳果糖 / 甘露醇 (L/M) 比值試驗**。
 
-To assess intestinal permeability in vivo, a widely used and non-invasive method involves the **lactulose/mannitol (L/M) ratio test**, which measures the urinary excretion of two non-metabolized sugars after oral ingestion.
+## 腸道屏障的組成
 
-## 2. Mannitol
+| 層次 | 組成 | 功能 |
+| --- | --- | --- |
+| 微生物層 | 共生菌 | 競爭排除病原、產生短鏈脂肪酸（丁酸為大腸上皮主要能量來源） |
+| 黏液層 | MUC2 等黏蛋白、抗菌肽、分泌型 IgA | 物理與化學屏障 |
+| 上皮層 | 腸上皮細胞 + 緊密連接 (tight junction：occludin、claudins、ZO-1) | 控制細胞間 (paracellular) 通道 |
+| 免疫層 | 固有層免疫細胞 | 辨識穿越的抗原 |
 
-**Mannitol** is a small monosaccharide alcohol (molecular weight ≈182 Da) that is readily absorbed through the **transcellular route** via small, intact enterocytes. It serves as an indicator of **mucosal absorptive surface area** and normal permeability of the small intestine.
+## 兩條通道與糖探針
 
-- **Properties:**
+| | 甘露醇 (mannitol) | 乳果糖 (lactulose) |
+| --- | --- | --- |
+| 分子 | 單醣醇，約 182 Da | 雙醣，約 342 Da |
+| 路徑 | 穿細胞 (transcellular) | 細胞間 (paracellular)，經緊密連接 |
+| 正常情況 | 容易吸收 | 很少吸收 |
+| 反映 | 小腸吸收表面積 | 緊密連接完整性 |
+| 異常 | 吸收↓ = 絨毛萎縮、黏膜表面積減少 | 吸收↑ = 屏障破壞 |
 
-  - Small molecular size
-  - Hydrophilic and non-metabolized
-  - Transported through intact epithelial cells (transcellular diffusion)
+兩者在小腸都不被代謝、吸收後由尿液排出；口服後收集約 5–6 小時尿液，計算：
 
-- **Interpretation:**
+$$\text{L/M ratio} = \frac{\text{尿中乳果糖回收率 (\%)}}{\text{尿中甘露醇回收率 (\%)}}$$
 
-  - **Decreased mannitol absorption** suggests mucosal damage or villous atrophy (e.g., celiac disease, chemotherapy-induced mucositis).
+用比值而非單一糖的好處：胃排空、腸道運動、腎功能與尿液收集完整度對兩者影響相同，取比值可以抵消。
 
-## 3. Lactulose
+## L/M 比值判讀
 
-**Lactulose** is a disaccharide (molecular weight ≈342 Da) that is **poorly absorbed** under normal conditions because it passes mainly through **paracellular pathways** (tight junctions between epithelial cells).
+| 情況 | 乳果糖 | 甘露醇 | L/M 比值 |
+| --- | --- | --- | --- |
+| 正常 | 低 | 正常 | 低 |
+| 緊密連接受損（IBD、NSAID、敗血症） | ↑ | 正常 | ↑ |
+| 絨毛萎縮（乳糜瀉、化療黏膜炎） | ↑（緊密連接也受損） | ↓ | ↑↑（兩個方向都推高比值） |
+| 短腸症候群 | 依剩餘腸道而定 | ↓ | 不一定，需搭配臨床判讀 |
 
-- **Properties:**
+> 常見誤解是「絨毛萎縮會讓比值下降」：甘露醇吸收減少使分母變小，比值其實會**上升**。L/M 比值的正常範圍依各實驗室的劑量與收尿時間而異，沒有通用切點。
 
-  - Larger molecular size
-  - Only absorbed through leaky or compromised tight junctions
-  - Non-metabolized in the small intestine (fermented by colonic bacteria)
+## 其他量測方法
 
-- **Interpretation:**
+| 方法 | 量什麼 | 備註 |
+| --- | --- | --- |
+| 蔗糖 (sucrose) | 胃與十二指腸通透性 | 在小腸被分解，只反映上段 |
+| 蔗糖素 (sucralose) | 全腸道（含大腸）通透性 | 不被細菌分解；收集 24 小時尿液 |
+| ⁵¹Cr-EDTA、PEG | 全腸道通透性 | 研究用 |
+| 血清 LPS、LBP、sCD14 | 細菌產物進入循環 | 間接；LPS 易受汙染 |
+| I-FABP、瓜胺酸 (citrulline) | 腸上皮細胞損傷 / 數量 | 偏向上皮損傷而非通透性 |
+| Zonulin | 調節緊密連接的蛋白 | 注意：研究顯示常用的商業 ELISA 套組實際測到的可能是其他蛋白（如補體 C3 相關蛋白），結果難以解讀 |
+| Ussing chamber | 切片的跨上皮電阻 | 離體 (ex vivo)，需要組織 |
 
-  - **Increased lactulose absorption** indicates disruption of the intestinal barrier and increased paracellular permeability.
+## 「腸漏症」(Leaky Gut Syndrome)
 
-## 4. The L/M Ratio
+| 層面 | 現況 |
+| --- | --- |
+| 現象 | 通透性增加在 IBD、乳糜瀉、重症等確實存在，是可量測的生理變化 |
+| 機制 | 發炎細胞激素（TNF-α、IFN-γ、IL-1β）打開緊密連接；酒精、NSAID、菌相失衡、氧化壓力 |
+| 「腸漏症」作為獨立診斷 | **不是**公認的醫學診斷；通透性增加導致自體免疫、代謝等全身疾病的因果關係多來自動物與觀察研究，人體證據有限 |
+| 常見建議（纖維、益生菌、麩醯胺酸、鋅、omega-3） | 部分有小型研究支持改善通透性指標，但改善臨床結果的證據不足 |
 
-The **L/M ratio** represents the **urinary excretion ratio of lactulose to mannitol** following oral administration of both sugars.
-
-$$
-\text{L/M ratio} = \frac{\text{Urinary lactulose excretion}}{\text{Urinary mannitol excretion}}
-$$
-
-### Physiological Meaning
-
-- **Normal ratio:** Reflects intact epithelial integrity and normal absorptive capacity.
-- **Increased ratio:** Suggests increased paracellular permeability (higher lactulose) and/or decreased absorptive capacity (lower mannitol).
-- **Decreased ratio:** May occur in cases of villous atrophy or reduced mucosal surface without paracellular leak.
-
-### Clinical Use
-
-| Condition                  | Expected L/M Ratio Change | Interpretation                             |
-| -------------------------- | ------------------------- | ------------------------------------------ |
-| Celiac disease             | ↑                         | Tight junction disruption, villous atrophy |
-| Inflammatory bowel disease | ↑                         | Barrier dysfunction due to inflammation    |
-| NSAID enteropathy          | ↑                         | Drug-induced mucosal injury                |
-| Critical illness/sepsis    | ↑                         | Systemic inflammation causing leakiness    |
-| Short bowel syndrome       | ↓ or variable             | Reduced absorptive surface area            |
-
-## 5. Leaky Gut Syndrome (腸漏症)
-
-**Leaky gut syndrome (腸漏症)** describes a pathological state in which the intestinal epithelial barrier becomes excessively permeable, allowing luminal contents—such as toxins, antigens, and microbes—to cross into the bloodstream.
-
-### Mechanisms
-
-- **Disruption of tight junction proteins** (occludin, claudins, ZO-1)
-- **Inflammatory cytokines** (e.g., TNF-α, IL-6, IFN-γ) that loosen junctional complexes
-- **Oxidative stress** and **microbial dysbiosis**
-- **Dietary and environmental triggers** (alcohol, high-fat diets, stress, antibiotics)
-
-### Consequences
-
-- Activation of systemic immune responses
-- Low-grade inflammation
-- Association with autoimmune and metabolic diseases
-
-### Biomarkers and Tests
-
-- **L/M ratio test:** Quantitative measure of intestinal permeability
-- **Zonulin:** Regulates tight junctions; elevated serum or fecal levels correlate with barrier dysfunction
-- **Serum lipopolysaccharide (LPS):** Indicates translocation of bacterial endotoxins
-
-### Management Strategies
-
-- **Dietary modulation:** Increase fiber, reduce processed food intake
-- **Probiotics and prebiotics:** Support microbiome balance
-- **Anti-inflammatory nutrients:** L-glutamine, zinc, omega-3 fatty acids
-- **Address underlying disease:** Control inflammation and stress
-
-## 6. Summary
-
-| Concept                         | Mechanism                                         | Diagnostic Role                           |
-| ------------------------------- | ------------------------------------------------- | ----------------------------------------- |
-| **Mannitol**                    | Transcellular absorption                          | Reflects mucosal surface area             |
-| **Lactulose**                   | Paracellular diffusion                            | Reflects tight junction integrity         |
-| **L/M Ratio**                   | Lactulose ÷ Mannitol                              | Quantifies intestinal permeability        |
-| **Leaky Gut Syndrome (腸漏症)** | Increased permeability due to barrier dysfunction | Clinical consequence of altered L/M ratio |
-
-**In summary**, the lactulose/mannitol ratio provides a valuable, non-invasive biomarker for assessing intestinal permeability. Elevated ratios suggest compromised epithelial integrity, often referred to as leaky gut, which may contribute to the pathophysiology of numerous chronic diseases.
+相關：[細胞激素](../immunology/cytokines.md)、[益生菌 / 益生元](biotics.md)、[ELISA 的干擾與確效](../molecular-biology/experimental-methods/elisa.md#品質指標)。

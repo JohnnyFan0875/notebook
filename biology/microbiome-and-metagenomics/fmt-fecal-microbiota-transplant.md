@@ -1,13 +1,44 @@
-# Fecal Microbiota Transplant
+[Biology](../README.md) › [微生物體](README.md) › FMT
 
-Fecal microbiota transplant (FMT) transfers screened donor stool microbiota to a recipient to restore microbial balance.
+# 糞便微生物植入 (Fecal Microbiota Transplantation, FMT)
 
-## Common Context
+把經篩檢的健康捐贈者糞便菌群移植到病人腸道，以重建被破壞的菌相。目前證據最強、指引建議的適應症是**復發性困難梭狀桿菌感染 (recurrent *Clostridioides difficile* infection, rCDI)**。
 
-- Recurrent or refractory *C. difficile* infection is the classic indication.
-- Delivery routes include colonoscopy, capsules, or enema depending on protocol.
+## 適應症與證據
 
-## Notes
+| 適應症 | 證據 | 說明 |
+| --- | --- | --- |
+| 復發性 CDI | 強；治癒率約 80–90% | 各國指引建議用於標準抗生素後仍復發者 |
+| 潰瘍性結腸炎 | 中；部分隨機試驗有效 | 研究中，捐贈者與方案差異大 |
+| IBS、代謝症候群、肥胖 | 結果不一致 | 未建議常規使用 |
+| 免疫檢查點抑制劑相關腸炎、抗藥菌去定殖、提升免疫治療反應 | 早期研究 | 臨床試驗中 |
 
-- Donor screening and regulatory requirements are critical.
-- Safety and evidence standards vary by indication and region.
+## 給予方式
+
+| 方式 | 特性 |
+| --- | --- |
+| 大腸鏡 | 可同時評估腸道；侵入性 |
+| 灌腸 / 直腸給予 | 簡單；保留時間較短 |
+| 口服膠囊 | 非侵入；需多顆膠囊 |
+| 鼻胃 / 鼻十二指腸管 | 較少用；有吸入風險 |
+
+## 美國 FDA 核准的微生物體產品
+
+| 產品 | 核准 | 給予 | 內容 |
+| --- | --- | --- | --- |
+| Rebyota（RBX2660） | 2022-11 | 直腸 | 經篩檢捐贈者的糞便菌群 |
+| Vowst（SER-109） | 2023-04 | 口服膠囊 | 純化的 Firmicutes 孢子 |
+
+兩者都只核准用於成人 rCDI 在抗生素治療後的**預防復發**。
+
+## 安全性與捐贈者篩檢
+
+| 項目 | 內容 |
+| --- | --- |
+| 捐贈者問卷 | 感染風險行為、近期抗生素、腸胃 / 代謝 / 自體免疫疾病、旅遊史 |
+| 血液檢驗 | HIV、HBV、HCV、梅毒等 |
+| 糞便檢驗 | 腸道病原菌、寄生蟲、*C. difficile*、多重抗藥菌（ESBL、CRE、VRE、MRSA）、SARS-CoV-2 |
+| 已知事件 | 2019 年美國 FDA 安全警訊：未篩檢 ESBL 的捐贈者糞便造成接受者感染與死亡，之後抗藥菌篩檢成為必要項目 |
+| 長期風險 | 菌相改變對代謝、免疫的長期影響仍在追蹤 |
+
+> 研究 FMT 時，用 shotgun 宏基因體做菌株層級分析，可判斷捐贈者的菌株是否在接受者體內定殖 (engraftment)，見 [Shotgun 宏基因體](shotgun-metagenomics.md)。
