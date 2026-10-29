@@ -21,4 +21,4 @@
 
 > 記錄每個專案用的**版本號**（GENCODE vXX / Ensembl release XXX / 下載日期），寫在 README 或流程設定檔中；換版本後基因數、轉錄本 ID 都會變，結果不能直接比較。
 
-格式說明見 [FASTA](../file-formats/fasta.md)、[GTF / GFF3](../file-formats/gtf-gff.md)；變異標準集 (GIAB) 見 [Genome in a Bottle](../assay-validation/giab.md)。
+格式說明見 [FASTA](../file-formats/fasta.md)、[GTF / GFF3](../file-formats/gtf-gff.md)；變異標準集 (GIAB) 見 [Genome in a Bottle](../assay-validation/reference-standard.md#genome-in-a-bottle-giab)。

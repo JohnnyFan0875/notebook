@@ -47,7 +47,7 @@ qual = "II5#?F"
 | 特定 cycle 突然下降 | 儀器問題、氣泡、試劑 | 查看 run 的 tile 品質；嚴重時重跑 |
 | R2 整體比 R1 差 | 正常現象 | 依 R2 調整修剪 |
 | 整個 run 品質偏低 | cluster 密度過高或過低、library 品質差 | 與定序中心確認 run 指標 |
-| 低品質 + polyG 尾巴 | 2-color 化學無訊號被讀成 G | `--trim_poly_g`（見 [Illumina 2-color 化學](../sequencing-techniques/illumina-color-chemistry.md)） |
+| 低品質 + polyG 尾巴 | 2-color 化學無訊號被讀成 G | `--trim_poly_g`（見 [Illumina 2-color 化學](../sequencing-techniques/sequencing-platforms.md#illumina-2-channel-化學與-polyg)） |
 
 ## 品質在下游的用途
 

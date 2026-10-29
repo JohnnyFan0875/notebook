@@ -216,7 +216,7 @@ ds |> filter(chrom == "chr17", qual > 30) |> select(pos, ref, alt) |> collect()
 | AnnData `.h5ad` | `zellkonverter::readH5AD()` | `SingleCellExperiment` |
 | HDF5 | `rhdf5`、`HDF5Array` | 陣列（可不載入記憶體） |
 
-這些套件多數來自 Bioconductor，安裝用 `BiocManager::install()`；見 [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md)。
+這些套件多數來自 Bioconductor，安裝用 `BiocManager::install()`；見 [Bioconductor 入門](../../biology/bioinformatics-tools/bioconductor.md)。
 
 ## 匯入後的檢查
 

@@ -80,7 +80,7 @@ variants[, `:=`(start = pos, end = pos)]                  # 點也是長度 1 �
 foverlaps(variants, genes, type = "within")
 ```
 
-> Bioconductor 的 `GenomicRanges::findOverlaps()` 是生資標準做法，會處理 strand 與座標系統；見 [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md)。
+> Bioconductor 的 `GenomicRanges::findOverlaps()` 是生資標準做法，會處理 strand 與座標系統；見 [Bioconductor 入門](../../biology/bioinformatics-tools/bioconductor.md)。
 
 ### join 陷阱
 

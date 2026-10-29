@@ -72,8 +72,8 @@
 
 | 需求 | 去哪裡 |
 | --- | --- |
-| Bioconductor 物件、`SummarizedExperiment` | [Bioconductor 入門](../../biology/genomics/sequencing-and-analysis/workflows/bioconductor-introduction.md) |
-| RNA-seq 差異表現（DESeq2 / limma） | [DESeq2](../../biology/genomics/sequencing-and-analysis/workflows/rnaseq-differential-expression-with-deseq2.md)、[limma](../../biology/genomics/sequencing-and-analysis/workflows/limma-differential-expression.md) |
+| Bioconductor 物件、`SummarizedExperiment` | [Bioconductor 入門](../../biology/bioinformatics-tools/bioconductor.md) |
+| RNA-seq 差異表現（DESeq2 / limma） | [DESeq2](../../biology/genomics/workflows/rnaseq-differential-expression-with-deseq2.md)、[limma](../../biology/genomics/workflows/limma-differential-expression.md) |
 | 統計方法的選擇與解讀 | [Statistics](../statistics/README.md) |
 | EDA 流程與圖表原則 | [Data Manipulation and EDA](../data-manipulation-and-eda/README.md) |
 | SQL | [Databases](../databases/README.md) |

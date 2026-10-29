@@ -42,7 +42,7 @@
 
 | 問題 | 原因 | 後果 |
 | --- | --- | --- |
-| [GWAS](../../biology/genomics/sequencing-and-analysis/genome-wide-analysis/gwas-fundamental.md) 樣本以歐洲血統為主 | 研究資源與生物資料庫分布不均 | 其他族群的風險位點較少被發現 |
+| [GWAS](../../biology/genomics/genome-wide-analysis/gwas-fundamental.md) 樣本以歐洲血統為主 | 研究資源與生物資料庫分布不均 | 其他族群的風險位點較少被發現 |
 | 多基因風險分數 (PRS) 跨族群可遷移性差 | 連鎖不平衡 (LD) 結構、等位基因頻率、效應大小在族群間不同 | 用歐洲樣本建立的 PRS 套用在非洲血統族群時，預測力通常大幅下降 |
 | 參考基因體與變異資料庫偏向特定族群 | 參考資料的組成 | 非歐洲族群的罕見變異較常被判為「意義不明」(VUS) |
 

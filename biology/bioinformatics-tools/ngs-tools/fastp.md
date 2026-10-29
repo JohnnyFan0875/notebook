@@ -34,7 +34,7 @@ fastp -i S1.fastq.gz -o S1.clean.fq.gz -w 8 -h S1.fastp.html -j S1.fastp.json
 | `-U --umi_loc read1 --umi_len 8` | 關 | 把 UMI 從序列移到 read 名稱，供下游依 UMI 去重 |
 | `-w` | 3 | 執行緒數 |
 
-> polyG 的成因見 [Illumina 2-color 化學](../../genomics/sequencing-techniques/illumina-color-chemistry.md)。
+> polyG 的成因見 [Illumina 2-color 化學](../../genomics/sequencing-techniques/sequencing-platforms.md#illumina-2-channel-化學與-polyg)。
 
 ## 報告重點
 

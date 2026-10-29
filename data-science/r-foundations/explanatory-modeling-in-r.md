@@ -45,7 +45,7 @@ ggplot(evals, aes(age, score)) +
 model.matrix(~ condition + batch, data = coldata)   # 看 formula 實際產生的設計矩陣
 ```
 
-`model.matrix()` 就是 DESeq2 / limma 的 `design` 背後的東西，見 [limma](../../biology/genomics/sequencing-and-analysis/workflows/limma-differential-expression.md)。
+`model.matrix()` 就是 DESeq2 / limma 的 `design` 背後的東西，見 [limma](../../biology/genomics/workflows/limma-differential-expression.md)。
 
 ## 線性模型 `lm()`
 

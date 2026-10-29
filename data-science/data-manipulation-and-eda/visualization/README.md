@@ -36,7 +36,7 @@
 | 兩個連續變數 | scatter | n 很大用 hexbin / 2D density |
 | 時間趨勢 | line | rolling mean、small multiples |
 | 多變數關係 | pairplot、相關 heatmap | PCA 圖、clustermap |
-| 差異表現結果 | volcano plot、MA plot | 見 [RNA-seq 對比與視覺化](../../../biology/genomics/sequencing-and-analysis/workflows/rna-seq/08-contrasts-testing-and-visualization.md) |
+| 差異表現結果 | volcano plot、MA plot | 見 [RNA-seq 對比與視覺化](../../../biology/genomics/workflows/rna-seq/08-contrasts-testing-and-visualization.md) |
 
 | 相關 | 連結 |
 | --- | --- |

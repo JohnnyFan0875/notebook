@@ -76,8 +76,8 @@
 
 - [x] `genomics/ngs-qc/base-quality.md` + `quality-score.md` → `base-quality-scores.md`
 - [ ] `genomics/ngs-qc/vqsr.md` → 併入新的 `genomics/workflows/variant-calling.md`（Phase 3 批次 5 補全）
-- [ ] `liquid-biopsy/cfdna-ctc.md` + `cfdna-ctdna.md` → `genomics/sequencing-techniques/liquid-biopsy.md`
-- [ ] `color-chemistry.md`、`enseqlopedia.md` → 新的 `genomics/sequencing-techniques/sequencing-platforms.md`
+- [x] `liquid-biopsy/cfdna-ctc.md` + `cfdna-ctdna.md` → `genomics/sequencing-techniques/liquid-biopsy.md`
+- [x] `color-chemistry.md`、`enseqlopedia.md` → 新的 `genomics/sequencing-techniques/sequencing-platforms.md`
 - [ ] `cancer-genomics/mutational-signatures/` 3 篇 → `mutational-signatures.md`
 - [ ] `workflows/rnaseq-differential-expression-with-deseq2.md` → 獨特內容（size factors、vst / rlog、`lfcShrink`、常見錯誤）併入 `rna-seq/06`、`07`；更新 data-science 的 2 個連入與 `#pca-for-sample-structure` anchor
 - [x] `genomics/reference-data/`：7 個 annotation / FASTA 空殼 + `download-exon-from-fasta.md` → `reference-genomes.md`（UCSC / Ensembl / NCBI 版本、chr 命名、下載）與 `gene-annotations.md`（GTF / GFF、GENCODE、RefSeq、refGene）；`ncbi-reference-standard.md`（GIAB）→ `genomics/assay-validation/reference-standard.md`；`ena.md` → `raw-data-repositories.md`（SRA / ENA / GEO）
@@ -92,7 +92,7 @@
 
 - [x] **批次 1　bioinformatics-tools**（約 18 篇）：ngs-tools 依任務整理（「想做 X → 指令」）、bioconductor、primer-design（README 放設計準則表）、visualization；空殼工具補用途與替代方案
 - [x] **批次 2　genomics 基礎**（約 16 篇）：`file-formats/`（補 FASTA、GTF/GFF）、`reference-data/`、`ngs-qc/`（補圖：Phred 分數、覆蓋度分布、GC bias）
-- [ ] **批次 3　定序技術與驗證**（約 10 篇）：新增 `sequencing-platforms.md`（Illumina / ONT / PacBio、錯誤型態 → QC 指標）、chip-seq、liquid-biopsy、targeted-panels、single-cell（README 補 scRNA-seq 流程，連 data-science 的 AnnData / scanpy）、`assay-validation/`
+- [x] **批次 3　定序技術與驗證**（約 10 篇）：新增 `sequencing-platforms.md`（Illumina / ONT / PacBio、錯誤型態 → QC 指標）、chip-seq、liquid-biopsy、targeted-panels、single-cell（README 補 scRNA-seq 流程，連 data-science 的 AnnData / scanpy）、`assay-validation/`
 - [ ] **批次 4　RNA-seq**（12 篇）：`rna-seq/` 系列 + `limma-differential-expression.md`；移除寫死路徑；資料與圖保留在 `data/`、`src/`
 - [ ] **批次 5　變異呼叫、全基因體分析、癌症基因體**（約 12 篇）：新增 `workflows/variant-calling.md`（比對 → 去重 → BQSR → HaplotypeCaller / Mutect2 → VQSR / hard filter → VEP）；GWAS / QTL / colocalization；TCGA / GDC、mutational signatures、NCCN
 - [ ] **批次 6　genetics 資料庫 I**（約 17 篇）：gene、population-frequency（gnomAD、TaiwanGenomes、DGV…）、functional-expression、pharmacogenomics（PharmGKB + CPIC）
