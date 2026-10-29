@@ -1,8 +1,10 @@
-# Reference Genome, Alignment, BAM, and Alignment QC
+[分析流程](../README.md) › [RNA-seq](README.md) › 03 比對
 
-本章目的：理解 reference genome/annotation 的版本一致性，使用 STAR 或 HISAT2 做 splice-aware alignment，處理 SAM/BAM/CRAM，並判讀 alignment QC。
+# 參考基因組、比對與 BAM QC (Reference, Alignment & BAM QC)
 
-## Reference Genome and Annotation
+理解 reference genome / annotation 的版本一致性，使用 STAR 或 HISAT2 做 splice-aware alignment，處理 SAM/BAM/CRAM，並判讀 alignment QC。
+
+## 參考基因組與註解
 
 輸入資料：
 
@@ -31,9 +33,9 @@ gene
     exon 3
 ```
 
-Warning: FASTA 與 GTF 版本不一致會造成 STAR index junction 錯誤、featureCounts assignment 低、tx2gene mapping 不完整，或 `chr` 命名不相容。
+> **注意**：FASTA 與 GTF 版本不一致會造成 STAR index junction 錯誤、featureCounts assignment 低、tx2gene mapping 不完整，或 `chr` 命名不相容。該下載哪個 FASTA / GTF 見 [參考基因組](../../reference-data/reference-genomes.md) 與 [基因註解](../../reference-data/gene-annotations.md)；格式見 [GTF / GFF3](../../file-formats/gtf-gff.md)。
 
-## Splice-aware Alignment
+## 剪接感知比對 (Splice-aware Alignment)
 
 RNA-seq reads 可能跨越 exon-exon junction，因此 aligner 必須允許 read 分段對到基因組不同 exon。**Splice-aware alignment** 會辨識 intron gap、canonical splice site（常見 GT-AG、GC-AG、AT-AC）、exon-exon junction 與 soft clipping。
 
@@ -50,7 +52,7 @@ RNA-seq reads 可能跨越 exon-exon junction，因此 aligner 必須允許 read
 
 STAR 使用 seed search 加上 stitching，速度快、junction detection 強，常用於 mammalian RNA-seq。它記憶體需求高，human genome index 通常需要數十 GB RAM。
 
-### Build Index
+### 建立索引
 
 ```bash
 READ_LENGTH=101 THREADS=16 \
@@ -68,7 +70,7 @@ bash scripts/star_alignment.sh reference/genome.fa reference/genes.gtf data/trim
 | `--quantMode GeneCounts` | 產生 STAR GeneCounts，適合快速檢查但 featureCounts 更彈性 |
 | `--twopassMode Basic` | first pass 找 junction，second pass 使用 novel junction 改善 mapping |
 
-### Single-end Example
+### 單端
 
 ```bash
 STAR --runThreadN 8 \
@@ -80,7 +82,7 @@ STAR --runThreadN 8 \
   --quantMode GeneCounts
 ```
 
-### Paired-end Example
+### 雙端
 
 ```bash
 STAR --runThreadN 8 \
@@ -147,13 +149,12 @@ hisat2 -p 8 --dta -x results/03_hisat2/index/genome \
 hisat2 -p 8 --dta -x results/03_hisat2/index/genome \
   -1 sample_R1.fastq.gz -2 sample_R2.fastq.gz \
   2> results/03_hisat2/logs/sample.summary.txt |
-  samtools view -bS - |
   samtools sort -o results/03_hisat2/bam/sample.sorted.bam -
 ```
 
 HISAT2 summary 會列出 overall alignment rate、concordantly aligned pairs、discordantly aligned pairs、multi-mapping reads。若 paired-end concordance 很低，需檢查 insert size、R1/R2 是否交換、library orientation 或樣本污染。
 
-## STAR, HISAT2, Salmon, and kallisto Comparison
+## STAR、HISAT2、Salmon、kallisto 比較
 
 | Feature | STAR | HISAT2 | Salmon | kallisto |
 | --- | --- | --- | --- | --- |
@@ -171,9 +172,9 @@ HISAT2 summary 會列出 overall alignment rate、concordantly aligned pairs、d
 | DE analysis | gene counts into edgeR/DESeq2/limma | gene counts into edgeR/DESeq2/limma | tximport into edgeR/DESeq2/limma | tximport into edgeR/DESeq2/limma |
 | Main limitation | RAM and storage | sometimes lower junction sensitivity than STAR | depends on transcriptome annotation | less flexible bias modeling than Salmon |
 
-Key point: alignment 與 pseudoalignment 不一定能互相取代。若後續要看 BAM、junction、fusion、variant 或 novel transcript，選 STAR/HISAT2；若主要是 known transcript/gene abundance 與 DE，Salmon/kallisto 通常更快。
+> **重點**：alignment 與 pseudoalignment 不一定能互相取代。若後續要看 BAM、junction、fusion、variant 或 novel transcript，選 STAR/HISAT2；若主要是 known transcript/gene abundance 與 DE，Salmon/kallisto 通常更快。
 
-## BAM Processing
+## BAM 處理
 
 SAM 是文字格式，BAM 是壓縮二進位格式，CRAM 是 reference-based 壓縮格式。大多數 downstream tools 使用 coordinate-sorted BAM 加上 BAM index。
 
@@ -195,9 +196,9 @@ samtools idxstats sample.sorted.bam > sample.idxstats.txt
 samtools view -H sample.sorted.bam | head
 ```
 
-SAM flag 會描述 paired-end 狀態、proper pair、unmapped mate、reverse strand、first/second in pair、secondary alignment、supplementary alignment 等。Primary alignment 是主要對齊；secondary 常見於 multi-mapping；supplementary 常見於 split alignment、fusion 或 structural variation。
+FLAG、CIGAR（RNA-seq 的 `N` 代表跨越 intron）與 primary / secondary / supplementary 的意義見 [SAM / BAM / CRAM](../../file-formats/bam.md)；`flagstat` 判讀見 [samtools](../../../bioinformatics-tools/ngs-tools/samtools.md#讀懂-flagstat)。MAPQ 在 STAR（255 = 唯一）與 HISAT2 的刻度不同，見 [比對品質](../../ngs-qc/mapping-quality.md)。
 
-## Alignment QC
+## 比對 QC (Alignment QC)
 
 完整 script：
 

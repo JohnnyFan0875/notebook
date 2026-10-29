@@ -104,7 +104,7 @@ plt.show()
 | 依**生物條件**與**批次**分別上色 | PC1 若對應批次而非處理，先處理 [批次效應](../experimental-design/confounding-bias.md) |
 | 檢查離群樣本 | 遠離其他樣本的點可能是品質問題或標籤錯誤 |
 
-DESeq2 的 `vst()` + `plotPCA()` 見 [DESeq2 workflow](../../../biology/genomics/workflows/rnaseq-differential-expression-with-deseq2.md#pca-for-sample-structure)；GWAS / QTL 則用 genotype PCs 當共變數校正族群結構（[QTL mapping](../../../biology/genomics/genome-wide-analysis/qtl-analysis-and-mapping.md#相關統計方法)）。
+DESeq2 的 `vst()` + `plotPCA()` 見 [DESeq2 workflow](../../../biology/genomics/workflows/rna-seq/06-exploratory-design-and-count-models.md#分布相關pca-與距離)；GWAS / QTL 則用 genotype PCs 當共變數校正族群結構（[QTL mapping](../../../biology/genomics/genome-wide-analysis/qtl-analysis-and-mapping.md#相關統計方法)）。
 
 > 單細胞分析中，PCA（約 30–50 個成分）是 t-SNE / UMAP 與分群之前的標準步驟。非線性結構 PCA 抓不到，見 [ML: t-SNE](../../machine-learning/unsupervised-learning/dimensionality-reduction/tsne.md)。
 

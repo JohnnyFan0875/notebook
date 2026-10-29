@@ -21,7 +21,7 @@ design <- model.matrix(~ 0 + group, data = metadata)
 colnames(design) <- sub("^group", "", colnames(design))
 y <- DGEList(counts = counts)
 y <- y[filterByExpr(y, design), , keep.lib.sizes = FALSE]
-y <- calcNormFactors(y)
+y <- normLibSizes(y)
 v <- voom(y, design, plot = TRUE)
 fit <- lmFit(v, design)
 contrast <- makeContrasts(treated - control, levels = design)

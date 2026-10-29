@@ -1,10 +1,12 @@
-# Gene Annotation and Functional Enrichment
+[分析流程](../README.md) › [RNA-seq](README.md) › 09 富集分析
 
-本章目的：將 gene ID 轉換為 gene symbol、Entrez ID 等可解讀 annotation，並使用 ORA/GSEA 解讀差異表現基因的 pathway 與 biological process。
+# 基因註解與功能富集 (Annotation & Functional Enrichment)
+
+將 gene ID 轉換為 gene symbol、Entrez ID 等可解讀 annotation，並使用 ORA/GSEA 解讀差異表現基因的 pathway 與 biological process。
 
 本節使用模擬資料示範分析流程，結果不代表真實生物學研究發現。
 
-## Gene Annotation
+## 基因註解
 
 RNA-seq 結果常以 Ensembl gene ID 為 row names，但報告與 enrichment 常需要 gene symbol 或 Entrez ID。
 
@@ -23,7 +25,7 @@ RNA-seq 結果常以 Ensembl gene ID 為 row names，但報告與 enrichment 常
 - Duplicate symbol：不同 Ensembl genes 可能共享 symbol，heatmap row label 會混淆。
 - Annotation database version：不同版本會造成結果差異。
 
-### AnnotationDbi Example
+### AnnotationDbi
 
 ```r
 library(AnnotationDbi)
@@ -45,7 +47,7 @@ annotation <- data.frame(
 )
 ```
 
-### biomaRt Example
+### biomaRt
 
 ```r
 library(biomaRt)
@@ -59,9 +61,9 @@ annot <- getBM(
 )
 ```
 
-Tip: 對 downstream DE table，保留 unmapped genes 比直接丟掉更安全。可新增 `gene_symbol` 欄位，但主鍵仍用 stable gene ID。
+> **提示**：對 downstream DE table，保留 unmapped genes 比直接丟掉更安全。可新增 `gene_symbol` 欄位，但主鍵仍用 stable gene ID。
 
-## Functional Enrichment
+## 功能富集分析 (Functional Enrichment)
 
 Functional enrichment 把 gene-level 結果轉成 biological process、pathway 或 gene set 層級。
 
@@ -87,9 +89,11 @@ Functional enrichment 把 gene-level 結果轉成 biological process、pathway �
 | Redundant pathways | GO term 彼此重疊，需要 simplify/emapplot 輔助 |
 | Directionality | ORA 對上調/下調需分開做；GSEA 可保留方向 |
 
-Warning: ORA 的背景集合不應任意使用全基因組。正確背景通常是「通過 filtering 且實際進入 DE model 的 genes」，否則會因可偵測性偏差而產生錯誤富集。
+> **注意**：ORA 的背景集合不應任意使用全基因組。正確背景通常是「通過 filtering 且實際進入 DE model 的 genes」，否則會因可偵測性偏差而產生錯誤富集。
 
 ## clusterProfiler ORA
+
+> 本節的 ORA 與 GSEA 程式碼以 clusterProfiler 4.20 在 airway 資料集（DESeq2 結果）上實跑；GSEA 的排序建議用 `stat`（Wald 統計量）而不只用 logFC，並設定 `seed = TRUE` 讓置換結果可重現。
 
 ```r
 library(clusterProfiler)

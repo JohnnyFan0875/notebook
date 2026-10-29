@@ -1,10 +1,12 @@
-# Count Matrix, Filtering, Normalization, and TMM
+[分析流程](../README.md) › [RNA-seq](README.md) › 05 標準化
 
-本章目的：檢查 count matrix 與 sample metadata 是否對齊，過濾低表現基因，並清楚區分 RNA-seq 中不同 normalization 方法的用途。TMM 是本章核心範例。
+# Count matrix、過濾與標準化 (Filtering & Normalization)
+
+檢查 count matrix 與 sample metadata 是否對齊，過濾低表現基因，並清楚區分 RNA-seq 中不同 normalization 方法的用途。TMM 是本章核心範例。
 
 本節使用模擬資料示範分析流程，結果不代表真實生物學研究發現。
 
-## Count Matrix and Metadata Checks
+## Count matrix 與 metadata 檢查
 
 輸入資料：
 
@@ -19,9 +21,9 @@ library(readr)
 counts_tbl <- read_csv("data/simulated_gene_counts.csv", show_col_types = FALSE)
 metadata <- read_csv("data/sample_metadata.csv", show_col_types = FALSE)
 
-sample_cols <- setdiff(names(counts_tbl), c("gene_symbol", "length"))
+sample_cols <- setdiff(names(counts_tbl), c("gene_id", "gene_symbol", "length"))
 count_mat <- as.matrix(counts_tbl[, sample_cols])
-rownames(count_mat) <- counts_tbl[[1]]
+rownames(count_mat) <- counts_tbl$gene_id
 
 stopifnot(!anyDuplicated(metadata$sample_id))
 stopifnot(setequal(colnames(count_mat), metadata$sample_id))
@@ -40,11 +42,11 @@ qr(design)$rank == ncol(design)
 Rscript scripts/metadata_design_checks.R data/simulated_gene_counts.csv data/sample_metadata.csv
 ```
 
-Warning: metadata 順序錯誤是 RNA-seq 中最危險的錯誤之一，因為程式可能不報錯，但 differential expression 的 group label 已經套到錯的 sample。
+> **注意**：metadata 順序錯誤是 RNA-seq 中最危險的錯誤之一，因為程式可能不報錯，但 differential expression 的 group label 已經套到錯的 sample。
 
-## Low-expression Filtering
+## 低表現基因過濾 (Low-expression Filtering)
 
-分析目的：移除幾乎沒有資訊的低表現基因，降低 multiple testing burden，改善 mean-variance modeling。
+移除幾乎沒有資訊的低表現基因，降低 multiple testing burden，改善 mean-variance modeling。
 
 低表現基因常造成：
 
@@ -82,7 +84,7 @@ y <- y[keep, , keep.lib.sizes = FALSE]
 
 圖 2. CPM filtering 後的 log-CPM density。過濾後低表現尖峰會減少，但不應把具有實驗設計意義的小型 gene set 全部過濾掉。
 
-## Normalization Concepts
+## 標準化的概念
 
 RNA-seq normalization 不是單一問題：
 
@@ -95,9 +97,9 @@ RNA-seq normalization 不是單一問題：
 | Within-sample normalization | 同一樣本內比較不同 gene/transcript | TPM |
 | Statistical model offset | 在 GLM 中校正 exposure/scale | edgeR effective library size、DESeq2 size factors |
 
-Key point: TPM 很適合描述同一樣本內 transcript composition，但不是 edgeR/DESeq2 的 raw count input。TMM/DESeq2 size factor 是 differential expression 模型的 between-sample normalization，不是 gene length correction。
+> **重點**：TPM 很適合描述同一樣本內 transcript composition，但不是 edgeR/DESeq2 的 raw count input。TMM/DESeq2 size factor 是 differential expression 模型的 between-sample normalization，不是 gene length correction。
 
-## Normalization Methods
+## 標準化方法比較
 
 | Method | Library size | Gene length | Within-sample comparison | Between-sample DE | Direct input to edgeR/DESeq2 | Common misuse |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -112,11 +114,11 @@ Key point: TPM 很適合描述同一樣本內 transcript composition，但不是
 | Upper-quartile | robust library scaling | no | no | sometimes | model-specific | 忽略 composition extremes |
 | Quantile normalization | forces distributions equal | no | sometimes microarray | usually not count-model default | no | 破壞 count mean-variance |
 
-## TMM Normalization
+## TMM 標準化
 
 TMM 是 **Trimmed Mean of M-values**。它處理的核心問題是 composition bias：如果少數基因在某個樣本中極高表現，總 library size 變大，其他大多數基因即使 absolute expression 沒變，單純 CPM 也會看起來下降。
 
-### Core Terms
+### 名詞
 
 | Term | Meaning |
 | --- | --- |
@@ -140,7 +142,7 @@ $$
 
 其中 \(Y_{gk}\) 是 gene \(g\) 在 sample \(k\) 的 count，\(N_k\) 是 library size，\(r\) 是 reference sample。TMM 對極端 \(M\) 與 \(A\) 做 trimming 後，計算加權平均並轉成 normalization factor。
 
-### R Example
+### R 範例
 
 ```r
 library(edgeR)
@@ -149,7 +151,7 @@ library(readr)
 counts_tbl <- read_csv("data/simulated_gene_counts.csv", show_col_types = FALSE)
 metadata <- read_csv("data/sample_metadata.csv", show_col_types = FALSE)
 counts <- as.matrix(counts_tbl[, metadata$sample_id])
-rownames(counts) <- counts_tbl[[1]]
+rownames(counts) <- counts_tbl$gene_id
 
 group <- factor(metadata$group)
 design <- model.matrix(~ group)
@@ -157,7 +159,7 @@ design <- model.matrix(~ group)
 y <- DGEList(counts = counts, group = group)
 keep <- filterByExpr(y, design)
 y <- y[keep, , keep.lib.sizes = FALSE]
-y <- calcNormFactors(y, method = "TMM")
+y <- normLibSizes(y, method = "TMM")       # edgeR < 4.0 用 calcNormFactors()
 
 y$samples[, c("lib.size", "norm.factors")]
 y$samples$effective_lib_size <- y$samples$lib.size * y$samples$norm.factors
@@ -165,7 +167,7 @@ y$samples$effective_lib_size <- y$samples$lib.size * y$samples$norm.factors
 log_cpm <- cpm(y, log = TRUE, prior.count = 2)
 ```
 
-`normLibSizes()` 是 edgeR 新版本中用來 normalize library sizes 的介面；`calcNormFactors()` 仍常見於既有教學與 workflow。TMMwsp 是 TMM 的 variant，對 sparse matrix 或 zero-heavy data 更穩定，會用 singleton positive counts 提供更多資訊。
+edgeR 4.0 起 `calcNormFactors()` 改名為 `normLibSizes()`（舊名仍可用但會提示）。TMMwsp 是 TMM 的變體，對稀疏、零值多的資料較穩定，會利用只在單一樣本為正的 counts。
 
 ![TMM library size comparison](src/tmm-library-size-comparison.png)
 

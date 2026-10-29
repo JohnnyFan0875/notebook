@@ -1,8 +1,10 @@
-# Reproducibility and Troubleshooting
+[分析流程](../README.md) › [RNA-seq](README.md) › 10 可重現性
 
-本章目的：整理 RNA-seq project 的環境、路徑、版本、log 與常見錯誤。這些內容不是形式問題，而是 RNA-seq 結果能否重現與被正確解讀的基礎。
+# 可重現性與疑難排解 (Reproducibility & Troubleshooting)
 
-## Reproducibility
+整理 RNA-seq project 的環境、路徑、版本、log 與常見錯誤。這些內容不是形式問題，而是 RNA-seq 結果能否重現與被正確解讀的基礎。
+
+## 可重現性
 
 建議專案目錄：
 
@@ -64,7 +66,7 @@ renv::snapshot()
 
 Workflow manager 的價值是把步驟依賴、版本、重跑條件與平行化管理起來；但本教學故意以 Bash/R/Python 分段呈現，讓讀者先理解每個分析步驟本身。
 
-## Troubleshooting Table
+## 疑難排解
 
 | Problem | Symptom | Likely cause | Check / Fix |
 | --- | --- | --- | --- |
@@ -87,37 +89,17 @@ Workflow manager 的價值是把步驟依賴、版本、重跑條件與平行化
 | ORA background 錯 | pathway 過度顯著 | 用全基因組當 universe | 使用實際 tested genes |
 | Technical replicate 當 biological | p-value 過小 | pseudo-replication | 合併 technical replicate 或正確建模 |
 
-## What Was Verified Here
+## 驗證狀態
 
-已實際執行：
+各腳本的實跑狀態見 [README：驗證狀態](README.md#驗證狀態)。
 
-```bash
-MPLCONFIGDIR=/tmp/matplotlib-rnaseq \
-python biology/genomics/sequencing-and-analysis/workflows/rna-seq/scripts/simulate_rnaseq_demo.py
-```
-
-已產生：
-
-- `data/simulated_gene_counts.csv`
-- `data/sample_metadata.csv`
-- `data/simulated_library_qc.csv`
-- `data/simulated_de_results.csv`
-- `data/simulated_enrichment_results.csv`
-- `src/*.png`
-
-未在目前環境執行：
-
-- Bash scripts：需要 FastQC、MultiQC、fastp、STAR、HISAT2、Salmon、kallisto、samtools、featureCounts 與真實 reference。
-- R scripts：目前環境找不到 `Rscript`，且需要 Bioconductor packages。
-- 真實 alignment/quantification：需要 reference FASTA/GTF/transcriptome 與足夠運算資源。
-
-## Re-run Examples
+## 重跑範例
 
 ```bash
-cd /home/johnny_fan/project/notebook/biology/genomics/sequencing-and-analysis/workflows/rna-seq
+cd biology/genomics/workflows/rna-seq          # 從 notebook 根目錄
 
 # 重新產生本教學的模擬資料與圖。
-MPLCONFIGDIR=/tmp/matplotlib-rnaseq python scripts/simulate_rnaseq_demo.py --outdir .
+python scripts/simulate_rnaseq_demo.py --outdir .
 
 # 有真實 FASTQ 時。
 bash scripts/fastq_qc.sh data/raw results/01_fastq_qc
@@ -128,7 +110,7 @@ THREADS=12 READ_LENGTH=101 bash scripts/star_alignment.sh reference/genome.fa re
 bash scripts/featurecounts_gene_counting.sh reference/genes.gtf results/03_star/bam results/06_featurecounts
 ```
 
-後續可擴充方向：
+可再擴充的方向：
 
 - 加入真實公開資料集的 end-to-end 範例。
 - 補 single-end、stranded/unstranded 三種 library 的對照結果。

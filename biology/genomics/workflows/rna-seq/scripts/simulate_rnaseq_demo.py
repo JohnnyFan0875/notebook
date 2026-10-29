@@ -51,7 +51,7 @@ def savefig(path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--outdir", default="biology/genomics/sequencing-and-analysis/workflows/rna-seq")
+    parser.add_argument("--outdir", default="biology/genomics/workflows/rna-seq")
     parser.add_argument("--seed", type=int, default=20260727)
     args = parser.parse_args()
 
@@ -94,7 +94,7 @@ def main() -> None:
     count_df = pd.DataFrame(counts, index=genes, columns=samples)
     count_df.insert(0, "gene_symbol", symbols)
     count_df.insert(1, "length", gene_length)
-    count_df.to_csv(data_dir / "simulated_gene_counts.csv")
+    count_df.to_csv(data_dir / "simulated_gene_counts.csv", index_label="gene_id")
 
     metadata = pd.DataFrame({
         "sample_id": samples,

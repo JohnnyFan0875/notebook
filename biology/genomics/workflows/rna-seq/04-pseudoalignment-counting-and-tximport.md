@@ -1,8 +1,10 @@
-# Pseudoalignment, Read Counting, and tximport
+[分析流程](../README.md) › [RNA-seq](README.md) › 04 定量
 
-本章目的：比較 Salmon/kallisto 的 transcript-level quantification，說明 gene-level read counting，以及如何用 tximport 將 transcript abundance 彙整到 gene-level differential expression 所需資料。
+# 偽比對、計數與 tximport (Pseudoalignment, Counting & tximport)
 
-## Lightweight Mapping Concepts
+比較 Salmon / kallisto 的 transcript-level quantification，說明 gene-level read counting，以及如何用 tximport 將 transcript abundance 彙整到 gene-level differential expression 所需資料。
+
+## 輕量比對的概念
 
 **Pseudoalignment** 不計算完整 base-by-base genomic alignment，而是判斷 read 與哪些 transcript 相容。**Quasi-mapping** 或 selective alignment 則在 transcriptome space 中加入更精細的 mapping validation。這些方法通常比 genome alignment 快，輸出 transcript-level abundance。
 
@@ -18,7 +20,7 @@
 
 Salmon 支援 quasi-mapping、selective alignment、bias correction 與 automatic library type detection。常見輸出是每個 sample 目錄下的 `quant.sf`。
 
-### Build Index
+### 建立索引
 
 ```bash
 salmon index \
@@ -29,7 +31,7 @@ salmon index \
 
 Decoy-aware transcriptome 會把 genome decoy sequence 加入 index，減少 reads 錯誤吸附到 transcriptome。真實專案中建議用 Salmon 官方建議流程建立 gentrome/decoy index，尤其是 vertebrate genome。
 
-### Paired-end Quantification
+### 雙端定量
 
 ```bash
 salmon quant \
@@ -44,7 +46,7 @@ salmon quant \
   -o results/04_salmon/quant/sample
 ```
 
-### Single-end Quantification
+### 單端定量
 
 ```bash
 salmon quant \
@@ -108,9 +110,9 @@ kallisto quant \
   sample_R1.fastq.gz
 ```
 
-Warning: 單端 fragment length 設錯會影響 effective length 與 abundance，尤其是 transcript-level interpretation。
+> **注意**：單端 fragment length 設錯會影響 effective length 與 abundance，尤其是 transcript-level interpretation。
 
-## Gene-level Read Counting
+## 基因層級計數 (Gene-level Counting)
 
 若使用 STAR/HISAT2 產生 BAM，常用 featureCounts 或 HTSeq-count 產生 gene-level count matrix。
 

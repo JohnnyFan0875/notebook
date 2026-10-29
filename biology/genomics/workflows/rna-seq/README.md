@@ -1,65 +1,49 @@
-# RNA-seq Analysis
+[基因體學](../../README.md) › [分析流程](../README.md) › RNA-seq
 
-這套筆記是一份從原始 FASTQ 到 differential expression 與 functional enrichment 的 RNA-seq 教學。內容參考 `/home/johnny_fan/project/rna_seq_pipeline` 的工具選擇、參數習慣、測試資料命名與輸出型態，但教學本身不以 Nextflow 為主軸，也不要求讀者透過 workflow manager 執行。
+# RNA-seq 分析 (Bulk RNA-seq Analysis)
 
-本教學的核心問題是：如何讓具有基礎生物資訊背景的讀者，從 reads、reference、quantification、count matrix、normalization、statistical model 到 biological interpretation，逐步知道每一步在做什麼、為什麼做、如何檢查結果。
+從原始 FASTQ 到差異表現與功能富集的 bulk RNA-seq 教學：每一步做什麼、為什麼、怎麼檢查結果。工具選擇與參數參考一套實際使用的 RNA-seq pipeline，但教學本身以 Bash / R / Python 分段呈現，不依賴工作流引擎。單細胞見 [單細胞 RNA-seq](../../sequencing-techniques/single-cell-rna-seq/README.md)。
 
-**使用資料：**
+## 建議順序
 
-- FASTQ、FastQC、fastp 與 Salmon 輸出格式說明參考 RNA-seq pipeline 的小型測試專案。
-- `data/` 與 `src/` 中的 count matrix、metadata、DE result、enrichment result 與 PNG 圖檔由 `scripts/simulate_rnaseq_demo.py` 產生。
-- 本教學的模擬資料僅用於展示分析流程，結果不代表真實生物學研究發現。
+| 章 | 內容 | 回答的問題 |
+| --- | --- | --- |
+| [01 概觀](01-rnaseq-overview.md) | bulk vs 單細胞、表現量層級、library 類型、重複、count matrix | RNA-seq 能回答什麼？ |
+| [02 FASTQ QC](02-fastq-quality-control-and-trimming.md) | 完整性檢查、FastQC / MultiQC、fastp 修剪 | 原始資料能用嗎？要不要修剪？ |
+| [03 比對](03-reference-alignment-and-bam-qc.md) | 參考版本、STAR / HISAT2、BAM 處理、比對 QC | reads 對到哪裡？比對品質如何？ |
+| [04 定量](04-pseudoalignment-counting-and-tximport.md) | Salmon / kallisto、featureCounts、tximport | 怎麼得到每個基因的 counts？ |
+| [05 標準化](05-count-matrix-filtering-normalization.md) | metadata 對齊、低表現過濾、CPM / TPM / TMM / median-of-ratios | 樣本間怎麼比較？ |
+| [06 EDA 與設計](06-exploratory-design-and-count-models.md) | PCA / 相關熱圖、設計矩陣、負二項模型 | 樣本結構合理嗎？模型怎麼設？ |
+| [07 差異表現](07-differential-expression.md) | edgeR、DESeq2、limma-voom 與比較 | 哪些基因表現改變？ |
+| [08 對比與視覺化](08-contrasts-testing-and-visualization.md) | 對比方向、交互作用、FDR、MA / volcano / heatmap | 結果怎麼解讀與呈現？ |
+| [09 富集分析](09-annotation-and-functional-enrichment.md) | ID 轉換、ORA、GSEA（clusterProfiler） | 這些基因代表哪些生物過程？ |
+| [10 可重現性](10-reproducibility-and-troubleshooting.md) | 環境、版本、常見錯誤排除 | 結果能被重現嗎？出錯怎麼查？ |
 
-## Suggested Reading Order
-
-1. [RNA-seq Overview](01-rnaseq-overview.md)
-2. [FASTQ, Quality Control, and Trimming](02-fastq-quality-control-and-trimming.md)
-3. [Reference Genome, Alignment, BAM, and Alignment QC](03-reference-alignment-and-bam-qc.md)
-4. [Pseudoalignment, Read Counting, and tximport](04-pseudoalignment-counting-and-tximport.md)
-5. [Count Matrix, Filtering, Normalization, and TMM](05-count-matrix-filtering-normalization.md)
-6. [Exploratory Analysis, Experimental Design, and Count Models](06-exploratory-design-and-count-models.md)
-7. [Differential Expression: edgeR, DESeq2, and limma-voom](07-differential-expression.md)
-8. [Contrasts, Multiple Testing, and DE Visualization](08-contrasts-testing-and-visualization.md)
-9. [Gene Annotation and Functional Enrichment](09-annotation-and-functional-enrichment.md)
-10. [Reproducibility and Troubleshooting](10-reproducibility-and-troubleshooting.md)
-
-## Directory Layout
+## 資料夾內容
 
 ```text
 rna-seq/
-├── index.md
-├── 01-rnaseq-overview.md
-├── 02-fastq-quality-control-and-trimming.md
-├── 03-reference-alignment-and-bam-qc.md
-├── 04-pseudoalignment-counting-and-tximport.md
-├── 05-count-matrix-filtering-normalization.md
-├── 06-exploratory-design-and-count-models.md
-├── 07-differential-expression.md
-├── 08-contrasts-testing-and-visualization.md
-├── 09-annotation-and-functional-enrichment.md
-├── 10-reproducibility-and-troubleshooting.md
-├── data/
-├── scripts/
-└── src/
+├── README.md、01–10 章
+├── data/      # 模擬的 count matrix、metadata、DE 與富集結果
+├── scripts/   # Bash（QC、修剪、比對、定量）、R（edgeR、DESeq2、limma-voom、tximport、富集）、Python（模擬資料與圖）
+└── src/       # 各章的圖
 ```
 
-## Reproduce the Demo Data and Figures
+`data/` 與 `src/` 的資料和圖由 `scripts/simulate_rnaseq_demo.py` 產生，只用來示範流程，**不代表真實生物學發現**。
 
 ```bash
-cd /home/johnny_fan/project/notebook
-MPLCONFIGDIR=/tmp/matplotlib-rnaseq \
-python biology/genomics/sequencing-and-analysis/workflows/rna-seq/scripts/simulate_rnaseq_demo.py
+# 在 notebook 根目錄執行；需要 numpy、pandas、matplotlib
+python biology/genomics/workflows/rna-seq/scripts/simulate_rnaseq_demo.py \
+  --outdir biology/genomics/workflows/rna-seq
 ```
 
-主要輸出：
+## 驗證狀態
 
-- `data/simulated_gene_counts.csv`
-- `data/sample_metadata.csv`
-- `data/simulated_de_results.csv`
-- `data/simulated_enrichment_results.csv`
-- `src/*.png`
+| 項目 | 狀態 |
+| --- | --- |
+| `simulate_rnaseq_demo.py` | 實跑；固定 seed 可重現相同資料 |
+| `metadata_design_checks.R`、`edger_workflow.R`、`deseq2_workflow.R`、`limma_voom_workflow.R` | 以 R 4.6.1 / Bioconductor 3.23 在模擬資料上實跑 |
+| 09 章的 clusterProfiler 程式碼 | 以 airway 真實資料實跑（模擬資料的基因名無法對應真實基因） |
+| `tximport_to_gene.R`、所有 Bash 腳本 | 未實跑：需要 Salmon 輸出、FASTQ、參考基因組與 STAR / HISAT2 / fastp 等工具；參數已對照官方文件 |
 
-## What Is Executable Here
-
-Python demo script 已在目前環境實際執行並產生圖檔。Bash 與 R scripts 是完整教學腳本，但依賴外部工具或 Bioconductor 套件；目前環境缺少 `Rscript`，因此 R scripts 尚未在本機驗證執行。
-
+相關統計：[GLM 計數模型](../../../../data-science/statistics/regression-analysis/glm-count-models.md)、[多重檢定](../../../../data-science/statistics/inferential-statistics/multiple-testing.md)、[PCA](../../../../data-science/statistics/multivariate-analysis/pca.md)、[批次效應](../../../../data-science/statistics/experimental-design/confounding-bias.md#生資最常見的干擾批次效應-batch-effect)。

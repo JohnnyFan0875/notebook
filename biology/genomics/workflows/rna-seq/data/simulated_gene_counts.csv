@@ -1,4 +1,4 @@
-,gene_symbol,length,ctrl_1,ctrl_2,ctrl_3,treat_1,treat_2,treat_3
+gene_id,gene_symbol,length,ctrl_1,ctrl_2,ctrl_3,treat_1,treat_2,treat_3
 ENSGDEMO000001,GENE0001,1333,39,68,121,155,258,134
 ENSGDEMO000002,GENE0002,4049,256,541,358,918,690,1249
 ENSGDEMO000003,GENE0003,2754,177,51,119,722,716,456

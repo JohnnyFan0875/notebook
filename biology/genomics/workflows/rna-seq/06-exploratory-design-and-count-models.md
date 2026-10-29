@@ -1,10 +1,12 @@
-# Exploratory Analysis, Experimental Design, and Count Models
+[分析流程](../README.md) › [RNA-seq](README.md) › 06 EDA 與設計
 
-本章目的：用樣本層級圖表檢查資料結構，建立正確 design matrix，並理解 RNA-seq count data 為什麼通常需要 negative binomial model，而不是只用 Poisson model。
+# 探索性分析、實驗設計與計數模型 (EDA, Design & Count Models)
+
+用樣本層級圖表檢查資料結構，建立正確 design matrix，並理解 RNA-seq count data 為什麼通常需要 negative binomial model，而不是只用 Poisson model。
 
 本節使用模擬資料示範分析流程，結果不代表真實生物學研究發現。
 
-## Exploratory Data Analysis
+## 探索性分析 (EDA)
 
 EDA 的目標不是直接決定顯著基因，而是檢查：
 
@@ -15,7 +17,7 @@ EDA 的目標不是直接決定顯著基因，而是檢查：
 - batch、sex、age 或其他 covariate 是否主導主要變異。
 - mean-variance trend 是否符合 count data 特性。
 
-### Library Size, Detected Genes, and Zero Proportion
+### Library size、偵測基因數、零值比例
 
 ```r
 library(edgeR)
@@ -24,7 +26,7 @@ library(readr)
 counts_tbl <- read_csv("data/simulated_gene_counts.csv", show_col_types = FALSE)
 metadata <- read_csv("data/sample_metadata.csv", show_col_types = FALSE)
 counts <- as.matrix(counts_tbl[, metadata$sample_id])
-rownames(counts) <- counts_tbl[[1]]
+rownames(counts) <- counts_tbl$gene_id
 
 library_size <- colSums(counts)
 detected <- colSums(counts > 0)
@@ -40,14 +42,14 @@ data.frame(sample = metadata$sample_id, library_size, detected, zero_prop)
 
 圖 2. Detected gene count 與 zero count proportion。這兩個指標常一起看，因為 library size 低、RNA degradation 或 mapping failure 都可能讓 detected genes 下降。
 
-### Distribution, Boxplot, Correlation, PCA, and Distance
+### 分布、相關、PCA 與距離
 
 ```r
 group <- factor(metadata$group)
 design <- model.matrix(~ group)
 y <- DGEList(counts = counts, group = group)
 y <- y[filterByExpr(y, design), , keep.lib.sizes = FALSE]
-y <- calcNormFactors(y)
+y <- normLibSizes(y)
 log_cpm <- cpm(y, log = TRUE, prior.count = 2)
 
 plotMDS(y, col = as.integer(group))
@@ -82,9 +84,28 @@ pca <- prcomp(t(log_cpm), scale. = FALSE)
 
 PCA 的原理、variance explained 與 loading 解讀見 [PCA](../../../../data-science/statistics/multivariate-analysis/pca.md#生資應用基因表現-pca)。
 
-Tip: outlier 不能只靠一張 PCA 排除。應同時檢查 FASTQ QC、mapping QC、gene body coverage、library size、metadata、sample handling record 與是否有合理生物原因。
+### DESeq2 的做法：VST 後再看樣本結構
 
-## Experimental Design
+raw counts 與 normalized counts 的變異會隨平均值增加，直接算距離或 PCA 會被高表現基因主導。DESeq2 用 variance-stabilizing transformation（`vst()`；樣本少時可用較慢的 `rlog()`）讓變異大致與平均無關，**只用於視覺化與分群，不取代 `DESeq()` 的計數模型**。
+
+```r
+library(DESeq2); library(pheatmap)
+dds <- DESeqDataSetFromMatrix(counts, colData = metadata, design = ~ group)
+vsd <- vst(dds, blind = TRUE)                      # blind = TRUE：不看設計，做無偏的 QC
+# 基因數少於約 1,000 時（如本系列的模擬資料）改用 varianceStabilizingTransformation(dds) 或 vst(dds, nsub = 500)
+plotPCA(vsd, intgroup = c("group", "batch"))       # 預設取變異最大的 500 個基因
+pheatmap(cor(assay(vsd)), annotation_col = metadata[, c("group", "batch")])
+```
+
+| 檢查 | 合理 | 要停下來查 |
+| --- | --- | --- |
+| 重複樣本 | 彼此聚在一起 | 某個重複落在另一組 → 可能 sample swap |
+| PC1 / PC2 | 依實驗條件分開 | 依批次、性別、上機日期分開 → 納入設計或檢查干擾 |
+| 相關熱圖 | 組內相關高於組間 | 單一樣本與所有人都低 → 品質問題 |
+
+> **提示**：outlier 不能只靠一張 PCA 排除。應同時檢查 FASTQ QC、mapping QC、gene body coverage、library size、metadata、sample handling record 與是否有合理生物原因。
+
+## 實驗設計 (Experimental Design)
 
 設計矩陣描述每個樣本的 group、batch、covariate 與 pairing。模型只能估計 design 中可以由資料分辨的效應。
 
@@ -102,7 +123,7 @@ Tip: outlier 不能只靠一張 PCA 排除。應同時檢查 FASTQ QC、mapping 
 | Blocking factor | subject、patient 或 batch 造成相關性 |
 | Nested design | 例如 sample nested within patient 或 lane nested within flowcell |
 
-### model.matrix Examples
+### model.matrix 範例
 
 ```r
 metadata$group <- factor(metadata$group, levels = c("control", "treated"))
@@ -137,7 +158,7 @@ qr(design_bad)$rank < ncol(design_bad)
 
 這種情況下，group effect 與 batch effect 沒有辦法由資料分開。把 batch 放進 model 不會 magically 修正 confounding。批次效應與干擾的設計層面見 [干擾與偏誤](../../../../data-science/statistics/experimental-design/confounding-bias.md#生資最常見的干擾批次效應-batch-effect)；paired design 中 subject 當 blocking factor 與 [混合效應模型](../../../../data-science/statistics/regression-analysis/mixed-effects-models.md) 的隨機截距是同一個想法（limma 用 `duplicateCorrelation()`、`dream()` 處理重複量測）。
 
-## Count Models
+## 計數模型 (Count Models)
 
 RNA-seq gene counts 是非負整數，且 variance 通常大於 mean。Poisson distribution 假設：
 
@@ -165,5 +186,5 @@ $$
 | Shrinkage / empirical Bayes | 用全基因資訊穩定 individual gene estimates |
 | Quasi-likelihood | edgeR QL framework，對 gene-level uncertainty 更保守 |
 
-Key point: replicate 數少時，單一 gene 的 dispersion 很難穩定估計，因此 edgeR、DESeq2、limma-voom 都會借用全基因資訊做 shrinkage 或 empirical Bayes。Poisson、過度離散與負二項 GLM 的一般理論見 [GLM 計數模型](../../../../data-science/statistics/regression-analysis/glm-count-models.md#過度離散與負二項迴歸)。
+> **重點**：replicate 數少時，單一 gene 的 dispersion 很難穩定估計，因此 edgeR、DESeq2、limma-voom 都會借用全基因資訊做 shrinkage 或 empirical Bayes。Poisson、過度離散與負二項 GLM 的一般理論見 [GLM 計數模型](../../../../data-science/statistics/regression-analysis/glm-count-models.md#過度離散與負二項迴歸)。
 

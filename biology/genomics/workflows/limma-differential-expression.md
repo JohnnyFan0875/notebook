@@ -1,284 +1,108 @@
-# Differential Expression with limma
+[基因體學](../README.md) › [分析流程](README.md) › limma
 
-`limma` is a Bioconductor workflow for differential expression analysis built around linear models. The important idea is that we fit the same design logic to every gene, then stabilize variance estimates with empirical Bayes shrinkage.
+# limma 差異表現分析 (Differential Expression with limma)
 
-This makes `limma` useful for:
+limma 對每個基因擬合同一個線性模型，再用經驗貝氏 (empirical Bayes) 借用所有基因的資訊穩定變異估計。它源自 microarray，現在也用於 RNA-seq（voom）、蛋白質體、甲基化等連續型資料。**差異表現主要是設計問題**：設計矩陣與對比寫對了，檢定就很直接。RNA-seq 的 voom 用法見 [RNA-seq 07](rna-seq/07-differential-expression.md#limma-voom)。
 
-- two-group comparisons
-- multiple phenotype groups
-- factorial designs
-- interaction effects
-- batch-aware expression analysis
+> 以下程式碼以 limma 3.68 在模擬表現矩陣上驗證 API；`eset` 是 Biobase 的 ExpressionSet（`exprs()` 取矩陣、`pData()` 取樣本資訊），一般矩陣也可直接使用。
 
-## Core Mental Model
+## 流程
 
-At a high level, the workflow is:
-
-1. inspect expression distributions
-2. log-transform if needed
-3. normalize across samples
-4. filter weakly expressed features
-5. encode the study design with a design matrix
-6. define biological questions as contrasts
-7. fit gene-wise linear models
-8. apply empirical Bayes moderation
-9. summarize, rank, and visualize differential signals
-
-The course repeatedly reinforces that differential expression is mostly a design problem. If the design matrix and contrasts correctly encode the biology, the downstream testing becomes much more straightforward.
-
-## Pre-processing
-
-### Inspect Sample Distributions
-
-Before modeling, inspect whether samples have comparable expression distributions:
+```
+檢查分布 → log2 轉換 → 標準化 → 過濾低訊號 → MDS 看樣本結構
+  → 設計矩陣 → 對比 → lmFit → contrasts.fit → eBayes → decideTests / topTable → 視覺化、基因集
+```
 
 ```r
 library(limma)
-plotDensities(eset, legend = FALSE)
+
+# 1. 前處理（microarray）
+plotDensities(eset, legend = FALSE)                       # 樣本分布是否對齊、有無離群樣本
+exprs(eset) <- log2(exprs(eset))                          # 乘法差異 → 加法差異；limma 慣用 log2
+exprs(eset) <- normalizeBetweenArrays(exprs(eset))        # quantile 標準化：讓各樣本分布一致
+eset <- eset[rowMeans(exprs(eset)) > 5, ]                 # 移除接近背景值的探針（閾值依平台）
+
+# 2. 樣本結構
+plotMDS(eset, labels = pData(eset)$treatment, gene.selection = "common")
+
+# 3. 模型
+design <- model.matrix(~ 0 + er, data = pData(eset))      # 無截距：每組一個平均值
+cm <- makeContrasts(status = erpositive - ernegative, levels = design)
+fit  <- lmFit(eset, design)                               # 每個基因的係數
+fit2 <- eBayes(contrasts.fit(fit, contrasts = cm))        # 轉成對比 + 收縮標準誤
+summary(decideTests(fit2))                                # 上調 / 下調 / 不顯著的基因數
+topTable(fit2, coef = "status", number = 10)              # logFC、AveExpr、t、P.Value、adj.P.Val、B
 ```
 
-Density plots are a quick check for:
+| 函式 | 作用 |
+| --- | --- |
+| `lmFit()` | 每個基因估計設計矩陣的係數 |
+| `contrasts.fit()` | 把係數改寫成要比較的對比 |
+| `eBayes()` | 經驗貝氏：每個基因的變異往所有基因的共同趨勢收縮 → moderated t，小樣本也穩定 |
+| `decideTests()` | 依閾值統計各對比的顯著基因數 |
+| `topTable()` | 單一對比的完整結果表（`number = Inf` 取全部） |
 
-- shifts in sample intensity distributions
-- obvious outlier samples
-- whether normalization is still needed
+> quantile 標準化是 microarray 的標準做法，但會破壞 RNA-seq counts 的平均–變異關係，**不要用在 RNA-seq counts 上**；RNA-seq 用 TMM + voom。
 
-### Log Transform
+## 設計矩陣與對比
 
-Expression values are often easier to model on a log scale because multiplicative differences become additive:
+| 寫法 | 係數意義 | 適合 |
+| --- | --- | --- |
+| `~ er` | 截距 = 參考組平均；`erpositive` = 兩組差 | 單純兩組 |
+| `~ 0 + er` | 每組各自的平均 | 自訂多個對比 |
+| `~ 0 + group + batch` | 組平均 + 批次效應 | 批次納入模型 |
 
-```r
-exprs(eset) <- log(exprs(eset))
-plotDensities(eset, legend = FALSE)
-```
-
-The practical goal is not "always log-transform", but to put measurements onto a scale where variance is more stable and between-sample comparisons are interpretable.
-
-### Quantile Normalization
-
-When the sample distributions are not aligned, the course uses quantile normalization:
-
-```r
-exprs(eset) <- normalizeBetweenArrays(exprs(eset))
-plotDensities(eset, legend = FALSE)
-```
-
-Quantile normalization forces samples to share a comparable marginal distribution. This is especially common in array-oriented workflows, where technical distributional differences can otherwise dominate biological comparisons.
-
-### Filter Low-Signal Features
-
-Weakly expressed genes usually add noise and multiple-testing burden without helping inference:
+一次擬合、多個問題：
 
 ```r
-plotDensities(eset, legend = FALSE)
-abline(v = 5)
-keep <- rowMeans(exprs(eset)) > 5
-eset <- eset[keep, ]
-plotDensities(eset, legend = FALSE)
-```
+# 多組
+cm <- makeContrasts(AMLvALL = typeAML - typeALL,
+                    CMLvALL = typeCML - typeALL,
+                    CMLvAML = typeCML - typeAML, levels = design)
 
-The exact threshold depends on platform and preprocessing, but the principle is stable: remove features that are too close to background to support reliable differential testing.
-
-## Modeling with Design Matrices
-
-The central `limma` abstraction is the design matrix:
-
-```r
-design <- model.matrix(~er, data = pData(eset))
-```
-
-This turns sample annotations into coefficients that can be interpreted biologically. For a simple two-group comparison, one coefficient usually plays the role of the reference level and another captures the group effect.
-
-For group-means parameterization, the course often uses a no-intercept design:
-
-```r
-design <- model.matrix(~0 + er, data = pData(eset))
-```
-
-This parameterization is convenient because each coefficient corresponds directly to a group mean, which makes custom contrasts easier to read.
-
-Key point: different parameterizations can encode the same biological question. A good workflow chooses the representation that makes coefficients and contrasts easiest to interpret.
-
-## Contrasts Represent the Biological Question
-
-Once the design matrix defines what can be estimated, contrasts define what should be tested.
-
-For a two-group comparison:
-
-```r
+# 2 × 2 因子設計：把兩個因子合成一個 group
+group  <- factor(with(pData(eset), paste(genotype, treatment, sep = ".")))
+design <- model.matrix(~ 0 + group); colnames(design) <- levels(group)
 cm <- makeContrasts(
-  status = erpositive - ernegative,
-  levels = design
-)
+  dox_wt      = wt.dox - wt.pbs,                                   # 野生型對藥物的反應
+  dox_top2b   = top2b.dox - top2b.pbs,                             # 突變型對藥物的反應
+  interaction = (top2b.dox - top2b.pbs) - (wt.dox - wt.pbs),       # 反應是否因基因型而不同
+  levels = design)
 ```
 
-For multiple disease groups, several contrasts can be tested in one model:
+交互作用的解讀（差異中的差異）見 [RNA-seq 08：交互作用](rna-seq/08-contrasts-testing-and-visualization.md#交互作用與差異中的差異)。
+
+## 批次效應
+
+| 做法 | 用途 |
+| --- | --- |
+| 批次放進設計矩陣（`~ 0 + group + batch`） | **正式檢定**的建議做法 |
+| `removeBatchEffect(x, batch = , covariates = , group = )` | 只用於視覺化（PCA、熱圖）；不要拿校正後的資料再做檢定 |
+| `duplicateCorrelation()` + `block =` | 同一受試者多個樣本（重複量測） |
+
+批次與組別完全重疊時無法分離，見 [干擾與偏誤](../../../data-science/statistics/experimental-design/confounding-bias.md#生資最常見的干擾批次效應-batch-effect)。
+
+## 診斷與視覺化
+
+| 圖 | 函式 | 看什麼 |
+| --- | --- | --- |
+| 密度圖 | `plotDensities()` | 前處理是否讓樣本分布一致 |
+| MDS | `plotMDS()` | 主要變異是否來自實驗條件 |
+| p 值直方圖 | `hist(fit2$p.value[, "status"])` | 左側尖峰 + 平坦 = 有訊號且模型合理（見 [多重檢定：p 值直方圖](../../../data-science/statistics/inferential-statistics/multiple-testing.md#診斷p-值直方圖)） |
+| Volcano | `volcanoplot(fit2, coef = , highlight = 5, names = )` | 效果量 vs 顯著性 |
+| MA / mean-difference | `plotMD(fit2)` | 效果量 vs 平均表現量 |
+
+## 基因集檢定
+
+| 函式 | 問題 | 特點 |
+| --- | --- | --- |
+| `camera()` | 這組基因整體是否比其他基因更常變化？（競爭型） | 考慮基因間相關，比一般 ORA 的型一錯誤控制好 |
+| `roast()` / `mroast()` | 這組基因是否有變化？（自足型） | 旋轉檢定，可看上調 / 下調比例 |
+| `fry()` | roast 的快速近似 | 大量基因集 |
 
 ```r
-cm <- makeContrasts(
-  AMLvALL = typeAML - typeALL,
-  CMLvALL = typeCML - typeALL,
-  CMLvAML = typeCML - typeAML,
-  levels = design
-)
+idx <- ids2indices(gene_sets, rownames(eset))    # 基因集 → 列索引
+camera(eset, idx, design, contrast = cm[, "status"])
 ```
 
-This is one of `limma`'s biggest strengths: fit one design, then ask multiple related biological questions without rebuilding the whole workflow from scratch.
-
-## Standard limma Testing Pipeline
-
-The core testing sequence is:
-
-```r
-fit <- lmFit(eset, design)
-fit2 <- contrasts.fit(fit, contrasts = cm)
-fit2 <- eBayes(fit2)
-results <- decideTests(fit2)
-```
-
-How to read this:
-
-- `lmFit()` estimates gene-wise model coefficients
-- `contrasts.fit()` rewrites those coefficients into the comparisons you care about
-- `eBayes()` moderates standard errors across genes
-- `decideTests()` summarizes which genes are up, down, or not significant
-
-The empirical Bayes step is the conceptual center of `limma`. It borrows strength across genes so that variance estimates are less unstable than fully separate per-gene models.
-
-## Inspecting Ranked Results
-
-Use `topTable()` to inspect the strongest signals:
-
-```r
-topTable(fit2, number = 3)
-stats <- topTable(fit2, number = nrow(fit2), sort.by = "none")
-```
-
-`topTable()` is useful for:
-
-- ranked candidate genes
-- fold-change and p-value inspection
-- exporting complete result tables
-
-`decideTests()` and `topTable()` answer different questions:
-
-- `decideTests()` summarizes how many genes pass thresholds
-- `topTable()` shows the per-gene statistics behind those summaries
-
-## Exploring Sources of Variation
-
-The course uses `plotMDS()` to see whether major expression differences line up with known biology:
-
-```r
-plotMDS(eset, labels = pData(eset)[, "time"], gene.selection = "common")
-plotMDS(eset, labels = pData(eset)[, "genotype"], gene.selection = "common")
-plotMDS(eset, labels = pData(eset)[, "treatment"], gene.selection = "common")
-```
-
-This is useful for checking:
-
-- whether replicates cluster together
-- whether treatment or phenotype separates samples
-- whether hidden technical structure is dominating the data
-
-If major structure does not match the study design, pause before interpreting p-values.
-
-## Batch Effects
-
-If unwanted technical structure is visible, the course shows batch adjustment with `removeBatchEffect()`:
-
-```r
-exprs(eset) <- removeBatchEffect(
-  exprs(eset),
-  batch = pData(eset)[, "batch"],
-  covariates = pData(eset)[, "rin"]
-)
-```
-
-This is useful for exploratory visualization and cleaned expression summaries, but the larger lesson is that batch should be modeled deliberately rather than treated as an afterthought.
-
-## Factorial and Interaction Designs
-
-`limma` becomes especially helpful when the experiment has more than one factor.
-
-A 2x2 design can be encoded by collapsing factors into a combined group label:
-
-```r
-group <- with(pData(eset), paste(genotype, treatment, sep = "."))
-group <- factor(group)
-
-design <- model.matrix(~0 + group)
-colnames(design) <- levels(group)
-```
-
-Then define contrasts for specific biological questions:
-
-```r
-cm <- makeContrasts(
-  dox_wt = wt.dox - wt.pbs,
-  dox_top2b = top2b.dox - top2b.pbs,
-  interaction = (top2b.dox - top2b.pbs) - (wt.dox - wt.pbs),
-  levels = design
-)
-```
-
-This pattern is important:
-
-- main-condition response can be tested within each genotype
-- genotype-specific response can be compared between conditions
-- the interaction contrast directly asks whether treatment response differs by genotype
-
-In practice, many biological studies are less about "case vs control" and more about whether one perturbation changes the effect of another. `limma` handles that naturally.
-
-## Common Diagnostic Plots
-
-The course repeatedly uses a few plotting patterns:
-
-- density plots with `plotDensities()`
-- MDS views with `plotMDS()`
-- ranked result tables with `topTable()`
-- p-value histograms with `hist(...)`
-- volcano plots with `volcanoplot()`
-
-Example volcano plot:
-
-```r
-gene_symbols <- fit2$genes[, "symbol"]
-volcanoplot(fit2, coef = "dox_wt", highlight = 5, names = gene_symbols)
-```
-
-These views are complementary:
-
-- density plots check preprocessing
-- MDS checks global structure
-- p-value histograms check signal shape and calibration
-- volcano plots highlight effect size versus significance
-
-## Gene Set Follow-up
-
-The material also points to gene set methods such as `camera` and `roast`.
-
-This reflects an important downstream idea: differential expression often starts at single genes, but interpretation usually moves toward pathways, programs, or coordinated biological processes.
-
-## Practical Workflow
-
-A compact reusable workflow is:
-
-1. load an expression object with feature and sample metadata
-2. inspect sample distributions with `plotDensities()`
-3. log-transform and normalize when appropriate
-4. filter weak features
-5. inspect sample structure with `plotMDS()`
-6. build `design <- model.matrix(...)`
-7. define `cm <- makeContrasts(...)`
-8. run `lmFit()`, `contrasts.fit()`, and `eBayes()`
-9. summarize with `decideTests()` and `topTable()`
-10. visualize selected contrasts with p-value histograms and volcano plots
-
-## Takeaways
-
-- `limma` is fundamentally a linear-model framework for expression data
-- the design matrix determines what biological effects are estimable
-- contrasts translate biological questions into statistical tests
-- empirical Bayes moderation is the main reason `limma` is so stable and widely used
-- preprocessing, batch awareness, and diagnostic plots are part of the analysis, not optional extras
+ORA / GSEA 見 [RNA-seq 09](rna-seq/09-annotation-and-functional-enrichment.md)。統計背景：[GLM 與線性模型](../../../data-science/statistics/regression-analysis/README.md)、[多重檢定](../../../data-science/statistics/inferential-statistics/multiple-testing.md)。

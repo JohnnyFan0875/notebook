@@ -1,14 +1,16 @@
-# Contrasts, Multiple Testing, and DE Visualization
+[分析流程](../README.md) › [RNA-seq](README.md) › 08 對比與視覺化
 
-本章目的：正確設定 comparison/contrast，理解 p-value 與 FDR，並用 MA plot、volcano plot、heatmap 與 gene-level expression plot 解讀 differential expression 結果。
+# 對比、多重檢定與視覺化 (Contrasts, Testing & Visualization)
+
+正確設定 comparison/contrast，理解 p-value 與 FDR，並用 MA plot、volcano plot、heatmap 與 gene-level expression plot 解讀 differential expression 結果。
 
 本節使用模擬資料示範分析流程，結果不代表真實生物學研究發現。
 
-## Coefficients and Contrasts
+## 係數與對比 (Coefficients & Contrasts)
 
 Coefficient 是 model matrix 中某一欄的模型參數；contrast 是 coefficient 的線性組合。contrast 方向會直接決定 log2 fold change 正負號。
 
-### Reference-level Design
+### 有參考組的設計
 
 ```r
 metadata$group <- factor(metadata$group, levels = c("control", "treated"))
@@ -31,7 +33,7 @@ edgeR：
 glmQLFTest(fit, coef = "grouptreated")
 ```
 
-### No-intercept Design
+### 無截距設計
 
 ```r
 design <- model.matrix(~ 0 + group, metadata)
@@ -48,7 +50,7 @@ makeContrasts(control - treated, levels = design)
 
 如果 contrast 方向反了，顯著性通常相同，但 logFC 正負號與 up/down interpretation 會顛倒。
 
-## Interaction and Difference-in-differences
+## 交互作用與差異中的差異
 
 Treatment by time interaction：
 
@@ -64,7 +66,7 @@ design <- model.matrix(~ treatment * time, metadata)
 
 這不是單純 post 時間點的 drug vs control，而是 drug 是否改變了 pre-to-post 的變化量。
 
-## Multiple Testing
+## 多重檢定 (Multiple Testing)
 
 RNA-seq 同時檢定上萬個 genes，不能只看未校正 p-value。
 
@@ -83,11 +85,11 @@ RNA-seq 同時檢定上萬個 genes，不能只看未校正 p-value。
 sig <- subset(res, FDR < 0.05 & abs(logFC) >= 1)
 ```
 
-Warning: `PValue < 0.05` 在上萬個基因中會產生大量 false positives。應以 FDR/padj 為主，並把 log2 fold change threshold 視為 biological effect size filter，而不是統計校正替代品。
+> **注意**：`PValue < 0.05` 在上萬個基因中會產生大量 false positives。應以 FDR/padj 為主，並把 log2 fold change threshold 視為 biological effect size filter，而不是統計校正替代品。
 
 BH 的計算步驟、FDR 與 FWER 的差異，以及用 p 值直方圖診斷模型是否合理，見 [多重檢定](../../../../data-science/statistics/inferential-statistics/multiple-testing.md#診斷p-值直方圖)。
 
-## Visualization
+## 視覺化
 
 ### MA Plot
 
@@ -131,7 +133,7 @@ pheatmap::pheatmap(mat_scaled, annotation_col = metadata["group"])
 
 圖 3. Top DE genes heatmap。row scaling 讓每個 gene 呈現相對高低，不代表絕對表達量。top genes 的選擇應明確，例如 FDR 排名前 50 或 FDR < 0.05 且 abs(logFC) >= 1。
 
-### Other Summary Plots
+### 其他摘要圖
 
 ![LogFC distribution](src/logfc-distribution.png)
 

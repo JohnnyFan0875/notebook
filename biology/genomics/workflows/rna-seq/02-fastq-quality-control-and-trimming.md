@@ -1,34 +1,14 @@
-# FASTQ, Quality Control, and Trimming
+[分析流程](../README.md) › [RNA-seq](README.md) › 02 FASTQ QC
 
-本章目的：從壓縮 FASTQ 開始，檢查 reads 是否完整、paired-end 是否成對、base quality 是否合理，以及是否需要 adapter trimming 或 quality trimming。
+# FASTQ 品質控制與修剪 (FASTQ QC & Trimming)
 
-## FASTQ Format
+從壓縮 FASTQ 開始，檢查 reads 是否完整、paired-end 是否成對、base quality 是否合理，以及是否需要 adapter trimming 或 quality trimming。
 
-FASTQ 每筆 read 由四行組成：
+## FASTQ 格式
 
-```text
-@read_identifier
-ACGTNACGTN...
-+
-IIIIHGFEDC...
-```
+FASTQ 每條 read 四行（名稱、序列、`+`、品質字串），品質以 Phred+33 編碼：`Q20` ≈ 1% 錯誤、`Q30` ≈ 0.1%。格式細節見 [FASTQ](../../file-formats/fastq.md)，品質分數見 [鹼基品質分數](../../ngs-qc/base-quality-scores.md)。
 
-| Line | Meaning |
-| --- | --- |
-| `@read_identifier` | read id、instrument、flowcell、lane、tile、座標與 pair 資訊 |
-| sequence | nucleotide sequence，可能含 `N` |
-| `+` | separator，可重複 identifier 或留空 |
-| quality | Phred quality score，每個字元對應一個 base |
-
-Phred quality 的概念是：
-
-$$
-Q = -10 \log_{10}(P_\text{error})
-$$
-
-Phred+33 表示 quality character 的 ASCII code 減 33 得到 Q score。`Q20` 約 1% error，`Q30` 約 0.1% error。
-
-## Raw Data Checks
+## 原始資料檢查
 
 輸入資料：
 
@@ -63,11 +43,11 @@ paste \
 awk '$1 != $2 {print; exit 1}'
 ```
 
-Warning: FASTQ 檔案不完整常見症狀是 gzip EOF error、行數不是 4 的倍數、R1/R2 read 數不同，或 paired read id 不匹配。
+> **注意**：FASTQ 檔案不完整常見症狀是 gzip EOF error、行數不是 4 的倍數、R1/R2 read 數不同，或 paired read id 不匹配。
 
-## FastQC and MultiQC
+## FastQC 與 MultiQC
 
-分析目的：FastQC 對單一 FASTQ 產生 quality report；MultiQC 把多個 FastQC、fastp、samtools、STAR、featureCounts 等報告彙整成一份總覽。
+FastQC 對單一 FASTQ 產生 quality report；MultiQC 把多個 FastQC、fastp、samtools、STAR、featureCounts 等報告彙整成一份總覽。
 
 完整 script：
 
@@ -86,7 +66,7 @@ bash scripts/fastq_qc.sh data/raw results/01_fastq_qc
 
 圖 1. Per-base sequence quality 示意圖。RNA-seq read 末端品質下降很常見；若大量 base 低於 Q20，才需要考慮 quality trimming 或重新評估上機品質。
 
-### FastQC Modules and Interpretation
+### FastQC 模組判讀
 
 | Module | 看什麼 | RNA-seq 常見情境 | 何時需要處理 |
 | --- | --- | --- | --- |
@@ -104,11 +84,11 @@ bash scripts/fastq_qc.sh data/raw results/01_fastq_qc
 
 圖 2. Adapter content 在 read 末端上升的示意圖。短 insert 或 read-through adapter 會讓 adapter content 隨 position 增加。
 
-Key point: FastQC 的 warning 不是自動失敗。RNA-seq 高 duplication、前端 sequence content bias 或 GC 分布偏移有時是 library 或 transcriptome 的正常特性；adapter、嚴重低品質、過多 `N` 與檔案不完整才通常需要明確處理。
+> **重點**：FastQC 的 warning 不是自動失敗。RNA-seq 高 duplication、前端 sequence content bias 或 GC 分布偏移有時是 library 或 transcriptome 的正常特性；adapter、嚴重低品質、過多 `N` 與檔案不完整才通常需要明確處理。
 
-## Adapter and Quality Trimming
+## Adapter 與品質修剪
 
-分析目的：移除 adapter、低品質 tail、poly-G/poly-X artifacts，並保持 paired-end reads 同步。
+移除 adapter、低品質 tail、poly-G/poly-X artifacts，並保持 paired-end reads 同步。
 
 | Tool | Strength | Notes |
 | --- | --- | --- |
@@ -132,15 +112,11 @@ bash scripts/fastp_trim.sh data/sample_metadata.csv . results/02_fastp_trim
 | `--length_required 30` | trimming 後 read 最短長度 |
 | `--trim_poly_g --trim_poly_x` | 移除 NextSeq/NovaSeq 常見 poly-G 與 poly-X tail |
 
-程式碼逐段說明：
+腳本以 metadata 逐列讀取 sample、R1、R2，為每個樣本產生同步修剪的 R1 / R2，報告放在 `reports/` 再用 MultiQC 彙整。工具細節見 [FastQC](../../../bioinformatics-tools/ngs-tools/fastqc.md)、[fastp](../../../bioinformatics-tools/ngs-tools/fastp.md)。
 
-- 以 metadata 逐列讀取 sample、R1、R2。
-- 每個 sample 產生同步的 trimmed R1/R2。
-- HTML/JSON report 放在 `reports/`，最後用 MultiQC 彙整。
+> **注意**：trimming 不是越多越好。過度 trimming 會讓 reads 變短、mapping ambiguity 上升，也可能造成 gene body coverage 或 isoform quantification 偏差。若 adapter content 很低且品質良好，可以只做 QC 不 trimming。
 
-Warning: trimming 不是越多越好。過度 trimming 會讓 reads 變短、mapping ambiguity 上升，也可能造成 gene body coverage 或 isoform quantification 偏差。若 adapter content 很低且品質良好，可以只做 QC 不 trimming。
-
-## Common Problems
+## 常見問題
 
 | Problem | Symptom | Action |
 | --- | --- | --- |

@@ -21,7 +21,7 @@ design <- model.matrix(~ group, data = metadata)
 y <- DGEList(counts = counts, group = metadata$group)
 keep <- filterByExpr(y, design)
 y <- y[keep, , keep.lib.sizes = FALSE]
-y <- calcNormFactors(y, method = "TMM")
+y <- normLibSizes(y, method = "TMM")
 y <- estimateDisp(y, design)
 fit <- glmQLFit(y, design)
 qlf <- glmQLFTest(fit, coef = "grouptreated")
