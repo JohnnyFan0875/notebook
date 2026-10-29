@@ -99,7 +99,7 @@ qa_res <- qa(fq, lane = "1")                        # QC 摘要：readCounts、b
 report(qa_res)                                      # frequentSequences、adapterContamination… 產生 HTML
 ```
 
-ASCII 品質編碼與 Phred 換算見 [鹼基品質分數](../genomics/ngs-qc/base-quality.md)。實務上 FASTQ QC 多用命令列的 [FastQC](ngs-tools/fastqc.md) / [fastp](ngs-tools/fastp.md)；ShortRead 適合在 R 裡做客製化檢查。
+ASCII 品質編碼與 Phred 換算見 [鹼基品質分數](../genomics/ngs-qc/base-quality-scores.md)。實務上 FASTQ QC 多用命令列的 [FastQC](ngs-tools/fastqc.md) / [fastp](ngs-tools/fastp.md)；ShortRead 適合在 R 裡做客製化檢查。
 
 ## 表現量矩陣：SummarizedExperiment
 

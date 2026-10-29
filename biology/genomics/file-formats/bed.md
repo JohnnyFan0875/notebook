@@ -1,74 +1,54 @@
-# BED
+[基因體學](../README.md) › [檔案格式](README.md) › BED
 
-## Overview
+# BED (Browser Extensible Data)
 
-The **BED (Browser Extensible Data)** format is a lightweight text format used to define genomic regions. It is widely used in genome browsers (e.g., UCSC Genome Browser) and analysis tools to represent features like exons, peaks, regulatory elements, or custom intervals.
-
-BED files are simple, compact, and flexible, making them useful for filtering, annotating, and visualizing genomic data.
-
-## Structure
-
-BED files are plain-text files with **0-based, half-open intervals**. The start position is inclusive, and the end position is exclusive. `[start, end)` Each line represents one feature.
+描述基因體區間的純文字格式：目標區域 (panel targets)、exon、ChIP-seq peak、低覆蓋區域都用 BED。座標是 **0-based、半開區間** `[start, end)`，見 [座標系統](zero-one-based.md)。
 
 ```text
-chr1    1   2         # position 2
-chr1    1   1000      # position 2-1000
+chr1    1    2       # 第 2 個鹼基（1-based）
+chr1    1    1000    # 第 2–1000 個鹼基，長度 999
 ```
 
-A BED file typically consists of **at least 3 mandatory fields**, and optionally up to 12 fields:
+## 欄位
 
-1. **Basic Fields (Required)**:
+前 3 欄必填（BED3），其餘依序選填，最多 12 欄（BED12）。
 
-| Field      | Description                           | Example |
-| ---------- | ------------------------------------- | ------- |
-| chrom      | Chromosome name                       | chr1    |
-| chromStart | Start position (0-based)              | 999     |
-| chromEnd   | End position (non-inclusive, 1-based) | 1050    |
-
-**Example:**
+| # | 欄位 | 意義 | 例 |
+| --- | --- | --- | --- |
+| 1 | chrom | 染色體 | `chr1` |
+| 2 | chromStart | 起點（0-based，含） | `999` |
+| 3 | chromEnd | 終點（不含） | `1050` |
+| 4 | name | 名稱 | `geneA` |
+| 5 | score | 0–1000（瀏覽器用來調深淺） | `960` |
+| 6 | strand | `+`、`-`、`.` | `+` |
+| 7–8 | thickStart / thickEnd | 粗線顯示範圍（如 CDS） | `1000`、`1045` |
+| 9 | itemRgb | 顏色 `R,G,B` | `0,0,255` |
+| 10 | blockCount | 區塊數（如 exon 數） | `2` |
+| 11 | blockSizes | 各區塊長度 | `20,30` |
+| 12 | blockStarts | 各區塊相對 chromStart 的起點 | `0,21` |
 
 ```text
-chr1    999    1050
+chr1  999  1050  geneA  960  +  1000  1045  0,0,255  2  20,30  0,21
 ```
 
-2. **Optional Fields (BED3+ format)**:
+這筆代表兩個 exon：[999, 1019) 與 [1020, 1050)，對應 1-based 的 1000–1019 與 1021–1050。
 
-| Field       | Description                                        | Example |
-| ----------- | -------------------------------------------------- | ------- |
-| name        | Feature name                                       | geneA   |
-| score       | Score from 0 to 1000                               | 960     |
-| strand      | Strand (+ or -)                                    | +       |
-| thickStart  | Start position for thick display (e.g., CDS)       | 1000    |
-| thickEnd    | End position for thick display                     | 1045    |
-| itemRgb     | RGB color (comma-separated, e.g., 255,0,0 for red) | 0,0,255 |
-| blockCount  | Number of blocks (e.g., exons)                     | 2       |
-| blockSizes  | Comma-separated list of block sizes                | 20,30   |
-| blockStarts | Comma-separated list of start positions (relative) | 0,21    |
+## 相關格式
 
-**Extended Example:**
+| 格式 | 用途 |
+| --- | --- |
+| BED6 + 自訂欄 | 很多工具輸出「BED 前 6 欄 + 額外欄位」（如 narrowPeak：ChIP-seq peak） |
+| bedGraph | `chrom start end value`，連續訊號（覆蓋度） |
+| bigBed / bigWig | BED / bedGraph 的二進位索引版，適合大檔與瀏覽器遠端讀取（`bedToBigBed`、`bedGraphToBigWig`） |
+| interval_list | Picard / GATK 的區間格式（1-based，含 header），用 `picard BedToIntervalList` 轉換 |
 
-```text
-chr1    999    1050    geneA    960    +    1000    1045    0,0,255    2    20,30    0,21
-```
+## 用途與注意
 
-## Applications
+| 用途 | 注意 |
+| --- | --- |
+| 限定分析區域（BAM / VCF） | 染色體命名與基因體版本要一致 |
+| panel 目標與 padding | 合併重疊區間再加 padding，見 [bedtools](../../bioinformatics-tools/ngs-tools/bedtools.md#範例panel-目標區域整理) |
+| 瀏覽器軌道 | 可加 `track name=... color=...` header 行 |
+| 排序 | 多數工具要求 `sort -k1,1 -k2,2n` 排序 |
 
-- Defining regions of interest (ROIs) for filtering BAM/VCF files
-- Input for genome browsers (e.g., UCSC, IGV)
-- Defining peak regions in ChIP-seq or ATAC-seq
-- Genomic intersection, union, and subtraction using tools like `bedtools`
-
-## Common tools
-
-| Tool                                                                  | Purpose                          |
-| --------------------------------------------------------------------- | -------------------------------- |
-| [**bedtools**](../../bioinformatics-tools/ngs-tools/bedtools.md)                                  | Manipulate and compare BED files |
-| [**IGV**](../../bioinformatics-tools/visualization/igv.md)                                            | Visualize BED annotations        |
-| [**samtools**](../../bioinformatics-tools/ngs-tools/samtools.md)                                  | Filter BAM reads overlapping BED |
-| [**UCSC tools**](https://genome.ucsc.edu/goldenPath/help/bigBed.html) | Convert to BigBed format         |
-
-## References
-
-- [UCSC BED Format Definition](https://genome.ucsc.edu/FAQ/FAQformat.html#format1)
-- [BEDTools User Guide](https://bedtools.readthedocs.io/en/latest/)
-- [IGV BED Format](https://igv.org/doc/desktop/#FileFormats/DataTracks/)
+工具：[bedtools](../../bioinformatics-tools/ngs-tools/bedtools.md)、[IGV](../../bioinformatics-tools/visualization/igv.md)、[samtools view -L](../../bioinformatics-tools/ngs-tools/samtools.md)、GenomicRanges（R，讀入時自動轉成 1-based）。規格：[UCSC BED 格式](https://genome.ucsc.edu/FAQ/FAQformat.html#format1)。

@@ -18,7 +18,7 @@ multiqc qc/ -o qc/                           # 彙整所有樣本（也能吃 fa
 
 | 模組 | 看什麼 | 常見警告的原因 |
 | --- | --- | --- |
-| Per base sequence quality | 每個 cycle 的品質分布 | 尾端下降是正常的；整體偏低要修剪或重做（見 [鹼基品質分數](../../genomics/ngs-qc/base-quality.md)） |
+| Per base sequence quality | 每個 cycle 的品質分布 | 尾端下降是正常的；整體偏低要修剪或重做（見 [鹼基品質分數](../../genomics/ngs-qc/base-quality-scores.md)） |
 | Per sequence quality scores | 每條 read 的平均品質 | 出現低品質的小峰：部分 tile 或 cluster 有問題 |
 | Per base sequence content | 每個 cycle 的 A/C/G/T 比例 | RNA-seq 前 10–15 bp 因隨機引子偏好必定 FAIL，屬正常 |
 | Per sequence GC content | GC 分布是否接近理論常態 | 雙峰：污染（細菌、adapter dimer）或高表現基因 |
