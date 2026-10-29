@@ -150,3 +150,9 @@ res <- topTable(fit2, number = Inf, sort.by = "P")
 
 Key point: 三者的顯著基因清單不必完全相同。差異通常來自 filtering、normalization、dispersion/variance modeling、contrast、LFC shrinkage 與 multiple testing。
 
+| 統計概念 | 對應筆記 |
+| --- | --- |
+| NB-GLM、log link、size factor 當 offset | [GLM 計數模型：RNA-seq 差異表現](../../../../../data-science/statistics/regression-analysis/glm-count-models.md#生資應用rna-seq-差異表現) |
+| `padj` / `FDR` / `adj.P.Val`（BH） | [多重檢定](../../../../../data-science/statistics/inferential-statistics/multiple-testing.md) |
+| batch、paired、重複量測（`duplicateCorrelation`、`dream`） | [混合效應模型](../../../../../data-science/statistics/regression-analysis/mixed-effects-models.md)、[干擾與偏誤](../../../../../data-science/statistics/experimental-design/confounding-bias.md) |
+

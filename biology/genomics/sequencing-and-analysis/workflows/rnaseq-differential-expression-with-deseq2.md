@@ -125,7 +125,7 @@ PCA 在 RNA-seq workflow 的主要用途不是降維本身，而是問：
 - replicate 是否穩定
 - batch / treatment / genotype 哪個在驅動分離
 
-如果 PC1 / PC2 完全由未知技術因素主導，直接解讀差異表達會很危險。
+如果 PC1 / PC2 完全由未知技術因素主導，直接解讀差異表達會很危險。PCA 本身見 [PCA](../../../../data-science/statistics/multivariate-analysis/pca.md#生資應用基因表現-pca)；分離若來自批次，見 [批次效應](../../../../data-science/statistics/experimental-design/confounding-bias.md#生資最常見的干擾批次效應-batch-effect)。
 
 ## Running the Main DESeq2 Model
 
@@ -228,6 +228,8 @@ pheatmap(
 - 忘記 shrinkage 後的 fold change 會比原始估計更適合解讀與排序
 
 ## Relation to Other Bioconductor Workflows
+
+- DESeq2 背後的統計：[GLM 計數模型（負二項、過度離散）](../../../../data-science/statistics/regression-analysis/glm-count-models.md#過度離散與負二項迴歸)、[多重檢定（`padj` = BH）](../../../../data-science/statistics/inferential-statistics/multiple-testing.md)。
 
 - 如果你想先理解 Bioconductor 的共同物件系統，先看 [Introduction to Bioconductor](bioconductor-introduction.md)。
 - 如果你處理的是 array-oriented expression workflow，或需要線性模型 / 對比矩陣語言，對照看 [Differential Expression with limma](limma-differential-expression.md)。

@@ -85,6 +85,8 @@ sig <- subset(res, FDR < 0.05 & abs(logFC) >= 1)
 
 Warning: `PValue < 0.05` 在上萬個基因中會產生大量 false positives。應以 FDR/padj 為主，並把 log2 fold change threshold 視為 biological effect size filter，而不是統計校正替代品。
 
+BH 的計算步驟、FDR 與 FWER 的差異，以及用 p 值直方圖診斷模型是否合理，見 [多重檢定](../../../../../data-science/statistics/inferential-statistics/multiple-testing.md#診斷p-值直方圖)。
+
 ## Visualization
 
 ### MA Plot

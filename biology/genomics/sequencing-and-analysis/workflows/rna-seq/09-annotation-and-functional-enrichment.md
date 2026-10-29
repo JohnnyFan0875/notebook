@@ -83,7 +83,7 @@ Functional enrichment 把 gene-level 結果轉成 biological process、pathway �
 | Gene universe | ORA 背景應是實際進入差異分析的 genes |
 | Ranking metric | GSEA 可用 signed statistic、logFC 或 signed -log10 p |
 | Gene set size | 太小不穩，太大不具體 |
-| Multiple testing | pathway 也需要 FDR correction |
+| Multiple testing | pathway 也需要 FDR correction（見 [多重檢定](../../../../../data-science/statistics/inferential-statistics/multiple-testing.md)） |
 | Redundant pathways | GO term 彼此重疊，需要 simplify/emapplot 輔助 |
 | Directionality | ORA 對上調/下調需分開做；GSEA 可保留方向 |
 

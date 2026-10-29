@@ -51,7 +51,7 @@ Warning: metadata 順序錯誤是 RNA-seq 中最危險的錯誤之一，因為�
 - 大量 zero counts。
 - fold change 極不穩定。
 - dispersion 估計不穩。
-- p-value 大多無資訊但仍增加 FDR 校正負擔。
+- p-value 大多無資訊但仍增加 FDR 校正負擔（獨立過濾的原理見 [多重檢定](../../../../../data-science/statistics/inferential-statistics/multiple-testing.md#實務重點)）。
 
 固定 CPM threshold 範例：
 
