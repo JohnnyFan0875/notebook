@@ -163,7 +163,7 @@ running_max_drawdown(np.random.default_rng(0).normal(size=1_000_000).cumsum())
 | generator 取代建好的大 list | 一次只放一筆，見 [迭代器與生成器](../iterator.md#生成器-generators惰性求值) |
 | 指定較小的 dtype | `float32` 是 `float64` 的一半；重複字串用 `category` |
 | 只讀需要的欄位 | `pd.read_csv(usecols=...)`、`pd.read_parquet(columns=...)` |
-| 稀疏矩陣 | 單細胞計數矩陣 90% 以上是 0，用 `scipy.sparse` |
+| 稀疏矩陣 | 單細胞計數矩陣 90% 以上是 0，用 [`scipy.sparse`](../scipy-sparse.md) |
 | 分塊處理 | `chunksize`、Dask、Polars streaming，見 [平行運算](parallel.md)、[Polars](polars.md) |
 
 ```python

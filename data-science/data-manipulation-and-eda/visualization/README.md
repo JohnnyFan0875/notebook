@@ -6,6 +6,7 @@
 
 ```text
 設計原則 → Matplotlib（figure / axes）→ Seaborn（統計圖）→ pandas plotting（快速檢查、時間序列）
+                                    R：ggplot2（圖形文法）
 ```
 
 | 筆記 | 內容 | 回答的問題 |
@@ -14,6 +15,7 @@
 | [Matplotlib](matplotlib/README.md) | figure / axes、各種圖型、雙軸、註解 | 怎麼精確控制每個元素？ |
 | [Seaborn](seaborn/README.md) | 分布、類別、關係、迴歸、矩陣圖 | 怎麼從 DataFrame 快速畫統計圖？ |
 | [pandas Plotting](pandas-plotting.md) | `df.plot()`、時間序列的 rolling / resample 圖 | 怎麼最快看一眼資料？ |
+| [ggplot2](ggplot2.md) | 圖形文法、geom 選擇、volcano / PCA、`coord_cartesian` vs `limits`、Python 對照 | 在 R 裡怎麼畫出版級的圖？ |
 
 ## 選工具
 
@@ -22,6 +24,7 @@
 | pandas `.plot()` | 第一眼檢查、時間序列 | 客製化有限 |
 | Seaborn | EDA、分組比較、統計圖（自動算平均與 CI） | 細節仍要用 Matplotlib 的 `ax` 調整 |
 | Matplotlib | 多子圖版面、出版級控制、特殊圖 | 語法較冗長 |
+| ggplot2（R） | 分組、分面、出版級統計圖 | 資料要先整理成長表 |
 
 ## 選圖速查
 
@@ -40,4 +43,4 @@
 | 把圖組成儀表板 | [Dashboard Design](../../data-communication/dashboard-design.md) |
 | 分布、效果量的統計意義 | [Statistics](../../statistics/README.md) |
 | 模型評估圖（ROC、校準、殘差） | [ML Evaluation](../../machine-learning/evaluation/README.md)、[Interpretability](../../machine-learning/interpretability-and-diagnostics/README.md) |
-| R 的作圖 | [tidyverse：接到 ggplot2](../../r-foundations/tidyverse-workflow.md#接到-ggplot2) |
+| R 的作圖 | [ggplot2](ggplot2.md)、[tidyverse：接到 ggplot2](../../r-foundations/tidyverse-workflow.md#接到-ggplot2) |
