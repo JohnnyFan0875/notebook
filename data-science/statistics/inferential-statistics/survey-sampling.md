@@ -79,7 +79,7 @@ quantile(boot, c(0.025, 0.975))                  # percentile 95% CI
 
 ### R：`survey` 套件
 
-先建立 design object，所有估計都透過 `svy*` 函式，不要對原始表直接 `mean()` / `table()`。
+先建立 design object，所有估計都透過 `svy*` 函式，不要對原始表直接 `mean()` / `table()`。以下以 survey 4.5、NHANES 2.1.4 實跑，註解數字為實際輸出。
 
 ```r
 library(survey)
@@ -93,13 +93,13 @@ des <- svydesign(ids = ~SDMVPSU, strata = ~SDMVSTRA, nest = TRUE,
 svytable(~Race1, des)                              # 加權次數（估計的母體人數）
 svymean(~Race1, des, na.rm = TRUE)                 # 加權比例 + SE
 svytable(~Race1 + Diabetes, des)
-svychisq(~Race1 + Diabetes, des)                   # Rao-Scott 校正，不是 chisq.test()
+svychisq(~Race1 + Diabetes, des)                   # Rao-Scott 校正，不是 chisq.test()；F = 5.79、p < 0.001
 
 # 2. 數值：平均、總量、分位數（都附 SE）
-svymean(~BMI, des, na.rm = TRUE)
+svymean(~BMI, des, na.rm = TRUE)                   # 26.63（SE 0.10）；未加權 mean(nh$BMI) = 25.65
 svytotal(~DaysPhysHlthBad, des, na.rm = TRUE)
 svyquantile(~BMI, des, quantiles = 0.5, na.rm = TRUE)
-confint(svymean(~BMI, des, na.rm = TRUE), df = degf(des))  # 自由度 = PSU 數 − 層數
+confint(svymean(~BMI, des, na.rm = TRUE), df = degf(des))  # 自由度 = PSU 數 − 層數 = 33
 
 # 3. 子群體：用 subset() 或 svyby()，不要先 filter 原始資料
 svymean(~BMI, subset(des, Age >= 20), na.rm = TRUE)
@@ -110,7 +110,7 @@ fit <- svyglm(Diabetes ~ BMI + Age + Gender, design = des, family = quasibinomia
 summary(fit)
 
 # 5. 設計效應：複雜設計的變異 / 同樣本數簡單隨機抽樣的變異
-svymean(~BMI, des, na.rm = TRUE, deff = TRUE)
+svymean(~BMI, des, na.rm = TRUE, deff = TRUE)      # DEff 3.37：變異是簡單隨機抽樣的 3.4 倍
 ```
 
 | 任務 | 普通寫法（錯） | survey 寫法 |
@@ -133,6 +133,7 @@ svymean(~BMI, des, na.rm = TRUE, deff = TRUE)
 | 離散 x 軸散點（如月齡） | `geom_jitter(width = 0.3, height = 0, alpha = 0.3)` 避免重疊 |
 
 ```r
+babies <- nh |> filter(AgeMonths <= 6) |> select(AgeMonths, HeadCirc, WTMEC4YR)
 ggplot(babies, aes(AgeMonths, HeadCirc)) +
   geom_jitter(width = 0.3, height = 0, alpha = 0.3) +
   geom_smooth(method = "lm", se = FALSE, aes(weight = WTMEC4YR))
