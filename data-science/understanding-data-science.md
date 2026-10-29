@@ -1,127 +1,90 @@
-[Data Science](README.md) › Understanding Data Science
+[Data Science](README.md) › 認識資料科學
 
-# Understanding Data Science
+# 認識資料科學 (Understanding Data Science)
 
-Data science is the practice of turning data into usable understanding, predictions, and decisions.
+資料科學把資料轉成可用的理解、預測與決策。它不只是建模：真實的工作流程包含問題定義、資料取得、整理、探索、實驗或建模，以及解讀與溝通，而很多專案在建模之前就已經失敗。
 
-Key point: Data science is not only modeling. A real workflow usually includes question framing, data collection, preparation, exploration, experimentation, modeling, and interpretation.
+## 工作流程
 
-## What Data Science Is Trying To Do
+```
+問題定義 → 取得資料 → 整理資料 → 探索 → 實驗 / 建模 → 解讀與溝通 → 行動
+   ↑                                                              │
+   └──────────────────────── 新問題 ←─────────────────────────────┘
+```
 
-A simple way to think about data science is:
+| 階段 | 目標 | 產出 | 詳見 |
+| --- | --- | --- | --- |
+| 問題定義 | 釐清要回答什麼 | 問題、假設、成功指標 | [形成分析問題](data-communication/forming-analytical-questions.md) |
+| 取得資料 | 找到相關的內部或外部資料 | 原始表、log、檔案、API 回應 | [Python 匯入資料](python-foundations/importing-data.md)、[Databases](databases/README.md) |
+| 整理資料 | 清理與標準化 | 可分析的資料集 | [pandas](python-foundations/pandas/README.md)、[缺失值](data-manipulation-and-eda/missing-data.md) |
+| 探索 | 了解結構、模式與風險 | 摘要統計、圖、假設 | [EDA](data-manipulation-and-eda/README.md) |
+| 實驗或建模 | 檢驗主張或預測結果 | 統計結果或訓練好的模型 | [Statistics](statistics/README.md)、[Machine Learning](machine-learning/README.md) |
+| 解讀與溝通 | 把結果連回決策 | 建議、報告、下一步 | [溝通分析結果](data-communication/communicating-results.md) |
 
-1. start with a question or decision problem
-2. gather relevant data
-3. prepare the data so it can be trusted
-4. analyze or model it
-5. turn the result into action
+> 很多專案失敗在建模之前：問題模糊、資料品質差、或跳過整理步驟。
 
-This is why data science sits between technical work and decision-making. It needs both sound methods and useful framing.
+## 資料來源
 
-## A Practical Workflow
-
-A typical workflow:
-
-| Stage | Main goal | Typical output |
+| 類型 | 說明 | 例子 |
 | --- | --- | --- |
-| Problem framing | Clarify what needs to be answered | Question, hypothesis, success metric |
-| Data sourcing | Find relevant internal or external data | Raw tables, logs, files, APIs |
-| Data preparation | Clean and standardize messy data | Analysis-ready dataset |
-| Exploration | Understand structure, patterns, and risks | Summary statistics, charts, hypotheses |
-| Experiment or modeling | Test claims or predict outcomes | Statistical result or trained model |
-| Interpretation | Connect result back to decisions | Recommendation, report, next action |
+| 組織內部資料 | 組織運作產生 | 網站事件、客戶資料、交易、物流；醫院 EHR、實驗室 LIMS、定序產出 |
+| 公開資料 | 可公開使用與分享 | 政府資料、研究資料集；GEO、SRA / ENA、TCGA、GTEx、UniProt、PDB |
+| 受控存取資料 | 需申請與簽署使用協議 | dbGaP、EGA、UK Biobank、All of Us，見 [隱私與法規](responsible-ai/privacy-and-regulation.md) |
 
-Warning: Many projects fail before modeling because the question is vague, the data is weak, or the preparation step is skipped.
-
-## Common Data Sources
-
-| Source type | Description | Examples |
+| 收集方式 | 例子 | 特性 |
 | --- | --- | --- |
-| Company data | Data created inside an organization | web events, customer data, survey data, logistics data, financial transactions |
-| Open data | Publicly available data that can be used and shared more broadly | government datasets, research datasets, public repositories |
+| 觀察 / 被動收集 | log、交易、clickstream、營運紀錄、EHR | 量大、反映實際行為；但記錄目的不是研究，可能有選擇偏差與缺漏 |
+| 主動徵求 | 問卷、評論、焦點團體、病人自評量表 | 能取得行為紀錄看不到的意見與感受；受題目措辭、抽樣與回應偏差影響 |
+| 實驗產生 | A/B 測試、臨床試驗、定序實驗 | 能回答因果問題；需要事先設計 |
 
-Useful reminder: Knowing where data came from matters as much as knowing what the columns contain. Source affects trust, bias, freshness, and reuse constraints.
+知道資料從哪裡來和知道欄位內容一樣重要：來源決定可信度、偏差、新鮮度與使用限制。主動徵求的資料是有自己收集過程的證據，不是中立的事實，見 [調查抽樣](statistics/inferential-statistics/survey-sampling.md)。
 
-Another useful split is:
+## 為什麼資料整理要早做
 
-- **observed / passively collected data**: logs, transactions, clickstreams, operational records
-- **solicited data**: surveys, reviews, in-app questionnaires, focus groups
+真實資料很亂。整理不是行政雜務，而是資料科學推理的一部分：它避免明顯錯誤、錯誤的分析結果，以及之後模型或決策中隱藏的偏差。
 
-Solicited data is often used when teams need to:
-
-- capture opinions that behavior logs cannot show directly
-- create structured feedback loops
-- de-risk decisions before a launch or major change
-- monitor perceived quality, satisfaction, or unmet needs
-
-Warning: solicited data is useful, but it is shaped by wording, sampling, and response bias. Treat it as evidence with its own collection process, not as a neutral ground truth.
-
-## Why Data Preparation Comes Early
-
-Real-world data is messy. Preparation exists to prevent:
-
-- obvious errors
-- incorrect analytical results
-- hidden bias in later models or decisions
-
-Common preparation work includes:
-
-- fixing wrong data types
-- standardizing formats and units
-- removing true duplicates
-- handling missing values deliberately
-- checking inconsistent categories
-
-Key point: Cleaning is not clerical overhead. It is part of the reasoning layer of data science.
-
-## Experiments In Data Science
-
-One important branch of data science is experimentation.
-
-The basic loop is:
-
-1. form a question
-2. form a hypothesis
-3. collect data
-4. test the hypothesis with an appropriate statistical method
-5. interpret the result
-
-`A/B testing` is one common business version of this pattern. It is useful when you want to compare two alternatives such as titles, interfaces, offers, or workflows.
-
-Tip: Experiments are especially valuable when the goal is to support a decision rather than only describe what happened.
-
-## Modeling And Machine Learning
-
-Modeling means representing a real-world process using mathematical relationships between variables.
-
-Two useful distinctions:
-
-| Concept | What it emphasizes |
+| 常見工作 | 例子 |
 | --- | --- |
-| Statistical modeling | Explain relationships, assumptions, and uncertainty |
-| Machine learning | Learn patterns from data to improve prediction |
+| 修正型別 | ID 被讀成數字（`"001"` → 1）、日期被讀成字串 |
+| 標準化格式與單位 | mg/dL vs mmol/L、大小寫不一致的類別 |
+| 移除真正的重複 | 同一樣本重複匯入（技術重複不是重複資料） |
+| 有意識地處理缺值 | 先問為什麼缺，再決定刪除或補值 |
+| 檢查類別一致性 | `Male` / `M` / `male`；基因名被 Excel 改成日期 |
 
-In supervised machine learning, the model learns from labeled examples and then predicts outcomes for new inputs.
+## 實驗
 
-Examples:
+```
+提出問題 → 形成假設 → 收集資料 → 用合適的統計方法檢驗 → 解讀結果
+```
 
-- customer churn prediction
-- recommendation systems
-- image diagnosis or classification
+A/B 測試是商業上常見的版本，比較兩個標題、介面、方案或流程；生醫研究中則是對照實驗與臨床試驗。實驗在目標是支持決策（「如果這樣做會怎樣」）而不只是描述發生了什麼時特別有價值，見 [A/B 測試](statistics/experimental-design/ab-testing.md)、[Experimental Design](statistics/experimental-design/README.md)。
 
-Warning: A model can look sophisticated while still being built on weak assumptions, weak labels, or badly prepared data.
+## 建模與機器學習
 
-One more distinction matters in business settings:
+建模是用變數之間的數學關係描述真實世界的過程。
 
-- **predictive** work asks whether the model can forecast or classify future cases accurately
-- **explanatory** work asks whether the model helps people understand what drives the outcome
+| 概念 | 著重 | 例子 |
+| --- | --- | --- |
+| 統計建模 | 解釋關係、假設與不確定性 | 迴歸係數與信賴區間、差異表現分析 |
+| 機器學習 | 從資料學習模式以提升預測 | 流失預測、推薦系統、影像分類、蛋白質結構預測 |
 
-These goals overlap, but they are not identical. A model with strong predictive power may be hard to explain, while an explanatory model may intentionally sacrifice some raw predictive accuracy in exchange for interpretability.
+監督式學習從有標籤的例子學習，再預測新輸入的結果。
 
-## Related Notes
+| 目標 | 問題 | 取捨 |
+| --- | --- | --- |
+| 預測 (predictive) | 模型能否準確預測或分類未來案例？ | 預測力強的模型可能難以解釋 |
+| 解釋 (explanatory) | 模型能否幫助理解什麼驅動了結果？ | 可能刻意犧牲部分預測準確度換取可解釋性 |
 
-- Use [Data Manipulation and EDA](./data-manipulation-and-eda/README.md) for profiling, missingness, and exploration before modeling.
-- Use [Data Communication](./data-communication/README.md) for problem framing, stakeholder alignment, and decision-oriented reporting.
-- Use [Statistics](./statistics/README.md) when the core task becomes estimation, hypothesis testing, or experimental reasoning.
-- Use [Machine Learning](./machine-learning/README.md) when the core task becomes prediction, evaluation, and deployment.
-- Use [A/B Testing](./statistics/experimental-design/ab-testing.md) for the experiment loop above.
+兩者重疊但不相同；先決定要哪一個，因為它影響模型選擇、評估方式與能下的結論（預測模型的重要特徵不代表因果）。見 [解釋性建模（R）](r-foundations/explanatory-modeling-in-r.md)、[Machine Learning](machine-learning/README.md)。
+
+> 模型可以看起來很精密，卻建立在薄弱的假設、品質差的標籤或沒整理好的資料上。
+
+## 接下來讀什麼
+
+| 想做的事 | 章節 |
+| --- | --- |
+| 整理與探索資料 | [Data Manipulation and EDA](data-manipulation-and-eda/README.md) |
+| 定義問題、和利害關係人對齊、報告 | [Data Communication](data-communication/README.md) |
+| 估計、檢定、實驗設計 | [Statistics](statistics/README.md) |
+| 預測、評估、部署 | [Machine Learning](machine-learning/README.md) |
+| 依讀者類型的完整路線 | [Data Science 建議路線](README.md#建議路線) |

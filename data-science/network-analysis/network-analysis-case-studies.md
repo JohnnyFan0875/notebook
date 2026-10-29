@@ -1,298 +1,151 @@
-# Network Analysis Case Studies
+[Data Science](../README.md) › [Network Analysis](README.md) › 網路分析案例
 
-> **待改寫**：指標的定義與解讀留在前三篇，本篇只保留「資料怎麼變成 graph」的案例；改寫時補生資範例：PPI 網路（STRING）、基因共表現網路（WGCNA）、單細胞 kNN 圖 + Leiden。
+# 網路分析案例 (Network Analysis Case Studies)
 
-真正做 network analysis 時，資料通常不是一開始就長成乾淨的 node-edge 表。你更常拿到的是事件紀錄、文字欄位、交易資料或移動軌跡，然後必須自己決定怎麼把它轉成 graph。
+真正做網路分析時，資料很少一開始就是乾淨的 node–edge 表：拿到的是事件紀錄、文字、交易、移動軌跡或表現量矩陣，要自己決定怎麼轉成 graph。不同的建模選擇會產生不同的 edge 意義。指標的定義與解讀見 [入門](introduction-to-network-analysis.md) 與 [結構指標](directed-networks-and-structural-metrics.md)。
 
-Key point: case study 的價值不只是多看幾張圖，而是學會把 messy event data 轉成可分析的 network，並知道不同建模選擇會產生不同 edge meaning。
+```
+定義一列代表什麼事件 → 決定事件會不會產生 edge（方向、意義）→ 必要時從文字抽出關係
+  → 重複互動聚合成權重 → 建圖後清理 → 大圖切子圖或時間切片 → 計算指標、比較方法
+```
 
-## Start From Events, Not From A Finished Graph
+## 商品網路：一天一張快照
 
-這組案例最有價值的地方，是它們都從原始資料表出發，而不是從已經整理好的 adjacency matrix 開始。
+把商品推薦 / 共同購買資料過濾到單一日期，建成有向圖（node：商品；edge：某商品連向另一商品）。這就是時間切片：先看單一時間點的結構，再把多個日期串起來看變化。
 
-常見原始來源包括:
+「重要」可以是任務導向的組合條件，例如 out-degree 高且 in-degree 低（常推薦別人、少被推薦）。把這些節點放回其他日期的圖中檢查，會發現重要性可能只是暫時現象。
 
-- 商品之間的共同購買或推薦紀錄
-- 推文文本與使用者互動
-- 單車站點之間的騎乘紀錄
+大圖的處理：取重要節點的 induced subgraph → 刪掉 degree 為 0 的節點 → 只看局部結構。
 
-這提醒我們，network workflow 的前半段通常是:
+## Twitter：關係藏在文字裡
 
-1. 先定義一筆 row 代表什麼事件。
-2. 再決定 event 會不會生成 edge。
-3. 最後才建立 graph 並計算指標。
+edge 常不在欄位中，而要從貼文文字抽出：轉推 (retweet)、提及 (mention)、回覆 (reply)、引用 (quote) 的對象。
 
-## Amazon Product Network: One Date Can Be One Snapshot
+| 互動 | 意義 | 方向 |
+| --- | --- | --- |
+| Retweet | 擴散、放大 | 轉推者 → 原作者 |
+| Quote | 帶評論的引用 | 引用者 → 原作者 |
+| Reply | 對話、互動回應 | 回覆者 → 被回覆者 |
+| Mention | 呼叫、社交接觸 | 發文者 → 被提及者 |
 
-Amazon 案例把商品互動資料過濾到單一日期，再建立 directed graph。這種做法很值得保留，因為它其實就是 time slicing。
-
-建模方式可以理解成:
-
-- nodes: products
-- edges: 某產品連向另一產品的推薦或共同購買方向
-- time unit: 某一天的 snapshot
-
-這樣的好處是:
-
-- 可以先看單一時間點的結構
-- 也可以把多個日期串起來看變化
-
-如果資料本身有時間欄位，先決定 graph 要不要是 snapshot，而不是急著把全部期間壓成同一張圖，通常會比較安全。
-
-## Importance Can Change Over Time
-
-這個案例裡一個很好的問題是: 某些看起來重要的 products，是否在其他日期也一樣重要？
-
-這背後其實是兩個判斷:
-
-- 重要性是怎麼定義的
-- 重要性是否穩定
-
-案例用的是簡單規則，例如:
-
-- out-degree 高
-- in-degree 低
-
-這種定義未必普遍，但很值得學，因為它說明一件事: important node 不一定是抽象 centrality 排名，也可以是任務導向的結合條件。
-
-更重要的是，當你把這些 nodes 放回多個日期的 graphs 觀察時，會發現重要性可能是暫時現象，而不是固定身分。
-
-## Large Graphs Usually Need Local Views
-
-Amazon graph 很大時，案例不是直接畫整張圖，而是:
-
-- 先取 induced subgraph
-- 再刪掉 degree 為 0 的 nodes
-- 最後只看局部結構
-
-這是很實用的工作習慣，因為真實網路常常太密。與其硬畫全圖，不如先:
-
-- 抽某個時間點
-- 抽某群重要節點
-- 抽某個局部子圖
-
-讓 visualization 回到可讀範圍。
-
-## Twitter Interaction Graphs Need Text Parsing First
-
-Twitter 案例很清楚地展示了一個重點: edge 常常不是直接存在欄位裡，而是藏在文字中。
-
-例如你可能要先從 tweet text 抽出:
-
-- retweet 對象
-- mentions 對象
-- reply 對象
-
-這表示 network construction 的核心不只是 `graph_from_data_frame()`，而是先把文本事件轉成 sender-target pairs。
-
-## Retweet And Mention Graphs Are Different Networks
-
-同一份 tweet 資料，至少可以建兩種 graph:
-
-- retweet graph
-- mention graph
-
-它們看起來都像使用者之間的 directed graph，但 edge meaning 其實不同。
-
-- retweet edge 比較接近傳播、轉發、放大
-- mention edge 比較接近對話、引用、呼叫、社交接觸
-
-這很重要，因為如果把它們混成同一張圖，後面的 centrality、community 與 influence interpretation 就會變得模糊。
-
-延伸一點看，Twitter interaction graph 常至少有三種 directed ties:
-
-- retweet
-- quote
-- reply
-
-它們都能表示成 `source -> target`，但社會語意不同：
-
-- retweet 比較接近擴散與放大
-- quote 比較接近帶評論的引用
-- reply 比較接近對話與互動回應
-
-如果研究問題和 edge meaning 有關，最好分開建圖，而不是先全部合併。
-
-## Building Directed Interaction Graphs From Edge Lists
-
-當 sender-target pairs 已經整理成欄位後，Twitter 互動圖其實很適合直接從 edge list 建起來。
-
-在 Python / NetworkX 裡，一個很自然的模式是：
+它們都能表示成 `source → target`，但社會意義不同；研究問題和 edge 意義有關時，要分開建圖，不要合併。
 
 ```python
 import networkx as nx
+import pandas as pd
 
-G_rt = nx.from_pandas_edgelist(
-    tweets,
-    source="user-screen_name",
-    target="retweeted_status-user-screen_name",
-    create_using=nx.DiGraph(),
-)
+# 1. 從文字抽 mention（被提及的帳號不一定在作者清單中，建圖時自動補節點）
+mentions = (tweets.assign(target=tweets["text"].str.findall(r"@(\w+)"))
+                  .explode("target").dropna(subset=["target"]))
+
+# 2. 不同互動各建一張有向圖；重複互動聚合成權重
+def build(df, target_col):
+    w = df.groupby(["user", target_col]).size().reset_index(name="weight")
+    G = nx.from_pandas_edgelist(w, "user", target_col, edge_attr="weight", create_using=nx.DiGraph)
+    G.remove_edges_from(nx.selfloop_edges(G))          # 清理：自我迴圈
+    G.remove_nodes_from(list(nx.isolates(G)))          # 清理：孤立點
+    return G
+
+G_rt = build(tweets.dropna(subset=["retweeted_user"]), "retweeted_user")
+G_mention = build(mentions, "target")
+
+# 3. 比較同一批帳號在不同互動中的角色
+deg = (pd.Series(dict(G_rt.in_degree()), name="rt")
+         .to_frame().join(pd.Series(dict(G_mention.in_degree()), name="mention"), how="inner"))
+deg["ratio"] = deg["mention"] / deg["rt"]              # 常被提及（對話型）vs 常被轉推（擴散型）
 ```
 
-quote graph 與 reply graph 也可以用同樣方式建立，只是 target 欄位不同。
+社群偵測不要只跑一種方法：比較 edge betweenness、Louvain / Leiden、label propagation 的結果，問哪些群在不同方法下都穩定、哪些邊界依賴演算法、結論對方法是否敏感，見 [社群偵測](directed-networks-and-structural-metrics.md#社群偵測-community-detection)。
 
-這個模式值得保留，因為它把 network construction 拆得很清楚：
+## 單車共享：流動網路與權重
 
-1. 先把原始事件整理成 sender-target columns。
-2. 再決定 graph 應該是 `Graph` 還是 `DiGraph`。
-3. 最後才開始做 centrality 或 visualization。
-
-## Vertex Creation Sometimes Happens On The Fly
-
-Twitter 案例還有一個很實用的工程細節: 被提及或被 retweet 的帳號，不一定先出現在作者清單裡。
-
-所以建圖流程常會變成:
-
-1. 先用已知作者建立部分 vertices。
-2. 逐列掃描文本抽出互動對象。
-3. 如果目標帳號不在現有 vertices 中，就補加進去。
-4. 再把 edge 加上去。
-
-這個模式在很多 event log 上都會出現，尤其是 target entity 來自半結構化文字時。
-
-## Cleaning The Graph Is Part Of Construction
-
-案例在建完 retweet / mention graph 後，會做幾個很實際的清理動作:
-
-- `simplify()` 去掉重複或不必要的結構
-- 刪除 degree 為 0 的 vertices
-
-這提醒我們:
-
-- graph 建出來不代表 graph 已經可分析
-- construction 和 cleaning 通常是一個連續流程
-
-如果你不先清掉孤立點、重複邊或明顯噪音，後面的社群與視覺化結果很容易被干擾。
-
-## Comparing Interaction Types Across Graphs
-
-同一批使用者在 retweet graph 和 reply graph 中，角色可能完全不同。
-
-一個很實用的分析方式，是先對不同互動圖各自算 degree，再合併比較：
+原始資料是一筆筆騎乘紀錄，不是現成的邊：
 
 ```python
-degree_rt = pd.DataFrame(list(G_rt.in_degree()), columns=["screen_name", "degree"])
-degree_reply = pd.DataFrame(list(G_reply.in_degree()), columns=["screen_name", "degree"])
-
-ratio = degree_rt.merge(
-    degree_reply,
-    on="screen_name",
-    suffixes=("_rt", "_reply"),
-)
-ratio["ratio"] = ratio["degree_reply"] / ratio["degree_rt"]
+flows = trips.groupby(["from_station_id", "to_station_id"]).size().reset_index(name="weight")
+G = nx.from_pandas_edgelist(flows, "from_station_id", "to_station_id",
+                            edge_attr="weight", create_using=nx.DiGraph)
 ```
 
-這種比較能回答的不是「誰最重要」這種單一問題，而是：
+| 概念 | 說明 |
+| --- | --- |
+| 權重來自聚合 | 同一對站點被騎過幾次；可控制線寬、區分強弱連結、做過濾 |
+| 網路距離 ≠ 地理距離 | 網路距離是要經過幾站，衡量結構可達性；兩站可能地理遠但網路近，反之亦然 |
+| 連通度 (connectivity) | `nx.node_connectivity`、`nx.edge_connectivity`：要移除多少節點或邊網路才會斷開，衡量韌性 (robustness) |
 
-- 某個帳號比較常被轉發，還是比較常被直接回覆？
-- 擴散型影響力和對話型影響力是否來自不同 nodes？
+## 生資案例
 
-這也再次提醒我們，network metric 的意義永遠依賴 edge meaning。
+### PPI 網路（STRING）
 
-## Community Detection Is Better As A Comparison Than A Single Answer
+[STRING](https://string-db.org/) 整合實驗、共表現、文獻探勘、基因鄰近等證據，給每對蛋白質一個信心分數（下載檔案中 `combined_score` 為 0–1000）。
 
-Twitter mentions 案例沒有只跑一種 community detection，而是比較了:
+```python
+import requests, io
 
-- edge betweenness
-- leading eigenvector
-- label propagation
+genes = ["TP53", "MDM2", "CDKN1A", "ATM", "CHEK2", "BRCA1"]
+r = requests.get("https://string-db.org/api/tsv/network",
+                 params={"identifiers": "\r".join(genes), "species": 9606, "required_score": 700})
+ppi = pd.read_csv(io.StringIO(r.text), sep="\t")
+G = nx.from_pandas_edgelist(ppi, "preferredName_A", "preferredName_B", edge_attr="score")
+```
 
-這個做法很值得保留，因為不同方法切出來的群組數與群大小本來就可能不同。
+| 注意 | 說明 |
+| --- | --- |
+| 分數門檻 | 400 中等、700 高、900 最高信心；結論要對門檻做敏感度分析 |
+| 證據類型 | 只用實驗證據 vs 包含文獻探勘，網路差很多 |
+| 研究偏差 | 熱門基因的已知交互作用多，hub 不一定是生物上最核心 |
+| ID 對應 | 用 STRING ID 或 Ensembl protein ID，symbol 有歧義 |
 
-所以比較成熟的態度不是問:
+常見分析：從差異表現基因建子網路、找模組（MCODE、Louvain）、看 hub 與橋樑節點、對模組做富集分析。
 
-- 哪個方法給我唯一正確社群？
+### 基因共表現網路（WGCNA）
 
-而是問:
+node 是基因，edge 是表現量的相似度。WGCNA 把相關係數取冪次（soft thresholding）讓網路接近無尺度 (scale-free)，再用 topological overlap 分出模組，每個模組以第一主成分（eigengene）摘要，與臨床特徵相關。
 
-- 哪些群組在不同方法下都穩定存在？
-- 哪些邊界非常依賴演算法？
-- 我的結論是否對分群方法敏感？
+```r
+library(WGCNA)
+# datExpr：樣本 × 基因（已過濾低表現、已做變異穩定轉換）
+sft <- pickSoftThreshold(datExpr, powerVector = 1:20, networkType = "signed")
+net <- blockwiseModules(datExpr, power = 12, networkType = "signed", TOMType = "signed",
+                        minModuleSize = 30, mergeCutHeight = 0.25)
+MEs <- net$MEs                                   # 每個模組的 eigengene
+cor(MEs, traits, use = "p")                      # 模組 ↔ 表型
+```
 
-Key point: community detection 比較像是結構假說產生器，不是最後仲裁者。edge betweenness 分群的原理見 [Directed Networks and Structural Metrics](directed-networks-and-structural-metrics.md#community-detection-turns-dense-structure-into-groups)；選圖工具的原則見 [Graph Visualization](introduction-to-network-analysis.md#graph-visualization-is-for-reasoning-not-decoration)。
+| 注意 | 說明 |
+| --- | --- |
+| 樣本數 | 一般建議至少約 15–20 個樣本，否則相關係數雜訊太大 |
+| 批次效應 | 先校正，否則模組反映的是批次而非生物 |
+| 相關 ≠ 調控 | 共表現網路無方向、不代表因果；推論調控關係需要其他證據 |
 
-## Bike Sharing Data Naturally Becomes A Weighted Mobility Graph
+### 單細胞 kNN 圖 + Leiden
 
-單車案例展示了另一種常見情境: 原始資料是一筆筆 trips，而不是已存在的 edges。
+單細胞分群本身就是網路分析：node 是細胞，edge 連到表現量空間（PCA 後）中最近的 k 個鄰居，再用 Leiden 社群偵測切出細胞群。
 
-這時合理的做法通常是:
+```python
+import scanpy as sc
 
-1. 用 `from_station_id` 和 `to_station_id` 分組。
-2. 計算每組出現次數。
-3. 把次數當成 edge weight。
+sc.pp.pca(adata, n_comps=50)
+sc.pp.neighbors(adata, n_neighbors=15, n_pcs=30)        # 建 kNN 圖：adata.obsp["connectivities"]
+sc.tl.leiden(adata, resolution=1.0, flavor="igraph", n_iterations=2, key_added="leiden_r1")
+sc.tl.umap(adata)                                       # UMAP 也建立在同一張 kNN 圖上
+```
 
-於是 graph 變成:
+| 參數 | 影響 |
+| --- | --- |
+| `n_neighbors` | 小：保留細緻局部結構、易破碎；大：較平滑、小群可能被吞掉 |
+| `n_pcs` | 太少丟失訊號，太多加入雜訊 |
+| `resolution` | 社群偵測的 resolution 參數：越大群越多；沒有唯一正確值，要用 marker 基因與生物知識判斷 |
 
-- nodes: stations
-- directed edges: 從起點站到終點站的流動
-- weight: 該路徑出現頻率
+UMAP 上看起來分開不代表是不同細胞類型，看起來相連也不代表是連續的分化：判斷要回到 kNN 圖與 marker。批次整合（Harmony、scVI）要在建圖之前，見 [單細胞深度學習](../deep-learning/bio-applications/single-cell-deep-learning.md)。
 
-這是一個非常典型的 mobility network 建模方式。
+## 常見錯誤
 
-## Edge Weight Often Comes From Aggregation
-
-這個案例最值得記住的是，weight 不一定是原始欄位直接給你的數字，它也可以是你彙總事件後得到的結果。
-
-像這裡的 `weights = n()` 代表的是:
-
-- 同一對站點之間被騎過多少次
-
-這樣的 weight 很適合用來:
-
-- 控制 edge thickness
-- 定義強連結與弱連結
-- 之後做過濾或 routing 分析
-
-## Graph Distance And Geographic Distance Are Not The Same Thing
-
-單車案例做了一個很好的對照:
-
-- graph distance: 在 network 中要經過幾站才能到
-- geographic distance: 現實世界中的地理距離
-
-這兩者不一定一致。
-
-一對站點可能:
-
-- 地理上很遠，但 network 上連得不差
-- 地理上很近，但因為路徑結構或流量模式，graph distance 反而不短
-
-這個對照很重要，因為它提醒我們 network shortest path 測的是結構可達性，不是物理空間距離本身。
-
-## Connectivity Describes Robustness, Not Just Reachability
-
-案例後面還引入了 connectivity 的角度，例如:
-
-- vertex connectivity
-- edge connectivity
-
-它們回答的不是「能不能到」，而是:
-
-- 要移除多少 nodes 或 edges，網路才會斷開
-
-這讓 network analysis 從 navigation 問題往 robustness 問題延伸。對交通、通訊、供應鏈類資料來說，這往往比單純 shortest path 更接近真實風險。
-
-## A Practical Workflow For Messy Network Data
-
-如果你面對的是事件流或半結構化資料，可以優先照這個順序走:
-
-1. 先定義一筆資料會不會產生 edge。
-2. 釐清 edge direction 與 edge meaning。
-3. 必要時從文字中抽 sender-target 關係。
-4. 若互動可重複發生，決定是否先聚合成 weighted edges。
-5. 建圖後立刻清理孤立點與重複邊。
-6. 大圖先切 subgraph 或抽 snapshot，不要直接解讀全圖。
-7. 若資料有時間欄位，優先考慮 snapshot 或 evolving graph。
-8. 若要做社群，至少比較兩種方法，避免把單一演算法輸出當定論。
-
-## Common Failure Modes
-
-- 把原始事件列直接當 edge，卻沒有先確認 row meaning
-- 把 retweet、mention、reply 混成同一種互動
-- 忘記為新增出現的目標帳號補 vertex
-- 不聚合同一對 entities 的重複互動，導致 weight information 流失
-- 只看地理距離，忽略 graph distance 回答的是另一個問題
-- 只跑一種 community detection 就直接下定論
-
-如果前面幾篇是 network analysis 的概念地圖，這篇 case study 更像是提醒你: 真正困難的地方，往往不是算指標，而是把資料正確地變成值得分析的 graph。
+| 錯誤 | 後果 |
+| --- | --- |
+| 把原始事件列直接當 edge，沒確認每列的意義 | 圖建錯 |
+| 把 retweet、mention、reply 混成同一種互動 | centrality 與社群的解讀變模糊 |
+| 沒有聚合重複互動 | 權重資訊流失（或變成多重邊） |
+| 只看地理距離，或把相似度當距離算最短路徑 | 回答錯的問題 |
+| 只跑一種社群偵測、一個 resolution 就下結論 | 結果依賴方法與參數 |
+| 共表現網路沒校正批次 | 模組反映技術變異 |

@@ -1,505 +1,213 @@
 [Data Science](../README.md) › [應用領域](README.md) › 最佳化
 
-# Optimization
+# 最佳化 (Optimization)
 
-作業研究 (operations research) 偏 prescriptive 的一側：問題不是「會發生什麼」，而是「在約束下應該怎麼做」。核心是把決策寫成 `decision variables + objective + constraints`，再交給 solver。
+最佳化是 prescriptive 的一側：問題不是「會發生什麼」，而是「在約束下應該怎麼做」。任何最佳化問題都要先拆成三塊，再交給 solver：
 
-## 概觀
+| 元件 | 問題 | 例子 |
+| --- | --- | --- |
+| 決策變數 (decision variables) | 可以調什麼？ | 生產量、出貨量、是否開廠、投資權重、模型參數 |
+| 目標函數 (objective) | maximize 或 minimize 什麼？ | 成本、利潤、負對數概似、生物質產量 |
+| 約束 (constraints) | 哪些條件不能違反？ | 容量、需求、預算、質量守恆、權重和為 1 |
 
-### 這個模組回答什麼問題
+三者沒分清楚，solver 只是把模糊的問題算得更快。solver 回傳 `optimal` 只代表「在你寫的模型裡最優」，不代表在真實世界最優。
 
-- 在容量、需求、成本與邏輯限制之下，最佳決策是什麼？
-- 哪些約束是真正卡住系統的 bottleneck？
-- 若需求或成本改變，最佳解會不會一起改變？
-
-### 與其他章節的關係
-
-- [Statistics](../statistics/README.md): 幫你判斷需求、成本、處理時間與其他輸入是否可信。
-- [Machine Learning](../machine-learning/README.md): ML 常回答「會發生什麼」，OR 則接著回答「應該怎麼做」。
-- [Process Analytics](process-mining.md): 若 bottleneck 已被找出，OR 常負責後續的資源配置與改善方案。
-
-### 實務提醒
-
-- solver 找到的最優解，只對你給進去的目標、限制與假設成立。
-- 若輸入資料很不穩定，先做 sensitivity analysis，比直接追求唯一最佳解更重要。
-- OR 最有價值的地方通常不是數學炫技，而是把 trade-off 說清楚。
-
-## Optimization in Python
-
-optimization 問的不是「資料長什麼樣」，而是「在目標與限制都明確時，哪些決策值最好」。
-
-Key point: 一個 optimization 問題最少要拆成三件事:
-
-- decision variables: 你可以調什麼
-- objective function: 你想 maximize 或 minimize 什麼
-- constraints: 哪些條件不能被違反
-
-如果這三塊沒有先分清楚，後面的 solver 只是幫你把模糊問題算得更快。
-
-### A Simple Mental Model
-
-可以先把 optimization 想成:
-
-1. 寫出一個輸入到分數的函數
-2. 定義哪些輸入是可行的
-3. 讓 solver 在可行範圍裡找最高分或最低分
-
-例如:
-
-- 最小化成本
-- 最大化利潤
-- 在容量、預算、時間或政策限制下找最佳組合
-
-### Unconstrained Optimization
-
-如果輸入值沒有額外限制，只需要對目標函數找最小值或最大值，可以先從 `scipy.optimize` 開始。
-
-#### One Variable: `minimize_scalar()`
-
-```python
-from scipy.optimize import minimize_scalar
-
-def objective(x):
-    return x**2 - 12*x + 4
-
-result = minimize_scalar(objective)
-
-print(result.x)    # argmin
-print(result.fun)  # minimum value
-```
-
-常看的欄位有:
-
-- `result.x`: 最佳輸入值
-- `result.fun`: 該點的目標函數值
-- `result.success`: 是否成功收斂
-- `result.nit`: iteration 次數
-- `result.nfev`: 函數評估次數
-
-Warning: 不要只看 `x`。若 `success=False` 或 `message` 顯示沒有正常收斂，數值結果可能不能直接相信。
-
-#### Maximization by Negation
-
-很多 SciPy API 預設做 minimization。若你要 maximize `f(x)`，常見做法是最小化 `-f(x)`。
-
-```python
-from scipy.optimize import minimize_scalar
-
-def revenue(x):
-    return -(x - 4)**2 + 10
-
-result = minimize_scalar(lambda x: -revenue(x))
-best_x = result.x
-best_value = revenue(best_x)
-```
-
-Key point: maximize `f` 等價於 minimize `-f`。這是最常見也最容易忘的轉換。
-
-#### Multiple Variables: `minimize()`
-
-```python
-import numpy as np
-from scipy.optimize import minimize
-
-def objective(q):
-    x, y = q
-    return (x - 2)**2 + (y - 3)**2
-
-initial_guess = np.array([0.0, 0.0])
-result = minimize(objective, initial_guess)
-
-print(result.x)
-```
-
-Tip: 多變數最適化通常需要 `initial_guess`。如果目標函數不是凸的，不同起點可能會導向不同 local optimum。
-
-### Bounds Are The First Useful Constraint
-
-很多問題不是完全自由，而是每個變數有上下界。
-
-```python
-from scipy.optimize import minimize, Bounds
-
-bounds = Bounds([5, 10], [25, 30])
-result = minimize(objective, initial_guess, method="L-BFGS-B", bounds=bounds)
-```
-
-這很適合表達:
-
-- 產量至少多少、至多多少
-- 價格不能低於某門檻
-- 投入比例要落在合法區間
-
-Bounds 很常是從 unconstrained 問題走向 constrained 問題的第一步。
-
-### Constrained Optimization
-
-當限制不只是各變數自己的上下界，而是多個變數之間有聯合條件時，可以用 constraint 物件。
-
-#### Linear Constraints
-
-如果限制是線性的，例如:
-
-- `x + y <= 90`
-- 原料消耗不能超過容量
-- 某些加總必須小於預算
-
-可以用 `LinearConstraint`:
-
-```python
-import numpy as np
-from scipy.optimize import minimize, Bounds, LinearConstraint
-
-def profit(q):
-    x, y = q
-    return 3*x + 5*y
-
-bounds = Bounds([0, 0], [90, 90])
-constraint = LinearConstraint([1, 1], lb=-np.inf, ub=90)
-
-result = minimize(
-    lambda q: -profit(q),
-    x0=np.array([10.0, 10.0]),
-    bounds=bounds,
-    constraints=constraint,
-)
-```
-
-#### Nonlinear Constraints
-
-如果可行域本身是非線性的，例如:
-
-- `x^2 + y^2 <= 25`
-- 生產、效用或風險限制不是線性關係
-
-可以用 `NonlinearConstraint`:
-
-```python
-from scipy.optimize import NonlinearConstraint
-
-constraint = NonlinearConstraint(lambda q: q[0] + q[1], lb=92, ub=np.inf)
-```
-
-Tip: 如果限制明明是線性的，優先用 `LinearConstraint`。這樣語意更清楚，也通常更穩。
-
-### Convexity Changes How Much You Can Trust The Result
-
-凸問題的好處是:
-
-- 可行域比較容易描述
-- local optimum 通常就是 global optimum
-- solver 的數值結果更容易解釋
-
-這也是為什麼很多教學會先從凸的 constrained optimization 開始。
-
-Warning: 若問題非凸，solver 找到的可能只是某個局部最優解，而不是全域最優解。
-
-### Linear And Mixed-Integer Programming
-
-當 objective 與 constraints 都是線性的，而且有些變數必須是整數或 0/1，問題就會進入 LP / MILP。
-
-SciPy 也有這類工具:
-
-```python
-from scipy.optimize import milp, Bounds, LinearConstraint
-
-result = milp(
-    c=[-5, -4],
-    bounds=Bounds([0, 0], [20, 12]),
-    constraints=LinearConstraint([[6, 4], [3, 1]], ub=[40, 20]),
-)
-```
-
-這類模型很適合:
-
-- 產品組合
-- 資源分配
-- binary open / close 決策
-- facility location 與 network design
-
-### When Nonlinear Problems Need Reformulation
-
-不是每個真實問題都能直接交給線性工具。
-
-有時候真正重要的技巧不是換 solver，而是先問:
-
-- 能不能做變數替換？
-- 能不能把非線性項改寫成線性形式？
-- 能不能接受一個可解的近似版本？
-
-例如若某個目標含有平方根項，原始形式可能不能直接交給線性建模工具，但透過替代變數有時可以改寫成可求解的線性或整數模型。
-
-Key point: 很多實務 optimization 工作不是「按下 solver」，而是把原始商業問題 reformulate 成 solver 真正能理解的形式。
-
-### SciPy vs Algebraic Modeling Tools
-
-可以先用這個粗略分法:
-
-| Tool direction | Better for |
+| 問題型態 | 工具 |
 | --- | --- |
-| `scipy.optimize` | 連續變數、數值最適化、直接寫 Python 函數 |
-| algebraic modeling tools such as `PuLP` | 線性 / 整數規劃、明確的變數索引、商業規則很多的模型 |
+| 連續變數、一般非線性函數 | `scipy.optimize.minimize` |
+| 線性目標 + 線性約束（LP） | `scipy.optimize.linprog` |
+| 部分變數為整數或 0/1（MILP） | `scipy.optimize.milp`、PuLP、OR-Tools |
+| 索引多、約束有業務語意的大模型 | 代數建模工具：PuLP、Pyomo、CVXPY（凸問題） |
 
-如果你的問題比較像:
+## 無約束最佳化
 
-- 寫一個數值函數，找最小值
-- 少量變數、偏數值分析
+```python
+import numpy as np
+from scipy.optimize import minimize_scalar, minimize
 
-那 `scipy.optimize` 通常很直接。
+# 單變數
+res = minimize_scalar(lambda x: x**2 - 12*x + 4)
+res.x, res.fun, res.success          # (6.0, -32.0, True)
 
-如果你的問題比較像:
+# 求最大值：最小化 -f
+revenue = lambda x: -(x - 4)**2 + 10
+res = minimize_scalar(lambda x: -revenue(x))
+res.x, revenue(res.x)                # (4.0, 10.0)
 
-- 產品、地點、期間都有索引
-- 約束很多，而且每條都有商業語意
-- 需要 binary / integer decision variables
+# 多變數：需要初始值
+res = minimize(lambda q: (q[0] - 2)**2 + (q[1] - 3)**2, x0=np.zeros(2))
+res.x                                 # [2., 3.]
+```
 
-那像 `PuLP` 這種 algebraic modeling 介面通常更好維護。
+| 結果欄位 | 意義 |
+| --- | --- |
+| `x`、`fun` | 最佳輸入、目標值 |
+| `success`、`message` | 是否正常收斂；`False` 時數值不能直接相信 |
+| `nit`、`nfev` | 迭代次數、函數評估次數 |
 
-### A Practical Workflow
+## 約束最佳化
 
-1. 先明確定義 decision variables。
-2. 寫出 objective，確認它真的代表 business goal。
-3. 把 constraints 一條條翻成數學與程式。
-4. 先用小例子檢查可行域是否符合語意。
-5. 再看 solver 結果、`success`、binding constraints 與 sensitivity。
+```python
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
 
-如果 solver 回傳一個答案，不代表模型就對。它只代表 solver 在你給的問題描述裡找到了一個解。
+f = lambda q: (q[0] - 4)**2 + (q[1] - 4)**2
 
-### Related Notes
+# 1. 上下界：每個變數各自的範圍
+res = minimize(f, x0=[1, 1], method="L-BFGS-B", bounds=Bounds([0, 0], [3, 10]))
+res.x                                                        # [3., 4.]
 
-- [Supply Chain Optimization](#supply-chain-optimization)
-- [Linear Regression](../machine-learning/supervised-learning/regression/linear.md): both involve optimization, but regression optimizes model fit while operations research optimizes a decision under explicit constraints.
+# 2. 線性約束：x + y <= 5
+lin = LinearConstraint([[1, 1]], lb=-np.inf, ub=5)
+res = minimize(f, x0=[1, 1], method="trust-constr", constraints=[lin])
+res.x                                                        # [2.5, 2.5]
 
-## Supply Chain Optimization
+# 3. 非線性約束：x² + y² <= 4（可行域是半徑 2 的圓）
+circle = NonlinearConstraint(lambda q: q[0]**2 + q[1]**2, lb=-np.inf, ub=4)
+res = minimize(f, x0=[0.5, 0.5], method="trust-constr", constraints=[circle])
+res.x                                                        # ≈ [1.414, 1.414]
+```
 
-supply chain analytics 常常不是先問「預測值是多少」，而是先問「在需求、容量、運輸與設施成本都存在時，系統該怎麼配置才最好」。這就是 optimization 真正切入的地方。
+約束是線性時優先用 `LinearConstraint`：語意清楚、數值較穩。目標與約束都是線性時不要用 `minimize`，改用 `linprog` / `milp`。
 
-Key point: supply chain optimization 的本質是把 network decision 寫成 `decision variables + objective + constraints`。如果這三件事沒有分清楚，模型通常只會算出一個數字，卻沒有真的代表決策。
+## 凸性
 
-### What A Supply Chain Model Is Trying To Do
+| | 凸問題 | 非凸問題 |
+| --- | --- | --- |
+| 局部最優 = 全域最優？ | 是 | 不一定 |
+| 對初始值敏感？ | 否 | 是 |
+| 例子 | LP、最小平方、Ridge / Lasso、Markowitz 最小變異 | 神經網路、混合模型的概似、多峰函數 |
 
-supply chain 不只是倉庫或貨運，而是所有和 fulfilment 有關的參與者與流程，例如:
+![LP and local optima](src/optimization-lp-and-local-optima.png)
 
-- suppliers
-- internal manufacturing
-- warehouses
-- outsourced logistics providers
-- regional demand points or customers
+左：LP 的最佳解一定在可行域的頂點（目標函數等高線往外推，最後碰到的角）。右：非凸函數從三個起點出發得到三個不同的局部最小值，而真正的全域最小值（x ≈ 1.55）一個都沒找到。非凸問題要用多個起點、全域方法（`scipy.optimize.differential_evolution`、`basinhopping`），或重新表述成凸問題。
 
-optimization 要做的，不是把每個環節都模擬得很像現實，而是找出在既定約束下的最佳配置。
+## 線性與整數規劃
 
-### Linear Programming As The Default Starting Point
+```python
+from scipy.optimize import milp, linprog
 
-這份課程的核心語言是 linear programming, LP。它之所以常用，不是因為 supply chain 問題一定線性，而是因為很多重要的第一版決策問題都能先用線性近似。
+# 最大化 5x + 4y，s.t. 6x + 4y <= 40、3x + y <= 20、0 <= x <= 20、0 <= y <= 12，x、y 為整數
+res = milp(c=[-5, -4],                                   # milp 只做最小化，係數取負
+           constraints=LinearConstraint([[6, 4], [3, 1]], ub=[40, 20]),
+           bounds=Bounds([0, 0], [20, 12]),
+           integrality=[1, 1])                           # 沒給 integrality 時就只是 LP
+res.x, -res.fun                                          # ([0., 10.], 40.0)
+```
 
-一個 LP 模型至少有三塊:
+| 適合 LP / MILP 的問題 | 0/1 變數表達的邏輯 |
+| --- | --- |
+| 產品組合、資源分配 | 開 / 不開某個設施 |
+| 運輸與指派 | 若不開廠則出貨為 0（`flow <= capacity × open`） |
+| 設施選址、網路設計 | 互斥選擇（`open_low + open_high <= 1`） |
 
-- decision variables: 我們能控制什麼
-- objective function: 我們想 maximize 或 minimize 什麼
-- constraints: 哪些規則、容量或邏輯不能被違反
+有些非線性問題可以重新表述：變數替換、把非線性項線性化、或接受可解的近似。很多實務最佳化工作不是按下 solver，而是把原始問題改寫成 solver 能理解的形式。
 
-在 supply chain 情境裡，典型對應會是:
+## 生醫例子
 
-- variables: 生產量、出貨量、是否開廠、是否開倉
-- objective: 最小化總成本，或最大化總利潤
-- constraints: demand fulfillment、capacity、material balance、logical rules
+### 參數估計 = 最佳化
 
-### Decision Variables Need A Clean Index Structure
+統計模型的最大概似估計 (MLE) 就是最小化負對數概似；曲線擬合是最小化殘差平方和，見 [最大概似估計](../statistics/probability-and-distributions/maximum-likelihood.md)。
 
-一旦模型從單產品、單工廠走向多產品、多地點、多期間，手工寫變數通常很快失控。
+```python
+from scipy.optimize import curve_fit
 
-這也是為什麼像 `LpVariable.dicts()` 這種 indexed variable 建立方式很重要。真正的重點不是工具本身，而是你是否清楚定義索引:
+# 劑量反應：四參數 logistic（Hill）曲線
+def hill(dose, bottom, top, ec50, n):
+    return bottom + (top - bottom) / (1 + (ec50 / dose)**n)
 
-- product `p`
-- time `t`
-- warehouse or plant `w`
-- market `j`
-- facility size `s`
-
-大多數 supply chain 模型的可維護性，往往取決於索引設計是否乾淨，而不是 solver 呼叫本身。
-
-### Transportation Problems Are The First Useful Network Model
-
-最基本的 network optimization 通常是 transportation problem。
-
-典型問題長這樣:
-
-- 幾個 warehouses 或 plants
-- 幾個 customers 或 regions
-- 每條 route 有不同運輸成本
-- 需求必須被滿足
-- 每個供給點有出貨上限
-
-這種模型的核心不是路徑圖，而是 allocation:
-
-- 每個供給點應該送多少到每個需求點？
-- 要如何在滿足需求下，把總運輸成本降到最低？
-
-這是很多更大 network design 問題的起點。
-
-### Facility Location Adds Fixed-Cost Decisions
-
-當模型從「既有設施怎麼分配」走到「哪些設施應該開」，問題就進一步變成 facility location。
-
-這裡通常會同時出現兩種決策:
-
-- continuous or integer flow variables: 送多少
-- binary open / close variables: 開不開某個 plant 或倉庫
-
-典型 trade-off 包括:
-
-- 小型、分散設施: 較低運輸成本，但可能失去規模經濟
-- 少數大型設施: 固定成本與規模效率較好，但運輸、tariff 或服務半徑可能變差
-
-這也是 supply chain network design 常見的真實 tension: local responsiveness 與 scale efficiency 很少能同時最大化。
-
-### Capacitated Plant Location Is A Canonical Form
-
-這份材料反覆出現的一個重要模型，是 capacitated plant location model。
-
-它通常同時包含:
-
-- 哪些地點開廠
-- 開 low-capacity 還是 high-capacity 版本
-- 各市場需求由哪些廠供應
-- 每個廠的總出貨不能超過 capacity
-
-這類模型非常適合用來練習如何把商業語句翻成數學限制，例如:
-
-- 每個市場需求必須完全被滿足
-- 若某 plant 沒有被打開，就不能出貨
-- 某 plant 若選 high-capacity，就不應同時再選 low-capacity
-
-這些都不是「額外細節」，而是模型是否忠於決策邏輯的關鍵。
-
-### Constraint Design Is Where Most Modeling Errors Happen
-
-很多 optimization 錯誤不在 objective，而在 constraint。
-
-這份課程很有價值的一點，是它強調常見 constraint mistake，例如:
-
-- dependent demand relation 方向寫反
-- 用 `=` 寫死本來應該是 `>=` 或 `<=` 的限制
-- 多維索引的加總範圍漏掉一層
-- 把 logical condition 寫成數學上可解、但商業上不合理的式子
-
-例如如果每單位 `B` 需要至少 3 單位 `A` 作為投入，重點不是只會寫公式，而是知道:
-
-- 「至少」代表不一定要剛好等於
-- 方向和單位必須一致
-- 代入具體數值檢查，通常比盯著公式更容易抓錯
-
-### A Good Habit: Plug In A Feasible Example By Hand
-
-在正式求解前，先拿一組小數字檢查 constraint 是否符合語意，通常非常有效。
-
-你應該能回答:
-
-- 如果 `B = 2`，`A` 至少該是多少？
-- 如果某市場 demand 是 100，模型是否真的會要求總出貨等於 100？
-- 如果某 plant closed，flow 變數是否真的被壓成 0？
-
-這種手動 sanity check 往往比直接跑 solver 更能提早發現問題。
-
-### Logical Constraints Are Business Rules In Algebra Form
-
-supply chain model 很少只有容量限制，還常帶有 logical constraints，例如:
-
-- 開了高產能廠就不能同時開低產能廠
-- 沒有開設施就不能出貨
-- 某些產品只能從特定倉庫配送
-- 某組決策只能二選一
-
-這些限制很重要，因為很多真實決策其實不是連續調整，而是開關式、互斥式或 conditional 的。
-
-換句話說，logical constraints 是把 business policy 寫進模型的地方。
-
-### Objective Functions Should Match The Real Question
-
-模型能算，不代表算的是對的問題。
-
-常見 objective 包括:
-
-- minimize production + transportation cost
-- minimize fixed + variable network cost
-- maximize profit under capacity and demand constraints
-
-若目標其實是 service reliability、response time 或 resilience，卻只寫成 cost minimization，模型就可能給出數學上漂亮、營運上危險的解。
-
-Tip: objective function 不是單純 technical choice，它其實是在定義「系統認為什麼叫做好」。
-
-### Shadow Prices Identify Which Constraints Really Matter
-
-求解完之後，最有分析價值的往往不是最佳解本身，而是 constraints 的敏感度。
-
-shadow price 可以先用直覺理解成:
-
-- 某 constraint 的 right-hand side 若增加一單位
-- objective value 會改善或惡化多少
-
-在 supply chain 裡，這通常能幫你回答:
-
-- 哪個 region 的額外 demand 最貴？
-- 哪個 capacity constraint 最值得投資放寬？
-- 哪些限制目前根本不是 bottleneck？
-
-如果某 constraint 的 shadow price 很高，代表那個資源或限制在目前解附近非常稀缺。
-
-### Sensitivity Analysis Is Not Optional
-
-很多供應鏈模型的輸入本來就是 estimate，不是 certainty，例如:
-
-- regional demand forecast
-- transportation cost
-- fixed facility cost
-- usable capacity
-
-因此一個單點最佳解通常不夠，還要再問:
-
-- demand 增加時，產能配置會不會改？
-- 成本小幅變動時，開廠決策會不會翻轉？
-- 哪些 plant 仍有 slack capacity 可以吸收未來需求？
-
-這也是為什麼 shadow price analysis 和 scenario testing 幾乎是同一條工作流上的下一步。
-
-### Simulation Testing Helps Stress-Test The Network
-
-這份內容最後把 simulation 接進 optimization，這很實用。
-
-核心想法是:
-
-- 先有一個 deterministic optimization model
-- 再對 demand 或 cost 加入隨機擾動
-- 重複求解，觀察決策與成本如何變動
-
-這樣做的目的不是把模型變華麗，而是檢查:
-
-- 最佳解是否穩定
-- 哪些地區或設施最容易受擾動影響
-- 單一最優解是否其實非常脆弱
-
-當 deterministic optimum 對小幅輸入變動就非常敏感時，通常代表模型需要更多 robustness thinking。
-
-### A Practical Modeling Workflow
-
-一個健康的 supply chain optimization workflow 通常像這樣:
-
-1. 先畫出 network 與 decision scope。
-2. 定義索引、variables、objective 與 units。
-3. 逐條寫 constraints，並用小例子驗證語意。
-4. 求解後先檢查 feasibility、flows 與 open / close decisions。
-5. 再看 shadow prices、binding constraints 與 slack。
-6. 最後做 scenario 或 simulation testing，而不是直接把單次結果當真理。
-
-這個節奏比「一口氣把模型寫完再交給 solver」安全很多。
-
-### Common Failure Modes
-
-- 把 forecast 當成精確值，沒有做 sensitivity analysis
-- constraint 方向寫反，卻只看 solver 有沒有回傳 optimal
-- 索引集合寫錯，導致少加總或重複加總
-- 只優化 cost，卻忽略 service 或 policy requirement
-- binary open / close logic 沒有和 flow 變數正確連動
-- 把影子價格當成全域真理，而不是局部邊際資訊
-
-如果 solver 回傳 `optimal`，那只是代表「在你寫的模型裡最優」，不代表「在你真正想表達的世界裡最優」。
+params, cov = curve_fit(hill, dose, response, p0=[0, 100, 1.0, 1.0],
+                        bounds=([-10, 50, 1e-4, 0.1], [20, 150, 100, 5]))
+se = np.sqrt(np.diag(cov))                 # 參數標準誤
+```
+
+非線性擬合是非凸問題：合理的 `p0` 與 `bounds` 決定能否收斂到有意義的解。
+
+### 通量平衡分析 (Flux Balance Analysis)
+
+代謝網路的 FBA 是一個 LP：決策變數是反應通量 v，約束是穩態質量守恆 S·v = 0（S 是化學計量矩陣）與通量上下界，目標通常是最大化生物質反應。
+
+```python
+# 玩具網路：v1 吸收 → A；v2 A → B；v3 A → 副產物；v4 B → biomass
+S = np.array([[1, -1, -1,  0],    # 代謝物 A
+              [0,  1,  0, -1]])   # 代謝物 B
+res = linprog(c=[0, 0, 0, -1], A_eq=S, b_eq=[0, 0],
+              bounds=[(0, 10), (0, 6), (0, None), (0, None)])
+res.x, -res.fun                    # 生物質通量 6：受 v2 上限 6 限制
+```
+
+這個解不唯一：v1 可以是 6 到 10 之間任何值（多出來的走 v3），目標值都一樣。FBA 常有多重最佳解，所以會再做 flux variability analysis 找每個通量的可行範圍。實際分析用 COBRApy。
+
+## 供應鏈最佳化
+
+供應鏈問題把網路決策寫成 LP / MILP：供應商、工廠、倉庫、市場之間該怎麼配置。
+
+| 模型 | 決策 | 典型約束 |
+| --- | --- | --- |
+| 運輸問題 | 每個供給點送多少到每個需求點 | 滿足需求、不超過供給上限 |
+| 設施選址 | 開哪些廠 / 倉（0/1）+ 流量 | 沒開就不能出貨、固定成本 |
+| 容量設施選址 | 開哪些、開低或高產能版本、誰供應哪個市場 | 需求完全滿足、出貨不超過產能、高低產能互斥 |
+
+設施選址的典型取捨：小型分散設施運輸成本低但失去規模經濟；少數大型設施固定成本與規模效率較好，但運輸、關稅或服務半徑變差。
+
+```python
+import pulp      # pip install pulp highspy；PuLP 4 不再內建 CBC solver
+
+plants, markets = ["P1", "P2"], ["M1", "M2", "M3"]
+cost = {("P1", "M1"): 4, ("P1", "M2"): 6, ("P1", "M3"): 9,
+        ("P2", "M1"): 5, ("P2", "M2"): 3, ("P2", "M3"): 7}
+supply, demand = {"P1": 250, "P2": 300}, {"M1": 150, "M2": 200, "M3": 180}
+fixed = {"P1": 500, "P2": 600}
+
+m = pulp.LpProblem("plant_location", pulp.LpMinimize)
+x = m.add_variable_dict("ship", (plants, markets), lowBound=0)      # 索引化變數：x[(p, j)]
+y = m.add_variable_dict("open", plants, cat="Binary")
+m += pulp.lpSum(cost[k] * x[k] for k in cost) + pulp.lpSum(fixed[p] * y[p] for p in plants)
+for j in markets:
+    m += pulp.lpSum(x[(p, j)] for p in plants) == demand[j], f"demand_{j}"
+for p in plants:
+    m += pulp.lpSum(x[(p, j)] for j in markets) <= supply[p] * y[p], f"cap_{p}"   # 沒開就不能出貨
+stats = m.solve(pulp.HiGHS(msg=False))
+stats.status, pulp.value(m.objective)          # (LpSolveStatus.Optimal, 3720.0)：兩廠都開
+{k: v.value() for k, v in x.items() if v.value()}
+# {('P1','M1'): 150, ('P1','M3'): 80, ('P2','M2'): 200, ('P2','M3'): 100}
+```
+
+PuLP 3.x 的寫法是 `pulp.LpVariable.dicts(...)`、`m.solve(pulp.PULP_CBC_CMD(msg=False))`、`pulp.LpStatus[m.status]`、`m.constraints[name].pi`；4.0 改成由問題物件建立變數、solve 回傳統計物件、`m.constraints()` 變成方法，舊教材的程式要改寫。MILP 沒有對偶值（影子價格全為 0）：要固定 0/1 決策後對剩下的 LP 求解，才能讀影子價格。
+
+### 約束是最常出錯的地方
+
+| 錯誤 | 例子 |
+| --- | --- |
+| 方向寫反 | 「每單位 B 至少需要 3 單位 A」寫成 `B >= 3A`（應為 `A >= 3B`） |
+| 用 `==` 寫死 `>=` / `<=` 的限制 | 「至少」不是「剛好」 |
+| 多維索引加總漏一層 | 少加總或重複加總 |
+| 0/1 變數沒和流量連動 | 關閉的廠仍在出貨 |
+| 數學上可解但業務上不合理 | 同時開高產能與低產能版本 |
+
+> 求解前先代入一組小數字手算：如果 B = 2，A 至少該是多少？某市場需求 100，模型是否真的要求總出貨 = 100？某廠關閉時，流量是否真的為 0？這比盯著公式更容易抓錯。
+
+### 求解後：影子價格與敏感度
+
+| 分析 | 回答 |
+| --- | --- |
+| Binding constraints / slack | 哪些約束真正卡住系統？哪些廠還有剩餘產能？ |
+| 影子價格 (shadow price) | 某約束右側多一單位，目標值改善多少？哪個產能最值得投資擴充？哪個市場的額外需求最貴？ |
+| 情境分析 | 需求、成本小幅變動時，開廠決策會不會翻轉？ |
+| 模擬壓力測試 | 對需求或成本加隨機擾動、重複求解，看決策與成本的分布；單點最優對小擾動很敏感時，模型需要更多韌性考量 |
+
+影子價格是局部的邊際資訊，只在目前解附近成立，不是全域真理。目標函數定義了「系統認為什麼叫好」：真正在意服務可靠度或韌性時只寫成本最小化，會得到數學漂亮、營運危險的解。
+
+## 工作流程
+
+1. 畫出網路與決策範圍
+2. 定義索引、變數、目標與單位
+3. 逐條寫約束，用小例子驗證語意
+4. 求解後檢查可行性、流量、開關決策、`success` / status
+5. 看 binding constraints、slack、影子價格
+6. 做情境或模擬測試，而不是把單次結果當真理
+
+| 相關筆記 | |
+| --- | --- |
+| [線性迴歸](../machine-learning/supervised-learning/regression/linear.md) | 迴歸最佳化的是模型配適；作業研究最佳化的是有明確約束的決策 |
+| [投資組合與風險](finance/portfolio-and-risk.md) | Markowitz 最佳化是二次規劃 |
+| [流程探勘](process-mining.md) | 找出瓶頸後，最佳化負責資源配置 |
