@@ -96,7 +96,7 @@
 - [x] **批次 4　RNA-seq**（12 篇）：`rna-seq/` 系列 + `limma-differential-expression.md`；移除寫死路徑；資料與圖保留在 `data/`、`src/`
 - [x] **批次 5　變異呼叫、全基因體分析、癌症基因體**（約 12 篇）：新增 `workflows/variant-calling.md`（比對 → 去重 → BQSR → HaplotypeCaller / Mutect2 → VQSR / hard filter → VEP）；GWAS / QTL / colocalization；TCGA / GDC、mutational signatures、NCCN
 - [x] **批次 6　genetics 資料庫 I**（約 17 篇）：gene、population-frequency（gnomAD、TaiwanGenomes、DGV…）、functional-expression、pharmacogenomics（PharmGKB + CPIC）
-- [ ] **批次 7　genetics 資料庫 II**（約 25 篇）：variant（ClinVar、dbSNP、VEP、COSMIC、CIViC、VarSome…）、gene-disease-association（OMIM、HPO、ClinGen、GenCC、PanelApp…）
+- [x] **批次 7　genetics 資料庫 II**（約 25 篇）：variant（ClinVar、dbSNP、VEP、COSMIC、CIViC、VarSome…）、gene-disease-association（OMIM、HPO、ClinGen、GenCC、PanelApp…）
 - [ ] **批次 8　genetics 基礎與變異判讀**（約 10 篇）：修正 VAF 與族群頻率的混用；新增 `variant-interpretation/acmg-amp.md`（criteria 表、證據組合規則、ClinGen SVI 調整）；HGVS、in-silico 預測、ACGS、ClinGen 指引
 - [ ] **批次 9　clinical-informatics**（約 25 篇）：clinical-terminology（FHIR、OMOP、SNOMED、ICD、LOINC…，補比較與對應關係）、clinical-databases、regulatory-databases
 - [ ] **批次 10　immunology、laboratory-medicine、medical-imaging**（約 16 篇）：細胞激素整合；影像模態比較表（連 data-science 的 image-analysis）；blood-bank 依網站內容補充

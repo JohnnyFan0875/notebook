@@ -1,4 +1,21 @@
-- **罕見疾病一點通**
+[資料庫](../README.md) › [基因–疾病關聯](README.md) › 罕見疾病一點通
 
-  - A Taiwanese rare disease database offering accessible information on rare diseases, supporting patients and healthcare providers.
-  - Website: [https://web.tfrd.org.tw/diseaseDatabase.html?selectedIndex=0](https://web.tfrd.org.tw/diseaseDatabase.html?selectedIndex=0)
+# 罕見疾病一點通（台灣罕見疾病基金會）
+
+財團法人台灣罕見疾病基金會 (TFRD) 的中文罕病資料庫，提供各罕見疾病的介紹、遺傳方式、症狀、治療與照護資訊，對象包含病人、家屬與醫療人員。
+
+| 項目 | 內容 |
+| --- | --- |
+| 網站 | [罕見疾病一點通：疾病資料庫](https://web.tfrd.org.tw/diseaseDatabase.html?selectedIndex=0) |
+| 內容 | 疾病中文介紹、遺傳模式、臨床表現、治療、病友資源 |
+| 何時用 | 撰寫中文衛教或遺傳諮詢資料；查台灣病友團體與社會資源 |
+
+## 台灣罕病的相關制度
+
+| 項目 | 主管機關 / 說明 |
+| --- | --- |
+| 公告罕見疾病名單、罕藥 | 衛生福利部國民健康署（依《罕見疾病防治及藥物法》） |
+| 重大傷病、給付 | 衛福部中央健康保險署 |
+| 罕病通報與確診檢驗補助 | 國民健康署 |
+
+> 網站為動態頁面，本次整理時無法讀取頁面內容；公告名單與補助以國健署最新公告為準。國際罕病資訊見 [Orphanet](orphanet.md)。
