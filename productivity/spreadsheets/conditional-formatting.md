@@ -1,82 +1,59 @@
-# Conditional Formatting
+[Productivity](../README.md) › [試算表](README.md) › 條件式格式
 
-## What It Is
+# 條件式格式 (Conditional Formatting)
 
-Conditional formatting applies visual styles to cells when their values match specified rules. It is useful when the goal is to surface patterns quickly without changing the underlying data.
+依規則自動改變儲存格外觀，讓異常值、截止日、高低分布一眼可見；資料更新後顏色跟著變，不必手動重新上色。Excel（常用 → 設定格式化的條件）與 Google Sheets（格式 → 條件式格式）概念相同。
 
-## When It Works Best
+> 條件式格式只是視覺提示，不改變資料本身；需要被篩選、分組或計算的判斷，應該另做一個邏輯欄（如 `=IF(...)` 旗標）。
 
-Conditional formatting is most useful when:
+## 組成
 
-- the dataset is small to medium sized
-- the data changes over time
-- visual attention should update automatically with the values
-
-The key advantage is that formatting stays tied to rules instead of requiring manual recoloring after each update.
-
-## Main Building Blocks
-
-Most spreadsheet conditional formatting systems revolve around:
-
-| Part | Role |
+| 部分 | 角色 |
 | --- | --- |
-| Range | Which cells the rule applies to |
-| Rule | What condition is being tested |
-| Format style | What visual change happens when the rule matches |
-| Mode | Single-color rules or color scales |
+| 套用範圍 (range) | 規則作用在哪些儲存格 |
+| 規則 (rule) | 測試的條件 |
+| 格式 (format style) | 條件成立時的外觀 |
+| 模式 | 單色規則 vs 色階 (color scale) / 資料橫條 (data bar) / 圖示集 (icon set) |
 
-## Common Rule Types
+## 規則類型
 
-Typical rules include:
+| 規則 | 例子 | 適合 |
+| --- | --- | --- |
+| 大於 / 小於 / 介於 | 負數標紅、低於門檻 | 單色 |
+| 文字包含 / 等於 | 狀態為 "Overdue" | 單色 |
+| 日期 | 過去 7 天、下個月 | 單色 |
+| 重複 / 唯一值 | 找出重複 ID | 單色 |
+| 前 / 後 N 項、高於平均 | top 10% 業績 | 單色 |
+| 色階、資料橫條 | 分數熱圖、相對大小 | 連續數值 |
+| 自訂公式 | 跨欄條件、整列上色 | 任何 |
 
-- greater than / less than thresholds
-- text contains or exact text matches
-- dates before or after a reference point
-- duplicate values
-- custom formulas
+| 選擇 | 用在 |
+| --- | --- |
+| 單色 | 二元或類別狀態：逾期、負值、已完成 |
+| 色階 | 大小程度重要：分數高低、熱圖式比較 |
 
-These rules let the sheet act like a lightweight monitoring surface.
+## 自訂公式
 
-## Single Color vs Color Scale
+公式以範圍左上角儲存格為基準撰寫，回傳 `TRUE` 時套用格式；`$` 決定哪個方向固定。
 
-### Single color
+| 目的 | 套用範圍 | 公式 |
+| --- | --- | --- |
+| 整列上色：狀態欄 (E) 為 Overdue | `$A$2:$H$100` | `=$E2="Overdue"` |
+| 截止日 (D) 在 7 天內且未完成 | `$A$2:$H$100` | `=AND($D2-TODAY()<=7, $F2<>"Done")` |
+| 標出重複 ID | `$A$2:$A$100` | `=COUNTIF($A:$A, $A2)>1` |
+| 標出空白必填欄 | `$B$2:$B$100` | `=ISBLANK($B2)` |
+| 隔列底色 | `$A$2:$H$100` | `=MOD(ROW(), 2)=0` |
 
-Use when a binary or category-like condition matters, such as:
+> 整列上色時欄要鎖（`$E2`）、列不鎖；忘記鎖欄會讓每一欄都去比對不同的欄位。
 
-- overdue tasks
-- negative values
-- completed rows
+## 設計原則
 
-### Color scale
+| 原則 | 說明 |
+| --- | --- |
+| 規則少 | 互相競爭的顏色越多，越沒有重點 |
+| 強烈顏色留給例外 | 紅色只給真正需要處理的狀態 |
+| 避免重疊規則語意不明 | 用「規則管理員」調整順序，必要時勾「如果為 True 則停止」 |
+| 不只靠顏色 | 色盲友善：搭配圖示或文字標籤 |
+| 用 Table 當範圍 | 新增列時規則自動延伸 |
 
-Use when magnitude matters, such as:
-
-- low to high scores
-- percentile-style heatmaps
-- quick comparison across a continuous numeric range
-
-## Design Principles
-
-Conditional formatting is most effective when it clarifies, not when it decorates.
-
-Good practices:
-
-- keep the number of competing rules low
-- use color only where interpretation matters
-- reserve strong colors for exceptional states
-- make sure overlapping rules do not create ambiguous meaning
-
-## Practical Use Cases
-
-- highlight missing or suspicious values
-- flag deadlines and schedule risk
-- reveal top or bottom performers
-- show trend direction in KPI tables
-- make operational spreadsheets easier to scan during updates
-
-## Practical Takeaways
-
-- Conditional formatting is a rule-driven visualization layer for spreadsheets.
-- It works especially well for changing datasets that need fast scanning.
-- Choose single-color rules for categorical emphasis and color scales for magnitude.
-- The best spreadsheet formatting systems are interpretable at a glance, not visually busy.
+常見用途：標出缺值或可疑值、截止日與進度風險、前後段表現、KPI 趨勢方向；也可搭配 [資料驗證](excel-data-validation.md) 標出驗證擋不到的重複值。

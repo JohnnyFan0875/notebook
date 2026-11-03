@@ -1,90 +1,71 @@
-# Computer Architecture and Program Execution
+[Computing](../README.md) › [CS 基礎](README.md) › 電腦架構與程式執行
 
-## Why This Matters
+# 電腦架構與程式執行 (Computer Architecture and Program Execution)
 
-Programs only become useful when their instructions can be represented in a form the machine can execute. A practical mental model is:
+硬體執行的是機器指令，不是原始碼。從人的意圖到硬體執行的路徑是：`意圖 → 原始碼 → 翻譯（編譯 / 直譯）→ 機器指令 → CPU 執行`。理解這條路徑，才能解釋語言速度差異、記憶體不足、為什麼向量化比迴圈快。
 
-`human intent -> source code -> translation layer -> machine instructions -> hardware execution`
+## 主要元件
 
-This helps explain why abstraction layers matter in programming, performance, debugging, and systems design.
-
-## Main Components of a Computer
-
-| Component | Main role | Typical questions |
+| 元件 | 角色 | 實務上的意義 |
 | --- | --- | --- |
-| CPU | Executes instructions and coordinates work | What operation is performed next? |
-| Memory (RAM) | Stores active data and instructions | What is needed right now? |
-| Storage | Keeps data persistently | What must survive after shutdown? |
-| Input | Brings information into the system | What does the computer receive? |
-| Output | Presents results | What does the computer produce? |
+| CPU | 執行指令、協調工作；多核心可平行 | 核心數決定能同時跑幾個執行緒 / 程序（`-t 8`、`--cpus-per-task`） |
+| 快取 (cache, L1/L2/L3) | CPU 內的小而快的記憶體 | 連續存取的資料（陣列）快、跳躍存取（鏈結串列、隨機索引）慢 |
+| 記憶體 (RAM) | 存放執行中的程式與資料，斷電消失 | 資料要整個載入時的上限；超過會用 swap 或被系統殺掉（OOM） |
+| 儲存 (storage: SSD / HDD / 網路磁碟) | 持久保存 | 讀寫比 RAM 慢上千倍以上；大檔分塊讀取 |
+| GPU | 大量簡單核心的平行運算 | 深度學習、矩陣運算 |
+| 輸入 / 輸出 (I/O) | 鍵盤、網路、磁碟 | 程式常卡在 I/O 而不是運算（I/O-bound vs CPU-bound） |
 
-## CPU Execution Cycle
+| 層級 | 存取延遲（數量級） | 容量（數量級） |
+| --- | --- | --- |
+| CPU 暫存器 / L1 快取 | ~1 ns | KB |
+| RAM | ~100 ns | GB |
+| SSD | ~100 µs | TB |
+| 網路（跨資料中心） | ~ms 以上 | — |
 
-The central simplified model is the fetch-decode-execute cycle:
+> 生資的大檔案處理（BAM、VCF、count matrix）常被**記憶體與 I/O** 限制，而不是 CPU。串流處理、分塊讀取、壓縮格式與索引（`.bai`、`.tbi`）都是為了少讀、少放進記憶體。
 
-1. Fetch an instruction from memory.
-2. Decode what operation it represents.
-3. Execute the operation.
-4. Store or expose the result, then continue.
+## CPU 執行循環
 
-Even high-level programs eventually reduce to repeated low-level instruction execution.
+簡化模型是 fetch-decode-execute 循環：
 
-## Why Binary Is the Common Representation
+```
+1. 擷取 (fetch)    從記憶體讀下一道指令
+2. 解碼 (decode)   判斷是哪種運算
+3. 執行 (execute)  運算（加法、比較、讀寫記憶體、跳轉）
+4. 寫回結果，程式計數器 (program counter) 指向下一道指令，重複
+```
 
-Computers use binary because physical hardware can reliably distinguish between two stable states. In practice, this means:
+再高階的程式最後都化成反覆執行的低階指令。
 
-- Data is encoded as bits.
-- Instructions are also encoded as bits.
-- Arithmetic, storage, and logic all operate on these binary representations.
+## 二進位表示
 
-Two useful habits:
+硬體能可靠區分兩種穩定狀態，所以資料與指令都以位元 (bit) 編碼。**同一串位元的意義取決於如何解讀**：可能是整數、字元、顏色或指令。
 
-- Read binary as positional notation with powers of two.
-- Separate the representation from the meaning. The same bit pattern might be interpreted as an integer, character, color value, or instruction depending on context.
+| 轉換 | 方法 | 例 |
+| --- | --- | --- |
+| 二進位 → 十進位 | 各位元乘上 2 的次方再相加 | `1011₂ = 1·2³ + 0·2² + 1·2¹ + 1·2⁰ = 11` |
+| 十進位 → 二進位 | 反覆除以 2 記餘數，由下往上讀 | `11 → 1011₂` |
+| 十六進位 (hex) | 每 4 位元一個 hex 字元 | `1011₂ = B₁₆`；顏色 `#4682B4` |
 
-## Binary Conversion Intuition
+```python
+int("1011", 2)        # 11
+bin(11), hex(255)     # ('0b1011', '0xff')
+```
 
-### Binary to Decimal
-
-Expand each bit by its positional value and sum the results.
-
-Example:
-
-`1011_2 = 1*2^3 + 0*2^2 + 1*2^1 + 1*2^0 = 11`
-
-### Decimal to Binary
-
-Repeatedly divide by 2 and track remainders, or choose the largest powers of two that fit the number.
-
-## From Programs to Machine Execution
-
-Programming languages sit between human reasoning and hardware execution.
-
-| Layer | Role |
+| 表示 | 實務上的影響 |
 | --- | --- |
-| High-level language | Expresses logic in a human-friendly form |
-| Translator | Converts source code into executable steps |
-| Machine code / lower-level representation | Form the CPU can act on directly |
+| 整數有位元數上限 | NumPy `int32` 最大約 21 億，超過會溢位（Python `int` 沒有上限） |
+| 浮點數是近似值 | `0.1 + 0.2 == 0.3` 為 `False`；比較用 `math.isclose` / `np.isclose` |
+| 文字需要編碼 | UTF-8 中英文字 1 byte、中文 3 bytes；讀檔時編碼錯就亂碼 |
+| 位元旗標 | SAM 的 `FLAG` 欄把多個是 / 否屬性打包成一個整數（`samtools flags`） |
 
-## Compilation vs Interpretation
+## 從原始碼到執行
 
-### Compilation
+| 方式 | 做法 | 優點 | 代價 | 例子 |
+| --- | --- | --- | --- | --- |
+| 編譯 (compilation) | 執行前整個翻譯成機器碼 | 執行快；許多錯誤在編譯時發現 | 每次修改要重新編譯；依平台產生不同執行檔 | C、C++、Rust、Go |
+| 直譯 (interpretation) | 執行時由直譯器逐步執行 | 修改後立刻執行、互動式 | 執行較慢 | Python、R、bash |
+| 位元組碼 + 虛擬機 (bytecode + VM) | 編譯成平台無關的中間碼，由 VM 執行 | 可攜（一次編譯到處執行） | 需要安裝 runtime | Java（JVM）、Scala、Python（`.pyc` 也是位元組碼） |
+| JIT (just-in-time) | 執行時把熱點編譯成機器碼 | 接近編譯語言的速度 | 第一次執行有編譯延遲 | JVM、Julia、PyPy、Numba |
 
-- Translates the program ahead of execution into a lower-level form.
-- Often improves runtime efficiency.
-- Errors are commonly caught before execution starts.
-
-### Interpretation
-
-- Executes the program through an intermediary at runtime.
-- Often improves iteration speed and flexibility.
-- Runtime behavior depends more directly on the interpreter environment.
-
-In real systems the boundary is not absolute. Many modern runtimes combine compilation, interpretation, bytecode, and just-in-time optimization.
-
-## Practical Takeaways
-
-- Hardware executes instructions, not source code.
-- Binary is the machine-level representation that makes digital execution possible.
-- Translation layers explain why languages differ in speed, portability, and tooling.
-- Understanding the execution path helps when reasoning about performance, memory use, and debugging.
+> 界線並不絕對：Python 先編譯成位元組碼再由直譯器執行；NumPy、pandas 的核心是 C 寫的，所以「向量化」快，是因為把迴圈交給編譯過的程式碼。各語言的比較見 [程式語言](../programming-languages/README.md)。

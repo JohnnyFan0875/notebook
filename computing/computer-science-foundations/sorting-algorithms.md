@@ -1,171 +1,107 @@
-# Sorting Algorithms
+[Computing](../README.md) › [CS 基礎](README.md) › 排序演算法
 
-sorting algorithm 的目標是把一組無序資料整理成有序資料，例如升冪、降冪或自訂規則順序。
+# 排序演算法 (Sorting Algorithms)
 
-排序常常不是最終目的，而是後續操作的準備步驟，例如：
+排序把資料依規則（升冪、降冪、自訂 key）重新排列。排序常不是目的，而是後續操作的準備：讓[二分搜尋](search-algorithms.md)可行、讓重複值相鄰以便去重、讓兩個序列能線性合併。實務上直接用 `sorted()`；學排序是為了建立複雜度與分治法的直覺。
 
-- 更快搜尋
-- 更穩定比較
-- 更容易合併或去重
+## 比較
 
-## Four Useful Teaching Examples
+| 演算法 | 想法 | 平均 | 最壞 | 額外空間 | 穩定 | 教學重點 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 氣泡排序 (bubble) | 反覆比較相鄰元素，順序錯就交換 | `O(n²)` | `O(n²)` | `O(1)` | 是 | 重複掃描與相鄰交換 |
+| 選擇排序 (selection) | 每輪找剩餘最小值放到前面 | `O(n²)` | `O(n²)` | `O(1)` | 否 | 選出下一個正確元素；交換次數少 |
+| 插入排序 (insertion) | 把新元素插入前面已排序區段 | `O(n²)` | `O(n²)` | `O(1)` | 是 | 維持已排序前綴；**近乎排序時接近 `O(n)`** |
+| 合併排序 (merge) | 切半、各自排序、合併 | `O(n log n)` | `O(n log n)` | `O(n)` | 是 | 分治法 |
+| 快速排序 (quick) | 選 pivot 分區，左右遞迴 | `O(n log n)` | `O(n²)` | `O(log n)` | 否 | 分區；pivot 選不好會退化 |
+| 堆積排序 (heap) | 建 [heap](non-linear-data-structures.md#堆積-heap) 後反覆取最小值 | `O(n log n)` | `O(n log n)` | `O(1)` | 否 | 用資料結構排序 |
+| Timsort（Python `sorted`） | 合併排序 + 插入排序，利用既有的已排序片段 | `O(n log n)` | `O(n log n)` | `O(n)` | 是 | 實務標準 |
 
-### Bubble Sort
+> **穩定 (stable)**：鍵值相同的元素維持原本的相對順序。先依次要欄位排、再依主要欄位穩定排序，就能做多欄排序；pandas `sort_values(kind="stable")`。
 
-bubble sort 反覆比較相鄰元素，順序錯了就交換。
+## 實作
 
 ```python
 def bubble_sort(values):
     items = values[:]
-    n = len(items)
-
-    for end in range(n - 1, 0, -1):
+    for end in range(len(items) - 1, 0, -1):
+        swapped = False
         for i in range(end):
             if items[i] > items[i + 1]:
                 items[i], items[i + 1] = items[i + 1], items[i]
+                swapped = True
+        if not swapped:                          # 一輪都沒交換 → 已排序，提早結束
+            break
     return items
-```
 
-特點：
-
-- 很直觀
-- 適合教學
-- 大資料時效率差
-
-典型複雜度：
-
-- worst case: `O(n^2)`
-
-### Selection Sort
-
-selection sort 每輪找出剩餘區間中的最小值，放到前面。
-
-```python
 def selection_sort(values):
     items = values[:]
-
     for i in range(len(items)):
-        min_idx = i
-        for j in range(i + 1, len(items)):
-            if items[j] < items[min_idx]:
-                min_idx = j
-        items[i], items[min_idx] = items[min_idx], items[i]
+        m = min(range(i, len(items)), key=items.__getitem__)   # 剩餘區段最小值的位置
+        items[i], items[m] = items[m], items[i]
     return items
-```
 
-特點：
-
-- 思路清楚
-- 交換次數通常不多
-- 仍然是 quadratic family
-
-### Insertion Sort
-
-insertion sort 把每個新元素插入前面已排序區間的正確位置。
-
-```python
 def insertion_sort(values):
     items = values[:]
-
     for i in range(1, len(items)):
-        key = items[i]
-        j = i - 1
-        while j >= 0 and items[j] > key:
+        key, j = items[i], i - 1
+        while j >= 0 and items[j] > key:         # 比 key 大的往右挪
             items[j + 1] = items[j]
             j -= 1
         items[j + 1] = key
     return items
-```
 
-特點：
-
-- 小資料或近乎排序資料時常不錯
-- 很適合理解「維持局部有序」
-
-### Merge Sort
-
-merge sort 使用 divide and conquer：
-
-1. 把序列切成更小子序列
-2. 各自排序
-3. 再把兩個已排序結果 merge 起來
-
-```python
 def merge_sort(values):
     if len(values) <= 1:
         return values
-
     mid = len(values) // 2
-    left = merge_sort(values[:mid])
-    right = merge_sort(values[mid:])
-
-    merged = []
-    i = j = 0
-
-    while i < len(left) and j < len(right):
-        if left[i] <= right[j]:
-            merged.append(left[i])
-            i += 1
+    left, right = merge_sort(values[:mid]), merge_sort(values[mid:])   # 1. 切半遞迴
+    merged, i, j = [], 0, 0
+    while i < len(left) and j < len(right):                            # 2. 合併兩個已排序串列
+        if left[i] <= right[j]:                  # <= 保持穩定
+            merged.append(left[i]); i += 1
         else:
-            merged.append(right[j])
-            j += 1
+            merged.append(right[j]); j += 1
+    return merged + left[i:] + right[j:]
 
-    merged.extend(left[i:])
-    merged.extend(right[j:])
-    return merged
+def quick_sort(values):                          # 易讀版（非原地）
+    if len(values) <= 1:
+        return values
+    pivot = values[len(values) // 2]
+    return (quick_sort([v for v in values if v < pivot])
+            + [v for v in values if v == pivot]
+            + quick_sort([v for v in values if v > pivot]))
 ```
 
-特點：
+快速排序的效能取決於 pivot：每次都選到最大或最小值（例如已排序資料選第一個元素）會退化成 `O(n²)`；實務用隨機 pivot 或三數取中。
 
-- 結構清楚
-- 擴展性比 `O(n^2)` 類演算法好很多
-- 通常需要額外記憶體來 merge
+## 實測
 
-典型複雜度：
+上面的 Python 實作在亂數 list 上的耗時（對數軸）：
 
-- `O(n log n)`
+![排序演算法實測耗時](src/sorting-algorithms-runtime.png)
 
-## Quicksort Intuition
-
-quicksort 也屬於 divide and conquer，但不是先切半再合併，而是：
-
-1. 選 pivot
-2. 把小於 pivot 的放左邊，大於 pivot 的放右邊
-3. 對左右子區間遞迴處理
-
-Key point: quicksort 平均情況很強，但效能很依賴 partition 品質與 pivot 選擇。
-
-## Why `O(n log n)` Matters
-
-當資料變大時，`O(n^2)` 和 `O(n log n)` 的差距會很快放大。
-
-所以 practical lesson 通常不是：
-
-- 背哪個排序「最強」
-
-而是：
-
-- 小資料時簡單方法常夠用
-- 大資料時成長率決定可不可行
-
-## Which Sort Teaches What
-
-| Algorithm | Best teaching value |
+| 觀察 | 說明 |
 | --- | --- |
-| Bubble sort | adjacent swaps and repeated passes |
-| Selection sort | choosing the next correct element |
-| Insertion sort | maintaining a sorted prefix |
-| Merge sort | divide and conquer |
-| Quicksort | partitioning around a pivot |
+| n 增為 2 倍，`O(n²)` 耗時約 4 倍 | n = 1000 → 2000：氣泡排序約 20 → 88 ms |
+| 合併排序 n = 3000 只要約 3 ms | 比氣泡排序快約 70 倍，且差距隨 n 擴大 |
+| `sorted()` 比手寫合併排序再快約 15 倍 | 同樣 `O(n log n)`，但以 C 實作（常數小） |
+| 插入排序在近乎排序的資料上快很多 | 只需少量移動，接近 `O(n)`；Timsort 利用了這點 |
 
-## Practical Reminder
+## 實務用法
 
-在 Python 實務裡，你通常直接用內建 `sorted()` 或 `.sort()`，因為標準庫實作已經很成熟。
+```python
+sorted(genes, key=lambda g: (g.chrom, g.start))           # 多欄排序：tuple 依序比較
+sorted(samples, key=lambda s: s.score, reverse=True)       # 降冪
+data.sort()                                                # list 原地排序，回傳 None
 
-學排序演算法的目的，多半是：
+import heapq
+heapq.nlargest(10, scores)        # 只要前 k 名：O(n log k)，不必整個排序
 
-- 理解 complexity
-- 建立 divide-and-conquer 直覺
-- 看懂不同資料流程的 tradeoff
+df.sort_values(["chrom", "start"], kind="stable")          # pandas
+```
 
-[Back to Computer Science Foundations](README.md)
+| 情境 | 工具 |
+| --- | --- |
+| 超過記憶體的大檔 | 外部排序：`sort -k1,1 -k2,2n --parallel=8 -S 4G big.tsv`（見 [命令列資料處理](../operating-system/command-line-data-processing.md)） |
+| BAM 依座標排序 | `samtools sort`（見 [samtools](../../biology/bioinformatics-tools/ngs-tools/samtools.md)） |
+| 染色體名稱的自然排序（chr2 在 chr10 前） | `sort -V`；Python 自訂 key |

@@ -60,7 +60,15 @@
 | --- | --- | --- |
 | 檢體與實驗 | [檢體類型](laboratory-medicine/sample-types/README.md)、[實驗方法](molecular-biology/experimental-methods/README.md) | [實驗設計](../data-science/statistics/experimental-design/README.md)（生物 vs 技術重複、批次） |
 | 定序與 QC | [定序技術](genomics/sequencing-techniques/README.md)、[NGS 品質指標](genomics/ngs-qc/README.md) | — |
-| 比對與檔案處理 | [檔案格式](genomics/file-formats/README.md)、[NGS 工具](bioinformatics-tools/ngs-tools/README.md) | [命令列資料處理](../computing/operating-system/command-line-data-processing.md)、[rsync](../computing/file-tools/file-transfer/rsync.md)、[MD5](../computing/file-tools/checksums/md5.md) |
+| 比對與檔案處理 | [檔案格式](genomics/file-formats/README.md)、[NGS 工具](bioinformatics-tools/ngs-tools/README.md) | [命令列資料處理](../computing/operating-system/command-line-data-processing.md)、[rsync](../computing/developer-tools/rsync.md)、[MD5](../computing/developer-tools/checksums.md)、[SSH](../computing/developer-tools/ssh.md)、[Slurm](../computing/workflow-engines/slurm.md) |
 | 統計分析 | [RNA-seq 分析](genomics/workflows/rna-seq/README.md)、[全基因體分析](genomics/genome-wide-analysis/README.md) | [統計（生資路線）](../data-science/statistics/README.md#建議路線)、[干擾與批次效應](../data-science/statistics/experimental-design/confounding-bias.md) |
 | 判讀 | [遺傳學資料庫](genetics/databases/README.md)、[變異判讀](genetics/variant-interpretation/README.md) | [生醫 LLM](../data-science/llm/bio-and-medical-llm.md)（文獻探勘與限制） |
-| 可重現性 | [RNA-seq：可重現性](genomics/workflows/rna-seq/10-reproducibility-and-troubleshooting.md) | [Nextflow](../computing/workflow-engines/nextflow/README.md)、[Conda](../computing/containers-and-env/conda.md)、[Docker](../computing/containers-and-env/docker/README.md)、[renv](../data-science/r-foundations/reproducible-environments-with-renv.md) |
+| 可重現性 | [RNA-seq：可重現性](genomics/workflows/rna-seq/10-reproducibility-and-troubleshooting.md) | [Nextflow](../computing/workflow-engines/nextflow/README.md)、[Snakemake](../computing/workflow-engines/snakemake.md)、[Conda](../computing/containers-and-env/conda.md)、[Docker](../computing/containers-and-env/docker/README.md) / [Apptainer](../computing/containers-and-env/apptainer.md)、[renv](../data-science/r-foundations/reproducible-environments-with-renv.md) |
+
+## 延伸閱讀：產業與研究新聞
+
+| 網站 | 內容 |
+| --- | --- |
+| [GEN（Genetic Engineering & Biotechnology News）](https://www.genengnews.com/) | 生技產業、定序與基因治療新聞 |
+| [GeneOnline](https://geneonline.news/) | 中文生技醫藥新聞，含台灣與亞洲產業動態 |
+| [ALZFORUM](https://www.alzforum.org/all-news) | 阿茲海默症與神經退化疾病研究新聞 |

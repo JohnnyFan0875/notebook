@@ -120,7 +120,7 @@ xls.sheet_names                                    # ['price', 'color']
 price = xls.parse("price")
 ```
 
-> Excel 適合交給人看，不適合當分析中間檔：會自動轉日期、截斷大數字的精度、隱藏格式。分析流程內改存 CSV 或 Parquet。
+> Excel 適合交給人看，不適合當分析中間檔：會自動轉日期、截斷大數字的精度、隱藏格式。分析流程內改存 CSV 或 Parquet。寫出 Excel、設定格式與轉 PDF 見 [用 Python 處理 Excel](../../productivity/spreadsheets/excel-with-python.md)。
 
 ## JSON
 

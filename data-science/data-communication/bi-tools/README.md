@@ -31,4 +31,4 @@ Tableau 可獨立閱讀；概念（dimension / measure、join、計算層級）�
 | 計算語言 | DAX | 計算欄位、LOD 運算式、table calculation |
 | 作者端 | Power BI Desktop（Windows） | Tableau Desktop（Windows / macOS） |
 
-資料模型（fact / dimension、grain）的設計原則見 [維度模型](../../data-engineering/dimensional-modeling-and-star-schema.md)；Excel 中的同類功能見 [Power Pivot](../../../productivity/microsoft-office/power-pivot-in-excel.md)。
+資料模型（fact / dimension、grain）的設計原則見 [維度模型](../../data-engineering/dimensional-modeling-and-star-schema.md)；Excel 中的同類功能見 [Power Pivot](../../../productivity/spreadsheets/power-pivot-in-excel.md)。

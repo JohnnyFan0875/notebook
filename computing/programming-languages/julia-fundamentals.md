@@ -1,195 +1,86 @@
-# Julia Fundamentals
+[Computing](../README.md) › [程式語言](README.md) › Julia 基礎
 
-Julia is a general-purpose language designed with scientific computing, statistics, and data work in mind.
+# Julia 基礎 (Julia Fundamentals)
 
-The beginner mental model is:
+Julia 為科學運算設計：寫起來像 Python / R / MATLAB，執行時由 JIT 編譯成機器碼，迴圈也能接近 C 的速度，不必像 Python 一樣靠向量化或改寫成 C 擴充。常見於數值模擬、微分方程、最佳化、統計與部分生資工具（BioJulia）。進階語法見 [Julia 進階模式](julia-intermediate-patterns.md)。
 
-- Python-like readability
-- R- and MATLAB-friendly data-science ergonomics
-- stronger focus on performance than many scripting languages
+| 特色 | 說明 |
+| --- | --- |
+| JIT 編譯 | 第一次呼叫函式時編譯（會慢），之後很快 |
+| 多重分派 (multiple dispatch) | 依**所有參數的型別**選擇要執行的方法，是組織程式的核心方式 |
+| 1-based 索引、column-major | 與 R、MATLAB、Fortran 相同；與 Python / NumPy 不同 |
+| 廣播 (broadcasting) | 點語法 `.+`、`f.(x)` 逐元素運算 |
+| 型別可選 | 不寫型別也能跑；寫了用於分派與文件 |
 
-## Why Julia Exists
+## 安裝與環境
 
-Julia was designed to be pleasant for high-level programming without giving up serious numerical computing use cases.
+```bash
+# 安裝：官方建議用 juliaup 管理版本
+winget install --name Julia --id 9NJNWW8PVKMN -e -s msstore   # Windows
+curl -fsSL https://install.julialang.org | sh        # macOS / Linux
 
-That is why Julia often shows up in workflows involving:
-
-- data science
-- linear algebra
-- simulation
-- scientific computing
-
-## Basic Expressions
-
-Julia can be used interactively as a calculator-like environment.
-
-```julia
-println(1 + 2)
-println(2 * 3)
+julia                       # 啟動 REPL
+julia script.jl             # 執行腳本
 ```
 
-`println(...)` prints a value and moves to a new line.
+```julia
+# REPL 中按 ] 進入套件模式
+] activate .                # 使用目前資料夾的專案環境（Project.toml + Manifest.toml）
+] add DataFrames CSV        # 安裝並寫入 Project.toml
+] instantiate               # 依 Manifest.toml 重建環境（可重現）
+```
 
-## Variables
+> `Project.toml` / `Manifest.toml` 的角色相當於 Python 的 `pyproject.toml` / `uv.lock`、R 的 `renv.lock`。
 
-Julia variables are assigned with `=`.
+## 型別與變數
 
 ```julia
 x = 3
-double_x = x * 2
+typeof(3), typeof(3.14), typeof(true), typeof("Jane"), typeof('a')
+# (Int64, Float64, Bool, String, Char)
 
-println(x)
-println(double_x)
+parse(Int64, "1")           # 1：字串 → 數字（不會自動轉換）
+parse(Float64, "1.5")       # 1.5
+string(1)                   # "1"
 ```
 
-Naming style is usually lowercase, often with underscores when they improve readability.
-
-## Core Types
-
-Some high-frequency Julia types are:
-
-| Type | Example |
-| ---- | ------- |
-| `Int64` | `3` |
-| `Float64` | `3.14` |
-| `Bool` | `true` |
-| `String` | `"Jane"` |
-| `Char` | `'a'` |
-
-You can inspect a value's type with `typeof(...)`.
+## 字串
 
 ```julia
-println(typeof(3))
-println(typeof(3.14))
-println(typeof(true))
-println(typeof("Jane"))
-```
-
-## Converting Values
-
-Julia does not automatically pretend that strings and numbers are interchangeable.
-
-Common conversions:
-
-```julia
-x = "1"
-
-as_int = parse(Int64, x)
-as_float = parse(Float64, x)
-as_string = string(1)
-```
-
-Use `parse(...)` when text should become a number, and `string(...)` when a value should become text.
-
-## Strings
-
-Strings use double quotes.
-
-```julia
-name = "Jane"
-book = "It is a truth universally acknowledged..."
-```
-
-Triple quotes are useful for multi-line text:
-
-```julia
+name = "Jane"                                  # 雙引號 = String，單引號 = Char
 poem = """Beware the Jabberwock, my son!
-The jaws that bite, the claws that catch!"""
+The jaws that bite, the claws that catch!"""   # 多行字串
+
+"Hello " * name                                # 串接用 *（不是 +）
+row, seat = 4, 12
+"Your seat is row $row, seat $seat."           # 內插
+"The product is $(row * seat)"                 # 內插運算式
 ```
 
-## String Concatenation and Interpolation
-
-Julia commonly joins strings with `*`.
-
-```julia
-greeting = "Hello "
-name = "Jane"
-
-println(greeting * name)
-```
-
-Interpolation is often more readable:
-
-```julia
-row = 4
-number = 12
-
-println("Your seat is in row $row, seat number $number.")
-println("The product is $(row * number)")
-```
-
-## Arrays
-
-Julia arrays are central to both general programming and numerical work.
+## 陣列與廣播
 
 ```julia
 names = ["Ana", "Ben", "Cara"]
-numbers = [1, 2, 3]
+typeof(names), eltype(names)          # (Vector{String}, String)
+
+names[1]                              # "Ana"：索引從 1 開始
+names[end]                            # "Cara"
+names[1:2]                            # ["Ana", "Ben"]：範圍包含結尾
+
+x = String[]                          # 空的 String 向量
+push!(x, "first")                     # ! 結尾 = 會修改參數的函式（慣例）
+
+a = [1, 2, 3]; b = [10, 20, 30]
+a .+ 2                                # [3, 4, 5]
+a .+ b                                # [11, 22, 33]
+a .* 5                                # [5, 10, 15]
+sqrt.(a)                              # 函式也能廣播
+a * 5                                 # 純量乘向量可以不加點；但 a * b 是矩陣乘法 → 維度錯誤
 ```
 
-Useful inspection helpers:
+> 沒加點時，運算子是**線性代數**意義（`*` 是矩陣乘法），逐元素運算一定要用 `.*`、`.^`、`f.(x)`。
 
-```julia
-println(typeof(names))
-println(eltype(names))
-```
-
-- `typeof(x)` tells you the container type
-- `eltype(x)` tells you the element type
-
-## Indexing
-
-Julia arrays are `1`-indexed, not `0`-indexed.
-
-```julia
-println(names[1])
-println(names[end])
-println(names[1:2])
-```
-
-That one-based indexing is one of the first habits to internalize when coming from Python, JavaScript, or Java.
-
-## Building and Updating Arrays
-
-```julia
-x = String[]
-push!(x, "first")
-push!(x, "second")
-```
-
-The `!` convention in Julia usually signals that a function mutates its argument.
-
-## Broadcasting
-
-Broadcasting applies an operation elementwise with dot syntax.
-
-```julia
-a = [1, 2, 3]
-b = [10, 20, 30]
-
-println(a .+ 2)
-println(a .+ b)
-println(a .* 5)
-println(a ./ 2)
-```
-
-This is a very Julia-specific habit worth learning early.
-
-Without the dot, the operation can mean something different or fail entirely depending on the values involved.
-
-## Conditionals
-
-Julia conditionals use `if`, `elseif`, `else`, and `end`.
-
-```julia
-is_raining = true
-
-if is_raining
-    println("Better get your coat")
-end
-```
-
-Multiple branches look like:
+## 控制流程
 
 ```julia
 if score >= 90
@@ -199,187 +90,80 @@ elseif score >= 70
 else
     println("Keep trying")
 end
-```
 
-## Comparisons
-
-Common comparison operators:
-
-| Operator | Meaning |
-| -------- | ------- |
-| `==` | equal |
-| `!=` | not equal |
-| `>` | greater than |
-| `>=` | greater than or equal |
-| `<` | less than |
-| `<=` | less than or equal |
-
-These are frequently used inside `if` conditions and filters.
-
-## Loops
-
-The source material introduces both `for` and `while`.
-
-```julia
-for name in names
+for name in names                     # 迴圈與 if 都以 end 結束
     println(name)
 end
-```
 
-```julia
 counter = 1
-
 while counter <= 3
-    println(counter)
     counter += 1
 end
 ```
 
-Julia closes both loop forms with `end`.
+比較運算子：`==`、`!=`、`<`、`<=`、`>`、`>=`；邏輯：`&&`、`||`、`!`。
 
-## Functions
-
-Functions are defined with the `function` keyword.
+## 函式與多重分派
 
 ```julia
 function double(x)
     return x * 2
 end
+double_short(x) = x * 2               # 單行定義
+
+double(x::String) = x * x             # 同名函式、不同參數型別 → 不同方法
+double(x::Bool) = !x
+
+double(2)        # 4
+double(10.0)     # 20.0
+double("ab")     # "abab"
+double(true)     # false
+methods(double)  # 列出所有方法
 ```
 
-Then called normally:
+多重分派依**所有**參數的型別選方法（Python 的方法只依第一個參數 `self` 的類別），所以不同套件定義的型別與函式可以自然組合。
+
+## DataFrames 與 CSV
 
 ```julia
-println(double(2))
-println(double(10.0))
-```
+using DataFrames, CSV
 
-## Multiple Dispatch
-
-Multiple dispatch is one of Julia's signature ideas.
-
-You can define different method implementations for different argument types:
-
-```julia
-function double(x::String)
-    return x * x
-end
-
-function double(x::Bool)
-    return !x
-end
-```
-
-This means function behavior can vary by type in a first-class way, rather than being treated as a special advanced feature.
-
-## DataFrames and CSV
-
-For tabular work, the common packages are:
-
-- `DataFrames.jl`
-- `CSV.jl`
-
-Basic setup:
-
-```julia
-using DataFrames
-using CSV
-```
-
-## Creating a DataFrame
-
-```julia
 df = DataFrame(
     day = ["Wednesday", "Monday", "Thursday"],
     distance = [2000, 5000, 3500],
     time = [14.99, 31.68, 22.02],
-    raining = [true, false, true]
+    raining = [true, false, true],
 )
+df = CSV.read("run.csv", DataFrame)          # 讀 CSV
+
+first(df, 3); names(df); size(df); describe(df)   # 檢視
+
+df[2, 3]            # 第 2 列第 3 欄的值
+df[:, :distance]    # 一欄（複本）；df.distance 或 df[!, :distance] 不複製
+df[2:4, :]          # 多列
+df[:, 1:3]          # 多欄
+
+sort(df, :distance)
+filter(row -> row.day == "Monday", df)
+filter(row -> row.distance <= 3000 && row.raining, df)
+
+df.speed = (df.distance ./ 1000) ./ (df.time ./ 60)   # 新欄位：km/h，用廣播
 ```
 
-This is the Julia equivalent of starting a small in-memory table for analysis.
+| 操作 | Julia DataFrames | pandas |
+| --- | --- | --- |
+| 讀檔 | `CSV.read(f, DataFrame)` | `pd.read_csv(f)` |
+| 取欄 | `df.col`、`df[!, :col]` | `df["col"]` |
+| 篩選 | `filter(row -> cond, df)`、`subset(df, :col => ByRow(f))` | `df[cond]`、`df.query()` |
+| 分組彙總 | `combine(groupby(df, :g), :x => mean)` | `df.groupby("g")["x"].mean()` |
 
-## Loading CSV into a DataFrame
+## 常見錯誤
 
-```julia
-file = CSV.File("run.csv")
-df = DataFrame(file)
-```
-
-Key point: use `CSV.File(...)`, not a generic `File(...)` constructor.
-
-## Inspecting a DataFrame
-
-Useful early operations:
-
-```julia
-println(first(df, 3))
-println(names(df))
-println(size(df))
-println(describe(df))
-```
-
-These help answer:
-
-- what columns exist?
-- how big is the table?
-- what do the first few rows look like?
-- what are the rough summaries?
-
-## Selecting Data
-
-Examples of common selection patterns:
-
-```julia
-value = df[2, 3]
-column = df[:, 2]
-subset = df[:, 1:3]
-row = df[4, :]
-rows = df[2:4, :]
-```
-
-This is a core piece of Julia tabular work: rows and columns are selected through indexing syntax rather than only through method chains.
-
-## Sorting and Filtering DataFrames
-
-Sorting:
-
-```julia
-df_sorted = sort(df, :distance)
-```
-
-Filtering:
-
-```julia
-df_monday = filter(row -> row.day == "Monday", df)
-df_short = filter(row -> row.distance <= 3000, df)
-df_raining = filter(row -> row.raining, df)
-```
-
-This is a concise way to keep only rows that match a condition.
-
-## Derived Columns
-
-Julia also makes it easy to compute new arrays from existing columns.
-
-```julia
-distance_km = df.distance ./ 1000
-time_hr = df.time ./ 60
-speeds = distance_km ./ time_hr
-```
-
-This is where broadcasting and column-oriented data analysis naturally meet.
-
-## Common Traps
-
-- forgetting that Julia arrays are `1`-indexed
-- confusing `String` and `Char`
-- forgetting to use `parse(...)` when converting text to numbers
-- forgetting dot syntax for elementwise array operations
-- assuming functions should behave the same for all types when multiple dispatch is available
-- mixing up raw CSV loading with `DataFrame` construction
-
-## Related Notes
-
-- [Java Fundamentals](java-fundamentals.md)
-- [Java Control Flow and Methods](java-control-flow-and-methods.md)
+| 錯誤 | 說明 |
+| --- | --- |
+| 以為索引從 0 開始 | Julia 從 1 開始，`end` 是最後一個 |
+| `"a" + "b"` | 字串串接用 `*` |
+| 逐元素運算忘了點 | `a * b` 是矩陣乘法 |
+| 混用 `String` 與 `Char` | `"a"` 與 `'a'` 不同型別 |
+| 文字沒有 `parse` 就當數字用 | 不會自動轉換 |
+| 第一次執行很慢就以為 Julia 慢 | 那是 JIT 編譯時間，見 [進階模式：量測時間](julia-intermediate-patterns.md#量測執行時間) |

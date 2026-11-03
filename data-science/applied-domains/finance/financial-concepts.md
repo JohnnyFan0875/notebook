@@ -33,7 +33,7 @@ pmt = -npf.pmt(rate, n, principal)     # 每月 2997.75
 interest_1 = principal * rate          # 第一期利息 2500：早期大部分付利息，後期才多還本金
 ```
 
-> 注意 Excel 的 `NPV()` 從第 1 期開始折現，與 `numpy_financial.npv` 不同；要把 t = 0 的投入另外加上。
+> 注意 Excel 的 `NPV()` 從第 1 期開始折現，與 `numpy_financial.npv` 不同；要把 t = 0 的投入另外加上。Excel 中逐期拆分本金與利息的攤還表見 [貸款攤還表](../../../productivity/spreadsheets/loan-amortization.md)。
 
 | 概念 | 要點 |
 | --- | --- |

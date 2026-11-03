@@ -47,12 +47,12 @@ event-triggered 不等於 streaming：很多系統只是事件觸發的 batch。
 | 比喻 | 發車時間表 | 整個運輸系統的調度 |
 | 工具 | cron、雲端排程器 | Airflow、Dagster、Prefect；生資常用 Nextflow、Snakemake |
 
-編排工具的核心概念是 task（執行單位）、dependency（先後順序）與 DAG（有向無環圖）。價值在於協調多個 job、自動重試、記錄每次執行，以及在失敗時知道從哪一步重跑。Airflow 見 [Airflow](../../computing/workflow-engines/airflow/README.md)，Nextflow 見 [Nextflow](../../computing/workflow-engines/nextflow/README.md)。
+編排工具的核心概念是 task（執行單位）、dependency（先後順序）與 DAG（有向無環圖）。價值在於協調多個 job、自動重試、記錄每次執行，以及在失敗時知道從哪一步重跑。Airflow 見 [Airflow](../../computing/workflow-engines/airflow.md)，Nextflow 見 [Nextflow](../../computing/workflow-engines/nextflow/README.md)。
 
 | 工具類型 | 適合 |
 | --- | --- |
 | Airflow / Dagster / Prefect | 定時的資料擷取與轉換、跨系統的 ETL |
-| Nextflow / Snakemake | 以檔案為單位的生資分析流程、HPC / 雲端批次、容器化工具 |
+| [Nextflow](../../computing/workflow-engines/nextflow/README.md) / [Snakemake](../../computing/workflow-engines/snakemake.md) | 以檔案為單位的生資分析流程、HPC（[Slurm](../../computing/workflow-engines/slurm.md)）/ 雲端批次、容器化工具 |
 | dbt | warehouse 內的 SQL 轉換，見 [dbt](dbt-foundations.md) |
 
 ## 冪等與重跑 (Idempotency)

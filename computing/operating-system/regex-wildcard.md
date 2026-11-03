@@ -1,122 +1,90 @@
-# Regex and Wildcard Usage in Linux
+[Computing](../README.md) › [作業系統](README.md) › 正規表達式與萬用字元
 
-This document provides a reference for using **wildcards** and **regular expressions (regex)** in Linux command-line operations.
+# 正規表達式與萬用字元 (Regex and Wildcards)
 
-| Feature               | Wildcards (globbing)                                                                                     | Regex (regular expressions)                                                      |      |
-| --------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---- |
-| **Who interprets it** | The **shell** (before running the command)                                                               | The **tool** (e.g., `grep`, `sed`, `awk`)                                        |      |
-| **Scope**             | Matches **filenames/paths**                                                                              | Matches **text inside files/streams**                                            |      |
-| **Common symbols**    | `*` (any chars), `?` (one char), `[abc]` (char set), `{1..10}` (brace expansion)                         | `.` (any char), `^` (start), `$` (end), `.*`, `[0-9]`, \`(a                      | b)\` |
-| **Complexity**        | Simple, limited                                                                                          | Very powerful, supports advanced patterns                                        |      |
-| **Examples**          | `ls *.txt` → matches all files ending in `.txt`                                                          | `grep '^ATG' genes.txt` → matches lines starting with `ATG`                      |      |
-| **Expansion**         | Shell expands the pattern **before** running command (e.g., `ls *.txt` becomes `ls file1.txt file2.txt`) | Regex pattern is **passed to the program** (`grep`, `awk`) and interpreted there |      |
-| **Use case**          | File/path matching                                                                                       | Searching/modifying text content                                                 |      |
+兩者都用特殊符號描述「一群字串」，但由不同的程式解讀、用在不同地方：**萬用字元 (wildcard / glob)** 由 shell 展開成檔名；**正規表達式 (regular expression, regex)** 由 `grep`、`sed`、`awk`、Python 等工具用來比對檔案內容。Python / R 的 regex 寫法見 [文字清理與正規表達式](../../data-science/python-foundations/text-cleaning-and-regex.md)、[R 正規表達式](../../data-science/r-foundations/regular-expressions.md)。
 
-## Wildcards (Globbing)
+| | 萬用字元 (globbing) | 正規表達式 (regex) |
+| --- | --- | --- |
+| 誰解讀 | **shell**，在指令執行前 | **工具本身**（`grep`、`sed`、`awk`） |
+| 比對對象 | 檔名、路徑 | 檔案或串流中的文字 |
+| 時機 | `ls *.txt` 先被展開成 `ls a.txt b.txt` 再執行 | 樣式原封不動傳給程式 |
+| 「任意字元」 | `*` 任意長度、`?` 一個字元 | `.` 一個字元、`.*` 任意長度 |
+| 能力 | 簡單 | 強大：錨點、重複次數、分組、或 |
+| 例子 | `ls *.fastq.gz` | `grep '^ATG' genes.txt` |
 
-### Common wildcards
+> 傳給 `grep` / `find -name` 的樣式要加引號：`find . -name "*.txt"`。不加引號時 shell 會先把 `*.txt` 展開成目前目錄的檔名，結果出乎意料。
 
-- `*` → matches zero or more characters
-- `?` → matches exactly one character
-- `[abc]` → matches any one character inside brackets (a, b, or c)
-- `[0-9]` → matches any digit
-- `{1..10}` → brace expansion (numbers 1 to 10)
+## 萬用字元
 
-### Examples
+| 符號 | 意義 | 例子 |
+| --- | --- | --- |
+| `*` | 零或多個任意字元 | `*.bam` |
+| `?` | 剛好一個字元 | `file?.txt` 符合 `file1.txt`、`fileA.txt`，不符合 `file10.txt` |
+| `[abc]`、`[0-9]` | 括號中的任一字元 | `sample[1-3].vcf` |
+| `[!abc]` | 不在括號中的字元 | `[!_]*` |
+| `{a,b}` | 大括號展開（產生字串，不檢查檔案是否存在） | `cp file.{txt,bak}` → `cp file.txt file.bak` |
+| `{1..10}` | 數列展開 | `mkdir run{1..10}`；`{01..10}` 補零 |
+| `**` | 遞迴所有子目錄（bash 需 `shopt -s globstar`） | `ls **/*.log` |
 
 ```bash
-ls *.txt            # list all .txt files
-ls file?.txt        # matches file1.txt, fileA.txt but not file10.txt
-ls file{1..10}.txt  # expands to file1.txt file2.txt ... file10.txt
+ls *_R1.fastq.gz                    # 所有 read 1
+for f in *_R1.fastq.gz; do          # 由 R1 推出 R2 的檔名
+    r2=${f/_R1/_R2}
+    echo "$f $r2"
+done
 ```
 
-## Regex Basics
+## 正規表達式
 
-Regular expressions are patterns interpreted by tools like `grep`, `sed`, `awk`, `perl`.
+| 符號 | 意義 | 例子 |
+| --- | --- | --- |
+| `.` | 任意一個字元 | `A.G` 符合 AAG、ACG |
+| `^` / `$` | 行首 / 行尾 | `^>`：FASTA 標題行；`\.gz$` |
+| `*` / `+` / `?` | 前一項 0 次以上 / 1 次以上 / 0 或 1 次 | `AT+G` |
+| `{n}`、`{n,m}` | 重複 n 次 / n 到 m 次 | `[ACGT]{6}`：6-mer |
+| `[ACGT]`、`[^N]` | 字元集合 / 排除 | `[^ACGTN]`：非法鹼基 |
+| `a\|b` | 或 | `error\|warn` |
+| `( )` | 分組、擷取 | `(chr[0-9XY]+):([0-9]+)` |
+| `\` | 跳脫特殊字元 | `\.`：真正的句點 |
+| `\b` | 單字邊界 | `\bchr1\b` 不符合 `chr10` |
+| `\d`、`\w`、`\s` | 數字、單字字元、空白（Perl / Python / `grep -P`） | POSIX 寫法：`[0-9]`、`[[:alnum:]_]`、`[[:space:]]` |
 
-### Common tokens
+| 方言 | 工具 | 差異 |
+| --- | --- | --- |
+| 基本 (BRE) | `grep`、`sed` 預設 | `+ ? \| ( ) { }` 要加反斜線才有特殊意義 |
+| 延伸 (ERE) | `grep -E`、`sed -E`、`awk` | `+ ? \| ( ) { }` 直接使用；**建議預設用這個** |
+| Perl 相容 (PCRE) | `grep -P`、Python `re`、R `perl = TRUE` | 支援 `\d`、`\s`、lookahead |
 
-- `.` → any single character
-- `^` → start of line
-- `$` → end of line
-- `.*` → zero or more characters
-- `\d` → digit (in some regex engines, e.g., Perl)
-- `[A-Za-z]` → any letter
-- `(pattern1|pattern2)` → either pattern1 or pattern2
-
-### Example with grep
-
-```bash
-grep '^ATG' genes.txt      # lines starting with ATG
-grep 'end$' genes.txt      # lines ending with 'end'
-grep -E 'cat|dog' pets.txt # matches cat or dog
-```
-
-## Using Regex and Wildcards in Commands
-
-### grep
+## 在指令中使用
 
 ```bash
-grep 'error' logfile               # find 'error'
-grep -i 'error' logfile            # case-insensitive
-grep -v 'debug' logfile            # exclude lines with 'debug'
-grep -E 'error|warning' logfile    # extended regex: match error or warning
-```
+# grep：搜尋
+grep -E 'error|warning' run.log          # 或
+grep -c '^>' seqs.fa                     # FASTA 序列數
+grep -v '^#' calls.vcf | head            # 去掉 VCF 標頭
+grep -E -o 'chr[0-9XY]+:[0-9]+' notes.txt   # -o：只輸出符合的部分
+grep -iv -E 'conflict|error|fail' run.log   # 排除多個樣式（不分大小寫）
 
-### sed (stream editor)
+# sed：取代（s/樣式/取代/旗標）
+sed 's/chr//' in.bed > out.bed           # 每行第一個 chr 刪除
+sed -E 's/[0-9]+/N/g' file.txt           # g：全部取代
+sed -E 's/^(chr[0-9]+)_([0-9]+)/\1:\2/' ids.txt   # \1 \2 引用分組：chr1_100 → chr1:100
+sed -i.bak 's/old/new/g' file.txt        # 原地修改並留備份（macOS 的 sed -i 語法不同）
+sed 's/\x1b\[[0-9;]*m//g' color.log      # 移除 ANSI 顏色碼（log 中的亂碼）
 
-```bash
-# Remove ANSI escape characters
-sed 's/\x1b\[[0-9;]*m//g' filename
+# awk：依欄位比對
+awk '$2 ~ /^rs/' variants.tsv            # 第 2 欄以 rs 開頭
+awk -F'\t' '$1 !~ /^chr(X|Y|M)$/' in.bed # 排除性染色體與粒線體
 
-# Replace all digits with X
-sed 's/[0-9]/X/g' file.txt
-```
-
-### awk
-
-```bash
-# Print lines where 3rd column > 20
-awk '$3 > 20 {print}' file.txt
-
-# Count lines with regex match in column 2
-awk '$2 ~ /regex/ {n++} END {print n}' file.txt
-```
-
-### find
-
-```bash
-# Find .txt files recursively
+# find：-name 用萬用字元，-regex 用正規表達式（比對完整路徑）
 find . -type f -name "*.txt"
-
-# Regex-like with -regex
-find . -regex ".*file[0-9]\\.txt"
+find . -regextype posix-extended -regex '.*/sample[0-9]+\.vcf\.gz'
 ```
 
-## Removing ANSI Escape Characters
-
-```bash
-less filename | sed 's/\x1b\[[0-9;]*m//g'
-```
-
-This cleans color codes from log files or terminal output.
-
-## Examples
-
-```bash
-# Match multiple keywords in one command
-egrep 'keyword1|keyword2|keyword3' file.txt
-
-# Exclude multiple patterns
-egrep -iv 'conflict|error|fail' logfile
-
-# Use wildcard in grep (requires quotes)
-grep "file.*txt" list.txt
-```
-
-## Summary
-
-- **Wildcards (globbing)** → expanded by shell (before command runs). Used in `ls`, `cp`, `mv`.
-- **Regex** → interpreted by tools like `grep`, `sed`, `awk`. Much more powerful and flexible.
-- Use `grep -E` (extended regex) for advanced patterns.
-- Combine with tools (`find`, `sed`, `awk`) for powerful text and file operations.
+| 常見錯誤 | 說明 |
+| --- | --- |
+| `.` 忘了跳脫 | `file.txt` 也會符合 `fileXtxt`；寫 `file\.txt` |
+| 沒有錨點 | `grep chr1` 也會符合 `chr10`、`chr11`；用 `-w` 或 `^chr1\b` |
+| 貪婪比對 | `<.*>` 會從第一個 `<` 吃到最後一個 `>`；用 `[^>]*` 或非貪婪 `.*?`（PCRE） |
+| 用 regex 解析巢狀結構 | 括號、HTML 的巢狀深度無法用正規表達式正確處理，見 [可計算性](../computer-science-foundations/computability-and-turing-machines.md) |

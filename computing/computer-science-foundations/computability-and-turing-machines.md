@@ -1,75 +1,56 @@
-# Computability and Turing Machines
+[Computing](../README.md) › [CS 基礎](README.md) › 可計算性與圖靈機
 
-## Core Question
+# 可計算性與圖靈機 (Computability and Turing Machines)
 
-Computability asks whether a problem can be solved by a well-defined procedure that always finishes in finite time.
+可計算性 (computability) 問的是：一個問題是否存在**一定會在有限時間結束**的演算法來解。這是理論上的可解性，和硬體快不快無關；有些問題不管給多少運算資源都不可能用一般演算法解決。
 
-## Computable vs Non-Computable Problems
-
-| Type | Meaning |
+| 類型 | 意義 |
 | --- | --- |
-| Computable problem | There exists an algorithm that solves the problem and halts in finite time |
-| Non-computable problem | No algorithm can solve all valid instances of the problem |
+| 可計算 (computable / decidable) | 存在演算法對所有輸入都能在有限時間停下並給出答案 |
+| 不可計算 (non-computable / undecidable) | 不存在能處理所有輸入的演算法 |
 
-This distinction is about theoretical solvability, not just whether current hardware is fast enough.
+## 自動機：計算模型的層級
 
-## Automata as Models of Computation
+自動機 (automaton) 是抽象的機器，用來分析「有多少記憶體、怎麼轉換狀態」能解決哪一類問題。
 
-Automata are abstract machines used to reason about what different computational systems can recognize or compute.
+| 模型 | 記憶體 | 能辨識 | 實務對應 |
+| --- | --- | --- | --- |
+| 有限狀態自動機 (finite automaton) | 只有有限個狀態 | 正規語言 (regular language) | [正規表達式](../operating-system/regex-wildcard.md)、詞法分析、序列 motif 掃描 |
+| 下推自動機 (pushdown automaton) | 加上一個[堆疊](linear-data-structures.md#堆疊-stacklifo) | 上下文無關語言 (context-free) | 巢狀結構：括號配對、程式語言語法解析、RNA 二級結構（stem-loop 的鹼基配對） |
+| 圖靈機 (Turing machine) | 無限長的紙帶，可讀寫 | 所有可計算的問題 | 一般用途電腦的理論模型 |
 
-They are useful because they separate:
+> 記憶體模型越強，能表達的問題類別越大。這也解釋了為什麼正規表達式無法正確匹配任意深度的巢狀括號：那需要堆疊。
 
-- the available memory model
-- the allowed state transitions
-- the class of problems or languages that can be handled
+## 圖靈機
 
-## Main Automata Progression
+| 組成 | 作用 |
+| --- | --- |
+| 紙帶 (tape) | 無限長，當作記憶體 |
+| 讀寫頭 (head) | 讀寫目前格子的符號，左移或右移 |
+| 狀態與轉移規則 | 依「目前狀態 + 讀到的符號」決定寫什麼、往哪移、進入哪個狀態 |
 
-| Model | Main limitation or capability | Common interpretation |
+圖靈機重要不是因為真實電腦長這樣，而是它給「演算法」一個嚴格定義。**邱奇-圖靈論題 (Church–Turing thesis)**：任何直觀上可以用演算法計算的東西，圖靈機都能計算。一般的程式語言（Python、Java、甚至 Excel 公式加上 `LAMBDA`）都是圖靈完備 (Turing complete)，計算能力等價。
+
+## 停機問題 (Halting Problem)
+
+> 是否存在一個通用演算法，能判斷**任意**程式在**任意**輸入下會停止還是永遠執行？
+
+答案是否定的（Turing, 1936）。證明思路是反證：假設存在判斷器 `halts(p, x)`，就能構造一個程式「若 `halts` 說我會停，我就無限迴圈；反之就停」，把它餵給自己時產生矛盾。
+
+| 影響 | 說明 |
+| --- | --- |
+| 有些問題注定無解 | 「更多算力」無法移除理論上的限制 |
+| 靜態分析有極限 | 編譯器、linter、防毒軟體無法完美預測所有程式的行為，只能近似（會有誤報或漏報） |
+| 萊斯定理 (Rice's theorem) | 任何關於程式「行為」的非平凡性質都不可判定 |
+
+## 可計算 ≠ 算得完
+
+可計算性問「能不能」，[複雜度](algorithms-and-complexity.md)問「要多久」。很多問題可計算，但已知演算法需要指數時間：
+
+| 類別 | 意義 | 例子 |
 | --- | --- | --- |
-| Finite automaton | Finite number of states, no unbounded memory | Good for regular patterns |
-| Pushdown automaton | Adds stack-like memory | Good for nested structure and context-free patterns |
-| Turing machine | Unbounded tape and general symbolic manipulation | Canonical model of general computation |
+| P | 多項式時間可解 | 排序、最短路徑 |
+| NP | 給定答案可在多項式時間驗證 | 數獨、旅行推銷員（判定版） |
+| NP-complete | NP 中最難的一群；任一個有多項式解則全部都有 | 布林可滿足性 (SAT)、多重序列比對的最佳解 |
 
-This progression shows that stronger memory models enable richer classes of problems.
-
-## Turing Machine Mental Model
-
-A Turing machine is an abstract machine with:
-
-- a tape that acts as memory
-- a head that reads and writes symbols
-- rules that determine state transitions and movement
-
-It is not important because real computers literally look like Turing machines. It matters because it gives a rigorous model for what an algorithm is.
-
-## Why Turing Machines Matter
-
-- They provide a standard model for general-purpose computation.
-- They define a boundary between solvable and unsolvable problems.
-- They connect algorithms, formal languages, and computer science theory.
-
-In modern terms, if a task is algorithmically computable, a Turing machine can in principle simulate it.
-
-## The Halting Problem
-
-The halting problem asks:
-
-Can a general algorithm determine whether any arbitrary program will stop or run forever on a given input?
-
-The answer is no in the fully general case.
-
-## Why the Halting Problem Matters
-
-- It proves that some problems are undecidable.
-- It places a formal limit on static analysis and program prediction.
-- It reminds us that "more compute" does not remove all theoretical barriers.
-
-This is one of the clearest examples showing that limits in computation are structural, not merely practical.
-
-## Practical Takeaways
-
-- Not every precisely stated problem is algorithmically solvable.
-- Memory model strongly affects what a computational system can express.
-- Turing machines matter because they formalize the idea of computation itself.
-- Theoretical limits such as undecidability still shape real areas like verification, security, and AI reasoning.
+> P 是否等於 NP 仍是未解問題。實務上面對 NP-hard 問題，改用啟發式 (heuristic) 或近似演算法：多重序列比對工具（MAFFT、Clustal）、演化樹搜尋、基因組組裝都是如此，結果是「夠好」而非保證最佳。

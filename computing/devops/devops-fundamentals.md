@@ -1,184 +1,97 @@
-# DevOps Fundamentals
+[Computing](../README.md) › [DevOps](README.md) › DevOps 基礎
 
-DevOps 不是單一工具，也不只是把開發與維運放在同一張組織圖。它比較像一種工作方式，目標是讓軟體從需求、開發、測試、部署到營運的整條流程更快、更穩、更可控。
+# DevOps 基礎 (DevOps Fundamentals)
 
-## DevOps 在解決什麼
+DevOps 不是一套工具，也不只是把開發 (Dev) 與維運 (Ops) 放進同一張組織圖，而是一種工作方式：讓軟體從需求、開發、測試、部署到營運的整條流程**更快、更穩、更可控**。核心是變更管理：讓變更可以更頻繁，但風險可以被看見與回復。
 
-大型產品常見的問題包括：
+## 要解決的問題
 
-- 系統很複雜，跨團隊協作成本高
-- 需求、開發、測試、部署彼此斷開
-- 每次改動都很慢，風險又大
-- 上線後出了問題，很難快速定位與回滾
+| 問題 | DevOps 的做法 |
+| --- | --- |
+| 需求、開發、測試、部署彼此斷開，交接等待 | 跨角色更早協作，流程連成一條 pipeline |
+| 每次改動又慢又危險 | 小而頻繁的變更 + 自動化測試 |
+| 手動部署出錯 | 部署腳本化、可重複 |
+| 上線後出問題很難定位與回滾 | 可觀測性 + 可回滾的發布 |
 
-DevOps 的核心價值，就是把這些斷點縮短，讓 change 可以更頻繁，但風險更可管理。
+## 流程
 
-## 不只是 Dev 和 Ops 靠近
+```
+需求 → 設計 → 開發 → 測試 → 部署 → 監控與回饋
+  ▲                                         │
+  └─────────────────────────────────────────┘
+          （持續改進：回饋決定下一個需求）
+```
 
-如果把 DevOps 只理解成「開發也要懂維運」，會太狹窄。比較完整的理解是：
+DevOps 不讓這些步驟消失，而是讓它們之間更連續，並以自動化減少等待與人為錯誤。每次變更都要能回答：需求有對齊嗎？改動可以測試嗎？上線後可以回滾嗎？風險看得見嗎？沒有這些制度，自動部署只是把混亂更快送進正式環境。
 
-- 跨角色協作要更早發生
-- 軟體交付要更多自動化
-- 測試、部署、監控要變成同一條流程的一部分
-- 變更管理要從手工審批轉向可驗證、可追蹤的 pipeline
+## CI/CD
 
-## 一條簡化的 DevOps 流程
+| | 持續整合 (CI) | 持續交付 (Continuous Delivery) | 持續部署 (Continuous Deployment) |
+| --- | --- | --- | --- |
+| 做什麼 | 頻繁合併程式碼，每次都自動建置與測試 | 每次變更都自動準備好可發布的版本 | 通過檢查就自動上線 |
+| 人工步驟 | — | 上線前人工核准 | 無 |
+| 目標 | 盡早發現衝突與缺陷 | 隨時可發布 | 最快的回饋 |
 
-教材中的 change management model，可以整理成這樣的順序：
+```
+push / PR ──► 建置 ──► lint + 單元測試 ──► 整合測試 ──► 打包（容器映像檔）──► 部署 staging ──► 部署 production
+               └──────────────── 任一步失敗就停下並通知 ────────────────┘
+```
 
-1. requirements
-2. design
-3. development
-4. testing
-5. deployment
-6. monitoring and feedback
+CI/CD 是機制而不是目的。實作見 [GitHub Actions](github-actions.md)。
 
-DevOps 並不是讓這些步驟消失，而是讓它們之間更連續，並盡量透過 automation 降低等待與手工錯誤。
+## 實務做法
 
-## 變更管理是核心，不是附屬品
+| 做法 | 說明 | 相關筆記 |
+| --- | --- | --- |
+| 版本控制一切 | 程式碼、設定、基礎設施、pipeline 定義 | [Git](../version-control/git.md) |
+| 主幹開發、短命分支 | 分支越久，合併越痛 | [GitHub 協作](../version-control/github-concepts.md) |
+| 自動化測試 | 頻繁變更若沒有自動驗證就無法擴張 | [測試](../../data-science/python-foundations/testing.md) |
+| 基礎設施即程式碼 (IaC) | Terraform、CloudFormation、Bicep：環境可重建、可審查 | [Cloud](../cloud/README.md) |
+| 容器化 | 開發、測試、正式環境一致 | [Docker](../containers-and-env/docker/README.md) |
+| 漸進式發布 | 藍綠部署、金絲雀發布 (canary)、功能開關 (feature flag)，出問題時影響小、易回滾 | — |
+| 可觀測性 | logs、metrics、traces；沒有可觀測訊號，每次上線都在賭 | — |
 
-很多團隊以為 DevOps 只是 CI/CD，但其實 change management 才是底層主題。
+### DORA 指標
 
-每一次變更都在問：
+衡量交付能力常用的四個指標：
 
-- 需求有沒有對齊
-- 改動是否可測
-- 上線是否可回滾
-- 風險是否能被觀察
+| 指標 | 意義 |
+| --- | --- |
+| 部署頻率 | 多久部署一次到正式環境 |
+| 變更前置時間 | commit 到上線要多久 |
+| 變更失敗率 | 有多少部署造成問題 |
+| 復原時間 | 出事後多久恢復 |
 
-如果這些問題沒有制度化，即使有自動部署，也只是把混亂更快送到 production。
+速度（前兩項）與穩定（後兩項）並不衝突：高績效團隊兩者都好。
 
-## CI/CD 的角色
+## 單體 vs 微服務
 
-CI/CD 是 DevOps 裡最常被看見的一層，但它應該被理解成機制，不是目的。
+| | 單體 (monolith) | 微服務 (microservices) |
+| --- | --- | --- |
+| 結構 | 一個大的部署單位 | 多個可獨立部署的小服務，各有資料與邏輯 |
+| 優點 | 簡單、易於除錯、交易一致 | 變更邊界清楚、可獨立擴展與部署 |
+| 代價 | 變更風險集中、部署牽一髮動全身 | 協調、網路、監控、資料一致性複雜 |
+| DevOps 需求 | 中 | 高：服務多 → 整合面、部署次數、監控需求都增加 |
 
-### Continuous Integration
+> 微服務不是天生比較進步。小團隊、早期產品從結構良好的單體開始通常更好。
 
-CI 的重點是：
+## 對資料與 ML 工作的意義
 
-- 頻繁整合程式碼
-- 盡早跑測試
-- 盡早發現衝突與缺陷
+資料 pipeline 與模型也是會變更的系統，同樣需要測試、部署與監控：
 
-### Continuous Delivery / Deployment
+| 延伸 | 重點 |
+| --- | --- |
+| DataOps | pipeline 程式碼化、資料品質檢查自動化、變更可追蹤（[資料品質檢查](../../data-science/data-engineering/data-quality-checks.md)） |
+| MLOps | 資料、模型、程式碼一起版本化；訓練與部署自動化；模型監控（[MLOps](../../data-science/machine-learning/production/mlops-overview.md)） |
+| 生資分析 | pipeline 用 [工作流引擎](../workflow-engines/README.md) + 容器；CI 跑小型測試資料集（nf-core 的 `-profile test`） |
 
-CD 的重點是：
-
-- 把可部署流程標準化
-- 減少手工上線步驟
-- 讓變更更小、更頻繁、更容易回滾
-
-教材反覆提到的一個核心觀念是：CI/CD pipeline 把 build、testing、deployment 自動化，讓 change management 變得比較可控。
-
-## Microservices 與 Monolith
-
-DevOps 常和 architecture decision 一起出現，尤其是 monolith 與 microservices 的對比。
-
-### Monolithic Architecture
-
-monolith 的特徵是：
-
-- 整體是一個較大的單位
-- 概念上比較單純
-- 但維護與變更風險容易集中
-
-### Microservices Architecture
-
-microservices 的特徵是：
-
-- 系統拆成較小、可獨立部署的服務
-- 每個服務各自處理特定功能
-- 常有自己的資料與邏輯
-
-這種架構的優點是變更邊界較清楚，但代價是協調、觀察與部署複雜度上升。
-
-### DevOps 為什麼常和 Microservices 綁在一起
-
-當服務被拆小之後：
-
-- 變更次數會增加
-- 整合面會增加
-- 測試與部署頻率會增加
-- 監控需求會增加
-
-這就是為什麼 microservices 幾乎一定需要更成熟的 DevOps 實踐。
-
-## Data Engineering 也受 DevOps 影響
-
-教材裡有一條很重要的線索：DevOps 不只影響產品工程，也會影響 data engineering。
-
-原因包括：
-
-- data pipelines 本身也是可變更的系統
-- 資料流程也需要測試、部署與監控
-- 微服務化架構下，資料常分散在多個服務與私有資料庫之間
-
-所以從 data team 的角度看，DevOps 的延伸其實很接近 DataOps 或 pipeline engineering discipline。
-
-## Observability 不是可有可無
-
-變更越頻繁，越需要 observability。
-
-它的價值在於：
-
-- 更早發現問題
-- 協助定位故障來源
-- 看見改動後的系統行為
-- 幫助回滾與後續改善
-
-如果團隊能自動部署，卻沒有足夠的 logs、metrics、traces 或其他可觀測訊號，那每次上線都還是在賭。
-
-## Testing 與 Reliability
-
-DevOps 很強調 automated testing，不只是因為省人工，而是因為頻繁變更如果沒有自動驗證，就無法穩定擴張。
-
-可以把 testing 想成兩層：
-
-- 上線前：避免明顯錯誤進入環境
-- 上線後：透過 observability 與 feedback 判斷系統是否真的穩定
-
-也因此，reliability 不是單靠 deployment tool 達成的，而是 testing、monitoring、rollback discipline 一起形成的。
-
-## Data Quality 與 DevOps 的關係
-
-第四章把焦點拉到 data quality，這很值得保留。
-
-重點不是 DevOps 自己生出高品質資料，而是：
-
-- 好的軟體流程更容易產生可信資料
-- 自動化測試可以幫助發現資料流程錯誤
-- observability 可以更早看見資料品質異常
-- 並非所有資料都需要同樣等級的品質要求
-
-這意味著 data quality 也應該被放進工程流程治理，而不只是靠事後人工檢查。
-
-## 一個實務上的心智模型
-
-理解 DevOps 時，可以先記四件事：
-
-1. `flow`
-   需求到上線的交付流程要更短、更順
-2. `automation`
-   build、test、deploy、check 都盡量制度化
-3. `feedback`
-   問題要能更快被看到
-4. `reliability`
-   變更要快，但不能靠運氣
-
-當這四件事能一起運作時，DevOps 才算真的落地。
+> 資料品質不只是資料團隊的事：好的工程流程、自動化測試與可觀測性能更早發現資料異常；但不是所有資料都需要同等級的品質要求，依用途決定。
 
 ## 常見誤區
 
-- 把 DevOps 等同於某一套工具鏈
-- 只有部署自動化，沒有測試與 observability
-- 以為 microservices 天生比較進步，忽略了治理成本
-- 把 data quality 當成純資料團隊問題，而不是工程流程問題
-
-## Related Concepts
-
-- [Git](../version-control/git.md)
-- [GitHub Concepts](../version-control/github-concepts.md)
-- [Containerization and Virtualization](../containers-and-env/containerization-and-virtualization.md)
-- [Deployment and Monitoring](../../data-science/machine-learning/production/deployment-and-monitoring.md)
-
-[Back to DevOps](README.md)
+| 誤區 | 說明 |
+| --- | --- |
+| DevOps = 某套工具鏈 | 工具只是手段，核心是流程與回饋 |
+| 只有自動部署，沒有測試與監控 | 把錯誤更快送上線 |
+| 微服務一定比較好 | 忽略協調與治理成本 |
+| 資料品質是資料團隊的事 | 應納入工程流程 |

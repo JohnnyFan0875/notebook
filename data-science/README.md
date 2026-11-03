@@ -6,6 +6,8 @@
 
 **找方法**：[統計方法速查](statistics/method-selection.md)、[模型選擇](machine-learning/model-selection.md)。
 
+**執行環境**：命令列、遠端伺服器、環境與容器、HPC 與工作流引擎見 [Computing](../computing/README.md)（[SSH](../computing/developer-tools/ssh.md)、[Conda](../computing/containers-and-env/conda.md)、[Docker](../computing/containers-and-env/docker/README.md)、[Slurm](../computing/workflow-engines/slurm.md)、[Snakemake](../computing/workflow-engines/snakemake.md)、[GitHub Actions](../computing/devops/github-actions.md)）。
+
 ## 章節地圖
 
 ### 核心
