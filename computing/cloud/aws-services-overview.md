@@ -1,229 +1,116 @@
-# AWS Services Overview
+[Computing](../README.md) › [Cloud](README.md) › AWS 服務總覽
 
-這一頁的目標不是列出所有 AWS 產品，而是把常見服務放進幾個穩定的分類，幫助你判斷一個 workload 大致該從哪裡開始找解法。
+# AWS 服務總覽 (AWS Services Overview)
 
-## 先用服務類別思考
+把常見 AWS 服務放進穩定的類別，遇到需求時先判斷類別、再挑服務。先問三件事：要解決的是運算、儲存、資料庫還是網路？要基礎資源還是託管服務？工作負載偏應用交付、資料平台還是 AI / ML？三家雲的服務對照見 [Cloud](README.md#服務對照)。
 
-初學 AWS 很容易卡在服務名稱太多。比較好的方式是先問：
+## 全球基礎設施
 
-- 我要解決的是 compute、database、storage，還是 networking 問題？
-- 我想要的是基礎資源，還是託管程度更高的 managed service？
-- 這個需求偏應用交付、資料平台，還是 AI / ML？
+| 層級 | 說明 |
+| --- | --- |
+| Region | 地理區域（`us-east-1`、`ap-northeast-1` 東京）；資料不會自動離開區域 |
+| Availability Zone | 區域內彼此獨立的一或多個資料中心；高可用架構跨 AZ 部署 |
+| Edge location | CloudFront 的快取節點，靠近使用者 |
 
-## Compute
+## 運算 (Compute)
 
-Compute 是大多數 workload 的起點，差別主要在控制權與託管程度。
-
-### EC2
-
-`EC2` 是虛擬伺服器。
-
-適合：
-
-- 需要自己控制 OS、runtime、儲存配置
-- 長時間運行的應用
-- 傳統伺服器型 workload
-
-### Lambda
-
-`Lambda` 是 serverless compute。
-
-適合：
-
-- 事件驅動任務
-- 短時、按需執行的程式
-- 不想自行管理伺服器的情境
-
-### 怎麼選
-
-- 想保留較高控制權，先想到 `EC2`
-- 想把維運壓到最低，先想到 `Lambda`
-
-## Databases
-
-資料庫服務的選擇，通常取決於資料模型、查詢模式與擴展方式。
-
-### Amazon RDS
-
-`RDS` 可以理解成託管式關聯式資料庫服務。
-
-重點是：
-
-- 不必自己從零管理底層資料庫基礎設施
-- 適合傳統交易型應用
-- 關聯式 schema 明確時很常見
-
-### Amazon Aurora
-
-`Aurora` 是 AWS 提供的雲端原生關聯式資料庫選項。
-
-可以先把它理解成：
-
-- 與 RDS 脈絡接近的關聯式體系
-- 偏向雲端託管最佳化
-- 常被拿來處理需要高可用與較高效能的關聯式 workload
-
-### Amazon DynamoDB
-
-`DynamoDB` 是 NoSQL 託管資料庫。
-
-適合：
-
-- key-value 或文件型資料
-- 高吞吐、低延遲需求
-- schema 彈性較高的應用
-
-心智模型上，可以把它和 RDS 類服務分開看：
-
-- `RDS / Aurora` 偏關聯式
-- `DynamoDB` 偏 NoSQL 與高擴展場景
-
-### Amazon Redshift
-
-`Redshift` 比較偏分析型資料倉儲，而不是日常交易資料庫。
-
-適合：
-
-- BI
-- 大規模分析查詢
-- 資料倉儲工作負載
-
-## Storage
-
-AWS storage 先用資料存放型態來分，比背產品有效。
-
-### Object Storage: S3
-
-`S3` 是 AWS 最核心的 object storage 服務之一。
-
-適合：
-
-- 檔案與物件儲存
-- data lake
-- 備份
-- 靜態網站資產
-
-常見概念包括：
-
-- object 而不是傳統檔案系統
-- 可搭配不同 storage classes 做成本分層
-- 可用 lifecycle rules 在儲存類別間轉換
-
-### Block Storage: EBS
-
-`EBS` 偏向提供給運算實例使用的區塊儲存。
-
-可以把它理解成：
-
-- 比較像掛在伺服器旁的磁碟
-- 常和 `EC2` 一起出現
-- 適合需要持久化磁碟的伺服器型 workload
-
-### File Storage: EFS
-
-`EFS` 是託管式檔案儲存服務。
-
-適合：
-
-- 多個運算節點共享檔案系統
-- 需要檔案系統語意，而不是單純 object 存取
-
-## Networking
-
-Networking 的核心不是背全部網路元件，而是知道 AWS 如何讓你的資源被隔離、連接與暴露。
-
-### VPC
-
-`Amazon VPC` 是邏輯上隔離的虛擬網路空間。
-
-它回答的是：
-
-- 你的資源放在哪個網路邊界裡
-- 哪些子網可公開，哪些要私有
-- 流量如何路由
-- 哪些存取要被允許或拒絕
-
-### Subnet, Route, Gateway, ACL
-
-入門時可以先這樣理解：
-
-- `Subnet`: 把 VPC 的位址空間切成較小區塊
-- `Route Table`: 決定流量往哪裡走
-- `Gateway`: 讓 VPC 連到外部網路或其他網路
-- `Network ACL`: 在子網層級控制流量
-
-這些概念一起構成 AWS 網路治理的基本骨架。
-
-### CloudFront
-
-`CloudFront` 比較像全球內容分發層。
-
-適合：
-
-- 加速靜態內容傳遞
-- 讓全球使用者更快拿到內容
-- 搭配 edge locations 降低延遲
-
-## AI / ML Services
-
-AWS 的 AI / ML 服務可以先分成兩類：
-
-- 直接可用的預訓練 AI 能力
-- 自己建模、訓練與部署的 ML 平台
-
-### 預訓練 AI 服務
-
-教材裡出現的例子包括：
-
-- `Amazon Translate`: 文字翻譯
-- `Amazon Polly`: 文字轉語音
-- `Amazon Lex`: 對話式介面與 chatbot
-- `Amazon Comprehend`: NLP 分析
-- `Amazon Rekognition`: 影像分析
-
-它們的共同特徵是：
-
-- 不一定要自己從零訓練模型
-- 適合把 AI 能力快速嵌入產品流程
-
-### Amazon SageMaker
-
-`SageMaker` 比較偏完整的 ML 平台。
-
-可以先把它理解成：
-
-- 協助準備資料、訓練模型、調參與部署
-- 適合需要自己建立 ML workflow 的團隊
-- 比單點 AI API 更接近真正的 ML 平台工作流
-
-## 一張簡化地圖
-
-如果把常見 AWS 服務用一句話記住，可以先這樣抓：
-
-| 類別 | 代表服務 | 先記住的用途 |
+| 服務 | 是什麼 | 適合 |
 | --- | --- | --- |
-| compute | EC2, Lambda | 跑程式與應用 |
-| relational database | RDS, Aurora | 結構化交易資料 |
-| NoSQL | DynamoDB | 高擴展、低延遲 key-value / document |
-| analytics database | Redshift | 資料倉儲與分析 |
-| object storage | S3 | 檔案、資料湖、備份 |
-| block storage | EBS | 給運算實例的磁碟 |
-| file storage | EFS | 共享檔案系統 |
-| networking | VPC, CloudFront | 網路隔離與內容分發 |
-| AI / ML | Translate, Comprehend, SageMaker | 預訓練 AI 與 ML 平台 |
+| EC2 | 虛擬機；自選 OS、規格、磁碟 | 長時間執行、需要客製環境、GPU 運算 |
+| Lambda | Serverless 函式，事件觸發，單次最長 15 分鐘 | 檔案上傳後處理、輕量 API、自動化 |
+| ECS / Fargate | 容器服務；Fargate 不必管伺服器 | 容器化應用 |
+| EKS | 託管 Kubernetes | 已採用 [Kubernetes](../containers-and-env/kubernetes.md) |
+| AWS Batch | 批次工作排程（底層用 EC2 / Spot / Fargate） | 生資 pipeline：Nextflow、Snakemake 的雲端 executor |
+| Elastic Beanstalk | PaaS：上傳程式碼，平台負責部署 | 傳統 web 應用 |
+
+| | EC2 | Lambda |
+| --- | --- | --- |
+| 控制權 | 高 | 低 |
+| 維運責任 | OS 修補、擴縮自己管 | 平台負責 |
+| 計費 | 開機時間 | 執行次數 × 時間 |
+| 心智模型 | 租一台可調整的伺服器（自己開車） | 需要時才執行的一段程式（叫車） |
+
+| EC2 購買方式 | 說明 |
+| --- | --- |
+| On-Demand | 依秒 / 小時計費，無承諾 |
+| Savings Plans / Reserved Instances | 承諾 1 或 3 年用量換折扣 |
+| Spot | 用剩餘容量，大幅折扣，但可能被收回（2 分鐘預告） |
+| Dedicated Hosts | 專屬實體主機（授權、合規需求） |
+
+## 儲存 (Storage)
+
+| 服務 | 類型 | 說明 |
+| --- | --- | --- |
+| S3 | 物件儲存 | 檔案、data lake、備份、靜態網站；以 bucket + key 存取，耐久度 11 個 9 |
+| EBS | 區塊儲存 | 掛在單一 EC2 上的磁碟 |
+| EFS | 檔案儲存（NFS） | 多台 EC2 共用的檔案系統 |
+| FSx for Lustre | 高效能平行檔案系統 | HPC、可與 S3 連動 |
+| S3 Glacier | 封存 | 便宜，取回需要時間與費用 |
+
+| S3 儲存類別 | 用途 |
+| --- | --- |
+| Standard | 常用資料 |
+| Intelligent-Tiering | 存取模式不確定時自動分層 |
+| Standard-IA / One Zone-IA | 不常存取但需要時要立即可讀 |
+| Glacier Instant / Flexible / Deep Archive | 封存，取回時間由毫秒到數小時 |
+
+> 用生命週期規則 (lifecycle rules) 讓原始 FASTQ 在分析完成後自動轉到 Glacier，可大幅降低長期儲存成本。很多公開生資資料集（1000 Genomes、gnomAD、TCGA 的開放部分）以 [AWS Open Data](https://registry.opendata.aws/) 形式放在 S3，可直接在同區域讀取。
+
+## 資料庫
+
+| 服務 | 類型 | 適合 |
+| --- | --- | --- |
+| RDS | 託管關聯式（PostgreSQL、MySQL、SQL Server 等） | 交易型應用、明確的 schema |
+| Aurora | AWS 雲端原生的 MySQL / PostgreSQL 相容資料庫 | 高可用、較高效能的關聯式工作負載 |
+| DynamoDB | 託管 NoSQL（key-value / 文件） | 高吞吐、低延遲、schema 彈性 |
+| Redshift | 資料倉儲 | BI、大規模分析查詢 |
+| Athena | 用 SQL 直接查 S3 上的檔案（Parquet / CSV） | 不想建資料庫的臨時分析 |
+| ElastiCache | 託管 Redis / Memcached | 快取 |
+
+交易型 (OLTP) 與分析型 (OLAP) 不要混用；概念見 [資料庫](../../data-science/databases/README.md)、[雲端資料倉儲](../../data-science/data-engineering/cloud-data-warehouses.md)。
+
+## 網路
+
+| 服務 / 元件 | 作用 |
+| --- | --- |
+| VPC | 邏輯隔離的虛擬網路，所有資源的網路邊界 |
+| Subnet | 切分 VPC 位址；公開子網（有路由到 Internet Gateway）vs 私有子網 |
+| Route table | 流量往哪裡走 |
+| Internet Gateway / NAT Gateway | 對外連線 / 讓私有子網可以連出但不被連入 |
+| Security Group | 執行個體層級的防火牆，**有狀態**，只能寫允許規則 |
+| Network ACL | 子網層級，**無狀態**，可允許也可拒絕 |
+| Route 53 | DNS |
+| CloudFront | CDN |
+| Direct Connect / Site-to-Site VPN | 機房與 AWS 之間的專線 / 加密連線 |
+
+## AI / ML
+
+| 類型 | 服務 | 用途 |
+| --- | --- | --- |
+| 預訓練 API | Translate、Polly（文字轉語音）、Transcribe（語音轉文字）、Lex（對話機器人）、Comprehend（NLP；Comprehend Medical 抽取醫療實體）、Rekognition（影像）、Textract（文件 OCR） | 不必自己訓練就能嵌入產品 |
+| 生成式 AI | Bedrock | 透過 API 使用多家基礎模型 |
+| ML 平台 | SageMaker | 資料準備、訓練、調參、部署、監控 |
+
+用 Python 呼叫這些服務見 [Boto3](boto3-for-aws-services.md)；ML 部署與監控見 [MLOps](../../data-science/machine-learning/production/mlops-overview.md)。
+
+## 管理與監控
+
+| 服務 | 作用 |
+| --- | --- |
+| CloudWatch | 指標、log、警示（**系統表現如何**） |
+| CloudTrail | API 呼叫紀錄（**誰做了什麼**），稽核用 |
+| CloudFormation / CDK | 基礎設施即程式碼 (IaC)；跨雲常用 Terraform |
+| Systems Manager | 大量 EC2 的修補、指令執行、參數 |
+| Organizations | 多帳號管理與合併帳單 |
+
+串流資料（Kinesis + Lambda）見 [串流](../../data-science/data-engineering/streaming.md#awskinesis--firehose--lambda)。
 
 ## 常見誤區
 
-- 把所有資料都往同一種資料庫放
-- 把 `S3`、`EBS`、`EFS` 當成可以互換的儲存方案
-- 一看到 AI 需求就想自己訓練模型，而不是先看 managed AI 服務
-- 把 VPC 當成單純「網路開關」，沒有理解它是整個隔離與流量治理邊界
-
-## Related Concepts
-
-- [AWS Certified Cloud Practitioner](aws-certified-cloud-practitioner.md)
-- [Cloud Computing Fundamentals](cloud-computing-fundamentals.md)
-- [Streaming: Kinesis and Lambda](../../data-science/data-engineering/streaming.md#awskinesis--firehose--lambda)
-- [MLOps Overview](../../data-science/machine-learning/production/mlops-overview.md)
-
-[Back to Cloud](README.md)
+| 誤區 | 說明 |
+| --- | --- |
+| 所有資料都放同一種資料庫 | 依存取模式選 |
+| S3、EBS、EFS 可互換 | 物件 vs 單機磁碟 vs 共用檔案系統 |
+| AI 需求一律自己訓練模型 | 先看預訓練 API 是否夠用 |
+| VPC 只是網路開關 | 它是整個隔離與流量治理的邊界 |
+| 運算與資料放不同區域 | 跨區傳輸收費且慢 |
