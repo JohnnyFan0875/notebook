@@ -1,126 +1,125 @@
+[Computing](../README.md) › [Web 開發](README.md) › FastAPI
+
 # FastAPI
 
-## What FastAPI Is
+FastAPI 是用 Python type hints 定義 API 的 web 框架：型別同時是輸入驗證、回應 schema 與自動產生的 OpenAPI 文件，程式碼少、契約清楚。常用在資料服務、內部工具、ML 模型推論端點。本篇是**伺服器端**；用 `requests` 呼叫 API 的客戶端寫法、狀態碼的處理方式見 [API 與 HTTP](../../data-science/python-foundations/api-http.md)。
 
-FastAPI is a Python web framework for building HTTP APIs. It is designed to make API development fast to write, strongly structured, and friendly to documentation and validation.
+## 核心概念
 
-## Why People Use FastAPI
+| 概念 | 在 FastAPI 中 |
+| --- | --- |
+| 端點 (endpoint) | HTTP 方法 + 路徑，用 decorator 宣告：`@app.get("/samples/{id}")` |
+| path 參數 | 路徑中的 `{sample_id}`，依型別自動轉換與驗證 |
+| query 參數 | 函式參數中不在路徑裡的簡單型別：`?tissue=liver&limit=10` |
+| request body | 型別為 Pydantic `BaseModel` 的參數，從 JSON 解析 |
+| response model | `response_model=`：過濾與驗證輸出欄位，也寫進文件 |
+| 驗證失敗 | 自動回 `422 Unprocessable Entity` 與哪個欄位錯 |
+| 文件 | 啟動後 `/docs`（Swagger UI）、`/redoc`、`/openapi.json` |
 
-FastAPI is popular because it combines several practical advantages:
+### CRUD 對應
 
-- high performance for Python-based APIs
-- type-hint driven request and response modeling
-- automatic OpenAPI-based documentation
-- a relatively small amount of code for common API patterns
+| 動作 | 方法 | 路徑 | 成功狀態碼 |
+| --- | --- | --- | --- |
+| 列出 / 查詢 | `GET` | `/samples?tissue=liver` | `200` |
+| 取得一筆 | `GET` | `/samples/{id}` | `200`；不存在 `404` |
+| 建立 | `POST` | `/samples` | `201 Created` |
+| 整筆取代 | `PUT` | `/samples/{id}` | `200`；不存在 `404` |
+| 部分更新 | `PATCH` | `/samples/{id}` | `200` |
+| 刪除 | `DELETE` | `/samples/{id}` | `204 No Content`（無 body） |
 
-This makes it attractive for data services, internal tools, inference endpoints, and CRUD-style backends.
+狀態碼要對應操作的語意，而不只是「函式有沒有跑完」：客戶端錯誤（輸入錯、找不到）回 4xx，伺服器處理失敗回 5xx。完整的狀態碼分類見 [API 與 HTTP：狀態碼](../../data-science/python-foundations/api-http.md#狀態碼)。
 
-## Core Mental Model
+## 範例
 
-A FastAPI app exposes endpoints over HTTP. Each endpoint typically combines:
+```python
+# main.py
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field
 
-- an HTTP method such as `GET`, `POST`, `PUT`, or `DELETE`
-- a route path such as `/reviews`
-- request inputs from path, query string, or body
-- a response model or response payload
+app = FastAPI(title="Sample API")
 
-## CRUD Mapping
+class SampleIn(BaseModel):                       # request body 的 schema
+    name: str = Field(min_length=1)
+    tissue: str
+    reads_m: float = Field(gt=0)                 # 必須 > 0，否則自動回 422
 
-A common pattern is to map object lifecycle operations onto HTTP methods.
+class Sample(SampleIn):                          # response 多一個 id
+    id: int
 
-| Action | Typical HTTP method | Typical meaning |
+db: dict[int, Sample] = {}                       # 示範用；實務接資料庫
+
+@app.get("/samples", response_model=list[Sample])
+def list_samples(tissue: str | None = None, limit: int = 100):   # query 參數
+    rows = [s for s in db.values() if tissue is None or s.tissue == tissue]
+    return rows[:limit]
+
+@app.get("/samples/{sample_id}", response_model=Sample)
+def get_sample(sample_id: int):                  # path 參數，自動轉 int
+    if sample_id not in db:
+        raise HTTPException(status_code=404, detail="sample not found")
+    return db[sample_id]
+
+@app.post("/samples", response_model=Sample, status_code=status.HTTP_201_CREATED)
+def create_sample(body: SampleIn):
+    new = Sample(id=len(db) + 1, **body.model_dump())
+    db[new.id] = new
+    return new
+
+@app.delete("/samples/{sample_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_sample(sample_id: int):
+    if db.pop(sample_id, None) is None:
+        raise HTTPException(status_code=404, detail="sample not found")
+```
+
+```bash
+uv add "fastapi[standard]"         # 含 uvicorn 與 fastapi CLI
+uv run fastapi dev main.py         # 開發模式：自動重載，http://127.0.0.1:8000/docs
+uv run fastapi run main.py         # 正式模式（不重載、監聽 0.0.0.0）
+```
+
+| 進階功能 | 用途 |
+| --- | --- |
+| `async def` 端點 | 端點內呼叫非同步 I/O（`httpx`、async DB driver）時用；呼叫阻塞函式（一般 DB driver、`requests`、模型推論）就用一般 `def`，FastAPI 會放到 thread pool |
+| `Depends()` | 依賴注入：共用 DB session、認證、分頁參數 |
+| `APIRouter` | 把端點拆到多個檔案 |
+| 背景任務 `BackgroundTasks` | 回應後再做的小工作（寄信、寫 log）；長時間任務改用佇列（Celery、RQ） |
+| 模型推論 | 模型在啟動時載入一次（`lifespan`），不要每個請求重新載入 |
+
+## 測試
+
+| 層級 | 範圍 | 工具 |
 | --- | --- | --- |
-| Create | `POST` | Create a new object |
-| Read | `GET` | Retrieve an object or collection |
-| Update | `PUT` | Replace or update an existing object |
-| Delete | `DELETE` | Remove an existing object |
+| 單元測試 | 純函式、商業邏輯 | `pytest` |
+| 端點測試 | 經過路由、驗證、序列化的完整請求 | `fastapi.testclient.TestClient`（不需啟動伺服器） |
+| 功能 / 整合測試 | 多步驟流程、認證、資料庫 | 測試用資料庫 + `TestClient` |
 
-This is a convention rather than a law, but it is the baseline design most API consumers expect.
+```python
+# test_main.py
+from fastapi.testclient import TestClient
+from main import app
 
-## Request and Response Design
+client = TestClient(app)
 
-Good FastAPI design depends on being explicit about:
+def test_create_and_get():
+    r = client.post("/samples", json={"name": "S1", "tissue": "liver", "reads_m": 32.1})
+    assert r.status_code == 201
+    assert client.get(f"/samples/{r.json()['id']}").json()["name"] == "S1"
 
-- what the endpoint receives
-- how existing objects are identified
-- what the endpoint returns
-- which status code signals success or failure
+def test_validation_error():
+    r = client.post("/samples", json={"name": "S2", "tissue": "lung", "reads_m": -1})
+    assert r.status_code == 422
 
-For update or delete operations, object identity is especially important. The application must have a clear way to map external identifiers to existing records.
+def test_not_found():
+    assert client.get("/samples/999").status_code == 404
+```
 
-## Validation and Type Hints
+好的 API 測試涵蓋：成功回應、失敗回應（404、422）、驗證行為、回應 schema 與狀態碼。pytest 的 fixture、marker 等見 [測試](../../data-science/python-foundations/testing.md)。
 
-One of FastAPI's main strengths is that Python type hints help define API structure directly.
+## 部署
 
-Practical benefits:
-
-- clearer contracts between client and server
-- earlier validation of malformed inputs
-- cleaner autogenerated docs
-- less duplication between implementation and interface definition
-
-## Error Handling
-
-Error handling in APIs usually falls into two broad categories:
-
-| Error type | Meaning |
+| 方式 | 說明 |
 | --- | --- |
-| Client-side / user error | Bad input, missing data, invalid route, outdated identifier |
-| Server-side error | The application failed while trying to process a valid request |
-
-This distinction matters because the API should communicate not only that something failed, but what kind of failure occurred.
-
-## HTTP Status Codes
-
-Status codes are part of the API contract.
-
-Common examples:
-
-| Code | Meaning |
-| --- | --- |
-| `200` | Successful request |
-| `201` | Resource created successfully |
-| `204` | Successful request with no response body |
-| `404` | Resource not found |
-| `500` | Server-side failure |
-
-The status code should align with the semantic meaning of the operation, not just whether the Python function finished running.
-
-## Testing FastAPI Applications
-
-FastAPI work benefits from at least two testing layers:
-
-| Test type | Scope |
-| --- | --- |
-| Unit test | Validate isolated functions or methods |
-| System / endpoint test | Validate endpoint behavior with the app running |
-
-`TestClient` is commonly used to exercise endpoints in a test environment without needing a separate external client.
-
-Good API tests usually check:
-
-- success responses
-- failure responses
-- validation behavior
-- response schema and status codes
-
-## Functional Perspective
-
-Beyond individual endpoint tests, functional tests ask whether the application works as a connected system rather than as isolated route handlers.
-
-This becomes more important once authentication, persistence, business logic, or multi-step workflows are involved.
-
-## Where FastAPI Is Especially Useful
-
-FastAPI is a strong fit for:
-
-- JSON CRUD APIs
-- internal data services
-- machine learning inference endpoints
-- high-throughput backend pipelines that expose HTTP interfaces
-
-## Practical Takeaways
-
-- FastAPI is best understood as a contract-first Python API framework.
-- Its core strengths are typed validation, autogenerated docs, and efficient HTTP endpoint development.
-- Good FastAPI design depends on clear CRUD semantics, thoughtful status codes, and strong testing around endpoint behavior.
+| `fastapi run` / `uvicorn main:app --workers 4` | 單機多 worker |
+| [Docker](../containers-and-env/docker/README.md) | 官方建議的容器化方式，一個容器跑一個 Uvicorn process，由外部（Kubernetes、Compose）負責擴展 |
+| 雲端 | 容器服務（Cloud Run、Azure Container Apps、AWS App Runner / ECS） |
+| ML 模型服務的監控與版本 | 見 [部署與監控](../../data-science/machine-learning/production/deployment-and-monitoring.md) |

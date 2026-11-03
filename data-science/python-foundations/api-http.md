@@ -2,7 +2,7 @@
 
 # API 與 HTTP (Web APIs with requests)
 
-呼叫 Web API 的流程很固定：組 URL → 加查詢參數、標頭、認證 → 送出請求 → 檢查狀態碼 → 解析回應 → 明確處理錯誤。Python 的預設工具是 `requests`；生資常見的 Ensembl REST、NCBI E-utilities、UniProt 都是這個模式。
+呼叫 Web API 的流程很固定：組 URL → 加查詢參數、標頭、認證 → 送出請求 → 檢查狀態碼 → 解析回應 → 明確處理錯誤。Python 的預設工具是 `requests`；生資常見的 Ensembl REST、NCBI E-utilities、UniProt 都是這個模式。自己寫 API（伺服器端）見 [FastAPI](../../computing/web-development/fastapi.md)，瀏覽器與 HTTP 的整體運作見 [Web 基礎](../../computing/web-development/web-fundamentals.md)。
 
 ## HTTP 請求與回應
 
