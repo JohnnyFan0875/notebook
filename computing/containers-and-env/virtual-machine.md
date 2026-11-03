@@ -1,56 +1,51 @@
-# Virtual Machine (VirtualBox)
+[Computing](../README.md) › [容器與環境](README.md) › 虛擬機
 
-## Free up space in a `vdi` (VirtualBox Disk Image) file
+# 虛擬機：VirtualBox (Virtual Machine)
 
-1. Zero out free space inside the VM
+在自己的電腦上跑一台完整的 Linux（或其他 OS）。Windows 使用者要 Linux 命令列環境時，[WSL 2](../operating-system/windows-and-wsl.md) 更輕量、整合更好；需要完整桌面環境、測試不同發行版、或要強隔離時才用 VirtualBox。概念比較見 [容器與虛擬化](containerization-and-virtualization.md)。
 
-- Run this **inside** Linux VM to fill the free space with zeroes. Deleted files are replaced with zeroes, making them compressible.
+| 項目 | 內容 |
+| --- | --- |
+| 軟體 | [VirtualBox](https://www.virtualbox.org/)（免費）；替代：VMware Workstation、Hyper-V（Windows 內建）、UTM（Apple Silicon Mac） |
+| 適合 | 完整 Linux 桌面、測試安裝流程、隔離不信任的軟體 |
+| 不適合 | 日常命令列開發（用 WSL）、大量運算（用伺服器或雲端） |
 
-  ```bash
-  sudo dd if=/dev/zero of=/EMPTY bs=1M
-  sudo rm -f /EMPTY
-  ```
+## 常見問題
 
-2. Shut down VM (powered off)
+### 縮小 `.vdi` 虛擬磁碟
 
-3. Compact the VDI from host machine
-
-   ```bash
-   VBoxManage modifymedium disk /path/to/your-disk.vdi --compact
-   ```
-
-## Fix VirtualBox unable to copy and paste bidirectionally
-
-[Link](https://medium.com/%E8%8A%B1%E5%93%A5%E7%9A%84%E5%A5%87%E5%B9%BB%E6%97%85%E7%A8%8B/%E8%A7%A3%E6%B1%BAvirtualbox%E7%84%A1%E6%B3%95%E9%9B%99%E5%90%91%E8%A4%87%E8%A3%BD%E8%B2%BC%E4%B8%8A-1554d5a81da0)
-
-## How can I make my own account a sudoers on VirtualBox
+動態配置的磁碟刪檔後不會自動縮小。
 
 ```bash
-su -                           # login root # the same password as user account
-sudo adduser [username] sudo
-su [username]
+# 1. 在 VM 內：把可用空間填零，再刪除（讓已刪除的區塊可被壓縮）
+sudo dd if=/dev/zero of=/EMPTY bs=1M; sudo rm -f /EMPTY
+# 2. 關閉 VM（完全關機，不是儲存狀態）
+# 3. 在主機上壓縮
+VBoxManage modifymedium disk /path/to/disk.vdi --compact
 ```
 
-[Link](https://superuser.com/questions/1623376/how-can-i-make-my-own-account-a-sudoers-on-virtualbox)
+### 剪貼簿與共用資料夾
 
-## How to fix if terminal can not open
+| 問題 | 處理 |
+| --- | --- |
+| 雙向剪貼簿 / 拖放無效 | VM 內安裝 Guest Additions（裝置 → 插入 Guest Additions CD 映像），設定 → 一般 → 進階 → 共用剪貼簿：雙向 |
+| 共用資料夾無權限存取（`/media/sf_*`） | `sudo usermod -aG vboxsf $USER`，重新開機 |
+| 視窗大小無法自動調整 | 安裝 Guest Additions；顯示卡控制器改 VMSVGA |
+
+### 讓自己的帳號可以用 sudo
 
 ```bash
-CTRL + ALT + F3  # 进入命令行模式 (需要返回桌面的CTRL + ALT + F1)
-
-$ sudo localectl set-locale LANG=en_US.UTF-8
-$ sudo reboot
+su -                              # 切換到 root（Debian 安裝時設定的 root 密碼）
+usermod -aG sudo <username>       # Debian / Ubuntu；RHEL 系列的群組是 wheel
+exit                              # 重新登入後生效
 ```
 
-![Image](https://1.bp.blogspot.com/-SdNHPYYSiQo/YLMaDXTpOFI/AAAAAAAAc04/uID-1vB6EBsMPvf1jh5ajhC4UDr_xtwbwCNcBGAsYHQ/s0/J1049_01_virtualbox_shared_folders.png)
+### 終端機打不開（Ubuntu）
 
-[Link](https://www.jinnsblog.com/2021/05/virtualbox-shared-folder-permission-setting.html)
+常見原因是 locale 設定不完整：
 
 ```bash
-sudo usermod -aG vboxsf $USER
+# 按 Ctrl + Alt + F3 進入文字模式登入（Ctrl + Alt + F1 或 F2 回圖形介面）
+sudo localectl set-locale LANG=en_US.UTF-8
 sudo reboot
 ```
-
-## Resize windows
-
-[Link](https://aprilyang.home.blog/2020/12/25/tips-for-smoother-virtual-machine/)

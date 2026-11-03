@@ -1,165 +1,77 @@
-# Docker Image
+[容器與環境](../README.md) › [Docker](README.md) › 映像檔
 
-A Docker image is an immutable template that packages an application together with its runtime environment, system libraries, and dependencies.
-Images are built in layers, cached for efficiency, and used as the blueprint
-for creating containers.
+# Docker 映像檔 (Image)
 
-## Basic Image Management
+映像檔是不可變的範本：應用程式 + 執行環境 + 系統函式庫 + 相依套件，由多層 (layer) 疊成，每層可快取、可在不同映像檔間共用。容器是映像檔的執行個體。
 
-```bash
-docker images          # List all images available on the local system.
+## 命名
+
+```
+registry.example.com/myteam/rnaseq:1.2.0
+└──── registry ────┘ └─ 儲存庫 ─┘ └ tag ┘
 ```
 
-## Remove Images
+| 部分 | 說明 |
+| --- | --- |
+| registry | 省略時為 Docker Hub（`docker.io`）；其他：`ghcr.io`、`quay.io` |
+| 儲存庫 (repository) | 官方映像檔沒有前綴（`python`、`ubuntu`）；其他為 `使用者/名稱` |
+| tag | 版本標籤；省略時為 `latest` |
+| digest | `@sha256:...`：內容的雜湊，**完全**固定的版本 |
+
+> 可重現的分析用明確的 tag（`python:3.12.7-slim`、`rocker/r-ver:4.4.1`），最嚴格時用 digest；`latest` 隨時會變。
+
+## 常用指令
 
 ```bash
-docker rmi <image_id>  # Remove image
-docker image prune     # Remove dangling (untagged) images
-docker image prune -a  # Remove all images not referenced by any container
+docker images                                   # 本機映像檔（= docker image ls）
+docker pull rocker/r-ver:4.4.1                  # 下載
+docker build -t myapp:1.0 .                     # 用目前目錄的 Dockerfile 建置
+docker tag myapp:1.0 ghcr.io/me/myapp:1.0       # 新增一個名稱，指向同一個映像檔（不複製）
+
+docker login ghcr.io                            # 登入 registry
+docker push ghcr.io/me/myapp:1.0                # 上傳：名稱要包含 registry 與帳號
+
+docker save -o myapp.tar myapp:1.0              # 匯出成檔案（無法連 registry 的環境）
+docker load -i myapp.tar                        # 匯入
+
+docker rmi myapp:1.0                            # 刪除；有容器（含已停止）在用時無法刪除
+docker image prune                              # 刪除 dangling 映像檔（沒有 tag、沒被使用）
+docker image prune -a                           # 刪除所有沒有容器在用的映像檔
 ```
 
-- Images referenced by **running** or **stopped** containers cannot be removed
-- Use docker `ps -a` to check for stopped containers if image removal fails
-- Remove containers first, or use `docker container prune`, before pruning images
+## 分層與建置快取
 
-## Tag Images
+Dockerfile 的每個指令產生一層；建置時逐層比對快取，**某一層改變，之後的層全部重建**。
 
 ```bash
-docker tag <source_image>:<source_tag> <target_image>:<target_tag>
+docker history myapp:1.0                                    # 各層大小與對應指令
+docker image inspect myapp:1.0 | jq '.[0].RootFS.Layers | length'   # 層數
+docker image inspect myapp:1.0 | jq '.[0].Config.Env'                # 環境變數
 ```
 
-Note:
+| 原則 | 說明 |
+| --- | --- |
+| 很少改變的步驟放前面 | 系統套件、相依套件安裝 |
+| 常改變的放後面 | 複製程式碼 |
+| 先複製相依清單、安裝，再複製程式碼 | 改程式碼不會讓套件重新安裝 |
 
-- `docker tag` creates a new reference (tag) pointing to the same image
-- The original image and its tag are not modified or overwritten
+寫法細節見 [Dockerfile](dockerfiles.md)。
 
-## Push / Pull Images
+## 多平台建置：buildx
 
-```bash
-docker push <repository>:<tag>   # Push an image to a container registry
-docker pull <repository>:<tag>   # Pull an image from a container registry
-```
-
-Notes:
-
-- Tags are required to uniquely identify image versions
-- For private registries, image names usually start with the registry host, such as `registry.example.com/myapp:1.0`
-- Pushing to a private registry often requires retagging the local image so the repository name includes the registry host
-
-### Authenticate to a Registry
+Apple Silicon（arm64）建的映像檔不能直接在 x86 伺服器（amd64）上跑，反之亦然。
 
 ```bash
-docker login <registry-host>
-```
+docker buildx create --name mybuilder --use     # 建立並使用 builder
+docker buildx inspect --bootstrap
 
-Notes:
+# 多平台：結果無法載入本機，通常直接推到 registry
+docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/me/myapp:1.0 --push .
 
-- `docker login` is commonly required before pushing to or pulling from a private registry
-- A typical flow is: tag the image with the registry host, authenticate, then push
+# 單一平台並載入本機
+docker buildx build --platform linux/amd64 -t myapp:local --load .
 
-```bash
-docker tag myapp:1.0 registry.example.com/myteam/myapp:1.0
-docker login registry.example.com
-docker push registry.example.com/myteam/myapp:1.0
-```
-
-## Save / Load Images as Files
-
-```bash
-docker save -o myapp.tar myapp:1.0
-docker load -i myapp.tar
-```
-
-Notes:
-
-- `docker save` exports an image to a tar archive
-- `docker load` imports an archive back into the local Docker image store
-- This is useful when moving images between environments without direct registry access
-
-## Build Image (Standard Build)
-
-```bash
-docker build .
-```
-
-Note:
-
-- `-t`: Name and optionally a tag (format: "name:tag")
-
-- Build Cache Behavior
-
-  - Build a Docker image using the Dockerfile in the current directory (if using `.`)
-  - Docker builds images layer by layer
-  - If any layer changes, all subsequent layers are rebuilt
-  - Instruction order strongly affects build speed
-
-- Best practices:
-  - Place rarely changed steps (system dependencies) earlier
-  - Place frequently changed code later
-
-## Inspect Image Metadata and Layers
-
-```bash
-docker image inspect <image>
-```
-
-Notes:
-
-- `docker image inspect` returns detailed JSON metadata for an image
-- The `RootFS.Layers` section shows the image layers recorded for that image
-
-With `jq`, it is easier to query specific parts of the metadata:
-
-```bash
-docker image inspect <image> | jq '.[0] | .RootFS'
-docker image inspect <image> | jq '.[0] | {LayerCount: .RootFS.Layers | length}'
-```
-
-- This is useful when checking how many layers an image has or debugging image structure
-
-## Build Image with Docker Buildx
-
-Docker Buildx extends the standard docker build command with advanced
-capabilities such as multi-platform builds and improved cache handling.
-
-### Create and Use a Buildx Builder
-
-```bash
-docker buildx create --name mybuilder --use
-docker buildx inspect mybuilder --bootstrap
-```
-
-- `create`: create a new builder instance
-- `--use`: – set it as the active builder
-- `inspect --bootstrap`: initialize and verify the builder
-
-### Build a Multi-Platform Image
-
-The image is not loaded into local Docker by default.
-Typically paired with `--push` to upload to registry (e.g. GitHub)
-
-```bash
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t myimage:latest \
-  .
-```
-
-### Build and Load Image Locally
-
-Build and load the image into the local Docker daemon.
-Works only for single-platform builds. Cannot be used with multi-platform output
-
-```bash
-docker buildx build \
- --platform linux/amd64 \
- -t myimage:local \
- --load \
- .
-```
-
-### Remove a Buildx Builder
-
-```bash
 docker buildx rm mybuilder
 ```
+
+> `exec format error` 通常就是平台不符：在 Mac 上建置要給伺服器用的映像檔時加 `--platform linux/amd64`。
