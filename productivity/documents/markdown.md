@@ -89,7 +89,7 @@ flowchart LR
 
 | 工具 | 用法 |
 | --- | --- |
-| VS Code | `Ctrl + Shift + V` 開預覽；`Ctrl + K V` 並排預覽；內建支援 GFM，Mermaid 需裝擴充套件（見 [編輯器](../../computing/developer-tools/vscode.md)） |
+| VS Code | `Ctrl + Shift + V` 開預覽；`Ctrl + K V` 並排預覽；內建支援 GFM，Mermaid 需裝擴充套件（見 [編輯器](../../computing/developer-tools/editors.md)） |
 | 線上編輯器 | [Markdown Editor](https://jbt.github.io/markdown-editor/) 等，不需安裝 |
 | 轉成其他格式 | [Pandoc](https://pandoc.org/)：`pandoc note.md -o note.docx` / `.pdf` / `.html` |
 

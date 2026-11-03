@@ -106,7 +106,7 @@ du -sh *                      # 目前目錄下各項目大小
 du -sh * | sort -h            # 依大小排序
 ```
 
-> 長時間的工作用 [tmux](../developer-tools/tmux.md) 而不是 `nohup`；在 HPC 上則交給排程器（[Slurm](../workflow-engines/README.md)），不要在登入節點跑重運算。
+> 長時間的工作用 [tmux](../developer-tools/tmux-and-screen.md) 而不是 `nohup`；在 HPC 上則交給排程器（[Slurm](../workflow-engines/README.md)），不要在登入節點跑重運算。
 
 ## 使用者與群組（需 sudo）
 
@@ -127,7 +127,7 @@ curl -L -O https://example.com/file.zip     # 下載，跟隨重新導向
 wget -c https://example.com/big.tar.gz      # -c：斷線後續傳
 ```
 
-遠端登入與傳檔見 [SSH](../developer-tools/README.md)、[rsync](../developer-tools/rsync.md)；壓縮與解壓見 [壓縮與封存](../developer-tools/archiving.md)。
+遠端登入與傳檔見 [SSH](../developer-tools/ssh.md)、[rsync](../developer-tools/rsync.md)；壓縮與解壓見 [壓縮與封存](../developer-tools/archiving.md)。
 
 ## 套件管理
 

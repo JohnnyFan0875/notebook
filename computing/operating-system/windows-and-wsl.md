@@ -32,7 +32,7 @@ sudo apt install -y build-essential git curl unzip
 | WSL | Windows 的 C 槽 | `/mnt/c/Users/<name>/Documents` |
 | Windows | WSL 的家目錄 | 檔案總管輸入 `\\wsl$\Ubuntu\home\<user>`（或 `\\wsl.localhost\...`） |
 | WSL | 用 Windows 檔案總管開目前目錄 | `explorer.exe .` |
-| WSL | 用 VS Code 開目前目錄 | `code .`（需安裝 WSL 擴充套件，見 [編輯器](../developer-tools/vscode.md)） |
+| WSL | 用 VS Code 開目前目錄 | `code .`（需安裝 WSL 擴充套件，見 [編輯器](../developer-tools/editors.md)） |
 
 > **專案檔案放在 WSL 的檔案系統**（`~/projects`），不要放在 `/mnt/c`：跨檔案系統存取慢很多（大量小檔、`git status`、編譯尤其明顯），權限與換行符號也容易出問題。只有需要用 Windows 程式開啟的成果才放到 `/mnt/c`。
 
