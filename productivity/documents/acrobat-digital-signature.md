@@ -1,12 +1,15 @@
-# Adobe Acrobat：數位簽章
+[Productivity](../README.md) › [文件](README.md) › Acrobat 數位簽章
 
-數位簽章（digital signature）用**數位 ID**（digital ID，含私鑰與憑證）簽署 PDF，能證明簽署者身分，並在文件被修改時讓簽章失效；「簽名外觀」只是畫面上顯示的樣式。
+# Adobe Acrobat 數位簽章 (Digital Signature)
+
+數位簽章 (digital signature) 用**數位 ID**（digital ID，含私鑰與憑證）簽署 PDF，能證明簽署者身分，並在文件被修改時讓簽章失效；「簽名外觀」只是畫面上顯示的樣式。只放一張簽名圖片的「填寫與簽署」不是數位簽章，無法驗證是否被竄改。
 
 | 概念 | 說明 |
 | --- | --- |
-| 數位 ID | 簽署用的憑證與私鑰，以密碼保護；可自建（self-signed）或由憑證機構（CA）核發 |
+| 數位 ID | 簽署用的憑證與私鑰，以密碼保護；可自建 (self-signed) 或由憑證機構 (CA) 核發 |
 | 簽名外觀 | 簽章欄位顯示的內容：標準文字（姓名、日期）或自訂圖片 / 手寫樣式 |
 | 自建 ID 的信任 | 對方的 Acrobat 預設不信任自建 ID，會顯示「簽章有效性不明」，需對方手動信任你的憑證 |
+| 背後機制 | 公開金鑰密碼學：私鑰簽署文件雜湊，他人用憑證中的公鑰驗證；與 SSH 金鑰同原理 |
 
 ## 建立數位 ID 與簽名外觀
 
@@ -21,8 +24,7 @@
 - 外觀可選標準文字或剛建立的簽名外觀。
 - 簽署後會另存一份 PDF；之後再修改內容，簽章會顯示文件已變更。
 
-## 相關連結
-
-- [Adobe 說明：使用數位 ID](https://helpx.adobe.com/tw/acrobat/using/digital-ids.html)
-
-[Back to Productivity](../README.md)
+| 項目 | 內容 |
+| --- | --- |
+| 官方說明 | [Adobe：使用數位 ID](https://helpx.adobe.com/tw/acrobat/using/digital-ids.html) |
+| 何時需要 CA 核發的 ID | 對外正式文件、需法律效力或對方要求可信任鏈時 |

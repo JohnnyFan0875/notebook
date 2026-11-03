@@ -1,47 +1,47 @@
-# Word
+[Productivity](../README.md) › [文件](README.md) › Word
 
-## Adjusting Total Number of Pages using Field codes
+# Word 功能變數 (Word Field Codes)
 
-1. Press `Alt + F9` to reveal field codes in the document.
-2. Select the entire `{ NUMPAGES }` field, including the braces.
-3. Press `Ctrl + F9`: insert a new pair of field code braces: `{  }`
-4. Insert the expression as follows:
+功能變數 (field code) 是 Word 裡會自動計算的佔位符：頁碼、總頁數、日期、目錄、交互參照都是功能變數。學會手動編輯它，就能做到選單做不到的事，例如「總頁數扣掉封面」或在文件中重用同一個值。
 
-    ```text
-    { = { NUMPAGES } - 1 } # pagenumber minus 1
-    ```
+## 快捷鍵
 
-5. Press `Alt + F9` again to hide field codes.
-6. Select the field and press `F9` to update it, it should now show one less than the total number of pages.
-    Note:  Previewing or printing the document can also update the field.
-    - In newer Word versions, ensure **File > Options > Display > Update fields before printing** is checked.
-    - In older versions, this setting is under **Tools > Options > Print**.
+| 按鍵 | 作用 |
+| --- | --- |
+| `Alt + F9` | 切換顯示所有功能變數的程式碼 / 結果 |
+| `Shift + F9` | 只切換選取的功能變數 |
+| `Ctrl + F9` | 插入一對功能變數大括號 `{ }`（**不能**直接用鍵盤打 `{}`） |
+| `F9` | 更新選取的功能變數；`Ctrl + A` 再 `F9` 更新全部 |
+| `Ctrl + Shift + F9` | 把功能變數轉成純文字（解除連結） |
 
-## Using Variables in Specific Sections
+> 預覽列印或列印也會更新功能變數：檔案 → 選項 → 顯示 → 勾選「列印前更新功能變數」。
 
-Define and reuse custom values using Word field codes. This method is useful for reusing calculated values, page counts, or any predefined variables across the Word document.
+## 總頁數扣掉封面
 
-### Define a Variable
+頁尾顯示「第 X 頁，共 Y 頁」，但封面不算時：
 
-1. Navigate to the desired section.
-2. Press `Alt + F9` to view field codes.
-3. Press `Ctrl + F9` to insert a field code.
-4. Inside the field, type:
+1. `Alt + F9` 顯示程式碼，找到 `{ NUMPAGES }`。
+2. 選取整個 `{ NUMPAGES }`（含大括號），按 `Ctrl + F9`，外面會再包一層 `{ }`。
+3. 在外層大括號內補上 `=` 與運算：
 
-    ```text
-    SET variableName value
-    ```
+   ```text
+   { = { NUMPAGES } - 1 }
+   ```
 
-5. Press `Alt + F9` to hide codes.
+4. `Alt + F9` 切回結果，選取該欄位按 `F9` 更新。
 
-### Reference the Variable in Another Section
+頁碼本身也要從 0 或 1 起算時：插入 → 頁碼 → 頁碼格式 → 起始頁碼；封面頁用「版面配置 → 不同的首頁」不顯示頁碼。
 
-1. Go to the target section.
-2. Press `Alt + F9`, then `Ctrl + F9` to create a field.
-3. Type:
+## 定義與重用變數
 
-    ```text
-    = variableName
-    ```
+用 `SET` 定義書籤值，再在其他地方引用；適合合約金額、版本號這類會在文件多處出現的值。
 
-4. Press `Alt + F9`, then `F9` to update and display the value.
+| 步驟 | 功能變數 | 說明 |
+| --- | --- | --- |
+| 定義 | `{ SET version "1.2" }` | `SET` 本身不顯示任何內容 |
+| 引用 | `{ REF version }` 或 `{ version }` | 顯示變數值 |
+| 計算 | `{ = price * 1.05 \# "#,##0" }` | `=` 運算式；`\#` 為數字格式開關 |
+
+改值時只改 `SET` 那一處，再 `Ctrl + A`、`F9` 更新全部。
+
+> `\#` 在功能變數中是數字格式開關，不是註解；功能變數內不能寫註解。
