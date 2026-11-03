@@ -52,7 +52,7 @@ event-triggered 不等於 streaming：很多系統只是事件觸發的 batch。
 | 工具類型 | 適合 |
 | --- | --- |
 | Airflow / Dagster / Prefect | 定時的資料擷取與轉換、跨系統的 ETL |
-| Nextflow / Snakemake | 以檔案為單位的生資分析流程、HPC / 雲端批次、容器化工具 |
+| [Nextflow](../../computing/workflow-engines/nextflow/README.md) / [Snakemake](../../computing/workflow-engines/snakemake.md) | 以檔案為單位的生資分析流程、HPC（[Slurm](../../computing/workflow-engines/slurm.md)）/ 雲端批次、容器化工具 |
 | dbt | warehouse 內的 SQL 轉換，見 [dbt](dbt-foundations.md) |
 
 ## 冪等與重跑 (Idempotency)

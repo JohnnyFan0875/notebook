@@ -64,7 +64,7 @@ apptainer exec --bind /ref:/ref containers/star_2.7.11b.sif \
          --readFilesIn R1.fq.gz R2.fq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate
 ```
 
-Slurm 的用法見 [工作流引擎](../workflow-engines/README.md)。工作流引擎設定：Nextflow 用 `-profile singularity` / `apptainer.enabled = true`，Snakemake 用 `--software-deployment-method apptainer`（舊版 `--use-singularity`）。
+Slurm 的用法見 [Slurm](../workflow-engines/slurm.md)。工作流引擎設定：Nextflow 用 `-profile singularity` / `apptainer.enabled = true`，Snakemake 用 `--software-deployment-method apptainer`（舊版 `--use-singularity`）。
 
 ## 自己建置映像檔
 

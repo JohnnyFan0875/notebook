@@ -205,5 +205,5 @@ if __name__ == "__main__":
 | --- | --- |
 | 個人分析腳本 | 先把核心邏輯抽成函式，替最容易錯的 2–3 個寫單元測試 |
 | 牽涉檔案、資料庫、API | 補整合測試；外部服務用 `monkeypatch` 或假資料替代 |
-| 共用的套件 / pipeline | 加 CI（GitHub Actions）每次 push 自動跑，見 [DevOps](../../computing/devops/devops-fundamentals.md) |
+| 共用的套件 / pipeline | 加 CI（GitHub Actions）每次 push 自動跑，見 [GitHub Actions](../../computing/devops/github-actions.md) |
 | 覆蓋率 | 不追求數字，先保護最難人工回歸檢查的部分 |

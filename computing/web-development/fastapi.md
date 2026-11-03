@@ -113,7 +113,7 @@ def test_not_found():
     assert client.get("/samples/999").status_code == 404
 ```
 
-好的 API 測試涵蓋：成功回應、失敗回應（404、422）、驗證行為、回應 schema 與狀態碼。pytest 的 fixture、marker 等見 [測試](../../data-science/python-foundations/testing.md)。
+好的 API 測試涵蓋：成功回應、失敗回應（404、422）、驗證行為、回應 schema 與狀態碼。pytest 的 fixture、marker 等見 [測試](../../data-science/python-foundations/testing.md)；每次 push 自動執行見 [GitHub Actions](../devops/github-actions.md)。
 
 ## 部署
 

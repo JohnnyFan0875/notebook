@@ -1,388 +1,171 @@
+[Computing](../README.md) › [工作流引擎](README.md) › Airflow
+
 # Apache Airflow
 
-Apache Airflow 是用 Python 程式碼描述 workflow 的 orchestration platform。它的核心價值不是「定時跑腳本」而已，而是把：
+Airflow 是用 Python 程式碼描述工作流的編排平台 (orchestrator)：把任務拆分、依賴、排程、等待條件、重試與監控放進同一個可觀察、可重跑的系統。適合定時的批次資料 pipeline（每天從 API 擷取 → 清理 → 寫入倉儲 → 產報表）；生資的檔案導向分析流程通常用 [Nextflow](nextflow/README.md) 或 [Snakemake](snakemake.md)。ETL / ELT、冪等與重跑的概念見 [處理與 Pipeline](../../data-science/data-engineering/processing-and-pipelines.md)。
 
-- 任務拆分
-- 依賴關係
-- 排程
-- 等待條件
-- 監控與失敗處理
+| 適合 | 不適合 |
+| --- | --- |
+| 定時批次 ETL / ELT、多步驟且有依賴 | 低延遲串流（用 Kafka、Flink） |
+| 需要重試、補跑歷史日期 (backfill)、監控 | 大量極短的事件驅動任務 |
+| 已有很多獨立腳本，缺少統一編排 | 單一 shell 腳本就能搞定的事（用 [cron](../operating-system/command-line-data-processing.md#排程cron)） |
+| 協調其他系統（Spark、dbt、資料庫、雲端服務） | 本身做大量資料轉換（Airflow 是指揮，不是引擎） |
 
-放進同一套可觀察、可重跑的 workflow system。
+> 本篇以 **Airflow 3**（2025 年 4 月發布）的寫法為主：`DAG` 等從 `airflow.sdk` 匯入、`schedule_interval` 改為 `schedule`、內建 operator 移到 `standard` provider、SLA 功能移除。舊版程式碼可用 `ruff check dags/ --select AIR3` 找出需要修改之處。
 
-## What Airflow Is Really For
+## 核心概念
 
-如果把 data engineering 理解成「把資料相關動作變成可靠、可重複、可維護的流程」，那 Airflow 做的就是協調這些流程。
+| 概念 | 意義 |
+| --- | --- |
+| DAG | 有向無環圖：一個工作流的所有任務與先後關係，加上排程 |
+| Task | DAG 中的一個節點，一個執行單位 |
+| Operator | 任務的範本（做什麼類型的事）；task 是 operator 的實例 |
+| Dependency | 任務之間的順序：`a >> b` 表示 a 完成後才跑 b |
+| DAG run | DAG 的一次執行，對應一個邏輯日期 (logical date) |
+| Scheduler / Worker | 決定何時執行 / 實際執行任務 |
 
-Airflow 特別適合：
+> 每個 task 獨立執行，可能在不同機器上；不要假設 task 之間共享記憶體或本機檔案。小量資料用 XCom 傳遞，大量資料寫到共享儲存（S3、資料庫）再傳路徑。
 
-- batch-style data pipelines
-- 多步驟 ETL / ELT
-- 需要依賴管理與重試的工作流
-- 已經有很多獨立腳本，但缺少統一 orchestration 的團隊
-
-它不一定適合：
-
-- 超低延遲 streaming
-- 每個 task 都極短且事件量極高的工作
-- 只需要單一 shell script 的極簡自動化
-
-## Core Mental Model
-
-可以先把 Airflow 拆成四個基本概念：
-
-1. `DAG`
-2. `task`
-3. `operator`
-4. `dependency`
-
-## DAG
-
-`DAG` 是 Directed Acyclic Graph，用來描述一個 workflow 的任務集合與先後順序。
-
-它的重要性不只是圖形結構，而是：
-
-- 哪些 task 屬於同一個 workflow
-- 哪些 task 必須先完成
-- 這個 workflow 何時應該被排程
-
-一個最小範例可以長這樣：
+## 範例
 
 ```python
-from airflow import DAG
-
-etl_dag = DAG(
-    dag_id="etl_pipeline",
-    default_args={"start_date": "2024-01-08"},
-)
-```
-
-更常見的寫法是 context manager：
-
-```python
-from airflow import DAG
-
-with DAG("etl_workflow", default_args=default_arguments) as etl_dag:
-    ...
-```
-
-這種寫法通常比較乾淨，因為 task 會自然掛進這個 DAG context。
-
-## Tasks and Operators
-
-在 Airflow 裡，一個 `task` 代表 workflow 中的一個執行單位，而 task 通常是由某個 `operator` 實例化出來的。
-
-教材裡有一個很重要的提醒：
-
-Key point: operator 是 task template，task 是實際放進 DAG 裡的那個節點。
-
-operator 的一般特徵包括：
-
-- 代表單一工作
-- 通常獨立執行
-- 不應該假設和其他 task 任意共享記憶體或程序狀態
-
-### EmptyOperator
-
-`EmptyOperator` 常用來做邏輯上的起點、終點或中間佔位。
-
-```python
-from airflow.operators.empty import EmptyOperator
-
-start = EmptyOperator(task_id="start")
-```
-
-它本身不做實際業務工作，但可以讓 DAG 結構更清楚。
-
-### BashOperator
-
-`BashOperator` 適合執行 shell command 或 shell script。
-
-```python
-from airflow.operators.bash import BashOperator
-
-bash_task = BashOperator(
-    task_id="bash_example",
-    bash_command='echo "Example!"',
-)
-```
-
-適合：
-
-- 呼叫既有 shell script
-- 啟動 CLI 工具
-- 做簡單檔案處理或系統命令
-
-但如果邏輯已經大量依賴 Python 物件操作，通常 `PythonOperator` 會更自然。
-
-### PythonOperator
-
-`PythonOperator` 適合直接執行 Python callable。
-
-```python
-from airflow.operators.python import PythonOperator
-
-python_task = PythonOperator(
-    task_id="simple_print",
-    python_callable=print_hello,
-)
-```
-
-這很適合：
-
-- 包裝既有 Python function
-- 做較複雜的資料處理邏輯
-- 在 task 中直接呼叫 Python library
-
-## Task IDs Matter
-
-每個 task 都需要 `task_id`，因為 Airflow 會用它來：
-
-- 在 UI 中辨識 task
-- 在 CLI 中定位 task
-- 表示依賴圖上的節點名稱
-
-所以 `task_id` 最好：
-
-- 穩定
-- 可讀
-- 反映工作內容
-
-## Dependencies
-
-Airflow 的依賴關係通常用 `>>` 和 `<<` 來表達。
-
-```python
-task1 >> task2
-task2 >> task3 >> task4
-task1 >> task2 << task3
-```
-
-心智模型上：
-
-- `task1 >> task2` 表示 `task1` 必須先完成
-- `task2 << task1` 是同一件事的反向寫法
-
-這種寫法的優點是 DAG 結構可以直接從程式碼讀出來。
-
-## Scheduling
-
-Airflow 不只負責描述 workflow，也負責決定 workflow 何時被觸發。
-
-關鍵欄位通常是：
-
-- `start_date`
-- `schedule_interval`
-
-`schedule_interval` 可以代表：
-
-- 固定時間週期，例如每天、每小時
-- 手動觸發型 DAG
-- 某些特殊 preset
-
-Key point: 很多人第一次碰 Airflow 時，會把 `start_date` 理解成「立即開始跑」。但實際上 scheduler 邏輯通常是從 `start_date` 與 `schedule_interval` 一起推導執行時點。
-
-因此如果 DAG 沒有出現在預期執行狀態，先檢查：
-
-- `start_date` 是否合理
-- 至少一個 `schedule_interval` 是否已經過去
-
-## Manual Testing and Basic Debugging
-
-Airflow 入門時，很值得先熟悉幾個基礎檢查方式。
-
-### Test a Single Task
-
-```bash
-airflow tasks test <dag_id> <task_id> [execution_date]
-```
-
-這很適合：
-
-- 單獨驗證某個 task 的邏輯
-- 不想等整個 DAG 跑起來才看結果
-- 排查 task 內部程式是否能成功執行
-
-### If a DAG Does Not Show Up
-
-如果 DAG 沒出現在 `airflow dags list`，常見檢查方向是：
-
-```bash
-airflow dags list-import-errors
-python3 <dagfile.py>
-```
-
-這兩個步驟通常很有效，因為它們直接在問：
-
-- Airflow import DAG file 時有沒有出錯
-- 這份 Python 檔案本身能不能成功被解析
-
-## Sensors
-
-`sensor` 是一種會等待條件成立的 operator。
-
-它的用途包括：
-
-- 等檔案出現
-- 等資料庫紀錄到位
-- 等某個 HTTP response 滿足條件
-
-可以先把 sensor 理解成：
-
-Key point: 不是做工作本身，而是阻止 workflow 太早往下跑。
-
-### Common Sensor Arguments
-
-教材裡最值得留下的是這幾個參數：
-
-- `mode`
-- `poke_interval`
-- `timeout`
-
-#### `mode="poke"`
-
-預設模式。task 會持續占著 worker slot，定期檢查條件是否成立。
-
-#### `mode="reschedule"`
-
-會先釋放 worker slot，之後再回來檢查。
-
-這在等待時間可能很長時更重要，因為它比較不會浪費執行資源。
-
-#### `poke_interval`
-
-多久檢查一次條件。
-
-#### `timeout`
-
-最多等多久，超過就 fail。
-
-### FileSensor
-
-```python
-from airflow.sensors.filesystem import FileSensor
-
-file_sensor_task = FileSensor(
-    task_id="file_sense",
-    filepath="salesdata.csv",
-    poke_interval=300,
-    dag=sales_report_dag,
-)
-
-init_sales_cleanup >> file_sensor_task >> generate_report
-```
-
-這種 pattern 很適合：
-
-- 檔案到齊後才開始處理
-- 防止下游報表 task 太早執行
-
-### Other Sensors
-
-除了 `FileSensor`，教材也提到像 `HttpSensor` 這類型別。
-
-重點不是背所有 sensor 名稱，而是理解 sensor 解決的是「外部條件未滿足時，workflow 要怎麼有紀律地等待」。
-
-## Templates and Jinja
-
-Airflow template 的核心價值是讓 task definition 更動態，而不是為了炫技。
-
-它通常用 Jinja syntax 在 DAG run 時插入值。
-
-### Why Templates Matter
-
-沒有 template 時，很容易寫出重複 task：
-
-```python
-t1 = BashOperator(
-    task_id="first_task",
-    bash_command='echo "Reading file1.txt"',
-    dag=dag,
-)
-
-t2 = BashOperator(
-    task_id="second_task",
-    bash_command='echo "Reading file2.txt"',
-    dag=dag,
-)
-```
-
-有 template 後，可以把變動部分抽出來：
-
-```python
-templated_command = """
-  echo "Reading {{ params.filename }}"
-"""
-
-t1 = BashOperator(
-    task_id="template_task",
-    bash_command=templated_command,
-    params={"filename": "file1.txt"},
-    dag=example_dag,
-)
-```
-
-這種做法的優點是：
-
-- task 定義更可重用
-- 變動值與執行邏輯分離
-- 比大量 copy-paste 任務更好維護
-
-## `default_args`
-
-`default_args` 是 Airflow 裡很常見的共用設定入口。
-
-可以把它理解成：
-
-- 把多個 task 或 DAG 常共用的參數先集中管理
-- 減少重複設定
-
-常見會放進去的內容包括：
-
-- `start_date`
-- retry 相關設定
-- email / alert 相關設定
-- SLA 類設定
-
-概念上：
-
-```python
-default_args = {
-    "start_date": start_date,
-    "sla": sla_window,
+# dags/sales_report.py
+from datetime import datetime, timedelta
+
+from airflow.sdk import DAG, task
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.providers.standard.sensors.filesystem import FileSensor
+
+default_args = {                               # 所有 task 共用的參數
+    "retries": 2,
+    "retry_delay": timedelta(minutes=5),
 }
 
-dag = DAG("sla_dag", default_args=default_args)
+with DAG(
+    dag_id="sales_report",
+    schedule="0 6 * * *",                      # 每天 06:00（cron 語法；也可用 "@daily"、None = 只手動觸發）
+    start_date=datetime(2024, 1, 1),
+    catchup=False,                             # 不自動補跑 start_date 以來錯過的所有日期
+    default_args=default_args,
+    tags=["reporting"],
+) as dag:
+    start = EmptyOperator(task_id="start")     # 結構上的起點，不做事
+
+    wait_for_file = FileSensor(                # 感測器：等條件成立才往下
+        task_id="wait_for_file",
+        filepath="/data/incoming/sales_{{ ds }}.csv",   # {{ ds }}：此次執行的邏輯日期 YYYY-MM-DD
+        poke_interval=300,                     # 每 5 分鐘檢查一次
+        timeout=6 * 60 * 60,                   # 最多等 6 小時，超過就失敗
+        mode="reschedule",                     # 等待期間釋放 worker slot
+    )
+
+    @task                                      # TaskFlow API：一般 Python 函式變成 task
+    def clean(ds=None):
+        import pandas as pd
+        df = pd.read_csv(f"/data/incoming/sales_{ds}.csv")
+        out = f"/data/clean/sales_{ds}.parquet"
+        df.dropna(subset=["amount"]).to_parquet(out)
+        return out                             # 回傳值自動存成 XCom，傳給下游
+
+    @task
+    def summarize(path: str):
+        import pandas as pd
+        return float(pd.read_parquet(path)["amount"].sum())
+
+    notify = BashOperator(
+        task_id="notify",
+        bash_command='echo "Report for {{ ds }} done"',   # Jinja 模板
+    )
+
+    cleaned = clean()
+    start >> wait_for_file >> cleaned          # 依賴關係
+    summarize(cleaned) >> notify               # 傳遞回傳值也會自動建立依賴
 ```
 
-這樣做的好處是 DAG 定義比較一致，也更容易在後續調整共同策略。
+| Operator / 寫法 | 用途 |
+| --- | --- |
+| `@task`（TaskFlow） | 執行 Python 函式，回傳值自動傳遞；新程式碼首選 |
+| `PythonOperator` | 舊式寫法：`PythonOperator(task_id=..., python_callable=f)` |
+| `BashOperator` | 執行 shell 指令或腳本、呼叫 CLI 工具 |
+| `EmptyOperator` | 起點、終點、分支匯合的佔位 |
+| Provider operators | 各系統的整合：`SQLExecuteQueryOperator`、Spark、dbt、AWS / GCP / Azure、Kubernetes |
 
-## A Practical Airflow Reading Order
+### 依賴寫法
 
-如果你是第一次看 Airflow，推薦用這個順序理解：
+```python
+a >> b >> c          # a → b → c
+a >> [b, c] >> d     # b、c 平行，都完成後才跑 d
+c << b               # 等同 b >> c
+```
 
-1. workflow / DAG 是什麼
-2. operator 與 task 的關係
-3. dependency syntax
-4. scheduling 與 `start_date`
-5. sensors
-6. templates
-7. CLI-based debugging
+## 排程
 
-這樣比較不會一開始就陷進 deployment 細節。
+| 概念 | 說明 |
+| --- | --- |
+| `schedule` | cron 字串、`"@daily"` 等 preset、`timedelta`、資料集 / asset 觸發，或 `None`（只手動） |
+| `start_date` | 排程從何時開始計算，**不是**「立刻開始執行」 |
+| 邏輯日期 (`{{ ds }}`) | 這次執行「負責處理」的資料日期；每日 DAG 在 1/2 的執行通常處理 1/1 的資料區間 |
+| `catchup` | `True` 時會補跑 `start_date` 到現在所有錯過的區間；多數情況設 `False` |
+| backfill | 手動補跑指定區間：`airflow backfill create --dag-id sales_report --from-date 2024-01-01 --to-date 2024-01-07` |
 
-## Practical Reminders
+> DAG 沒有如預期執行時，先檢查 `start_date` 是否合理、是否至少已經過了一個排程區間、DAG 是否在 UI 中被暫停 (paused)。
 
-- Airflow 比較像 orchestrator，不是 transformation engine 本身。
-- task 越小越清楚，但過度切碎也會增加管理成本。
-- `schedule_interval` 與 `start_date` 的交互很常是新手最先踩的坑。
-- sensor 很有用，但等待邏輯要考慮 worker slot 成本，必要時用 `reschedule`。
-- template 能減少重複 DAG code，但不要把過多商業邏輯藏進 Jinja 字串。
+任務要能**冪等 (idempotent)**：以邏輯日期為參數、覆寫該日期的輸出分區，重跑或補跑任何一天都安全。
 
-## Related Concepts
+## 感測器 (Sensors)
 
-- [Processing and Pipelines](../../data-science/data-engineering/processing-and-pipelines.md)
-- [ETL and ELT](../../data-science/data-engineering/processing-and-pipelines.md#etl-與-elt)
-- [Nextflow](nextflow/README.md)
+感測器不做工作本身，而是阻止工作流太早往下跑：等檔案出現、等資料庫有紀錄、等 API 回應某個狀態（`HttpSensor`）、等另一個 DAG 完成（`ExternalTaskSensor`）。
 
-[Back to Workflow Engines](../README.md)
+| 參數 | 說明 |
+| --- | --- |
+| `mode="poke"` | 預設；持續佔用 worker slot，定期檢查 |
+| `mode="reschedule"` | 檢查之間釋放 slot；等待時間長時使用 |
+| `poke_interval` | 檢查間隔（秒） |
+| `timeout` | 最多等多久，超過即失敗 |
+| deferrable operators | 等待交給 triggerer 程序，更省資源（新版建議） |
+
+## 模板 (Jinja)
+
+```python
+BashOperator(
+    task_id="process",
+    bash_command="python process.py --date {{ ds }} --file {{ params.filename }}",
+    params={"filename": "file1.txt"},
+)
+```
+
+| 常用變數 | 意義 |
+| --- | --- |
+| `{{ ds }}` / `{{ ds_nodash }}` | 邏輯日期 `2024-01-01` / `20240101` |
+| `{{ data_interval_start }}` / `{{ data_interval_end }}` | 此次執行負責的資料區間 |
+| `{{ params.x }}` | 自訂參數 |
+| `{{ var.value.x }}` | Airflow Variable |
+
+模板讓同一個 task 定義依日期、參數重用，避免複製貼上多個幾乎相同的 task；但不要把複雜商業邏輯藏在 Jinja 字串中。
+
+## 本機執行與除錯
+
+```bash
+uv pip install "apache-airflow==3.*"     # 正式安裝應依官方說明使用 constraints 檔
+airflow standalone                       # 本機啟動所有元件與 UI（http://localhost:8080），僅供開發
+airflow dags list
+airflow dags list-import-errors          # DAG 沒出現時：看匯入錯誤
+python dags/sales_report.py              # 確認檔案本身能被 Python 解析
+airflow tasks test sales_report clean 2024-01-01   # 單獨執行一個 task，不記錄狀態、不檢查依賴
+airflow dags test sales_report 2024-01-01          # 完整跑一次 DAG
+```
+
+| 實務守則 | 原因 |
+| --- | --- |
+| DAG 檔案頂層不做重運算或連線 | scheduler 會頻繁解析 DAG 檔；import 放進 task 內 |
+| task 冪等、以日期參數化 | 安全重跑與補跑 |
+| task 大小適中 | 太大難以重試，太碎管理成本高 |
+| 資料不經過 XCom | XCom 只傳小量 metadata（路徑、計數） |
+| 機密用 Connections / Variables 或 secrets backend | 不寫在 DAG 程式碼中 |
+
+| 替代方案 | 特色 |
+| --- | --- |
+| Dagster | 以資料資產 (asset) 為中心、型別與測試友善 |
+| Prefect | 純 Python、動態工作流、上手快 |
+| 雲端託管 | Amazon MWAA、Google Cloud Composer、Astronomer：託管的 Airflow |

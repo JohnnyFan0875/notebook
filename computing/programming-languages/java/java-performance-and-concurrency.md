@@ -61,7 +61,7 @@ java -Xms2g -Xmx8g -jar tool.jar          # 初始 / 最大 heap
 java -XX:+UseG1GC -Xmx16g -jar tool.jar   # 指定 GC（G1 為 Java 9+ 預設）
 ```
 
-> 跑 GATK、Picard 等 JVM 工具時最常調的就是 `-Xmx`：設太小丟 `OutOfMemoryError: Java heap space`；在 HPC 上要小於 [Slurm](../../workflow-engines/README.md) 申請的記憶體（留給 JVM 本身與原生記憶體的空間）。
+> 跑 GATK、Picard 等 JVM 工具時最常調的就是 `-Xmx`：設太小丟 `OutOfMemoryError: Java heap space`；在 HPC 上要小於 [Slurm](../../workflow-engines/slurm.md) 申請的記憶體（留給 JVM 本身與原生記憶體的空間）。
 
 GC 自動回收不再被參考的物件，但不代表記憶體不重要：不必要的物件配置會增加 GC 次數與暫停。
 

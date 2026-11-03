@@ -106,7 +106,7 @@ du -sh *                      # 目前目錄下各項目大小
 du -sh * | sort -h            # 依大小排序
 ```
 
-> 長時間的工作用 [tmux](../developer-tools/tmux-and-screen.md) 而不是 `nohup`；在 HPC 上則交給排程器（[Slurm](../workflow-engines/README.md)），不要在登入節點跑重運算。
+> 長時間的工作用 [tmux](../developer-tools/tmux-and-screen.md) 而不是 `nohup`；在 HPC 上則交給排程器（[Slurm](../workflow-engines/slurm.md)），不要在登入節點跑重運算。
 
 ## 使用者與群組（需 sudo）
 

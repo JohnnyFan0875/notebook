@@ -89,7 +89,7 @@ recent = deque(maxlen=3)    # 固定長度：滿了自動丟掉最舊的（滑�
 
 | 用途 | 例子 |
 | --- | --- |
-| 依到達順序處理工作 | 工作排程、[Slurm](../workflow-engines/README.md) 等批次系統的等待佇列 |
+| 依到達順序處理工作 | 工作排程、[Slurm](../workflow-engines/slurm.md) 等批次系統的等待佇列 |
 | 生產者 / 消費者 | 多執行緒用 `queue.Queue`（thread-safe）；多程序用 `multiprocessing.Queue` |
 | 逐層擴展 | [BFS](graph-traversal.md) |
 | 緩衝 | 串流資料、訊息佇列 (Kafka、RabbitMQ) |
