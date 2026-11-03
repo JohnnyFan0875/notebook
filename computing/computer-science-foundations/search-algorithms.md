@@ -1,16 +1,16 @@
-# Search Algorithms
+[Computing](../README.md) › [CS 基礎](README.md) › 搜尋演算法
 
-搜尋演算法的核心問題很單純：
+# 搜尋演算法 (Search Algorithms)
 
-- 給你一個 collection
-- 給你一個 target
-- 判斷 target 在不在裡面，或它在哪裡
+給一個集合與目標值，判斷目標在不在、在哪裡。入門的比較是線性搜尋與二分搜尋；實務上「搜尋快不快」更常取決於資料結構（`set`、`dict`、索引），而不只是演算法名稱。
 
-最常見的入門比較是 linear search 和 binary search。
+| 演算法 | 做法 | 最佳 | 最壞 | 前提 |
+| --- | --- | --- | --- | --- |
+| 線性搜尋 (linear search) | 從頭逐一比較 | `O(1)` | `O(n)` | 無 |
+| 二分搜尋 (binary search) | 看中間值，每步排除一半 | `O(1)` | `O(log n)` | **已排序**、可隨機存取 |
+| 雜湊查詢 (hash lookup) | 由 key 直接算出位置 | `O(1)` | `O(n)`（極少見） | 先建雜湊表，見 [非線性資料結構](non-linear-data-structures.md#雜湊表-hash-table) |
 
-## Linear Search
-
-linear search 的做法是從頭掃到尾，逐一比較。
+## 線性搜尋
 
 ```python
 def linear_search(values, target):
@@ -20,62 +20,26 @@ def linear_search(values, target):
     return -1
 ```
 
-### 特性
+仍然合理的時候：資料量小、沒排序且只查一次（排序要 `O(n log n)`，不划算）、資料來自 stream / iterator 無法跳著讀。
 
-- 不需要排序
-- 寫法直接
-- 最壞情況要看完整個序列
-
-時間複雜度：
-
-- best case: `O(1)`，第一個元素就找到
-- worst case: `O(n)`，最後才找到或根本不存在
-
-## Binary Search
-
-binary search 的前提是資料已排序。
-
-它每一步都看中間值，然後把搜尋範圍砍掉一半。
+## 二分搜尋
 
 ```python
-def binary_search(values, target):
+def binary_search(values, target):          # values 必須已排序
     left, right = 0, len(values) - 1
-
     while left <= right:
         mid = (left + right) // 2
-
         if values[mid] == target:
             return mid
         if values[mid] < target:
-            left = mid + 1
+            left = mid + 1                      # 目標在右半
         else:
-            right = mid - 1
-
+            right = mid - 1                     # 目標在左半
     return -1
-```
 
-### 特性
-
-- 需要 sorted data
-- 每次排除一半搜尋空間
-- 在大集合裡通常比 linear search 快很多
-
-時間複雜度：
-
-- best case: `O(1)`
-- worst case: `O(log n)`
-
-Key point: binary search 的快，不是因為「比較聰明」，而是因為它利用了排序這個前提。
-
-## Recursive View of Binary Search
-
-binary search 也很適合拿來理解 recursion，因為每次都把問題縮成更小的子區間。
-
-```python
-def binary_search_recursive(values, target, left, right):
+def binary_search_recursive(values, target, left, right):   # 遞迴版：每次縮成子區間
     if left > right:
         return -1
-
     mid = (left + right) // 2
     if values[mid] == target:
         return mid
@@ -84,31 +48,32 @@ def binary_search_recursive(values, target, left, right):
     return binary_search_recursive(values, target, left, mid - 1)
 ```
 
-## When Linear Search Is Still Fine
+n = 10⁶ 時二分搜尋最多比 20 次，線性搜尋最多比 10⁶ 次。快的原因不是演算法比較聰明，而是**利用了排序這個前提**。
 
-不要因為 binary search 漂亮，就以為 linear search 沒用。
+| 常見錯誤 | 說明 |
+| --- | --- |
+| 資料沒排序就用 | 結果錯誤且不會報錯 |
+| `left < right` vs `left <= right`、`mid ± 1` 寫錯 | 漏掉邊界或無限迴圈 |
+| 自己手寫 | Python 用標準庫 `bisect`；NumPy 用 `np.searchsorted` |
 
-linear search 仍然很合理 when:
+```python
+import bisect
+import numpy as np
 
-- 資料量很小
-- 資料沒排序
-- 只搜尋一次，不值得先排序
-- 來源是 stream 或 iterator，不能任意跳索引
+a = [3, 8, 15, 21, 42]
+bisect.bisect_left(a, 21)             # 3：21 的位置（或應插入的位置）
+bisect.insort(a, 10)                  # 插入並維持排序
 
-## A Useful Tradeoff Question
+starts = np.array([100, 500, 900])    # 已排序的區間起點
+np.searchsorted(starts, [120, 950])   # [1, 3]：每個查詢值落在哪個區間之後
+```
 
-如果資料還沒排序，binary search 的真實問題其實變成：
+## 要先排序嗎？
 
-- 你要搜尋幾次？
-- 排序成本值不值得？
+| 查詢次數 | 選擇 |
+| --- | --- |
+| 1 次 | 線性搜尋，`O(n)` |
+| k 次（k 大） | 先排序 `O(n log n)` + k 次二分 `O(k log n)`，或建 `set` / `dict` `O(n)` + k 次 `O(1)` |
+| 範圍查詢（介於 a 與 b 之間） | 排序 + 二分（雜湊表做不到範圍查詢） |
 
-如果只查一次，小資料時直接 linear search 往往更簡單。
-如果會重複查很多次，先排序再 binary search 通常更划算。
-
-## Practical Reminders
-
-- binary search 的前提是排序，不是可選優化。
-- 先搞清楚資料是否可 random access，才能判斷 binary search 是否自然。
-- 在真實程式裡，很多「搜尋快不快」其實是資料結構選擇問題，不只是演算法名稱問題。
-
-[Back to Computer Science Foundations](README.md)
+> 生資例子：給定一批變異位置，查詢落在哪個基因區間。基因起點排序後用 `np.searchsorted`，或用區間樹 / [bedtools](../../biology/bioinformatics-tools/ngs-tools/bedtools.md) `intersect`；資料庫則靠 [索引](../../data-science/databases/README.md) 做同樣的事。
