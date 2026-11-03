@@ -2,7 +2,7 @@
 
 # Power Query
 
-Power Query 是 Power BI（以及 Excel、Fabric Dataflows）的資料擷取與清理層：連接資料來源、選擇儲存模式，並把每一步轉換記成可重跑的 Applied Steps（底層是 M 語言）。很多看起來像視覺化或 DAX 的問題，根源其實在這一層：來源選錯、儲存模式不合適、重新整理不穩、gateway 或認證沒設好。模型與計算見 [Power BI 模型與 DAX](power-bi-modeling-and-dax.md)。
+Power Query 是 Power BI（以及 Excel、Fabric Dataflows）的資料擷取與清理層：連接資料來源、選擇儲存模式，並把每一步轉換記成可重跑的 Applied Steps（底層是 M 語言）。很多看起來像視覺化或 DAX 的問題，根源其實在這一層：來源選錯、儲存模式不合適、重新整理不穩、gateway 或認證沒設好。模型與計算見 [Power BI 模型與 DAX](power-bi-modeling-and-dax.md)；Excel 介面的操作流程見 [Excel 中的 Power Query](../../../productivity/spreadsheets/power-query-in-excel.md)。
 
 ## Desktop 與 Service 的分工
 

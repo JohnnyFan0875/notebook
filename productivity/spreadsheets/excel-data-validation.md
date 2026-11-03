@@ -1,212 +1,63 @@
-# Excel Data Validation
+[Productivity](../README.md) › [試算表](README.md) › 資料驗證
 
-Excel 的 data validation 不是分析工具，而是資料輸入階段的 quality control。
+# 資料驗證 (Data Validation)
 
-它的核心價值很直接：
+資料驗證是輸入階段的品質控管：在資料進表的當下擋掉不合法的值，讓下游少做清理。驗證 (validation) 是預防，[資料清理](excel-data-preparation-workflow.md) 是修正；前面擋得越多，後面修得越少。
 
-- 阻止明顯不合法的輸入
-- 讓每筆資料更一致
-- 把 business rules 前移到資料輸入當下
+> 驗證不會讓資料變聰明，而是讓輸入變得受控。對表單、報價單、營運台帳、手動維護的對照表特別有用。
 
-如果資料在進表時就能被限制，後面通常能少掉很多人工清理。
+## 設計流程
 
-## What It Really Does
+```
+業務規則（policy）→ 轉成可檢查的規則 → 在 Excel 設定驗證 → 故意輸入錯值測試 → 補輸入提示與錯誤訊息
+```
 
-可以把 data validation 想成對 cell 輸入加上一層規則：
+很多驗證失敗不是 Excel 功能不夠，而是一開始沒把規則定清楚。先想使用者**會輸入什麼錯**，再決定怎麼擋；優先保護關鍵欄位，不必追求全表覆蓋。
 
-- 只允許某種資料型別
-- 只允許某個範圍
-- 只允許清單中的值
-- 只在某個公式條件成立時才接受輸入
+## 規則類型
 
-除此之外，它也不只是「擋錯」：
+設定位置：資料 → 資料驗證 (Data → Data Validation)。
 
-- 可以加入 input instructions
-- 可以設定 custom error messages
-- 可以讓工作表更像一個受控的輸入介面
+| 類型 | 例子 | 設定 |
+| --- | --- | --- |
+| 數值範圍 | 年份 2000–2025、利率不超出公司政策、期數在合理範圍 | 允許：整數 / 小數，介於 |
+| 固定長度文字 | 車身號碼 VIN 必須 17 字元、固定長度的 ID | 允許：文字長度，等於 17 |
+| 清單（下拉選單） | 廠牌、顏色、狀態、地區 | 允許：清單，來源指向已命名範圍（如 `=MakerList`） |
+| 日期 / 時間 | 不可早於今天、不可晚於截止日 | 允許：日期，或自訂公式 |
+| 自訂公式 | 跨欄或依情境的規則 | 允許：自訂，公式回傳 `TRUE` 才接受 |
 
-## Why It Matters
+常用自訂公式（以 A2 為作用儲存格，套用到整欄時用相對參照）：
 
-data validation 最主要的價值有兩個：
+| 規則 | 公式 |
+| --- | --- |
+| 日期不可早於今天 | `=A2>=TODAY()` |
+| 還款起始日晚於簽約日 | `=B2>A2` |
+| 只有在 C 欄有值時才能填 | `=C2<>""` |
+| 依貸款類型限制利率上限 | `=B2<=XLOOKUP(A2, CapType, CapMax)`（`CapType`、`CapMax` 為已命名範圍） |
+| 不可重複（同欄唯一） | `=COUNTIF($A:$A, A2)=1` |
 
-- `data integrity`: 讓資料符合預期結構與規則
-- `error reduction`: 降低手動輸入造成的 typo 與不一致
+> 驗證公式不能直接寫 Table 的結構化參照（`Table1[Maker]`）。把選項放在「選項」工作表的 Table 裡，再定義一個指向該欄的已命名範圍（如 `MakerList`）；之後新增選項時 Table 自動延伸，清單也跟著更新。
 
-這對收集型工作表特別重要，例如：
+## 輸入提示與錯誤訊息
 
-- 表單
-- 估價工具
-- 報價單
-- 內部營運台帳
-- 手動維護的 reference sheet
+| 分頁 | 用途 | 寫法 |
+| --- | --- | --- |
+| 提示訊息 (Input Message) | 選取儲存格時顯示要填什麼 | 「請輸入 17 碼 VIN，不含 I、O、Q」 |
+| 錯誤提醒 (Error Alert) | 輸入錯誤時的訊息與強度 | 說清楚**哪裡錯、規則是什麼、怎麼改** |
 
-## A Good Validation Workflow
+| 錯誤提醒樣式 | 行為 |
+| --- | --- |
+| 停止 (Stop) | 不允許輸入（預設） |
+| 警告 (Warning) | 可選擇仍要輸入 |
+| 資訊 (Information) | 只提示 |
 
-實務上可以用這個順序設計：
+## 限制
 
-1. 先定義 business requirements。
-2. 把規則翻成可操作的 validation rule。
-3. 在 Excel 中實作對應的 validation。
-4. 故意輸入 invalid data 做測試。
-5. 補齊提示文字與錯誤訊息，讓使用者知道怎麼改。
+| 限制 | 對策 |
+| --- | --- |
+| 複製貼上會覆蓋驗證規則與內容 | 保護工作表；或之後用「資料 → 資料驗證 → 圈選錯誤資料」檢查 |
+| 設定前已存在的錯值不會被擋 | 同上，「圈選錯誤資料 (Circle Invalid Data)」 |
+| 沒有內建的「不可重複」選項 | 用上面的 `COUNTIF` 自訂公式，搭配 [條件式格式](conditional-formatting.md) 標出重複 |
+| 複雜、跨表的邏輯難以維護 | 改用表單工具（Microsoft Forms）或資料庫 + 前端，Excel 只當第一道防線 |
 
-這個順序很重要，因為很多 validation 失敗，不是 Excel 功能不夠，而是一開始就沒把規則定清楚。
-
-## Common Rule Types
-
-### Numeric Ranges
-
-最常見的是數值上下限。
-
-例如：
-
-- 年份只能在 `2000` 到 `2025`
-- `APR` 不能超出公司允許範圍
-- 付款期數必須在某個政策範圍內
-
-這類規則很適合防止：
-
-- 少打一個零
-- 不合理的百分比
-- 超出業務政策的輸入
-
-### Fixed-Length Text
-
-有些欄位的重點不是內容語意，而是格式長度。
-
-例如：
-
-- `VIN` 必須是 `17` 個字元
-- 某種 ID 必須固定長度
-
-這種情況常會搭配 `Text Length` 或 custom formula。
-
-### Controlled Choice Lists
-
-當欄位應該只能從固定集合中選值時，dropdown list 很有用。
-
-典型情境：
-
-- maker
-- color
-- status
-- region
-- loan type
-
-這能大幅減少：
-
-- 拼字不一致
-- 同義詞混用
-- 大小寫風格混亂
-
-如果同一欄會被拿來 group、filter 或 pivot，list validation 通常比事後清理划算得多。
-
-### Date / Time Rules
-
-有些欄位不是「有填就好」，而是必須在某個時間邏輯下有效。
-
-例如：
-
-- 日期不能早於今天
-- 日期不能晚於某個截止日
-- 還款起始日必須晚於簽約日
-
-這類規則常需要 custom formula，而不是只靠基本 date type。
-
-### Formula-Based Rules
-
-當規則和多個欄位有關，或條件比較特製時，可以用 custom formula。
-
-適合：
-
-- APR 依貸款類型有不同範圍
-- 某欄必須在另一欄不為空時才能填
-- 某個分類只能搭配特定狀態
-
-這時 data validation 真正做的是 enforcement of business logic，而不只是格式檢查。
-
-## User Guidance Matters
-
-很多人只設 validation 規則，卻忘了使用者體驗。
-
-一個比較完整的輸入設計通常包含兩層：
-
-### Input Guidance
-
-在使用者輸入前就告訴他：
-
-- 這格要填什麼
-- 可接受的範圍是什麼
-- 格式應該長怎樣
-
-這比事後一直跳錯誤訊息更友善。
-
-### Error Messages
-
-custom error messages 不只是提示「你錯了」，而是要說清楚：
-
-- 哪裡錯
-- 規則是什麼
-- 應該怎麼改
-
-好的錯誤訊息會讓工作表更像工具，而不是陷阱。
-
-## A Business Example Mindset
-
-如果你在做 loan calculator、報價表或申請表，可以先把欄位分成三類：
-
-- `free text but constrained`
-- `must choose from list`
-- `must satisfy business formula`
-
-例如車貸計算器裡常見的規則：
-
-- `VIN`: must be 17 characters
-- `APR`: must stay within realistic or policy-approved bounds
-- `term`: must remain within company policy
-- `maker` / `color`: should come from controlled lists
-
-這樣設計時，validation 就不再只是 Excel 技巧，而是表單結構的一部分。
-
-## Limits You Should Know
-
-Excel data validation 很有用，但不要把它想得太萬能。
-
-常見限制包括：
-
-- 沒有內建的 duplicates prevention
-- 可能被 copy/paste 覆蓋
-- 對複雜邏輯支援有限
-
-這代表：
-
-- unique key 檢查常需要額外公式、conditional formatting 或後續 QA
-- 不能因為設了 validation 就假設資料一定乾淨
-- 對高風險流程，validation 應該只是第一層防線
-
-## Practical Heuristics
-
-- 規則來自 business policy，不是來自你剛好會用哪個 Excel 功能。
-- 先想使用者會輸入什麼錯，再決定 validation 怎麼設。
-- 對關鍵欄位優先設 validation，不要一開始就追求全表 100% 覆蓋。
-- validation 設完之後，一定要故意輸入錯值測試。
-- 如果規則太複雜、跨欄依賴很多，考慮改成更結構化的資料收集流程。
-
-## Relation to Data Cleaning
-
-data validation 和 data cleaning 不一樣：
-
-- `validation` 是 prevention
-- `cleaning` 是 correction
-
-最理想的狀態不是後面很會清，而是前面就少收錯資料。
-
-所以它在 spreadsheet workflow 裡的角色比較像：
-
-`input guardrail -> cleaner downstream data -> less repair work later`
-
-## Mental Model
-
-可以把 Excel data validation 濃縮成一句話：
-
-它不是讓資料變聰明，而是讓輸入變得更笨也更安全，從而讓整個 workbook 更可靠。
+> 高風險流程不要因為設了驗證就假設資料乾淨；下游仍要有 QA（[資料準備](excel-data-preparation-workflow.md)、[資料品質](../../data-science/statistics/descriptive-statistics/data-quality.md)）。
