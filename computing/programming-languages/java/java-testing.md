@@ -1,299 +1,152 @@
-# Java Testing
+[程式語言](../README.md) › [Java](README.md) › 測試
 
-Testing in Java is usually introduced through `JUnit`, then expanded into broader ideas like edge cases, integration tests, and mocks.
+# Java 測試 (Java Testing)
 
-This note keeps the focus on practical test-writing habits rather than framework trivia.
+用 JUnit 寫單元測試、用 Mockito 隔離依賴、用參數化測試涵蓋多組輸入。測試的目的：確認正常行為，並刻意探測邊界與失敗路徑；只在 happy path 能跑的程式等於沒測。測試層級與 Python 的 pytest 寫法見 [測試](../../../data-science/python-foundations/testing.md)。
 
-## What Testing Is For
+## 邊界情況 (Edge Cases)
 
-Software testing checks whether code behaves as expected under both normal and unusual conditions.
+| 類型 | 例子 |
+| --- | --- |
+| 空值 | `null`、空字串、空集合 |
+| 數值邊界 | 0、負數、`Integer.MAX_VALUE`、溢位 |
+| 規則邊界 | 剛好在驗證門檻上、差一點點的值 |
+| 格式 | 多餘空白、大小寫、非預期字元 |
 
-Two recurring ideas matter early:
+## JUnit 基本寫法
 
-- verify expected behavior
-- probe edge cases and failure paths
-
-If the code only works on the happy path, it is usually not tested enough.
-
-## Edge Cases
-
-An edge case is an input or condition near the boundary of what the program normally expects.
-
-Common examples:
-
-- `null`
-- empty strings or empty collections
-- negative values
-- maximum or minimum numeric values
-- values just inside or outside a validation rule
-
-Good tests deliberately include these cases instead of treating them as afterthoughts.
-
-## `JUnit 5`
-
-`JUnit 5` is the standard beginner-friendly testing library in modern Java.
-
-A minimal test looks like this:
+JUnit Jupiter（JUnit 5 起的 API）是 Java 的標準測試框架；Maven / Gradle 專案的測試放在 `src/test/java/`，以 `mvn test` 或 `gradle test` 執行。
 
 ```java
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class CalculatorTest {
+
     @Test
-    void add_returnsSum() {
-        int actual = 2 + 2;
-        assertEquals(4, actual);
+    void add_twoPositives_returnsSum() {
+        // Arrange：準備輸入
+        Calculator calc = new Calculator();
+        // Act：呼叫受測程式
+        int actual = calc.add(2, 2);
+        // Assert：檢查結果
+        assertEquals(4, actual);                       // 預期值在前、實際值在後
+    }
+
+    @Test
+    void parse_badInput_throws() {
+        assertThrows(NumberFormatException.class, () -> Integer.parseInt("abc"));
     }
 }
 ```
 
-`@Test` marks a method as a test case.
+| 斷言 | 用途 |
+| --- | --- |
+| `assertEquals(expected, actual)` | 相等；浮點數加容許誤差 `assertEquals(0.3, x, 1e-9)` |
+| `assertTrue` / `assertFalse` | 條件 |
+| `assertNull` / `assertNotNull` | 空值 |
+| `assertThrows(Type.class, () -> ...)` | 預期丟出例外（失敗行為也是契約的一部分） |
+| `assertAll(...)` | 多個斷言一起回報 |
 
-## Arrange, Act, Assert
+| 註解 | 用途 |
+| --- | --- |
+| `@Test` | 標記測試方法 |
+| `@BeforeEach` / `@AfterEach` | 每個測試前後的準備與清理 |
+| `@BeforeAll` / `@AfterAll` | 整個類別前後執行一次（`static`） |
+| `@Disabled` | 暫時跳過 |
+| `@DisplayName` | 報告中顯示的名稱 |
 
-A useful structure for most tests is:
+測試命名用 `方法_情境_預期結果`：`isValidUsername_null_returnsFalse`。CI 輸出失敗時，不必打開程式碼就知道哪個行為壞了。
 
-- arrange inputs and setup
-- act by calling the code under test
-- assert the expected outcome
+## 單元測試 vs 整合測試
+
+| | 單元測試 | 整合測試 |
+| --- | --- | --- |
+| 範圍 | 單一元件，隔離依賴 | 多個元件一起運作 |
+| 速度 | 快 | 慢 |
+| 失敗時 | 容易定位 | 要追查較多 |
+| 依賴 | 用 mock 取代 | 真實（測試資料庫、容器） |
+| 優化 | 精確與速度 | 真實性 |
+
+## Mockito：隔離依賴
+
+依賴 (dependency) 是程式所依靠的其他元件：API client、資料庫層、外部服務。依賴慢、不確定或不受控時，單元測試用 mock 取代它。
 
 ```java
+import static org.mockito.Mockito.*;
+
 @Test
-void add_returnsSum() {
-    // Arrange
-    int left = 2;
-    int right = 2;
+void convert_mockedRate_returnsExpectedAmount() {
+    RateServer bank = mock(RateServer.class);                 // 建立假的依賴
+    when(bank.getRateEuroTo("JPY")).thenReturn(110.0);        // stubbing：設定回傳值
 
-    // Act
-    int actual = left + right;
+    Converter conv = new Converter(bank);                     // 依賴從建構子注入，才能替換
+    assertEquals(1100.0, conv.convert(10, "JPY"), 1e-9);
 
-    // Assert
-    assertEquals(4, actual);
+    verify(bank).getRateEuroTo("JPY");                        // 驗證互動：確實呼叫了一次
+    verifyNoMoreInteractions(bank);
 }
 ```
 
-This pattern keeps tests readable and reduces hidden setup.
+| 重點 | 說明 |
+| --- | --- |
+| 沒 stub 的方法 | 回傳預設值（`0`、`false`、`null`、空集合），常讓測試以令人困惑的方式失敗 |
+| `verify` 何時用 | 「有沒有呼叫」本身就是需求時（例如錯誤時要寫入 error store、成功時不寫） |
+| 可測試的設計 | 依賴透過建構子傳入，而不是在類別內 `new` |
 
-## Core Assertions
+## 參數化測試
 
-Some of the most common JUnit assertions are:
-
-- `assertEquals(expected, actual)`
-- `assertTrue(condition)`
-- `assertFalse(condition)`
-- `assertNull(value)`
-- `assertNotNull(value)`
-
-One easy mistake is swapping argument order in `assertEquals`. JUnit expects `expected` first and `actual` second.
-
-## Asserting Exceptions
-
-Exception behavior is often part of the contract and should be tested directly.
-
-```java
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-@Test
-void parse_throwsOnBadInput() {
-    assertThrows(NumberFormatException.class, () -> Integer.parseInt("abc"));
-}
-```
-
-If a method is supposed to reject invalid input, that rejection belongs in the test suite.
-
-## Naming Tests
-
-A project can easily contain hundreds of tests, so names should explain intent quickly.
-
-A practical naming style is:
-
-- `method_condition_expectedResult`
-
-Examples:
-
-- `isValidUsername_null_returnsFalse`
-- `convertEuroTo_mockedRate_returnsExpectedAmount`
-
-Good test names reduce the need to inspect the method body when a failure appears in CI output.
-
-## Unit Tests vs Integration Tests
-
-These two categories answer different questions.
-
-| Unit tests | Integration tests |
-| ---------- | ----------------- |
-| test one component in isolation | test how multiple components work together |
-| failures are easier to localize | failures take more tracing |
-| usually faster | usually heavier and slower |
-| often avoid real dependencies | often involve real dependencies |
-
-Key point: unit tests optimize for precision and speed, while integration tests optimize for realism.
-
-## Dependencies and Why They Matter
-
-A dependency is another component your code relies on.
-
-Examples:
-
-- an API client
-- a database layer
-- a file store
-- a service object from another module
-
-Testing gets harder when the dependency is slow, nondeterministic, or not under your control.
-
-## Mocking with Mockito
-
-When a dependency should not be exercised for real in a unit test, mocking is a common approach.
-
-`Mockito` is a widely used Java mocking library.
-
-```java
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-EuropeanCentralBankServer bank = mock(EuropeanCentralBankServer.class);
-when(bank.getRateEuroTo("JPY")).thenReturn(110.0);
-```
-
-This creates a fake dependency and programs a chosen response.
-
-That programming step is called stubbing.
-
-## Why Mocking Helps
-
-Mocks help when you want to:
-
-- isolate the code under test
-- avoid network or database calls
-- make results deterministic
-- assert exact outcomes instead of loose sanity checks
-
-Without stubbing, a mock often returns Java defaults like `0`, `false`, or `null`, which can make tests fail for confusing reasons.
-
-## Verifying Mock Usage
-
-Sometimes the important question is not just what value came back, but whether a dependency was called.
-
-```java
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-
-verify(infoStore).save("ok");
-verifyNoInteractions(errorStore);
-```
-
-Use this when interaction behavior is part of the requirement.
-
-## Parameterized Tests
-
-Parameterized tests reduce duplication when the same logic should be checked with many inputs.
-
-Instead of writing many nearly identical `@Test` methods, you write one test and feed it multiple cases.
-
-## `@ValueSource`
-
-Use `@ValueSource` when each case supplies a single primitive-like value.
+同一段邏輯用多組輸入驗證，避免複製貼上一堆幾乎相同的 `@Test`。
 
 ```java
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.*;
+import java.util.stream.Stream;
 
 @ParameterizedTest
-@ValueSource(strings = {"", "jane doe"})
-void isValidUsername_invalidInputs_returnFalse(String username) {
-    assertFalse(isValidUsername(username));
+@NullSource                                                // 加入 null（@ValueSource 不能放 null）
+@ValueSource(strings = {"", "jane doe", "a"})              // 每組一個值；屬性名是複數 strings / ints
+void isValidUsername_invalid_returnsFalse(String username) {
+    assertFalse(Validator.isValidUsername(username));
 }
-```
-
-Useful point: the attribute name is plural, such as `strings`, `ints`, or `booleans`.
-
-## `@NullSource`
-
-`@ValueSource` cannot include `null`.
-
-Use `@NullSource` when `null` should be one of the cases:
-
-```java
-import org.junit.jupiter.params.provider.NullSource;
-
-@ParameterizedTest
-@NullSource
-@ValueSource(strings = {"", "jane doe"})
-void isValidUsername_invalidInputs_returnFalse(String username) {
-    assertFalse(isValidUsername(username));
-}
-```
-
-This is a clean way to include a classic edge case without duplicating the test body.
-
-## `@CsvSource`
-
-When each test case needs multiple values, `@CsvSource` is often the simplest option.
-
-```java
-import org.junit.jupiter.params.provider.CsvSource;
 
 @ParameterizedTest
 @CsvSource({
     "Hello World, 11",
-    "DataCamp, 8",
-    "'', 0"
+    "DataCamp,    8",
+    "'',          0"                                       // '' 代表空字串
 })
-void length_returnsExpectedValue(String text, int expected) {
+void length_returnsExpected(String text, int expected) {
     assertEquals(expected, text.length());
 }
-```
-
-This works well for compact tables of input/output examples.
-
-## `@MethodSource`
-
-If the inputs are more complex objects, `@MethodSource` is usually the flexible choice.
-
-```java
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 @ParameterizedTest
-@MethodSource("provideNames")
-void fullName_returnsExpectedValue(Person person, String expected) {
-    assertEquals(expected, person.fullName(person));
+@MethodSource("people")                                    // 物件等複雜輸入
+void fullName_returnsExpected(Person p, String expected) {
+    assertEquals(expected, p.fullName());
 }
-```
-
-The provider method returns argument sets:
-
-```java
-private static List<Arguments> provideNames() {
-    return List.of(
+static Stream<Arguments> people() {
+    return Stream.of(
         Arguments.of(new Person("John", "Doe"), "John Doe"),
-        Arguments.of(new Person("Jane", "Doe"), "Jane Doe")
-    );
+        Arguments.of(new Person("Jane", "Doe"), "Jane Doe"));
 }
 ```
 
-Use this when the data is too rich for `@ValueSource` or `@CsvSource`.
+| 來源 | 何時用 |
+| --- | --- |
+| `@ValueSource` | 單一簡單值 |
+| `@NullSource` / `@EmptySource` / `@NullAndEmptySource` | 加入 `null` / 空值 |
+| `@CsvSource` | 小型的多欄輸入 / 預期輸出表 |
+| `@MethodSource` | 物件或需要程式產生的輸入 |
+| `@EnumSource` | 每個 enum 值各測一次 |
 
-## When to Prefer Each Parameter Source
+## 常見錯誤
 
-- use `@ValueSource` for one simple input value
-- use `@NullSource` when `null` must be included
-- use `@CsvSource` for small multi-column examples
-- use `@MethodSource` for objects or more expressive setup
-
-## Common Traps
-
-- testing only happy paths and skipping edge cases
-- reversing `expected` and `actual` in `assertEquals`
-- writing integration tests when a fast unit test would do
-- using mocks without stubbing their behavior
-- overusing parameterized tests when the cases are too different to stay readable
-- forcing complex object cases into `@ValueSource`
-
-## Related Notes
-
-- [Java Fundamentals](java-fundamentals.md)
-- [Java Collections and Exception Handling](java-collections-and-exception-handling.md)
-- [Java File I/O and Streams](java-file-io-and-streams.md)
+| 錯誤 | 說明 |
+| --- | --- |
+| 只測 happy path | 邊界與錯誤路徑最容易出 bug |
+| `assertEquals` 參數順序顛倒 | 失敗訊息的「預期 / 實際」會反過來 |
+| 能用快速單元測試卻寫成整合測試 | 測試變慢、難定位 |
+| mock 沒有 stub | 回傳預設值造成誤導 |
+| 差異很大的案例硬塞進同一個參數化測試 | 可讀性變差 |
+| 測試之間共享可變狀態 | 執行順序不同結果就不同 |

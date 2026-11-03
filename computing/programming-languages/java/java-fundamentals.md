@@ -1,263 +1,169 @@
-# Java Fundamentals
+[程式語言](../README.md) › [Java](README.md) › 基礎
 
-Java is a general-purpose, statically typed language with a steeper learning curve than Python or JavaScript, but that strictness is also part of why Java scales well for larger codebases. For notebook purposes, the important thing is not memorizing every keyword, but understanding the small set of structural rules that Java expects from the start.
+# Java 基礎 (Java Fundamentals)
 
-## Core Mental Model
+Java 是靜態型別、編譯成位元組碼在 JVM 上執行的通用語言。比 Python 冗長、規則嚴格，但明確的型別與結構讓大型程式容易維護；生資領域的 GATK、Picard、IGV、Nextflow（Groovy，跑在 JVM）都建立在 JVM 上。本篇涵蓋程式結構、型別、字串、陣列、運算子與 package。
 
-If you are new to Java, three ideas explain most of the "why is this so formal?" feeling:
+> 三個觀念解釋大部分「為什麼這麼正式」：程式碼都放在 class 裡；變數都有宣告的型別；語法明確標出邊界（`{}`、`;`）。
 
-- code lives inside classes
-- variables always have declared types
-- syntax is explicit about boundaries and intent
-
-That means Java often feels more verbose at first, but it also makes program structure easier to reason about once the conventions are familiar.
-
-## Minimal Program Structure
-
-The most common beginner shape is:
+## 程式結構與執行
 
 ```java
+// Main.java：檔名必須和 public class 同名
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) {   // 程式進入點
         System.out.println("Hello, Java!");
     }
 }
 ```
 
-Key pieces:
-
-- `class` groups related code
-- `main` is the entry point for a runnable program
-- `System.out.println(...)` prints a value and moves to a new line
-
-## Syntax Rules That Matter Early
-
-Java is case-sensitive and relatively strict about punctuation.
-
-```java
-public class Main {
-    public static void main(String[] args) {
-        int age = 29;
-        System.out.println(age);
-    }
-}
+```bash
+javac Main.java          # 編譯成 Main.class（位元組碼）
+java Main                # 在 JVM 上執行
+java Main.java           # Java 11+：單一檔案可直接執行，不必先 javac
 ```
 
-Early habits worth locking in:
+| 名詞 | 意義 |
+| --- | --- |
+| JDK | 開發工具：`javac`、`java`、`jshell`（互動式 REPL）等 |
+| JVM | 執行位元組碼的虛擬機；同一個 `.class` / `.jar` 可在不同作業系統執行 |
+| `.jar` | 打包好的 class 檔；`java -jar picard.jar ...` |
+| LTS 版本 | 17、21、25；生產環境選 LTS |
+| 建置工具 | Maven（`pom.xml`）、Gradle（`build.gradle`）：管理依賴、編譯、測試、打包 |
 
-- `Main` and `main` are different identifiers
-- statements usually end with `;`
-- whitespace helps readability, but does not replace required syntax
-- `=` is assignment, not equality checking
+| 規則 | 說明 |
+| --- | --- |
+| 區分大小寫 | `Main` 與 `main` 不同 |
+| 陳述句以 `;` 結尾 | 空白只影響可讀性，不能取代語法 |
+| `=` vs `==` | 指派 vs 比較 |
+| 命名慣例 | 類別 `PascalCase`、變數與方法 `camelCase`、常數 `UPPER_SNAKE_CASE` |
 
-## Variables
-
-Java variables have three parts:
+## 變數與型別
 
 ```java
-type variableName = value;
-```
-
-Examples:
-
-```java
-String message = "Java is awesome!";
+String message = "Java is awesome!";   // 型別 變數名 = 值;
 int age = 29;
 boolean isActive = true;
+var count = 10;                        // Java 10+：區域變數型別推斷（仍是靜態型別 int）
+final double PI = 3.14159;             // final：不可重新指派
 ```
 
-Good beginner heuristics:
+| 類別 | 型別 | 說明 |
+| --- | --- | --- |
+| 整數 | `int`（預設）、`long`（範圍更大，字面值加 `L`）、`short`、`byte` | `int` 上限約 21 億，超過會**溢位**而不報錯 |
+| 小數 | `double`（預設）、`float`（精度較低，字面值加 `f`） | 浮點數是近似值，金額用 `BigDecimal` |
+| 其他基本型別 | `boolean`（`true` / `false`）、`char`（單一字元，單引號） | — |
+| 參考型別 (reference type) | 類別、介面、enum、陣列、`String` | 變數存的是物件的參考，可以是 `null` |
 
-- pick names that describe meaning, not storage
-- use `camelCase` for variable names
-- remember that the declared type constrains what values the variable can hold
+| | 基本型別 (primitive) | 參考型別 (reference) |
+| --- | --- | --- |
+| 存什麼 | 值本身 | 指向物件的參考 |
+| 可以是 `null` | 否 | 是 |
+| `==` 比較 | 值 | **是不是同一個物件**；比內容用 `.equals()` |
+| 預設值（欄位） | `0`、`false` | `null` |
 
-## Primitive Types
+### 包裝類別 (Wrapper Classes)
 
-Java primitives are the built-in value types that are not objects.
+每個基本型別都有對應的物件版本：`int` → `Integer`、`double` → `Double`、`boolean` → `Boolean`、`char` → `Character`（其餘 `Byte`、`Short`、`Long`、`Float`）。
 
-### Whole numbers
+| 用途 | 例子 |
+| --- | --- |
+| 集合只能放物件 | `List<Integer>`，不能寫 `List<int>` |
+| 提供方法與常數 | `Integer.parseInt("8")`、`Integer.MAX_VALUE`、`Boolean.parseBoolean("true")` |
+| 表示「沒有值」 | `Integer age = null;` |
 
-| Type | Typical use |
-| ---- | ----------- |
-| `int` | default choice for whole numbers |
-| `long` | larger whole-number range |
-| `short` | smaller-range integers, uncommon in everyday code |
-| `byte` | very small integer range, often low-level or compact storage use |
+基本型別與包裝類別之間會自動轉換：自動裝箱 (autoboxing) `list.add(5)`、自動拆箱 (unboxing) `int x = list.get(0)`。
 
-Most of the time, `int` is the right first choice unless you specifically need a different range.
+> 拆箱 `null` 會丟 `NullPointerException`；包裝類別用 `==` 比較只在 -128 到 127 之間碰巧成立（快取），一律用 `.equals()`。
 
-### Decimal numbers
-
-| Type | Typical use |
-| ---- | ----------- |
-| `double` | default choice for decimal values |
-| `float` | lower precision decimal type |
-
-In ordinary Java application code, `double` is usually the primitive of choice for decimals.
-
-### Other common primitives
-
-| Type | Meaning |
-| ---- | ------- |
-| `boolean` | `true` or `false` |
-| `char` | one single character in single quotes |
-
-Examples:
+## 字串
 
 ```java
-boolean isPaid = false;
-char initial = 'J';
+char initial = 'J';                      // char：單引號、一個字元
+String name = "Jim";                     // String：雙引號；"J" 也是 String 不是 char
+
+String user = "JSmith13";
+user.length();                           // 8（方法，有括號）
+user.toLowerCase();                      // "jsmith13"
+user.substring(0, 6);                    // "JSmith"
+user.contains("13");                     // true
+"a,b,c".split(",");                      // ["a", "b", "c"]
+String full = "Java is" + " " + "awesome";   // + 串接；一邊是 String 時另一邊自動轉字串
+String msg = String.format("%s has %d reads", "S1", 1200);
+String block = """
+    多行文字區塊 (text block)，Java 15+
+    """;
+
+"abc".equals(other);                     // 比較內容；不要用 ==
 ```
 
-## `char` vs `String`
+字串不可變 (immutable)：每次修改都產生新物件。迴圈中大量串接用 `StringBuilder`，見 [效能與並行](java-performance-and-concurrency.md)。
 
-This distinction matters early because the syntax looks similar but the meaning is not.
-
-```java
-char initial = 'J';
-String name = "Jim";
-```
-
-- `char` stores one character and uses single quotes
-- `String` stores a sequence of characters and uses double quotes
-
-Key point: a single character inside double quotes is still a `String`, not a `char`.
-
-## Strings
-
-Strings are not primitives, but they are used constantly and are usually learned alongside them.
-
-```java
-String userName = "JSmith13";
-int userNameLength = userName.length();
-String lower = userName.toLowerCase();
-String upper = userName.toUpperCase();
-```
-
-Common beginner-useful operations:
-
-- `.length()` returns the number of characters as an `int`
-- `.toLowerCase()` and `.toUpperCase()` change case
-- `+` concatenates strings
-
-```java
-String message1 = "Java is";
-String message2 = "awesome";
-String fullMessage = message1 + " " + message2;
-```
-
-If one side of `+` is a `String`, Java will coerce the other side into string form during concatenation.
-
-## Arrays
-
-Arrays store multiple values of the same type under one variable.
+## 陣列
 
 ```java
 int[] prices = {10, 20, 30, 40};
-```
-
-Useful early rules:
-
-- arrays are zero-indexed
-- array length is fixed once created
-- access uses square brackets
-
-```java
-int first = prices[0];
+int[] zeros = new int[5];               // 長度 5，元素預設 0
+int first = prices[0];                  // 索引從 0 開始
 prices[2] = 95;
-int n = prices.length;
+int n = prices.length;                  // 屬性，沒有括號（String 是 .length() 方法）
+System.out.println(java.util.Arrays.toString(prices));   // [10, 20, 95, 40]
 ```
 
-Key point: `prices.length` is a property on the array, while `someString.length()` is a method on `String`.
+陣列長度建立後固定；需要增減元素時用 `ArrayList`，見 [集合與例外處理](java-collections-and-exception-handling.md)。
 
-## Arithmetic Operators
+## 運算子
 
-Java includes the usual arithmetic operators:
-
-| Operator | Meaning |
-| -------- | ------- |
-| `+` | addition |
-| `-` | subtraction |
-| `*` | multiplication |
-| `/` | division |
-| `++` | increment by 1 |
-| `--` | decrement by 1 |
-
-Example:
+| 類別 | 運算子 |
+| --- | --- |
+| 算術 | `+ - * / %`、`++`、`--`、`+=` |
+| 比較（結果為 `boolean`） | `> < >= <= == !=` |
+| 邏輯 | `&&`（且）、`\|\|`（或）、`!`（非）；短路求值 |
+| 三元 | `cond ? a : b` |
 
 ```java
-int a = 5 + 6;
-a++;
+int numOrders = 100, days = 30;
+int avg = numOrders / days;                  // 3：兩個整數相除是整數除法，小數被捨去
+double avgD = (double) numOrders / days;     // 3.333...：至少一邊轉成 double
+int r = 7 % 3;                               // 1：餘數
 ```
 
-### Integer division
+## Package 與 import
 
-This is one of the most common beginner surprises.
+Package 是命名空間加目錄結構，用來組織類別，名稱全小寫、以點分隔，自訂 package 慣例用反轉網域：`com.example.app` 對應目錄 `com/example/app/`。
 
 ```java
-int numOrders = 100;
-int days = 30;
-int avgOrders = numOrders / days;
+package com.example.app;                // 檔案第一行：本檔所屬 package
+
+import java.util.List;                  // 明確匯入單一類別（優先）
+import java.util.*;                     // 萬用字元匯入整個 package
+import java.math.BigDecimal;
 ```
 
-Here the result is `3`, not `3.333...`, because dividing two integers produces integer division.
-
-If you need a decimal result, at least one side must be treated as decimal:
+| Package | 內容 |
+| --- | --- |
+| `java.lang` | `String`、`System`、`Math`、包裝類別、`Exception`；**自動匯入** |
+| `java.util` | 集合、`Scanner`、`Optional` |
+| `java.time` | 日期時間，見 [核心 API](java-core-apis.md) |
+| `java.nio.file` | 檔案與路徑，見 [檔案 I/O 與 Stream](java-file-io-and-streams.md) |
+| `java.math` | `BigInteger`（任意大整數）、`BigDecimal`（精確小數） |
 
 ```java
-double avgOrders = (double) numOrders / days;
+import java.math.BigDecimal;
+
+BigDecimal exact = new BigDecimal("0.1").add(new BigDecimal("0.2"));   // 0.3（精確）
+double approx = 0.1 + 0.2;                                            // 0.30000000000000004
 ```
 
-## Comparison Operators
+> `BigDecimal` 要用字串建構：`new BigDecimal(0.1)` 會把 double 的誤差一起帶進來。
 
-Comparison operators evaluate to `boolean`.
+## 常見錯誤
 
-| Operator | Meaning |
-| -------- | ------- |
-| `>` | greater than |
-| `<` | less than |
-| `>=` | greater than or equal to |
-| `<=` | less than or equal to |
-| `==` | equal to |
-| `!=` | not equal to |
-
-Example:
-
-```java
-int minSpend = 25;
-int total = 23;
-boolean paidDelivery = total <= minSpend;
-```
-
-Warning: `=` assigns a value. `==` compares values. Mixing them up is one of the most common early syntax and logic errors.
-
-## Interview Fast Answer
-
-If someone asks what feels different about Java compared with more dynamic beginner languages, a good short answer is:
-
-- Java is statically typed, so variables need declared types
-- runnable code is usually structured through classes and a `main` method
-- syntax is stricter, but that explicitness helps with maintainability
-
-If the follow-up is about beginner essentials, the highest-signal topics are:
-
-- primitives vs `String`
-- integer division
-- `char` vs `String`
-- `=` vs `==`
-- array indexing and fixed length
-
-## Common Beginner Traps
-
-- forgetting that Java is case-sensitive
-- using `=` when you meant `==`
-- expecting integer division to produce decimals
-- treating `char` and `String` as interchangeable
-- trying to access an array index beyond its fixed length
-- assuming `System.out.println(array)` prints array contents nicely
-
-## Related Notes
-
-- [Computer Science Foundations](../../computer-science-foundations/README.md)
-- [Programming Paradigms](../../computer-science-foundations/programming-paradigms.md)
+| 錯誤 | 結果 |
+| --- | --- |
+| 預期整數除法得到小數 | `100 / 30` 是 `3` |
+| 用 `==` 比較字串或包裝類別 | 比的是參考，結果看似隨機 |
+| `char` 與 `String` 混用 | `'ab'` 編譯錯誤 |
+| 陣列索引超出範圍 | `ArrayIndexOutOfBoundsException` |
+| `System.out.println(array)` | 印出 `[I@1b6d3586` 這類位址，要用 `Arrays.toString` |
+| 金額用 `double` | 累積誤差 |

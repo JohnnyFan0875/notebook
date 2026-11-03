@@ -1,401 +1,177 @@
-# Java Collections and Exception Handling
+[程式語言](../README.md) › [Java](README.md) › 集合與例外處理
 
-After arrays and basic objects, Java programming quickly becomes about two recurring problems:
+# Java 集合與例外處理 (Collections and Exception Handling)
 
-- how to manage groups of objects
-- how to deal with failure without losing control flow
+一般 Java 程式很快就會遇到兩個問題：怎麼管理一群物件（集合框架），以及出錯時怎麼不失去控制（例外處理）。資料結構的原理與複雜度見 [線性資料結構](../../computer-science-foundations/linear-data-structures.md)、[非線性資料結構](../../computer-science-foundations/non-linear-data-structures.md)。
 
-This note groups those two areas because they show up together in ordinary application code very quickly.
+## 集合框架 (Collections Framework)
 
-## Collections Framework
+`java.util` 內建的資料結構，分兩大家族：`Collection`（一群物件：`List`、`Set`、`Queue`）與 `Map`（key → value）。
 
-The Java Collections Framework is a built-in set of reusable data-structure types, mostly centered in `java.util`.
+| 介面 | 特性 | 常用實作 | 對應 Python |
+| --- | --- | --- | --- |
+| `List` | 有序、可重複、依索引存取 | `ArrayList`（預設）、`LinkedList` | `list` |
+| `Set` | 不重複 | `HashSet`（無序）、`LinkedHashSet`（保留插入順序）、`TreeSet`（排序） | `set` |
+| `Queue` / `Deque` | FIFO / 雙端 | `ArrayDeque`（預設）、`PriorityQueue`（堆積） | `collections.deque`、`heapq` |
+| `Map` | key → value | `HashMap`、`LinkedHashMap`、`TreeMap`（依 key 排序） | `dict` |
 
-Its purpose is to avoid rebuilding common containers from scratch and to give a shared vocabulary for storing and manipulating groups of objects.
+| 陣列 | 集合 |
+| --- | --- |
+| 長度固定 | 大小可變 |
+| 可直接放基本型別 | 只放物件（`Integer` 而非 `int`，自動裝箱） |
+| 幾乎沒有內建操作 | 豐富的方法 |
 
-## Arrays vs Collections
-
-Arrays and collections overlap, but they are not interchangeable.
-
-| Arrays | Collections |
-| ------ | ----------- |
-| fixed length | dynamically resizable in many implementations |
-| can store primitives directly | usually store objects |
-| minimal built-in behavior | richer built-in operations |
-| good for fixed-size, simple storage | better for growth, lookup, reordering, and abstraction |
-
-Key point: arrays are still useful, but when you need flexible size or higher-level operations, collections are often the better default.
-
-## Two Big Families
-
-The framework is commonly introduced through two top-level ideas:
-
-| Family | Purpose |
-| ------ | ------- |
-| `Collection` | store groups of objects |
-| `Map` | store key-value associations |
-
-Inside `Collection`, the most important interfaces for beginners are:
-
-- `List`
-- `Set`
-- `Queue`
-
-## Generics
-
-Collections are usually parameterized with generics.
+### 泛型 (Generics)
 
 ```java
-ArrayList<String> animals = new ArrayList<String>();
-```
-
-The type parameter tells Java what kind of objects the collection should hold.
-
-Why generics matter:
-
-- better type safety
-- fewer casts
-- clearer intent
-
-Without generics, a collection can become a mixed bag of `Object`, which is legal but much less safe.
-
-## `List`
-
-`List` is for ordered collections that can contain duplicates.
-
-Two common implementations are:
-
-- `ArrayList`
-- `LinkedList`
-
-### `ArrayList`
-
-`ArrayList` is the usual default choice.
-
-```java
-import java.util.ArrayList;
-
-ArrayList<String> animals = new ArrayList<String>();
+List<String> animals = new ArrayList<>();       // <String>：只能放 String；右邊 <> 自動推斷
 animals.add("horse");
-animals.add("cow");
+animals.add(42);                                // 編譯錯誤：型別安全
+```
+
+沒有泛型的「原始型別」(`List animals`) 什麼都能放，取出時要強制轉型，錯誤延到執行時才發現。
+
+### 常用操作
+
+```java
+import java.util.*;
+
+// List
+List<String> animals = new ArrayList<>(List.of("horse", "cow"));
 animals.add("chicken");
-
-String first = animals.get(0);
+animals.get(0);                  // "horse"
 animals.set(1, "goat");
-```
+animals.remove("horse");
+animals.contains("goat");        // true（O(n)）
+animals.size();
 
-Useful operations:
+List<String> fixed = List.of("a", "b");          // Java 9+：不可變；add 會丟 UnsupportedOperationException
+List<String> view = Arrays.asList(arr);          // 固定長度，與原陣列共用資料
 
-- `.add(...)`
-- `.get(index)`
-- `.set(index, value)`
-- `.remove(index or value)`
+// Set
+Set<String> words = new HashSet<>();
+words.add("java"); words.add("java");            // 重複的被忽略
+words.contains("jvm");                           // O(1) 平均
 
-### `LinkedList`
-
-`LinkedList` supports the same `List` interface, but with a different internal structure.
-
-```java
-import java.util.LinkedList;
-
-LinkedList<String> cars = new LinkedList<String>();
-cars.addFirst("Fiat");
-cars.addLast("BMW");
-```
-
-Useful when:
-
-- you frequently add/remove near the ends or middle
-
-Less ideal when:
-
-- you do lots of random index access
-
-### `ArrayList` vs `LinkedList`
-
-Good beginner rule of thumb:
-
-- choose `ArrayList` by default
-- switch to `LinkedList` only when your mutation pattern clearly benefits
-
-## Autoboxing
-
-Collections usually work with objects, not primitives, so wrappers matter here.
-
-```java
-ArrayList<Integer> nums = new ArrayList<Integer>();
-nums.add(5);
-```
-
-`5` is automatically boxed into `Integer`.
-
-Key point: this automatic primitive-to-wrapper conversion is called autoboxing.
-
-## `Set`
-
-`Set` is for uniqueness.
-
-```java
-import java.util.HashSet;
-
-HashSet<String> words = new HashSet<String>();
-words.add("java");
-words.add("java");
-words.add("jvm");
-```
-
-The duplicate `"java"` is ignored.
-
-Good when:
-
-- membership testing matters
-- duplicates should not exist
-
-Less suitable when:
-
-- ordering or index-based access is important
-
-## `Queue`
-
-`Queue` models first-in, first-out processing.
-
-```java
-import java.util.concurrent.ArrayBlockingQueue;
-
-ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<String>(4);
-queue.offer("A");
-queue.offer("B");
-String next = queue.poll();
-```
-
-Useful distinctions:
-
-- `.add(...)` may throw if capacity is exceeded
-- `.offer(...)` returns failure instead of throwing in that situation
-- `.remove()` may throw on empty queue
-- `.poll()` returns `null` on empty queue
-
-## `Map`
-
-`Map` stores associations from keys to values.
-
-```java
-import java.util.HashMap;
-
-HashMap<Integer, String> users = new HashMap<Integer, String>();
-users.put(101, "Alice");
-users.put(102, "Bob");
-
-String name = users.get(101);
-```
-
-Core operations:
-
-- `.put(key, value)`
-- `.get(key)`
-- `.remove(key)`
-
-Use a map when lookup by key is the real job, not ordered sequence handling.
-
-## Supporting Utility Classes
-
-Two useful helper classes are:
-
-- `java.util.Collections`
-- `java.util.Arrays`
-
-Examples:
-
-```java
-Collections.sort(list);
-Collections.reverse(list);
-
-List<String> countries = Arrays.asList(arrayCountries);
-```
-
-`Collections` helps manipulate collection instances. `Arrays` helps bridge array-oriented operations.
-
-## Exceptions
-
-In Java, exceptions represent problems that interrupt normal control flow.
-
-Common sources:
-
-- wrong input
-- coding mistakes
-- unexpected runtime conditions
-
-Java throws exceptions to signal that the normal path could not continue as written.
-
-## `try` / `catch`
-
-The basic recovery structure is:
-
-```java
-try {
-    String x = list.get(3);
-} catch (IndexOutOfBoundsException e) {
-    System.out.println("Oops - wrong index");
+// Map
+Map<String, Integer> counts = new HashMap<>();
+counts.put("A", 1);
+counts.get("A");                                 // 1；不存在回傳 null
+counts.getOrDefault("C", 0);                     // 0
+counts.merge("A", 1, Integer::sum);              // 計數：A → 2
+for (Map.Entry<String, Integer> e : counts.entrySet()) {
+    System.out.println(e.getKey() + "=" + e.getValue());
 }
+
+// Queue / Deque
+Deque<String> q = new ArrayDeque<>();
+q.offer("A"); q.offer("B");                      // 尾端加入
+q.poll();                                        // "A"：前端取出；空時回傳 null
+Deque<String> stack = new ArrayDeque<>();
+stack.push("x"); stack.pop();                    // 當堆疊用
+
+// 工具類別
+Collections.sort(animals);
+Collections.reverse(animals);
+animals.sort(Comparator.comparing(String::length).thenComparing(Comparator.naturalOrder()));
 ```
 
-The idea is:
+| 方法成對 | 失敗時丟例外 | 失敗時回傳特殊值 |
+| --- | --- | --- |
+| 加入 | `add()` | `offer()` → `false` |
+| 取出 | `remove()` | `poll()` → `null` |
+| 查看 | `element()` | `peek()` → `null` |
 
-- `try` runs risky code
-- `catch` handles a matching exception type
+| 選擇 | 理由 |
+| --- | --- |
+| `ArrayList` 而非 `LinkedList` | 隨機存取 `O(1)`、快取友善；`LinkedList` 只有在頻繁於已知位置插入刪除時才有優勢 |
+| `ArrayDeque` 而非 `Stack` / `LinkedList` 當佇列 | 較快；`Stack` 是舊類別 |
+| `HashSet` / `HashMap` 做成員檢查與查找 | `O(1)` 平均；`List.contains` 是 `O(n)` |
+| 多執行緒共用 | `ConcurrentHashMap`、`ArrayBlockingQueue`（見 [效能與並行](java-performance-and-concurrency.md)） |
 
-## Multiple `catch` Blocks
+## 例外處理 (Exception Handling)
 
-You can handle different exception types differently.
+例外 (exception) 表示正常流程無法照寫的方式繼續：輸入錯誤、程式錯誤、外部資源出問題。
 
 ```java
 try {
-    // risky code
-} catch (IndexOutOfBoundsException eIndex) {
+    int n = Integer.parseInt(text);
+    String x = list.get(n);
+} catch (NumberFormatException e) {             // 依序比對，第一個符合的 catch 執行
+    System.out.println("Bad number: " + e.getMessage());
+} catch (IndexOutOfBoundsException | NullPointerException e) {   // 多個型別共用處理
     System.out.println("Bad index");
-} catch (NumberFormatException eValue) {
-    System.out.println("Bad number");
-}
-```
-
-Java checks the `catch` blocks in order until it finds a match.
-
-## `finally`
-
-`finally` is for cleanup code that should run whether an exception happened or not.
-
-```java
-try {
-    Integer.valueOf("one");
-} catch (NumberFormatException e) {
-    System.out.println("Oops");
 } finally {
-    System.out.println("Doing cleanup");
+    System.out.println("Always runs");          // 不論是否發生例外都執行：清理
 }
 ```
 
-## Exception Objects Carry Information
+### 例外的種類
 
-The caught exception object is not just a signal; it also contains context.
+```
+Throwable
+├── Error                    嚴重問題，通常不處理：OutOfMemoryError、StackOverflowError
+└── Exception
+    ├── RuntimeException     unchecked：通常是程式錯誤
+    │   NullPointerException、IndexOutOfBoundsException、IllegalArgumentException、
+    │   NumberFormatException、ArithmeticException（除以 0）
+    └── 其他                 checked：外部因素，必須處理或宣告
+        IOException、FileNotFoundException、SQLException
+```
 
-Useful methods:
-
-- `.getMessage()`
-- `.getClass()`
-
-The stack trace gives execution-path context for where the problem happened.
-
-## Exceptions vs Errors
-
-Java distinguishes between exceptions and more serious errors.
-
-| Kind | Typical meaning |
-| ---- | --------------- |
-| Exception | something the application may handle or recover from |
-| Error | serious problem the application usually does not handle |
-
-For example, `OutOfMemoryError` is not the kind of issue you normally recover from with ordinary control-flow logic.
-
-## Checked vs Unchecked Exceptions
-
-This distinction is central in Java.
-
-| Type | Meaning |
-| ---- | ------- |
-| Checked exception | must be handled or declared |
-| Unchecked exception | subtype of `RuntimeException`; handling is optional |
-
-Rough mental model:
-
-- checked exceptions often represent conditions outside your direct control
-- unchecked exceptions often reflect programming mistakes or bad assumptions
-
-Common runtime examples:
-
-- `ArithmeticException`
-- `IndexOutOfBoundsException`
-- `NegativeArraySizeException`
-- `NullPointerException`
-- `NumberFormatException`
-
-## `throws`
-
-Instead of handling an exception locally, a method can declare that it passes responsibility upward.
+| | Checked | Unchecked |
+| --- | --- | --- |
+| 父類別 | `Exception`（非 `RuntimeException`） | `RuntimeException` |
+| 編譯器要求 | 必須 `catch` 或在方法簽章用 `throws` 宣告 | 可不處理 |
+| 代表 | 不在程式控制內的狀況（檔案不存在、網路斷） | 錯誤的假設或 bug |
 
 ```java
-public static void loadThing() throws ClassNotFoundException {
-    Class<?> myClass = Class.forName("com.mysql.Driver");
+// throws：交給呼叫者處理
+public static List<String> readIds(Path p) throws IOException {
+    return Files.readAllLines(p);
+}
+
+// 丟出例外：驗證輸入
+if (reads < 0) throw new IllegalArgumentException("reads must be >= 0, got " + reads);
+
+// 重新拋出並保留原因：加上脈絡，讓上層決定怎麼處理
+try {
+    loadConfig(path);
+} catch (IOException e) {
+    throw new IllegalStateException("cannot load config " + path, e);   // e 成為 cause
 }
 ```
 
-This is often described as "passing the buck".
-
-Key point: `throws` is sometimes necessary, but local handling with `try/catch` is usually clearer when the method actually knows how to recover.
-
-## Rethrowing
-
-You can catch an exception and then throw it again.
-
-This is useful when:
-
-- you want to add context
-- you can only partially handle the issue
-- a higher layer should decide the final response
+> 需要關閉的資源（檔案、連線）用 try-with-resources，見 [檔案 I/O](java-file-io-and-streams.md)；比 `finally` 手動關閉安全。
 
 ## Logging
 
-Logging is the structured cousin of `System.out.println(...)`.
-
-Java includes built-in logging support.
+`System.out.println` 適合練習；正式程式用 logging，可分級、可設定輸出位置與格式。
 
 ```java
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-Logger logger = Logger.getLogger("MyClass");
-logger.log(Level.INFO, "This is informational");
-logger.log(Level.SEVERE, "This is critical");
+private static final Logger LOG = Logger.getLogger(MyClass.class.getName());
+LOG.info("Loaded " + n + " samples");
+LOG.log(Level.SEVERE, "Failed to parse " + file, e);    // 附上例外，會印出 stack trace
 ```
 
-Why logging matters:
+| 等級（`java.util.logging`） | 用途 |
+| --- | --- |
+| `SEVERE` / `WARNING` | 錯誤 / 可能有問題 |
+| `INFO` | 重要的正常事件 |
+| `CONFIG` / `FINE` | 設定 / 除錯細節 |
 
-- records what happened
-- helps debug control flow
-- gives production-friendly diagnostics
+> 實務專案多用 SLF4J + Logback（等級 `ERROR`、`WARN`、`INFO`、`DEBUG`、`TRACE`）。
 
-Typical levels include:
+## 常見錯誤
 
-- `SEVERE`
-- `WARNING`
-- `INFO`
-- `CONFIG`
-- `FINE`
-
-## Interview Fast Answer
-
-If someone asks for the practical difference between `List`, `Set`, and `Map`, a good short answer is:
-
-- `List`: ordered, allows duplicates
-- `Set`: unique elements, usually no index-based access
-- `Map`: key-value lookup table
-
-If the follow-up is about exceptions, the highest-signal answer is:
-
-- checked exceptions must be handled or declared
-- unchecked exceptions are usually programming mistakes and do not require explicit handling
-- `try/catch/finally` controls local recovery and cleanup
-
-## Common Traps
-
-- using raw collections without generics
-- reaching for `LinkedList` by default when `ArrayList` would be simpler
-- forgetting that collections usually work with objects, not primitives
-- confusing `.add()` and `.offer()` style behavior on queues
-- catching overly broad `Exception` too early and hiding useful detail
-- overusing `throws` when local handling would be clearer
-- relying on `System.out.println(...)` where logging is the better long-term tool
-
-## Related Notes
-
-- [Java Fundamentals](java-fundamentals.md)
-- [Java Objects and Packages](java-objects-and-packages.md)
+| 錯誤 | 說明 |
+| --- | --- |
+| 使用原始型別集合 | 失去型別檢查 |
+| 對 `List.of` / `Arrays.asList` 結果呼叫 `add` | `UnsupportedOperationException` |
+| for-each 迴圈中刪除元素 | `ConcurrentModificationException`；用 `removeIf` 或 `Iterator.remove()` |
+| `catch (Exception e) {}` 吞掉例外 | 錯誤消失無蹤；至少要記錄 |
+| 太早 catch 太廣的 `Exception` | 隱藏了有用的細節 |
+| 重新拋出時沒帶原例外 | 失去根本原因的 stack trace |

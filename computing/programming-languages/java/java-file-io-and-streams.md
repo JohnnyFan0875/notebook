@@ -1,353 +1,128 @@
-# Java File I/O and Streams
+[程式語言](../README.md) › [Java](README.md) › 檔案 I/O 與 Stream
 
-This note focuses on two adjacent but different ideas that often get taught together in Java:
+# Java 檔案 I/O 與 Stream API (File I/O and Streams)
 
-- file and directory operations through `java.io`
-- collection-processing streams through the Stream API
+兩個名稱相近但不同的主題：**檔案 I/O** 處理檔案系統與持久化（`java.nio.file`、`java.io`）；**Stream API** 是對記憶體中集合做篩選、轉換、彙總的管線，和 I/O 的「串流」無關。
 
-They both move data around, but they solve different problems. File I/O is about persistence and the filesystem. Stream processing is about transforming in-memory data collections.
+## 檔案 I/O
 
-## File Basics with `File`
+新程式用 `java.nio.file`（`Path` + `Files`）；舊的 `java.io.File` 仍常見於舊程式碼。
 
-The older `java.io.File` API represents a path-like handle to a file or directory.
+| 任務 | `java.nio.file`（建議） | `java.io`（舊） |
+| --- | --- | --- |
+| 表示路徑 | `Path p = Path.of("data", "a.txt")` | `new File("data/a.txt")` |
+| 是否存在 | `Files.exists(p)` | `file.exists()` |
+| 建立檔案 / 目錄 | `Files.createFile(p)`、`Files.createDirectories(dir)` | `createNewFile()`、`mkdir()` / `mkdirs()` |
+| 刪除 | `Files.delete(p)`（失敗丟例外）、`Files.deleteIfExists(p)` | `delete()`（只回傳 `false`，不說原因） |
+| 讀整個小檔 | `Files.readString(p)`、`Files.readAllLines(p)` | — |
+| 寫整個小檔 | `Files.writeString(p, text)` | `FileWriter` |
+| 列出目錄 | `Files.list(dir)`、遞迴 `Files.walk(dir)` | `listFiles()`（目錄不存在回傳 `null`） |
+| 複製 / 移動 | `Files.copy`、`Files.move` | — |
+| 絕對路徑 | `p.toAbsolutePath()` | `getAbsolutePath()` |
 
-```java
-import java.io.File;
+> `new File(...)` / `Path.of(...)` 只是指向一個位置，不會建立檔案。相對路徑以**目前工作目錄**為基準，從 IDE 與命令列執行時可能不同。
 
-File dataTextFile = new File("data.txt");
-```
-
-By itself, creating a `File` object does not create anything on disk. It just points to a location.
-
-## Creating Files
-
-```java
-import java.io.File;
-import java.io.IOException;
-
-File dataTextFile = new File("data.txt");
-boolean created = dataTextFile.createNewFile();
-```
-
-`createNewFile()` returns:
-
-- `true` if the file was actually created
-- `false` if it already existed
-
-Because creation can fail, this usually belongs inside `try/catch`.
-
-## Deleting Files
+### 讀寫文字檔
 
 ```java
-File exampleFile = new File("example.txt");
-boolean deleted = exampleFile.delete();
-```
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 
-The return value tells you whether deletion succeeded.
+Path in = Path.of("samples.tsv");
 
-Key point: file APIs frequently communicate success through both return values and exceptions. You should inspect both design patterns instead of assuming one universal style.
-
-## Checking Existence
-
-```java
-if (dataTextFile.exists()) {
-    System.out.println("The file already exists.");
-}
-```
-
-This is useful for guard checks before create, overwrite, or delete operations.
-
-## Wrap File Operations in `try/catch`
-
-```java
-try {
-    File dataTextFile = new File("data.txt");
-    dataTextFile.createNewFile();
+// 1. 逐行讀大檔：try-with-resources 自動關閉，即使發生例外
+try (BufferedReader br = Files.newBufferedReader(in, StandardCharsets.UTF_8)) {
+    String line;
+    while ((line = br.readLine()) != null) {      // null = 檔案結尾
+        String[] cols = line.split("\t");
+    }
 } catch (IOException e) {
-    System.out.println(e.getMessage());
+    System.err.println("Cannot read " + in + ": " + e.getMessage());
+}
+
+// 2. 以 Stream 逐行處理（惰性讀取，也要關閉）
+try (Stream<String> lines = Files.lines(in)) {
+    long n = lines.filter(l -> !l.startsWith("#")).count();
+}
+
+// 3. 寫檔：預設覆寫；附加用 StandardOpenOption.APPEND
+Path out = Path.of("out.txt");
+try (BufferedWriter bw = Files.newBufferedWriter(out)) {
+    bw.write("Hello");
+    bw.newLine();
+}
+Files.writeString(out, "More\n", StandardOpenOption.APPEND);
+
+// 4. 讀 .gz（如 FASTQ.gz、VCF.gz）
+try (BufferedReader br = new BufferedReader(new InputStreamReader(
+        new GZIPInputStream(Files.newInputStream(Path.of("reads.fastq.gz"))), StandardCharsets.UTF_8))) {
+    String header = br.readLine();
 }
 ```
 
-Typical reasons for failure include:
+| 舊寫法 | 問題 |
+| --- | --- |
+| `FileReader.read()` 一次一個字元 | 慢；回傳 `int`，`-1` 表示結尾，要轉型成 `char` |
+| 手動 `close()` | 中途丟例外就不會關閉，造成檔案控制代碼洩漏 |
+| `new FileWriter("a.txt")` | 預設覆寫；附加要 `new FileWriter("a.txt", true)` |
+| 未指定編碼 | Java 18 起預設 UTF-8，之前依作業系統（Windows 常是 Big5 / CP950） |
 
-- invalid paths
-- missing permissions
-- other filesystem-level issues
-
-## Reading Files with `FileReader`
-
-`FileReader` is a character-oriented reader for text files.
-
-```java
-import java.io.FileReader;
-import java.io.IOException;
-
-FileReader fr = new FileReader("example.txt");
-int data = fr.read();
-while (data != -1) {
-    System.out.print((char) data);
-    data = fr.read();
-}
-fr.close();
-```
-
-A few important details:
-
-- `read()` returns an `int`
-- `-1` means end-of-file
-- character output often requires casting from `int` to `char`
-
-## Reading Efficiently with `BufferedReader`
-
-For larger text workloads, buffered reading is usually better.
+## 走訪集合：for-each 與 `Iterator`
 
 ```java
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+for (String fruit : fruits) { ... }             // 只讀取時最簡單
 
-BufferedReader br = new BufferedReader(new FileReader("example.txt"));
-String line;
-
-while ((line = br.readLine()) != null) {
-    System.out.println(line);
-}
-
-br.close();
-```
-
-Why use it:
-
-- reads line by line
-- reduces low-level read calls
-- more practical than character-by-character reading for ordinary text files
-
-## Writing Files with `FileWriter`
-
-```java
-import java.io.FileWriter;
-import java.io.IOException;
-
-FileWriter fw = new FileWriter("example.txt");
-fw.write("Hello, Java");
-fw.close();
-```
-
-Warning: plain `FileWriter("example.txt")` overwrites existing content by default.
-
-## Appending Instead of Overwriting
-
-```java
-FileWriter fw = new FileWriter("example.txt", true);
-fw.write("More text");
-fw.close();
-```
-
-The second `true` argument enables append mode.
-
-## Writing Efficiently with `BufferedWriter`
-
-```java
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-
-BufferedWriter bw = new BufferedWriter(new FileWriter("example.txt"));
-bw.write("Hello");
-bw.newLine();
-bw.write("World");
-bw.close();
-```
-
-This is usually the better choice when writing more than tiny one-off text snippets.
-
-## Directories
-
-`File` can also represent directories.
-
-```java
-File newDirectory = new File("myDirectory");
-boolean created = newDirectory.mkdir();
-```
-
-Key point: whether a `File` object ends up representing a file or a directory depends on what operation you perform with it.
-
-## Listing Files in a Directory
-
-```java
-File dir = new File("myDirectory");
-File[] files = dir.listFiles();
-```
-
-`listFiles()` returns:
-
-- an array of `File` objects when the directory exists
-- `null` when it does not
-
-So it should be checked before use.
-
-## Relative vs Absolute Paths
-
-```java
-File file = new File("myDirectory/sample.txt");
-
-String relative = file.getPath();
-String absolute = file.getAbsolutePath();
-```
-
-- relative path: interpreted from the current working directory
-- absolute path: full filesystem location
-
-Understanding this difference prevents many "it works on my machine" path bugs.
-
-## For-Each vs Iterator
-
-Moving to in-memory collections:
-
-```java
-for (String x : fruits) {
-    System.out.println(x);
-}
-```
-
-The for-each loop is the simplest traversal style when you only need to read elements.
-
-## `Iterator`
-
-Use `Iterator` when you need explicit traversal control or safe removal during iteration.
-
-```java
-import java.util.Iterator;
-
-Iterator<String> it = fruits.iterator();
+Iterator<String> it = fruits.iterator();         // 走訪中要刪除元素
 while (it.hasNext()) {
-    String fruit = it.next();
-    if (fruit.startsWith("A")) {
-        it.remove();
-    }
+    if (it.next().startsWith("A")) it.remove();  // 安全；for-each 中呼叫 fruits.remove 會丟 ConcurrentModificationException
+}
+fruits.removeIf(f -> f.startsWith("A"));         // Java 8+ 更簡潔的寫法
+
+ListIterator<String> li = names.listIterator();  // List 專用：可往回走、修改、插入
+while (li.hasNext()) {
+    if ("Bob".equals(li.next())) li.set("Bobby");
 }
 ```
-
-Key point: removing through the iterator is the safe pattern here; it avoids `ConcurrentModificationException`.
-
-## `ListIterator`
-
-`ListIterator` extends the iterator idea for lists.
-
-```java
-import java.util.ListIterator;
-
-ListIterator<String> it = names.listIterator();
-while (it.hasNext()) {
-    String name = it.next();
-    if ("Bob".equals(name)) {
-        it.set("Bobby");
-    }
-}
-```
-
-Useful capabilities:
-
-- move forward with `.next()`
-- move backward with `.previous()`
-- modify current element with `.set()`
-- insert during iteration with `.add()`
 
 ## Stream API
 
-Java streams process collections in a more functional style.
+Java 8+ 以函數式風格處理集合：`來源 → 中間操作（惰性）→ 終端操作（觸發計算）`。
 
 ```java
-names.stream().forEach(name -> System.out.println(name));
+import java.util.*;
+import java.util.stream.*;
+
+List<String> names = List.of("Ana", "Bob", "Alice", "Ben");
+
+names.stream().filter(n -> n.startsWith("A")).forEach(System.out::println);   // Ana, Alice
+long b = names.stream().filter(n -> n.startsWith("B")).count();              // 2（long）
+List<String> upper = names.stream().map(String::toUpperCase).toList();       // Java 16+
+int total = names.stream().mapToInt(String::length).sum();                   // 15
+int total2 = names.stream().map(String::length).reduce(0, Integer::sum);     // 同上，用 reduce
+
+Map<Character, List<String>> byInitial = names.stream()
+    .collect(Collectors.groupingBy(n -> n.charAt(0)));                       // {A=[Ana, Alice], B=[Bob, Ben]}
+Map<Character, Long> counts = names.stream()
+    .collect(Collectors.groupingBy(n -> n.charAt(0), Collectors.counting()));
+String joined = names.stream().sorted().collect(Collectors.joining(", "));   // "Alice, Ana, Ben, Bob"
 ```
 
-A stream is not the same thing as a file stream here. In this context, it is a pipeline abstraction over in-memory data.
+| 操作 | 類型 | 作用 | 對應 pandas / SQL |
+| --- | --- | --- | --- |
+| `filter` | 中間 | 保留符合條件的元素 | `df[cond]` / `WHERE` |
+| `map` | 中間 | 轉換每個元素 | `apply` / `SELECT expr` |
+| `sorted`、`distinct`、`limit` | 中間 | 排序、去重、取前 n | `sort_values`、`drop_duplicates`、`head` |
+| `collect(groupingBy(...))` | 終端 | 分組 | `groupby` / `GROUP BY` |
+| `count`、`sum`、`reduce` | 終端 | 彙總成單一值 | `agg` |
+| `toList`、`collect(toSet())` | 終端 | 收集成集合 | — |
 
-## Creating a Stream
+| 適合 Stream | 用迴圈比較清楚 |
+| --- | --- |
+| 篩選 → 轉換 → 彙總的管線 | 需要修改原集合、提早跳出 |
+| 產生新的結果集合 | 迴圈很短、邏輯直接 |
+| 分組統計 | 需要多個累加狀態 |
 
-```java
-Stream<String> stream = names.stream();
-```
-
-This is the entry point from a collection into stream-style processing.
-
-## Filtering
-
-```java
-names.stream()
-    .filter(name -> name.startsWith("A"))
-    .forEach(System.out::println);
-```
-
-Use `.filter()` when you want to keep only matching elements.
-
-## Counting
-
-```java
-long count = names.stream()
-    .filter(name -> name.startsWith("B"))
-    .count();
-```
-
-`.count()` returns `long`.
-
-## Transforming with `map()`
-
-```java
-Set<String> upper = names.stream()
-    .map(name -> name.toUpperCase())
-    .collect(Collectors.toSet());
-```
-
-`map()` transforms each element into another form.
-
-## Aggregating with `reduce()`
-
-```java
-int totalLength = names.stream()
-    .map(name -> name.length())
-    .reduce(0, (sum, length) -> sum + length);
-```
-
-Use `reduce()` when the goal is one accumulated result.
-
-## When Streams Help
-
-Streams are especially useful when you want:
-
-- readable filter / map / aggregate pipelines
-- transformation into a new result collection
-- less manual loop boilerplate
-
-They are less attractive when:
-
-- you are mutating the original collection heavily
-- the loop is very small and direct imperative code is clearer
-
-## Interview Fast Answer
-
-If someone asks for the practical difference between `Iterator` and streams, a good short answer is:
-
-- `Iterator` is about explicit step-by-step traversal and safe in-loop mutation
-- streams are about declarative transformation pipelines over collections
-
-If the follow-up is about file I/O, the highest-signal distinction is:
-
-- `File` models file/directory locations
-- `FileReader` / `BufferedReader` read text
-- `FileWriter` / `BufferedWriter` write text
-- buffering improves efficiency for larger workloads
-
-## Common Traps
-
-- assuming `new File(...)` creates the file immediately
-- forgetting that `FileWriter` overwrites by default
-- forgetting to close readers and writers
-- removing collection elements inside for-each instead of through `Iterator`
-- confusing Java Stream API with low-level I/O streams
-- overusing streams where a small loop would be easier to read
-
-## Related Notes
-
-- [Java Fundamentals](java-fundamentals.md)
-- [Java Collections and Exception Handling](java-collections-and-exception-handling.md)
+> Stream 只能用一次；終端操作後再用會丟 `IllegalStateException`。平行 stream 見 [效能與並行](java-performance-and-concurrency.md#平行-stream)。
