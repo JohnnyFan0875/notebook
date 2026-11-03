@@ -8,6 +8,6 @@ Notes for reproducible software environments, containers, and local virtualizati
 - [Containerization and Virtualization](containerization-and-virtualization.md)
 - [Virtual Machine](virtual-machine.md)
 - [Docker](docker/README.md)
-- [Kubernetes](kubernetes/README.md)
+- [Kubernetes](kubernetes.md)
 
 Bioinformatics tools usually installed via Bioconda or BioContainers: [Biology: bioinformatics tools](../../biology/bioinformatics-tools/README.md).

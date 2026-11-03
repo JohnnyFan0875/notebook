@@ -188,4 +188,4 @@ Orders With Profit = ADDCOLUMNS(Fact_Orders, "Profit", Fact_Orders[Revenue] - Fa
   → 4. FILTER / ALL / SUMX 改變計算範圍與方式 → 5. SWITCH、TOTALYTD、ADDCOLUMNS / SUMMARIZE
 ```
 
-DAX 不應脫離模型理解：關係影響計算範圍、篩選方向影響結果、模型設計決定 measure 能否重用。Excel 中的同一套概念見 [Power Pivot](../../../productivity/microsoft-office/power-pivot-in-excel.md)。
+DAX 不應脫離模型理解：關係影響計算範圍、篩選方向影響結果、模型設計決定 measure 能否重用。Excel 中的同一套概念見 [Power Pivot](../../../productivity/spreadsheets/power-pivot-in-excel.md)。

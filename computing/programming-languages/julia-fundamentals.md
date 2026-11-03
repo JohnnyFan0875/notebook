@@ -381,5 +381,5 @@ This is where broadcasting and column-oriented data analysis naturally meet.
 
 ## Related Notes
 
-- [Java Fundamentals](java-fundamentals.md)
-- [Java Control Flow and Methods](java-control-flow-and-methods.md)
+- [Java Fundamentals](java/java-fundamentals.md)
+- [Java Control Flow and Methods](java/java-control-flow-and-methods.md)

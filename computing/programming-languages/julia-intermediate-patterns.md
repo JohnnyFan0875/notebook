@@ -420,4 +420,4 @@ The main design lesson is simple:
 ## Related Notes
 
 - [Julia Fundamentals](julia-fundamentals.md)
-- [Java Performance and Concurrency](java-performance-and-concurrency.md)
+- [Java Performance and Concurrency](java/java-performance-and-concurrency.md)

@@ -259,5 +259,5 @@ If the follow-up is about beginner essentials, the highest-signal topics are:
 
 ## Related Notes
 
-- [Computer Science Foundations](../computer-science-foundations/README.md)
-- [Programming Paradigms](../computer-science-foundations/programming-paradigms.md)
+- [Computer Science Foundations](../../computer-science-foundations/README.md)
+- [Programming Paradigms](../../computer-science-foundations/programming-paradigms.md)

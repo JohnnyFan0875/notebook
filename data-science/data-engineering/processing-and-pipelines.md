@@ -47,7 +47,7 @@ event-triggered 不等於 streaming：很多系統只是事件觸發的 batch。
 | 比喻 | 發車時間表 | 整個運輸系統的調度 |
 | 工具 | cron、雲端排程器 | Airflow、Dagster、Prefect；生資常用 Nextflow、Snakemake |
 
-編排工具的核心概念是 task（執行單位）、dependency（先後順序）與 DAG（有向無環圖）。價值在於協調多個 job、自動重試、記錄每次執行，以及在失敗時知道從哪一步重跑。Airflow 見 [Airflow](../../computing/workflow-engines/airflow/README.md)，Nextflow 見 [Nextflow](../../computing/workflow-engines/nextflow/README.md)。
+編排工具的核心概念是 task（執行單位）、dependency（先後順序）與 DAG（有向無環圖）。價值在於協調多個 job、自動重試、記錄每次執行，以及在失敗時知道從哪一步重跑。Airflow 見 [Airflow](../../computing/workflow-engines/airflow.md)，Nextflow 見 [Nextflow](../../computing/workflow-engines/nextflow/README.md)。
 
 | 工具類型 | 適合 |
 | --- | --- |

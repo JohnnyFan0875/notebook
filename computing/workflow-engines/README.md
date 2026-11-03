@@ -4,7 +4,7 @@ Workflow engine notes for reproducible pipeline execution and orchestration.
 
 ## Topics
 
-- [Apache Airflow](airflow/README.md)
+- [Apache Airflow](airflow.md)
 - [Nextflow](nextflow/README.md)
 
 Bioinformatics pipelines these engines orchestrate: [Biology: analysis workflows](../../biology/genomics/workflows/README.md).

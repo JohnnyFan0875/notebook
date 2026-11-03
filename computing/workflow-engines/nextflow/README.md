@@ -65,8 +65,8 @@ nextflow run main.nf
 
 ## What to Learn Next
 
-- `running-pipelines/command-line-interface.md`
-- `running-pipelines/configuration.md`
+- [Running pipelines](running-pipelines.md)
+- [Configuration](running-pipelines/configuration.md)
 - DSL2 concepts such as channels, processes, modules, and workflows
 
 ## Related
