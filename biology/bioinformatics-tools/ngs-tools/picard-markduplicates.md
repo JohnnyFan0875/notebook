@@ -44,7 +44,7 @@ picard MarkDuplicates \
 | 有 UMI 的 library | 依 UMI 分組再判斷（fgbio、`umi_tools dedup`、Picard `UmiAwareMarkDuplicatesWithMateCigar`） |
 | RNA-seq 差異表現 | 高表現基因的「重複」多半是真的；通常不去重複，只拿重複率當 QC 參考 |
 | WGS / WES 變異呼叫 | 標準流程，必做 |
-| cfDNA 低頻變異 | 用 UMI 建一致序列 (consensus)，不只是標記 |
+| cfDNA 低頻變異 | 用 UMI 建一致序列 (consensus)，不只是標記；見 [UMI 與一致序列](../../genomics/ngs-qc/umi-consensus.md) |
 
 ## 替代工具
 

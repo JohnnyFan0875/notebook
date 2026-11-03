@@ -80,7 +80,30 @@ gatk VariantFiltration -V snps.vcf.gz -O snps.filtered.vcf.gz \
 | 需要正常樣本 | 排除 germline 變異；只有腫瘤時要靠 gnomAD 與 panel of normals，偽陽性較多 |
 | FFPE 假象 | C>T / G>A 去胺基假象；方向性模型與 UDG 處理 |
 | 克隆性造血 | 血液正常樣本也可能帶 *DNMT3A*、*TET2* 等體細胞突變 |
-| 低頻 / cfDNA | UMI 一致序列，見 [液態切片](../sequencing-techniques/liquid-biopsy.md) |
+| 低頻 / cfDNA | UMI 一致序列，見 [UMI 與一致序列](../ngs-qc/umi-consensus.md)、[液態切片](../sequencing-techniques/liquid-biopsy.md) |
+
+### Panel of Normals (PoN)
+
+一組**正常樣本**用與腫瘤相同的平台、panel、建庫與流程跑過，記錄在多個正常樣本中反覆出現的位點。這些位點多半是技術假象（重複區比對錯誤、平台 / 探針特有的錯誤、捕獲偏差），或常見但 gnomAD 沒涵蓋的 germline 變異；腫瘤中出現在 PoN 的呼叫會被過濾。
+
+```bash
+# 1. 每個正常樣本以 tumor-only 模式呼叫
+gatk Mutect2 -R ref.fa -I normal1.bam --max-mnp-distance 0 -O normal1.vcf.gz
+# 2. 合併成 GenomicsDB，再建 PoN
+gatk GenomicsDBImport -R ref.fa -L targets.interval_list --genomicsdb-workspace-path pon_db \
+  -V normal1.vcf.gz -V normal2.vcf.gz   # …其餘正常樣本
+gatk CreateSomaticPanelOfNormals -R ref.fa --germline-resource af-only-gnomad.vcf.gz \
+  -V gendb://pon_db -O pon.vcf.gz
+# 3. 腫瘤呼叫時帶入：Mutect2 ... --panel-of-normals pon.vcf.gz
+```
+
+| 原則 | 說明 |
+| --- | --- |
+| 技術條件要一致 | 同平台、同 panel / 探針版本、同建庫方式；換 panel 就要重建 |
+| 樣本數 | GATK 建議至少約 40 個；越多越能抓到低頻出現的假象 |
+| 正常樣本要乾淨 | 混入腫瘤污染的「正常」樣本會把真突變（如熱點）放進 PoN 而被濾掉 |
+| 不能取代配對正常樣本 | PoN 濾掉的是反覆出現的假象；個人獨有的 germline 變異仍需配對正常或 gnomAD |
+| CNV 另有 PoN | 用來校正覆蓋度的系統性偏差（GATK `CreateReadCountPanelOfNormals`、CNVkit reference），與 SNV 的 PoN 不同 |
 
 ## 正規化與註解
 

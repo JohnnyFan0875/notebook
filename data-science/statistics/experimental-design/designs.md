@@ -109,7 +109,7 @@ BIBD 可行性檢查：t = 處理數、k = 每區集處理數、r = 每處理重
 
 ## 三、基因變異與臨床終點分析
 
-評估遺傳變異（如 germline SNP）與不同臨床終點的關係時，常見的分析策略：
+評估遺傳變異（如 germline SNP）與不同臨床終點的關係時，常見的分析策略（OS、PFS、DFS、ORR、pCR 等終點的定義見 [腫瘤臨床終點](../../../biology/genomics/cancer-genomics/clinical-endpoints.md)）：
 
 | 終點 | 所需資料 | 初步比較 | 調整後分析 | 視覺化 / 預測力 |
 | --- | --- | --- | --- | --- |

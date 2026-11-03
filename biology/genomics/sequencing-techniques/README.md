@@ -6,7 +6,7 @@
 
 | 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
-| [定序平台](sequencing-platforms.md) | Illumina、PacBio、ONT 等的原理與錯誤型態；2-channel 化學 | 該用短讀還是長讀？會有哪些假象？ |
+| [定序平台](sequencing-platforms.md) | Illumina、MGI、Element、PacBio、ONT 等的原理與錯誤型態；2-channel、RCA、cPAS、avidity 化學 | 該用短讀還是長讀？會有哪些假象？ |
 | [標靶定序](targeted-panels.md) | WGS / WES / panel、amplicon vs hybrid capture、panel 內容資源 | 要定多大範圍？用哪種捕捉方式？ |
 | [ChIP-seq](chip-seq.md) | 蛋白質–DNA 結合、peak calling、差異結合 | 轉錄因子 / 組蛋白修飾在哪裡？ |
 | [液態切片](liquid-biopsy.md) | cfDNA、ctDNA、CTC、MRD | 能不能從血液偵測腫瘤？ |

@@ -9,7 +9,8 @@
 | 平台 | 原理 | read 長度 | 主要錯誤型態 | 強項 |
 | --- | --- | --- | --- | --- |
 | Illumina（NovaSeq、NextSeq、MiSeq） | 可逆終止子邊合成邊定序 (SBS) | 50–300 bp（成對） | 置換為主，約 0.1–0.5%；尾端品質下降 | 產量大、準確、生態系最完整 |
-| MGI DNBSEQ、Element AVITI | DNA nanoball / avidity 定序（短讀 SBS 類） | 100–300 bp | 置換為主 | 成本、品質與 Illumina 相近 |
+| MGI DNBSEQ | DNA nanoball（RCA）+ cPAS（短讀 SBS 類） | 100–300 bp | 置換為主 | 每 Gb 成本低；duplicate、index hopping 較少 |
+| Element AVITI | 表面原位 RCA + avidity 定序 | 100–300 bp | 置換為主 | 宣稱 Q40 以上、試劑用量低 |
 | Ion Torrent | 半導體偵測 pH 變化 | 200–600 bp | **homopolymer 長度錯誤**（indel） | 快、amplicon panel |
 | Ultima（UG 100） | 流動式 (flow-based) 定序 | ~300 bp 單端 | homopolymer indel | 每 Gb 成本低 |
 | PacBio HiFi（Revio、Sequel II） | 單分子即時定序；環狀共識 (CCS) | 15–25 kb | 單次讀取錯誤高，CCS 後 > Q30 | 長且準：SV、phasing、組裝、全長轉錄本 |
@@ -38,6 +39,53 @@
 | **都沒有（暗）** | **G** |
 
 不同 2-channel 系統的顏色指派可能不同，但「暗 = G」是共同特性。因此當片段比 read 短、或 cluster 訊號衰減時，儀器讀到的是「沒有訊號」，被判成一串 **G**（polyG 尾巴）；這不是真實序列，要在比對前修剪（[fastp](../../bioinformatics-tools/ngs-tools/fastp.md) 對 NextSeq / NovaSeq 資料自動開啟）。參考：[Illumina 2-channel SBS](https://emea.illumina.com/science/technology/next-generation-sequencing/sequencing-technology/2-channel-sbs.html)。
+
+## 短讀平台的擴增與定序化學：Illumina、MGI、Element
+
+三家都是「邊合成邊讀取」的短讀定序，差在**怎麼放大訊號**與**怎麼辨識鹼基**。MGI 與 Element 都用滾環複製 (rolling circle amplification, RCA)，但真正拉開差異的是定序化學（cPAS vs avidity），不是 RCA 本身。
+
+| | Illumina | MGI DNBSEQ | Element AVITI |
+| --- | --- | --- | --- |
+| 訊號放大 | 橋式擴增 (bridge PCR / ExAmp) 在 flow cell 上長出 cluster | 文庫環化後在**溶液中** RCA，製成 DNA nanoball (DNB) | 文庫環化後在 **flow cell 表面原位** RCA，長出 polony |
+| 載入 | 原位生成（新機型為 patterned flow cell） | DNB 吸附到規則排列的 patterned array | 表面隨機分布 |
+| 定序化學 | SBS：螢光可逆終止子 | cPAS（另有 CoolMPS） | Avidity sequencing |
+| 辨識與延伸 | 同一步 | 同一步（CoolMPS 例外，見下） | **分成兩步** |
+| 接到鏈上的核苷酸 | 帶螢光，成像後切除 | 帶螢光，成像後切除 | **不帶螢光**的可逆終止子 |
+| 設計重點 | 產量、生態系 | 高密度、低成本 | 高準確度、低試劑消耗 |
+
+> RCA 的每個拷貝都從**原始環狀模板**複製（線性放大），錯誤不會像 PCR 一樣一輪輪累積；也沒有 PCR 的 duplicate 與 index hopping 問題。
+
+### cPAS（combinatorial probe-anchor synthesis）
+
+由 Complete Genomics（後被 BGI 收購）發展，源自早期的 cPAL（probe-anchor **ligation**），後來把連接酶改成聚合酶，名稱也從 ligation 變成 synthesis。
+
+```
+anchor primer 與 DNB 接頭雜交
+  → 聚合酶接上一個帶螢光、可逆終止的核苷酸
+  → 成像判讀鹼基
+  → 切除螢光與終止子 → 下一循環
+```
+
+邏輯與 Illumina SBS 相同，差在跑在 DNB + patterned array 上。**CoolMPS** 是 MGI 的另一種化學：先用未標記的可逆終止子延伸，再用帶螢光的**抗體**辨識剛接上的鹼基；「辨識與延伸分開」的概念接近 avidity，但辨識靠抗體而非多價結合。
+
+### Avidity sequencing
+
+把「讀鹼基」和「延伸鏈」拆開，利用**多價結合 (avidity)** 提高辨識特異性。
+
+| 步驟 | 做什麼 |
+| --- | --- |
+| 1. 辨識 (binding) | *avidite*：一個核心帶多條「手臂」，每條末端是同一種帶螢光的核苷酸。多條手臂同時結合同一個 polony 上的多個聚合酶–模板複合物，結合力強，所以只需極低濃度；配對正確者停留較久，錯配者很快脫落。**此時核苷酸沒有接上鏈** |
+| 2. 成像 | 判讀螢光顏色 |
+| 3. 移除 | 洗掉 avidite |
+| 4. 延伸 (incorporation) | 加入**不帶螢光**的可逆終止子核苷酸，延伸一個鹼基，再解除終止 |
+
+| 特色 | 原因 |
+| --- | --- |
+| 準確度高（宣稱 Q40 以上） | 辨識靠多價結合且與延伸分離 |
+| 長讀長下品質較穩 | 接上鏈的是無螢光核苷酸，不留染料殘基 (dye scar) |
+| 試劑消耗低 | avidite 濃度極低 |
+
+> 廠商的錯誤率數字依機型與化學版本更新快；做技術或成本比較時，對照官方白皮書與原始文獻（Element 的 avidity 論文：Arslan et al., *Nature Biotechnology* 2024）。比較兩平台實際錯誤率的方法見 [SAM / BAM：MD 與 NM](../file-formats/bam.md#md-與-nm錯配與編輯距離)。
 
 ## 依應用選擇
 

@@ -21,6 +21,21 @@ Broad Institute 開發的基因體瀏覽器，把比對 reads、變異、註解�
 
 > 參考基因體版本必須和檔案一致（hg19 vs hg38），否則 reads 會對到錯的位置或完全不顯示。
 
+## 變異怎麼顯示
+
+IGV **不需要** BAM 裡的 MD / NM：它用 CIGAR、SEQ 與載入的參考基因體逐格比對，標出差異（見 [BAM：MD 與 NM](../../genomics/file-formats/bam.md#md-與-nm錯配與編輯距離)）。
+
+| 變異 | 顯示 |
+| --- | --- |
+| 錯配 (SNV) | 該鹼基上色：A 綠、C 藍、G 橘、T 紅；低品質鹼基顏色較淡 |
+| 插入 | 紫色 `I`，點開看插入序列 |
+| 缺失 | 黑色橫線 |
+| soft clip | 預設不顯示；Preferences → Alignments 開啟 *Show soft-clipped bases* |
+| delins | 同位置同時出現上色鹼基與黑線 / 紫色 `I`，需自行判讀 |
+| Coverage track | 某位置不同於參考的 reads 比例超過門檻（預設 allele fraction 0.2，可調）時，長條依鹼基比例分色；點擊看各鹼基計數 |
+
+點擊單條 read 可看 CIGAR、MAPQ，以及 BAM 中有的 MD / NM 等 tag。IGV 只負責視覺化，正式的變異清單要用 caller（GATK、bcftools、DeepVariant）產生 VCF，再和 BAM 一起載入對照。
+
 ## 複核變異時看什麼
 
 | 檢查 | 真變異 | 可疑 |

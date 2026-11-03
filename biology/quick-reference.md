@@ -51,7 +51,7 @@
 | --- | --- | --- |
 | 病人帶有哪些致病變異（罕病、遺傳性癌症） | [WES / panel](genomics/sequencing-techniques/targeted-panels.md) | [變異呼叫（germline）](genomics/workflows/variant-calling.md) → [ACMG/AMP](genetics/variant-interpretation/acmg-amp.md) |
 | 腫瘤帶有哪些體細胞突變 | 腫瘤 / 正常配對定序 | [變異呼叫（Mutect2）](genomics/workflows/variant-calling.md) → [突變特徵](genomics/cancer-genomics/mutational-signatures.md) |
-| 能不能從血液追蹤腫瘤 / MRD | [液態切片（cfDNA / ctDNA）](genomics/sequencing-techniques/liquid-biopsy.md) | 低 VAF 偵測 → [VAF](genetics/foundations/variant-allele-frequency.md)、[UMI 與重複率](genomics/ngs-qc/duplication-rate.md) |
+| 能不能從血液追蹤腫瘤 / MRD | [液態切片（cfDNA / ctDNA）](genomics/sequencing-techniques/liquid-biopsy.md) | 低 VAF 偵測 → [VAF](genetics/foundations/variant-allele-frequency.md)、[UMI 與一致序列](genomics/ngs-qc/umi-consensus.md)；療效評估 → [腫瘤臨床終點](genomics/cancer-genomics/clinical-endpoints.md) |
 | 結構變異、重複區、單倍型 | [長讀定序（PacBio / ONT）](genomics/sequencing-techniques/sequencing-platforms.md) | [其他 caller 與變異類型](genomics/workflows/variant-calling.md#其他-caller-與變異類型) |
 | 哪些基因在不同條件下表現改變 | bulk RNA-seq | [RNA-seq 分析](genomics/workflows/rna-seq/README.md)；microarray / 複雜設計 → [limma](genomics/workflows/limma-differential-expression.md) |
 | 樣本裡有哪些細胞類型 / 狀態 | [單細胞 RNA-seq](genomics/sequencing-techniques/single-cell-rna-seq/README.md) | [scanpy 流程](../data-science/python-foundations/anndata-and-scanpy.md)、[軌跡分析](genomics/sequencing-techniques/single-cell-rna-seq/trajectory.md) |
@@ -86,6 +86,11 @@
 | de novo vs novel | de novo 是父母都沒有、在子代新發生；novel 只是資料庫裡沒看過 | [新生變異](genetics/foundations/de-novo-variant.md) |
 | GRCh37 vs GRCh38、`chr1` vs `1` | 座標不同；同版本也有 UCSC / Ensembl 兩種染色體命名，混用會整批對不上 | [參考基因組](genomics/reference-data/reference-genomes.md) |
 | 鹼基品質 vs 比對品質 | Phred 分數評估**單一鹼基**定錯的機率；MAPQ 評估 **read 放錯位置**的機率 | [鹼基品質分數](genomics/ngs-qc/base-quality-scores.md)、[MAPQ](genomics/ngs-qc/mapping-quality.md) |
+| Raw depth vs unique depth | raw depth 數 **reads**；unique depth 數**原始分子**（UMI 家族），低 VAF 偵測極限由後者決定 | [UMI 與一致序列](genomics/ngs-qc/umi-consensus.md) |
+| CIGAR vs MD | CIGAR 記錄比對結構（indel、clip），SNV 藏在 `M` 裡；MD 記錄錯配位置與**參考**鹼基 | [BAM：MD 與 NM](genomics/file-formats/bam.md#md-與-nm錯配與編輯距離) |
+| LoB vs LoD vs LoQ | LoB：空白樣本的上限；LoD：能和空白可靠區分的最低量；LoQ：能準確定量的最低量 | [檢測確效](genomics/assay-validation/README.md#lob--lod--loq偵測與定量極限) |
+| 相關 vs 一致 | 兩方法 r 接近 1 仍可能有系統性偏差；方法比較用 Bland-Altman | [方法比較](genomics/assay-validation/README.md#方法比較bland-altman-圖) |
+| PFS vs DFS vs OS | PFS 用於有可量測疾病時、DFS 用於根治性治療後；OS 計任何原因死亡 | [腫瘤臨床終點](genomics/cancer-genomics/clinical-endpoints.md) |
 | 深度 vs 均勻度 | 平均深度高不代表每個目標區都夠；要看達到某深度的比例 | [深度與覆蓋度](genomics/ngs-qc/sequencing-depth-coverage.md)、[均勻度](genomics/ngs-qc/uniformity.md) |
 | TPM vs counts | TPM 適合樣本內比較與作圖；DESeq2 / edgeR 要吃**原始 counts** | [RNA-seq 05：標準化方法比較](genomics/workflows/rna-seq/05-count-matrix-filtering-normalization.md#標準化方法比較) |
 | 生物重複 vs 技術重複 | 推論要靠生物重複；技術重複只量測量誤差，當成獨立樣本會變成假重複 | [實驗設計](../data-science/statistics/experimental-design/README.md) |

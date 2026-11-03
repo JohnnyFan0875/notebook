@@ -9,6 +9,7 @@
 | [TCGA 與 GDC](tcga-gdc.md) | 大型腫瘤多體學資料、下載與分析工具 | 公開的腫瘤資料去哪裡找？ |
 | [突變特徵](mutational-signatures.md) | SBS / DBS / ID 特徵、COSMIC 目錄、萃取與擬合 | 腫瘤的突變是哪些過程造成的？ |
 | [NCCN 指引](nccn.md) | 依癌別的治療指引與證據分級 | 這個生物標記在臨床上怎麼用？ |
+| [腫瘤臨床終點](clinical-endpoints.md) | OS、PFS、DFS、EFS、ORR、pCR、RECIST、替代終點 | 療效怎麼定義、用什麼統計方法？ |
 
 ## 相關流程與資源
 

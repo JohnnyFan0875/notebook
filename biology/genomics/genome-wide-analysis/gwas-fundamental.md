@@ -54,6 +54,32 @@ plink2 --pfile qc --pheno pheno.txt --covar pcs.eigenvec --covar-name PC1-PC10 \
 
 > PRS 在訓練族群以外（例如以歐洲族群訓練、套用到東亞族群）準確度明顯下降；現有 GWAS 以歐洲族群為主，見 [資料偏差與代表性](../../../data-science/responsible-ai/data-bias-and-representativeness.md)。
 
+### PRS 的預測力：R²
+
+PRS 好不好，看它在**獨立的目標樣本**中多解釋了多少表型變異。
+
+| 指標 | 用於 | 說明 |
+| --- | --- | --- |
+| Incremental R² | 連續性狀 | R²(共變數 + PRS) − R²(只有共變數)；共變數含年齡、性別、族群主成分 (PCs) |
+| Nagelkerke R² | 二元性狀 | 邏輯斯迴歸的 pseudo-R²，數值受樣本中病例比例影響，不同研究不能直接比 |
+| Liability-scale R² | 二元性狀 | 依族群盛行率 K 與樣本病例比例 P 轉到潛在易感性尺度（Lee et al. 2012），可跨研究比較 |
+| AUC、每 SD 的 OR、最高 vs 最低十分位 | 二元性狀 | 臨床上較直覺；AUC 常只比只用共變數的模型高一點 |
+
+```r
+null <- lm(height ~ age + sex + PC1 + PC2 + PC3 + PC4, data = d)
+full <- update(null, . ~ . + prs)
+summary(full)$r.squared - summary(null)$r.squared   # incremental R²
+```
+
+| 注意 | 說明 |
+| --- | --- |
+| 上限是 SNP 遺傳率 | R² 不會超過 h²<sub>SNP</sub>；身高在歐洲族群可達約 40%，多數疾病只有個位數百分比 |
+| 樣本重疊 | 目標樣本若也在 GWAS 訓練資料中，R² 嚴重高估 |
+| 調參與評估分開 | 用同一批樣本挑 p 值門檻 / 收縮參數又報告 R²，等同 [資料洩漏](../../../data-science/machine-learning/foundations/data-leakage.md)；要切出驗證與測試集 |
+| 族群可轉移性 | 以歐洲 GWAS 建的 PRS，用在東亞族群準確度約降一半，非洲族群降得更多（Martin et al., *Nat Genet* 2019） |
+
+pseudo-R² 的概念見 [邏輯斯迴歸：模型配適指標](../../../data-science/statistics/regression-analysis/logistic-regression.md#模型配適指標)。
+
 ## 常見誤解
 
 | 誤解 | 實際 |

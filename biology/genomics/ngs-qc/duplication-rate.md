@@ -40,4 +40,4 @@ picard MarkDuplicates -I in.bam -O dedup.bam -M metrics.txt   # PERCENT_DUPLICAT
 samtools flagstat dedup.bam                                   # duplicates 一行
 ```
 
-fastp 報告的重複率是未比對前依序列估計的粗略值；以比對後的 Picard / samtools 數值為準。工具與 UMI 處理見 [Picard MarkDuplicates](../../bioinformatics-tools/ngs-tools/picard-markduplicates.md)；FastQC 的 duplication 模組判讀見 [FastQC](../../bioinformatics-tools/ngs-tools/fastqc.md)。
+fastp 報告的重複率是未比對前依序列估計的粗略值；以比對後的 Picard / samtools 數值為準。工具見 [Picard MarkDuplicates](../../bioinformatics-tools/ngs-tools/picard-markduplicates.md)；UMI 家族、raw vs unique depth 與一致序列見 [UMI 與一致序列](umi-consensus.md)；FastQC 的 duplication 模組判讀見 [FastQC](../../bioinformatics-tools/ngs-tools/fastqc.md)。

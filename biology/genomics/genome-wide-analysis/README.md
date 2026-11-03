@@ -14,7 +14,7 @@ GWAS（變異 ↔ 疾病 / 性狀）
 
 | 筆記 | 內容 | 回答的問題 |
 | --- | --- | --- |
-| [GWAS 基礎](gwas-fundamental.md) | QC、族群結構、關聯檢定、Manhattan / QQ、fine-mapping、PRS | 哪些變異與性狀有關？ |
+| [GWAS 基礎](gwas-fundamental.md) | QC、族群結構、關聯檢定、Manhattan / QQ、fine-mapping、PRS 與 R² | 哪些變異與性狀有關？ |
 | [QTL 分析](qtl-analysis-and-mapping.md) | 連鎖 vs 關聯定位、cis / trans、統計框架 | 怎麼找影響數量性狀的位點？ |
 | [eQTL](eqtl.md) | 表現量 QTL、GTEx、隱藏共變數 | 這個變異改變哪個基因的表現量？ |
 | [sQTL](sqtl.md) | 剪接 QTL、LeafCutter | 這個變異改變剪接嗎？ |

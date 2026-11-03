@@ -71,4 +71,6 @@
 | 前處理 | 血球破裂釋出基因組 DNA 稀釋 ctDNA | 專用採血管（Streck）、時限內分離血漿 |
 | 陰性結果 | 腫瘤釋出 DNA 少（低 shedding）時偽陰性 | 陰性不代表無腫瘤，必要時仍需組織檢測 |
 
-相關：[重複率與 UMI](../ngs-qc/duplication-rate.md)、[Picard MarkDuplicates：UMI](../../bioinformatics-tools/ngs-tools/picard-markduplicates.md)、[癌症基因體](../cancer-genomics/README.md)、[血清 vs 血漿](../../laboratory-medicine/sample-types/serum-plasma.md)。
+分子數、family size 與 0.1% VAF 的偵測機率試算見 [UMI 與一致序列](../ngs-qc/umi-consensus.md#實例cfdna--hybrid-captureillumina)；偵測極限的定義見 [LoB / LoD / LoQ](../assay-validation/README.md#lob--lod--loq偵測與定量極限)；MRD 與療效終點的關係見 [腫瘤臨床終點](../cancer-genomics/clinical-endpoints.md)。
+
+相關：[重複率](../ngs-qc/duplication-rate.md)、[Picard MarkDuplicates：UMI](../../bioinformatics-tools/ngs-tools/picard-markduplicates.md)、[癌症基因體](../cancer-genomics/README.md)、[血清 vs 血漿](../../laboratory-medicine/sample-types/serum-plasma.md)。

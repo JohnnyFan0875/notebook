@@ -21,7 +21,7 @@ FASTQ（reads + 品質）──比對──► SAM / BAM / CRAM（比對結果�
 | [座標系統](zero-one-based.md) | 0-based 半開 vs 1-based 閉區間、轉換規則 | — | — |
 | [FASTA](fasta.md) | 參考序列、`.fai` 索引、軟遮蔽 | — | samtools faidx、seqkit |
 | [FASTQ](fastq.md) | reads、品質字串、成對檔案 | — | FastQC、fastp |
-| [SAM / BAM / CRAM](bam.md) | 比對結果、FLAG、CIGAR、header | 1-based | samtools、Picard |
+| [SAM / BAM / CRAM](bam.md) | 比對結果、FLAG、CIGAR、MD / NM、header | 1-based | samtools、Picard |
 | [VCF](vcf.md) | 變異、INFO / FORMAT、基因型 | 1-based | bcftools、GATK |
 | [BED](bed.md) | 基因體區間 | **0-based** | bedtools |
 | [GTF / GFF3](gtf-gff.md) | 基因、轉錄本、exon 註解 | 1-based | gffread、AGAT |

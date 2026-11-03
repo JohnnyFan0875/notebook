@@ -7,7 +7,7 @@
 ## 建議順序
 
 ```
-鹼基品質 (FASTQ) → 比對品質 MAPQ (BAM) → 重複率 → 深度 / 覆蓋度 → 均勻度 → GC 偏差 → 變異過濾 (VCF)
+鹼基品質 (FASTQ) → 比對品質 MAPQ (BAM) → 重複率 / UMI → 深度 / 覆蓋度 → 均勻度 → GC 偏差 → 變異過濾 (VCF)
 ```
 
 ## 筆記
@@ -17,6 +17,7 @@
 | [鹼基品質分數](base-quality-scores.md) | Phred、ASCII 編碼、Q30、品質分箱 | 這個鹼基讀錯的機率多大？ |
 | [比對品質](mapping-quality.md) | MAPQ 定義、各比對器的數值意義、過濾閾值 | 這條 read 放對位置了嗎？ |
 | [重複率](duplication-rate.md) | PCR / 光學重複、library complexity、各實驗類型的合理範圍 | 有效的獨立 reads 有多少？ |
+| [UMI 與一致序列](umi-consensus.md) | UMI 家族、raw vs unique depth、碰撞、duplex、低 VAF 偵測 | 實際有多少個原始分子？低頻變異可信嗎？ |
 | [定序深度與覆蓋度](sequencing-depth-coverage.md) | 深度 vs 覆蓋度、需要多少 reads、各應用的建議深度 | 夠不夠深？有沒有漏掉的區域？ |
 | [均勻度](uniformity.md) | fold-80、≥0.2× mean 比例 | 深度是不是平均分布？ |
 | [GC 偏差](gc-bias.md) | 成因、指標、對 CNV 與表現量的影響 | 高 / 低 GC 區域是否被低估？ |
