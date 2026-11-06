@@ -13,7 +13,7 @@ MIT LCP 維護的生醫資料平台，提供生理訊號（ECG、EEG、ICU 波�
 
 ## 取得 credentialed 資料
 
-```
+```text
 1. 註冊 PhysioNet 帳號
 2. 申請 credentialing（填寫研究用途、提供推薦人 / 指導者）
 3. 完成 CITI「Data or Specimens Only Research」線上訓練，上傳證書

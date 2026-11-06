@@ -6,7 +6,7 @@
 
 ## 診斷流程
 
-```
+```text
 1. 寫清楚：只選需要的欄、先過濾再 join、確認 join 沒有膨脹
         ↓
 2. 看計畫：EXPLAIN（預估）→ EXPLAIN ANALYZE（實際執行）
@@ -38,7 +38,7 @@ JOIN animals AS a ON c.species = a.species
 WHERE c.age > 10;
 ```
 
-```
+```text
 Hash Join  (cost=1.09..2.30 rows=4 width=64) (actual time=0.03..0.04 rows=37 loops=1)
   Hash Cond: (c.species = a.species)
   ->  Seq Scan on cheeses c  (cost=0.00..1.12 rows=4 width=64) (actual ... rows=37 loops=1)

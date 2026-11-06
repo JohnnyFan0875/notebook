@@ -119,7 +119,7 @@ def merge_counts(a, b):
 
 ## 例外階層速查
 
-```
+```text
 BaseException
 ├── KeyboardInterrupt, SystemExit       ← 不該被一般 except 攔下
 └── Exception

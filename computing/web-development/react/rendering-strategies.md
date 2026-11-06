@@ -13,7 +13,7 @@
 | SSG (Static Site Generation) | **建置時**產生一次 | 最快：可放 CDN | 好 | 幾乎無 | 到下次建置前不變 | 文件、部落格、行銷頁 |
 | ISR (Incremental Static Regeneration) | 建置時產生，之後依設定時間在背景重新產生 | 快 | 好 | 低 | 延遲一段時間 | 商品頁、大量但不常變的頁面 |
 
-```
+```text
 CSR:  請求 → 空 HTML + JS ─────────► 下載執行 JS ─► 呼叫 API ─► 畫面
 SSR:  請求 → 伺服器取資料、產生 HTML ─► 完整畫面（尚不可互動）─► hydration ─► 可互動
 SSG:  建置時產生 HTML ── 請求 → CDN 直接回傳 ─► 完整畫面 ─► hydration ─► 可互動
@@ -40,7 +40,7 @@ CSR 應用需要 SEO 時，改用 Next.js 的 SSR / SSG，或對公開頁面預�
 
 ## 怎麼選
 
-```
+```text
 需要 SEO 或連結預覽？
 ├─ 否 → CSR（Vite + React）
 └─ 是 → 內容每個使用者 / 每次請求都不同？

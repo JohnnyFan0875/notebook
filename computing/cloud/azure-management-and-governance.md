@@ -76,7 +76,7 @@ az deployment group create -g rg-demo -f main.bicep -p env=dev    # 部署 Bicep
 
 ## 監控
 
-```
+```text
 資料收集（metrics、logs）→ 分析與視覺化（Log Analytics、workbooks、dashboard）→ 警示與自動回應
 ```
 

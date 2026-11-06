@@ -38,7 +38,7 @@ big data 不是「資料很多」而已，而是規模、速度或型態超過�
 
 ## 資料生命週期
 
-```
+```text
 資料來源 → 擷取 → 儲存 → 處理 / 轉換 → 交付 (serving)
 (sources)  (ingestion) (storage) (processing)  報表、分析、模型、應用程式
 ```

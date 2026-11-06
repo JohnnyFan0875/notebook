@@ -8,7 +8,7 @@ limma 對每個基因擬合同一個線性模型，再用經驗貝氏 (empirical
 
 ## 流程
 
-```
+```text
 檢查分布 → log2 轉換 → 標準化 → 過濾低訊號 → MDS 看樣本結構
   → 設計矩陣 → 對比 → lmFit → contrasts.fit → eBayes → decideTests / topTable → 視覺化、基因集
 ```

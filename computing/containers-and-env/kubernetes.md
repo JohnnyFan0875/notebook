@@ -14,7 +14,7 @@ Kubernetes（K8s）是容器編排平台：在一群機器（叢集）上排程�
 
 ## 架構
 
-```
+```text
 Cluster
 ├── Control plane：API server、scheduler、controller manager、etcd（叢集狀態）
 └── Nodes（工作機器）

@@ -6,7 +6,7 @@
 
 ## 流程
 
-```
+```text
 原始文件（一列一篇，含 doc_id 與其他欄位）
   └─ unnest_tokens()            一列一個 token
        └─ anti_join(stop_words)   移除停用詞（+ 資料集專屬停用詞）

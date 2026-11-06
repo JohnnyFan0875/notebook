@@ -6,7 +6,7 @@
 
 ## 一步訓練
 
-```
+```text
 forward：x → model → ŷ → loss(ŷ, y)
 backward：loss.backward() → 每個參數的 .grad = ∂L/∂w
 update：optimizer.step() → w ← w − η · ∂L/∂w（SGD 的情況）

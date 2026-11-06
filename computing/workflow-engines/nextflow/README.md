@@ -16,7 +16,7 @@ Nextflow 是生資最常用的工作流引擎之一：用 DSL 描述「process�
 | Profile | 在 `nextflow.config` 中預先定義的一組設定，用 `-profile` 選擇 |
 | Work directory | 所有中間結果在 `work/`；`-resume` 依快取重用已完成的任務 |
 
-```
+```text
 channel(樣本 FASTQ) ──► FASTQC ──┐
                     └─► FASTP ──► ALIGN ──► QUANT ──► collect() ──► MULTIQC
 （每個樣本的任務自動平行；某個樣本失敗只需重跑該任務）

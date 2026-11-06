@@ -6,7 +6,7 @@ RAG 在生成前先從文件庫檢索相關段落，放進 prompt，讓模型根
 
 ## 建議順序
 
-```
+```text
 Embedding（文字 → 向量、相似度）→ 向量資料庫（索引、過濾、規模化）→ RAG Pipeline（切分、檢索、grounding、評估）
 ```
 

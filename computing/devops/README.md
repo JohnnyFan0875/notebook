@@ -4,7 +4,7 @@
 
 讓軟體與資料 pipeline 的變更可以頻繁、可靠地交付：版本控制、自動化測試、CI/CD、容器、監控。
 
-```
+```text
 DevOps 基礎（流程、CI/CD 觀念、DORA、微服務）→ GitHub Actions（實作 CI）
 ```
 

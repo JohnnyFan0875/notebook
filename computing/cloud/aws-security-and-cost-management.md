@@ -90,7 +90,7 @@ IAM 回答三個問題：誰可以登入或呼叫 API、可以做哪些動作、
 
 ## 新帳號的治理順序
 
-```
+```text
 1. Root 開 MFA，不建立 root access key
 2. 建立管理者身分（IAM Identity Center 或 IAM user + MFA），日常不用 root
 3. 權限透過群組與角色給，預設最小權限

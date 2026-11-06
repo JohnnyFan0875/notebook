@@ -81,7 +81,7 @@ strong = nx.Graph((u, v, d) for u, v, d in G_w.edges(data=True) if d["weight"] >
 
 溝通、論壇、合作、交易網路都會隨時間改變。常見做法是時間切片：
 
-```
+```text
 依時間窗切資料 → 每個窗建一張圖 → 對每張圖算同一組指標 → 把指標當時間序列看
 ```
 

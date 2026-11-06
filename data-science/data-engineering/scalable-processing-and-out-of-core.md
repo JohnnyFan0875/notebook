@@ -38,7 +38,7 @@
 
 資料能切成互相獨立的分區時：
 
-```
+```text
 split：切成 partitions / chunks → apply：每塊做相同計算 → combine：合併部分結果
 ```
 

@@ -40,7 +40,7 @@ uv tree                          # 依賴樹
 
 `uv init --package` 產生的結構：
 
-```
+```text
 mypkg/
 ├── .python-version              # 專案使用的 Python 版本
 ├── pyproject.toml
@@ -50,7 +50,7 @@ mypkg/
 
 加入程式與測試後：
 
-```
+```text
 mypkg/
 ├── pyproject.toml
 ├── uv.lock                      # 進 git：鎖定所有套件的確切版本與 hash

@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 核心觀念 → 儲存與格式 → 擷取 → Pipeline
                                ↓
          資料建模 → 維度模型          大資料：out-of-core → Spark → 基因體 Spark

@@ -6,7 +6,7 @@ Kaggle 競賽不是「多試幾個模型、看 leaderboard」。穩定進步的�
 
 ## 核心循環
 
-```
+```text
 理解任務與指標 → 建立 local validation → 可靠的 baseline
         ↑                                        ↓
   用 submission 檢查 local 與 public LB 是否同步 ← 逐步改特徵 / 模型 / ensemble

@@ -79,7 +79,7 @@ batches <- purrr::map(list.files("data", full.names = TRUE), clean_batch)
 | 副檔名一致 | 一律 `.R` | `.r` / `.R` 混用 |
 | 日期用 ISO | `2024-03-15-qc-report.html` | `3-15-24-report.html` |
 
-```
+```text
 project/
 ├── project.Rproj        # 或 .here 檔；搭配 here::here() 取路徑，不要 setwd()
 ├── renv.lock            # 套件版本鎖定（renv::init() / renv::snapshot()）

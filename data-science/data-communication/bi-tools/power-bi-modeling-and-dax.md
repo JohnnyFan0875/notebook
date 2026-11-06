@@ -8,7 +8,7 @@ Power BI 把資料準備、資料模型、互動式視覺化與分享串成一�
 
 ## 整體地圖
 
-```
+```text
 1. 載入資料 → 2. Power Query 清理 → 3. 建模型（關係、measure）→ 4. Report view 做報表 → 5. Service 發布分享
 ```
 
@@ -183,7 +183,7 @@ Orders With Profit = ADDCOLUMNS(Fact_Orders, "Profit", Fact_Orders[Revenue] - Fa
 
 ### 學習順序
 
-```
+```text
 1. 分清楚計算欄與 measure → 2. 理解 context → 3. CALCULATE 調整 filter context
   → 4. FILTER / ALL / SUMX 改變計算範圍與方式 → 5. SWITCH、TOTALYTD、ADDCOLUMNS / SUMMARIZE
 ```

@@ -13,7 +13,7 @@
 | CSC (`csc_array`) | 每欄連續存放 | **取欄**、欄運算 | 取列 | 取單一基因、`svds` 某些情況 |
 | LIL / DOK | list / dict | 逐格修改 | 運算慢 | 增量建構，完成後轉 CSR |
 
-```
+```text
 CSR：data    = [3, 1, 5, 2, 4]       非零值，依列排好
      indices = [0, 2, 1, 0, 2]       每個值的欄號
      indptr  = [0, 2, 3, 5]          第 i 列是 data[indptr[i]:indptr[i+1]]

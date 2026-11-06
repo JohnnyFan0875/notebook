@@ -21,7 +21,7 @@ PCR / qPCR / amplicon 定序的成敗多半取決於引子：要能專一結合�
 
 ## 設計流程
 
-```
+```text
 目標序列（軟遮蔽 FASTA，標出 SNP）
    │  Primer3 / Primer-BLAST 產生候選引子
    ▼

@@ -4,7 +4,7 @@
 
 從瀏覽器與 HTTP 的運作，到用 Python 寫 API、用 React 寫前端。對資料工作者最常見的需求是：把模型或資料包成 API、做一個內部用的查詢介面或 dashboard。
 
-```
+```text
 Web 基礎（瀏覽器、HTTP、REST）──┬─► FastAPI（伺服器端 API）
                                  └─► React（前端 UI）
 ```

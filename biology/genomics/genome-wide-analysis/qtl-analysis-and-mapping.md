@@ -15,7 +15,7 @@
 
 ## 分子 QTL 流程
 
-```
+```text
 基因型 + 分子表型（如 RNA-seq 表現量）
   ──► 表型標準化（log / inverse normal transform）
   ──► 共變數：基因型 PCs + 隱藏因子（PEER、表現量 PCs）+ 已知批次

@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 檔案格式 → 參考資料 → NGS 品質指標 → 定序技術 → 分析流程（RNA-seq、變異呼叫）→ 全基因體分析 / 癌症基因體
 ```
 
@@ -17,7 +17,7 @@
 | [檔案格式](file-formats/README.md) | FASTA、FASTQ、BAM、VCF、BED、GTF、座標系統 | 每個檔案裝什麼？座標怎麼算？ |
 | [參考資料](reference-data/README.md) | 參考基因組、基因註解、公開原始資料 | 用哪個版本？去哪裡下載？ |
 | [NGS 品質指標](ngs-qc/README.md) | 鹼基品質、MAPQ、重複率、UMI、深度、均勻度、GC 偏差 | 資料品質夠嗎？ |
-| [定序技術](sequencing-techniques/README.md) | 定序平台、panel、ChIP-seq、液態切片、單細胞 | 該選哪種技術？各有什麼偏差？ |
+| [定序技術](sequencing-techniques/README.md) | 定序平台、panel、ChIP-seq、ATAC-seq、DNA 甲基化、液態切片、單細胞 | 該選哪種技術？各有什麼偏差？ |
 | [分析流程](workflows/README.md) | RNA-seq、變異呼叫、limma | 從原始資料到結果的步驟？ |
 | [檢測確效](assay-validation/README.md) | validation vs verification、LoB / LoD / LoQ、Bland-Altman、參考標準品 | 檢測方法可靠嗎？ |
 | [全基因體分析](genome-wide-analysis/README.md) | GWAS、eQTL / sQTL / pQTL、colocalization | 哪些變異與性狀或表現量有關？ |

@@ -26,7 +26,7 @@ LLM 應用上線後的營運：prompt 與設定的版本管理、回歸測試、
 | dev / staging / production 設定分離 | 避免實驗中的 prompt 直接影響使用者 |
 | 每次改動跑評估集 | 防止修好一個案例、壞掉十個（回歸） |
 
-```
+```text
 改 prompt / 換模型 / 改檢索
         ↓
 跑評估集（golden set + 困難案例 + 安全測試）

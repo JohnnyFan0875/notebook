@@ -4,7 +4,7 @@
 
 對訓練資料做多次 [bootstrap](../../../statistics/probability-and-distributions/monte-carlo-simulation.md#拔靴法-bootstrap)（有放回抽樣），每份樣本訓練一個模型，最後平均（迴歸）或投票（分類）。平均能抵銷各模型的隨機誤差，**主要降低變異**，對高變異的模型（深決策樹）最有效。
 
-```
+```text
 訓練資料 ──bootstrap──► 樣本 1 → 模型 1 ┐
          ──bootstrap──► 樣本 2 → 模型 2 ├─► 平均 / 投票 → 預測
          ──bootstrap──► 樣本 B → 模型 B ┘

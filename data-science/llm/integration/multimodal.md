@@ -67,7 +67,7 @@ model.config.id2label[pred]
 
 使用者感受到的是「語音進、語音出」，中間通常以文字為主：
 
-```
+```text
 音訊 → ASR 逐字稿 → [語言偵測 / 翻譯] → [清理：修正術語、斷句] → LLM 生成回應 / 摘要
      → moderation → [TTS 轉語音]
 ```

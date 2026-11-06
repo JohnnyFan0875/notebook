@@ -43,7 +43,7 @@
 
 ## 一個分析專案的工程骨架
 
-```
+```text
 本機（VS Code + WSL）──Git──► GitHub（PR、Actions 自動測試）
    │ SSH / rsync
    ▼

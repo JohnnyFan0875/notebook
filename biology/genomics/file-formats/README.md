@@ -6,7 +6,7 @@
 
 ## 資料流與格式
 
-```
+```text
 FASTA（參考序列）+ GTF/GFF（基因註解）
         │
 FASTQ（reads + 品質）──比對──► SAM / BAM / CRAM（比對結果）──變異呼叫──► VCF（變異）

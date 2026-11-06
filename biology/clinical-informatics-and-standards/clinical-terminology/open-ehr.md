@@ -19,7 +19,7 @@ openEHR 是開放的電子病歷 (EHR) 建模與儲存規格。它的核心是**
 | Archetype | 一個臨床概念的完整定義（最大集合） | `openEHR-EHR-OBSERVATION.blood_pressure.v2` | 社群 / 臨床人員（CKM） |
 | Template | 依用途組合、裁剪 archetype | 生命徵象表單、出院摘要 | 各機構 |
 
-```
+```text
 Applications（表單、決策支援、分析）
         │  AQL 查詢
 Templates（用途專屬：生命徵象 = 血壓 + 心率 + 體溫）
@@ -31,7 +31,7 @@ Reference Model（固定的資料結構與型別）
 儲存（版本化、稽核紀錄）
 ```
 
-```
+```text
 openEHR-EHR-OBSERVATION.blood_pressure.v2
  ├── systolic      DV_QUANTITY (mm[Hg])
  ├── diastolic     DV_QUANTITY (mm[Hg])

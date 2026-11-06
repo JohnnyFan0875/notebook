@@ -28,7 +28,7 @@
 
 簡化模型是 fetch-decode-execute 循環：
 
-```
+```text
 1. 擷取 (fetch)    從記憶體讀下一道指令
 2. 解碼 (decode)   判斷是哪種運算
 3. 執行 (execute)  運算（加法、比較、讀寫記憶體、跳轉）

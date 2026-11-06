@@ -16,7 +16,7 @@ bulk RNA-seq 量的是一群細胞的平均表現；單細胞 RNA-seq (scRNA-seq
 
 ## 分析流程
 
-```
+```text
 FASTQ ──Cell Ranger / STARsolo / alevin-fry──► 細胞 × 基因 count matrix（稀疏）
   ──► QC：每細胞基因數、UMI 數、粒線體比例、doublet 偵測
   ──► 正規化（log-normalize / SCTransform）──► 高變異基因

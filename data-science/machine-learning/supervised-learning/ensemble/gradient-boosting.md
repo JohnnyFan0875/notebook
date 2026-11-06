@@ -55,7 +55,7 @@ hgb.n_iter_               # 80
 
 ## 調參順序
 
-```
+```text
 1. 固定 learning_rate = 0.05–0.1，開 early stopping
 2. 調樹的複雜度：max_depth / max_leaf_nodes、min_samples_leaf
 3. 調隨機性：subsample、max_features（或 XGBoost 的 colsample_bytree）

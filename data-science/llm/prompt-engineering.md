@@ -71,7 +71,7 @@ JSON：{"include": true/false, "reason": "<一句話，引用摘要中的關鍵�
 
 一個大 prompt 拆成多個小步驟，每步輸出成為下一步輸入。
 
-```
+```text
 擷取（摘要 → 實體 JSON）→ 標準化（實體 → HGNC / MONDO ID）→ 驗證（檢查 ID 存在）→ 彙整（產生表格）
      LLM                      LLM + 資料庫查詢              程式                   程式 / LLM
 ```

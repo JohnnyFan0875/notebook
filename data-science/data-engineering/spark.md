@@ -25,7 +25,7 @@ Apache Spark 是分散式資料處理引擎：把資料切成 partition 分散�
 
 ## 執行架構
 
-```
+```text
 Driver（你的程式、SparkSession、規劃 DAG）
    │  切成 stages / tasks
    ├── Executor 1：處理 partition 1, 4, ...

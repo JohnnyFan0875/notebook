@@ -56,7 +56,7 @@ model.eval()    # dropout 關閉；評估、推論前一定要切換
 
 對一個 `(batch N, features D)` 的輸入：
 
-```
+```text
 BatchNorm：每個特徵 d，用這個 batch 的 N 個值算 μ, σ     → 沿 batch 方向標準化
 LayerNorm：每個樣本 n，用它自己的 D 個特徵算 μ, σ        → 沿特徵方向標準化
 兩者之後都乘上可學習的 γ、加上 β
@@ -92,7 +92,7 @@ nn.LayerNorm(512)                                            # 對最後一維�
 
 ## 過擬合時的處理順序
 
-```
+```text
 validation loss 上升、train loss 持續下降
   ├─ 先確認不是資料洩漏或切分錯誤（同一病人 / 同源序列跨 train/val）
   ├─ 有預訓練模型？ → 遷移學習 / 只抽 embedding

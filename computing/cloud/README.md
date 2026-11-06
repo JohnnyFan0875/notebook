@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 雲端運算基礎 ──┬─► AWS：服務總覽 → 安全與成本 → Boto3（→ Cloud Practitioner 考試）
                ├─► Azure：基礎 → 服務總覽 → 管理與治理
                └─► GCP：基礎

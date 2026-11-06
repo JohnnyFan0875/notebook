@@ -23,7 +23,7 @@ MedDRA (Medical Dictionary for Regulatory Activities) 是 ICH 制定的法規用
 | PT (Preferred Term) | 單一醫學概念，**分析與通報的主要層級** | Cardiac failure congestive |
 | LLT (Lowest Level Term) | 同義詞、拼寫變體、口語，**編碼時選這層** | Congestive heart failure、CHF |
 
-```
+```text
 通報原文："病人出現 CHF"
  → LLT  CHF
  → PT   Cardiac failure congestive

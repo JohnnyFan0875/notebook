@@ -15,7 +15,7 @@
 | [Apptainer](apptainer.md) | 同 Docker，可直接執行 Docker 映像檔 | 否 | 很高（`.sif` 檔） | 共用 HPC 叢集 |
 | [虛擬機](virtual-machine.md) | 整台電腦（含核心與 OS） | — | 很高但笨重 | 需要不同 OS、完整桌面、強隔離 |
 
-```
+```text
 只有 Python？ ── 是 ──► uv
    │否
 需要生資命令列工具 / 混合語言？ ── 是 ──► conda / mamba（bioconda）

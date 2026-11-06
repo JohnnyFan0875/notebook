@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 線性迴歸（baseline）→ Ridge / Lasso / Elastic Net（特徵多、共線）→ 迴歸樹（非線性）→ 集成方法
 ```
 

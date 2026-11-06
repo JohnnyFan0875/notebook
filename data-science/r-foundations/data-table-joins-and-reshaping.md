@@ -4,7 +4,7 @@
 
 `data.table` 把篩選、計算、分組、更新、join 都壓進同一個語法 `DT[i, j, by]`，而且多數操作**就地修改 (by reference)**、不複製資料，所以在千萬列以上的資料（變異位點表、單細胞 metadata、大型讀數表）明顯比 dplyr 快、省記憶體。dplyr 的對應寫法見 [dplyr 合併資料](joining-data-with-dplyr.md) 與 [tidyr 資料重塑](data-reshaping-with-tidyr.md)。
 
-```
+```text
 DT[ i,        j,             by       ]
     哪些列     算什麼 / 改什麼   依什麼分組
     （或 join 的表）

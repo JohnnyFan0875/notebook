@@ -16,7 +16,7 @@
 
 ## 建議順序
 
-```
+```text
 資料結構與設限 → S(t) / h(t) → Kaplan-Meier + log-rank → Cox 模型 → 診斷 → 參數模型 → 解讀與視覺化
 ```
 

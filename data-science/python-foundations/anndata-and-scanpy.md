@@ -6,7 +6,7 @@ AnnData 是 Python 單細胞分析的標準資料結構：把**稀疏計數矩�
 
 ## 物件結構
 
-```
+```text
                  var（基因 metadata：DataFrame，index = var_names）
                  ┌─────────────────────────┐
  obs（細胞        │  X：細胞 × 基因          │  varm（基因 × k：PCA loadings）
@@ -74,7 +74,7 @@ adata.write_h5ad("pbmc_processed.h5ad", compression="gzip")
 
 scanpy 的函式分三個命名空間：`sc.pp`（前處理）、`sc.tl`（工具 / 分析）、`sc.pl`（作圖）；結果寫回 `adata` 的對應欄位。
 
-```
+```text
 QC 過濾 → 保存 counts → 標準化 + log1p → HVG → PCA → kNN 圖 → UMAP / Leiden → marker 基因
 ```
 

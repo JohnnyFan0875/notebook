@@ -23,7 +23,7 @@ snakemake --version
 
 ## 範例
 
-```
+```text
 data/{sample}_R1.fastq.gz ──count_reads──► results/counts/{sample}.txt ──summarize──► results/summary.tsv
 ```
 

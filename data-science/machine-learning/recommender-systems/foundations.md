@@ -35,7 +35,7 @@
 
 ## User-Item 矩陣
 
-```
+```text
             item_1  item_2  item_3  item_4  ...
 user_1        5       ·       3       ·
 user_2        ·       4       ·       ·
@@ -60,7 +60,7 @@ user_3        1       ·       ·       5
 
 ## 典型架構：召回 + 排序
 
-```
+```text
 全部項目（百萬）→ 召回 candidate generation（快、粗：協同過濾、內容相似、熱門）→ 數百個候選
               → 排序 ranking（慢、精：GBDT / 深度模型，加入情境特徵）→ 過濾與重排（已看、庫存、多樣性）→ top-N
 ```

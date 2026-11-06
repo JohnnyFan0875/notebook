@@ -23,7 +23,7 @@
 
 ## 判讀流程中的位置
 
-```
+```text
 病人表型（HPO 詞彙）
   → 候選基因（PanelApp / OMIM / 表型排序工具如 Exomiser）
   → 基因–疾病有效性（ClinGen / GenCC：Definitive / Strong / Moderate / Limited…）

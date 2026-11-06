@@ -20,7 +20,7 @@ MARKDOWN_FILES = sorted(
     {
         path
         for path in ROOT.rglob("*.md")
-        if ".git/" not in str(path)
+        if not any(part.startswith(".") for part in path.relative_to(ROOT).parts)
     }
 )
 
@@ -33,6 +33,24 @@ FORBIDDEN_PATTERNS = [
 ]
 
 LINK_RE = re.compile(r"(!?)\[[^\]]*]\(([^)]+)\)")
+FENCE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})")
+INLINE_CODE_RE = re.compile(r"(`+)(?:(?!\1).)+?\1")
+
+
+def strip_code(text: str) -> str:
+    """Remove fenced code blocks and inline code so example links are not checked."""
+    kept: list[str] = []
+    fence: str | None = None
+    for line in text.splitlines():
+        match = FENCE_RE.match(line)
+        if fence is None:
+            if match:
+                fence = match.group(2)
+                continue
+            kept.append(INLINE_CODE_RE.sub("", line))
+        elif match and match.group(2).startswith(fence) and not line.strip()[len(match.group(2)):].strip():
+            fence = None
+    return "\n".join(kept)
 
 
 def is_relative_target(target: str) -> bool:
@@ -60,7 +78,7 @@ def check_forbidden_patterns(path: Path, text: str) -> list[str]:
 
 def check_links(path: Path, text: str) -> list[str]:
     errors: list[str] = []
-    for _bang, raw_target in LINK_RE.findall(text):
+    for _bang, raw_target in LINK_RE.findall(strip_code(text)):
         target = normalize_target(raw_target).split("#", 1)[0].strip()
         if not is_relative_target(target):
             continue

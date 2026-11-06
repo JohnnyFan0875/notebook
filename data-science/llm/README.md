@@ -8,7 +8,7 @@
 
 ## 建議順序
 
-```
+```text
 基礎 → Prompt → API 整合 → RAG → Agent → 評估與幻覺 → LLMOps
                                           └→ 生醫應用（依需要）
 ```

@@ -19,7 +19,7 @@
 
 ### 分配之間的關係
 
-```
+```text
 N(0,1) ──平方──▶ χ²(1) ──k 個相加──▶ χ²(k) ──兩個 χ² 相除──▶ F(df₁, df₂)
 N(0,1) ÷ √(χ²(k)/k) ──▶ t(k)          t(k)² = F(1, k)
 Poisson 的事件間隔 ──▶ Exponential     log(X) ~ Normal ⇔ X ~ Log-normal

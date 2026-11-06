@@ -69,7 +69,7 @@ find . -name "*.tsv" -print0 | xargs -0 wc -l   # 交給 xargs；-print0 / -0 �
 
 ## 權限
 
-```
+```text
 -rwxr-x---  1 alice  lab  2.1K  run.sh
  │└┬┘└┬┘└┬┘
  │ │  │  └─ others：無權限

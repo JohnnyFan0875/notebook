@@ -6,7 +6,7 @@
 
 ## Germline 流程（GATK Best Practices）
 
-```
+```text
 FASTQ ──BWA-MEM──► BAM ──MarkDuplicates──► BQSR ──HaplotypeCaller（-ERC GVCF）──► gVCF（每個樣本）
    ──GenomicsDBImport + GenotypeGVCFs（多樣本聯合基因分型）──► VCF
    ──VQSR 或硬過濾──► 過濾後 VCF ──bcftools norm──► VEP / ANNOVAR 註解 ──► 判讀
@@ -67,7 +67,7 @@ gatk VariantFiltration -V snps.vcf.gz -O snps.filtered.vcf.gz \
 
 ## Somatic 流程（Mutect2）
 
-```
+```text
 腫瘤 BAM + 正常 BAM ──Mutect2（+ panel of normals、gnomAD germline resource）──► 原始呼叫
    ──GetPileupSummaries + CalculateContamination（樣本污染）
    ──LearnReadOrientationModel（FFPE / 氧化造成的方向性假象）

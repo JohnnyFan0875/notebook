@@ -4,7 +4,7 @@
 
 HPC 叢集由登入節點與大量計算節點組成；Slurm 是最常見的排程器 (scheduler)：你描述工作需要多少 CPU、記憶體、時間，送進佇列，Slurm 在有資源時把它分派到計算節點執行。生資的比對、變異呼叫、組裝等重運算都在這裡跑；Nextflow 與 Snakemake 也把每個步驟以 Slurm job 送出。
 
-```
+```text
 你 ──SSH──► 登入節點 (login node)：編輯、送出工作、輕量操作
                 │ sbatch
                 ▼

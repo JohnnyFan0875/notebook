@@ -6,7 +6,7 @@
 
 ## 命名
 
-```
+```text
 registry.example.com/myteam/rnaseq:1.2.0
 └──── registry ────┘ └─ 儲存庫 ─┘ └ tag ┘
 ```

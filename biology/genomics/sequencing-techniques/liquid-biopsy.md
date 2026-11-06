@@ -6,7 +6,7 @@
 
 ## cfDNA、ctDNA、CTC
 
-```
+```text
 血漿中的 cfDNA（cell-free DNA）
  ├── 來自正常細胞（主要是血球）……大部分
  └── ctDNA（circulating tumor DNA）……腫瘤來源，常只佔 0.01–10%

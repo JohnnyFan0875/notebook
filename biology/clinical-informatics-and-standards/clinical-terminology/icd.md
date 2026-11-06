@@ -21,7 +21,7 @@
 | 組合編碼 | 有限 | stem code + extension code 以 `&` / `/` 組合（如部位、嚴重度） |
 | 數位化 | 以書本 / 表格為主 | 原生支援 API 與 Coding Tool |
 
-```
+```text
 E11   Type 2 diabetes mellitus
  ├── E11.2  With kidney complications
  ├── E11.3  With ophthalmic complications

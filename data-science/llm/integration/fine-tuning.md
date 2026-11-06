@@ -38,7 +38,7 @@ LoRA adapter 檔很小（MB 級），同一個 base model 可替換多個 adapte
 
 ## 訓練流程
 
-```
+```text
 定義任務與輸出格式 → 準備示範資料（chat 格式）→ 切 train / validation / test
 → 跑 baseline（未微調模型 + 最佳 prompt）→ LoRA 訓練 → 在 test 上與 baseline 比較 → 檢查一般能力是否退化
 ```

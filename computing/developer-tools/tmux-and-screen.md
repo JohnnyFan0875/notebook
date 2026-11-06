@@ -4,7 +4,7 @@
 
 終端機多工器 (terminal multiplexer) 讓你在一個 SSH 連線裡開多個 shell，並且可以**中斷連線 (detach) 後程序繼續跑**，之後重新接回 (attach)。在遠端伺服器跑長時間的工作（比對、下載、互動式分析）時，網路斷線或關掉筆電都不會中斷程序。tmux 功能較完整，是新環境的首選；screen 歷史較久，許多舊伺服器預設已安裝。
 
-```
+```text
 SSH 登入 → tmux new -s align → 啟動工作 → Ctrl+b d（detach）→ 登出
        ↓（隔天）
 SSH 登入 → tmux a -t align → 工作仍在跑，畫面與輸出都在

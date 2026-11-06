@@ -4,7 +4,7 @@
 
 用 React 建構互動式前端的核心觀念：宣告式元件、Virtual DOM、渲染策略與 Hooks。
 
-```
+```text
 React 概覽（元件、props、函式庫 vs 框架）→ Hooks（state、effect）→ 渲染策略（CSR / SSR / SSG）
 ```
 

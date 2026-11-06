@@ -6,7 +6,7 @@
 
 ## 從 notebook 到可維護程式
 
-```
+```text
 探索 (notebook) → 抽出函式 → 搬進模組 (src/) → 加測試 → 加 CLI 入口 → 固定環境
 ```
 
@@ -19,7 +19,7 @@
 
 建議的專案結構：
 
-```
+```text
 project/
 ├── pyproject.toml        # 依賴與工具設定
 ├── uv.lock               # 鎖定的確切版本

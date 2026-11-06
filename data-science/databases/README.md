@@ -6,7 +6,7 @@ SQL 是資料分析的共同語言：資料太大不適合整批拉進 pandas / 
 
 ## 建議順序
 
-```
+```text
 查詢基礎 → JOIN 與集合 → 報表模式 → Window functions → 遞迴查詢
                                   ↓
           資料庫設計 → 正規化            Python 存取 / DuckDB

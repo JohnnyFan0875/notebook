@@ -6,7 +6,7 @@ Agent 是能自己決定下一步、呼叫工具、根據結果繼續執行的 L
 
 ## 建議順序
 
-```
+```text
 Agent 基礎（何時需要、工具、guardrail）→ LangGraph（狀態、節點、條件路由）→ 多 Agent（swarm vs supervisor）
 ```
 

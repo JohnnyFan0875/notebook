@@ -64,7 +64,7 @@ rfecv[-1].n_features_    # 17
 
 ## 前向逐步選擇 (Forward Stepwise)
 
-```
+```text
 從空集合開始
   ↓
 每輪把每個候選特徵試加進來 → 用 CV 指標（如 AUC）評分 → 加入最好的那個

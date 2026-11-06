@@ -6,7 +6,7 @@ LLM 在變成工具或 agent 之前的核心觀念：它把文字切成 token，
 
 ## LLM 在做什麼
 
-```
+```text
 文字 → tokenizer → token IDs → embedding → Transformer（decoder-only）→ 下一個 token 的機率分布
                                                                      ↓ 取樣
                                                      接到序列尾端，重複直到結束

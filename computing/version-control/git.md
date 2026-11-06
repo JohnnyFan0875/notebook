@@ -6,7 +6,7 @@ Git 記錄專案每一次快照 (commit)，讓你可以回到任何版本、在�
 
 ## 心智模型：三個區域
 
-```
+```text
 工作目錄 (working directory) ──git add──► 暫存區 (staging area / index) ──git commit──► 儲存庫歷史 (repository)
         ▲                                                                                │
         └──────────────────────── git restore / git switch ◄──────────────────────────────┘
@@ -114,7 +114,7 @@ git push origin -d feature/qc-plot   # 刪除遠端分支
 
 ### Merge vs Rebase
 
-```
+```text
 merge：                         rebase：
 main    A─B─C───M               main    A─B─C
          \     /                               \

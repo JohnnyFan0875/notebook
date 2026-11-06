@@ -34,7 +34,7 @@ rsync -avhP data/ hpc:/scratch/data/                          # 使用 ~/.ssh/co
 
 來源路徑**有沒有結尾斜線**決定傳的是「目錄本身」還是「目錄內容」：
 
-```
+```text
 rsync -avh src  dest/          rsync -avh src/ dest/
 dest/                          dest/
 └── src/                       ├── file1.txt

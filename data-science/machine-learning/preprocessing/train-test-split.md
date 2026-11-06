@@ -6,7 +6,7 @@
 
 ## 正確順序
 
-```
+```text
 1. 定義預測單位與時間點
 2. 依問題結構切分 ──► train │ (validation) │ test（test 鎖起來）
 3. 只在 train 上 fit 前處理（放進 Pipeline）
