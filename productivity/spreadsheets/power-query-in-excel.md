@@ -19,7 +19,7 @@ Power Query 是 Excel 內建的輕量 ETL：把「匯入 → 清理 → 轉換 �
 | 工作表 | 檢視、公式分析、報表（消費資料） |
 | [Power Pivot](power-pivot-in-excel.md) / 資料模型 | 多表關聯、DAX 量值 |
 
-```
+```text
 原始來源 ──► Power Query（清理、重塑）──► 工作表 Table 或資料模型 ──► 樞紐分析 / 報表
 ```
 

@@ -6,7 +6,7 @@
 
 ## HTTP 請求與回應
 
-```
+```text
 Request                                   Response
   method   GET / POST / PUT / DELETE        status   200 / 404 / 429 / 500
   URL      https://api.x.org/genes/42       headers  Content-Type: application/json

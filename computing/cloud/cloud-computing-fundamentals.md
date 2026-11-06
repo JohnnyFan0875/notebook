@@ -24,7 +24,7 @@
 | SaaS | 幾乎整個應用 | 設定、資料、使用治理 | Microsoft 365、Gmail、Salesforce | 直接使用成熟產品 |
 | Serverless / FaaS | 連擴縮與伺服器都不見了 | 函式程式碼 | Lambda、Azure Functions、Cloud Run functions | 事件驅動、短時任務 |
 
-```
+```text
 控制權高 ◄─────────────────────────────────────────► 維運負擔低
    自建機房 → IaaS → 容器服務 → PaaS → Serverless → SaaS
 ```

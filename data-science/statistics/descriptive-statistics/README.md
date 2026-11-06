@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 資料能不能用？ → 是什麼型態？ → 單一變數長怎樣？ → 兩個變數有沒有關係？
  (Data Quality)   (Data Types)     (Univariate)         (Bivariate)
 ```

@@ -21,7 +21,7 @@
 
 ## Supervisor 與 Swarm
 
-```
+```text
 Supervisor：                              Swarm：
             supervisor                    文獻 agent ⇄ 資料 agent
           ↙     ↓      ↘                        ↖     ↙

@@ -6,7 +6,7 @@
 
 ## 瀏覽器如何載入頁面
 
-```
+```text
 輸入 https://example.org/genes
   1. DNS 查詢        example.org → 93.184.215.14
   2. TCP + TLS 連線  建立加密通道（HTTPS，port 443）
@@ -60,7 +60,7 @@
 
 ## HTTP 請求與回應
 
-```
+```text
 Request                                   Response
   GET /api/genes?symbol=TP53 HTTP/1.1       HTTP/1.1 200 OK
   Host: example.org                         Content-Type: application/json

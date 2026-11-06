@@ -4,7 +4,7 @@
 
 程式變慢或資料變大時的工具。順序：先量測 → 換資料結構、向量化 → 才平行化或換引擎。
 
-```
+```text
 單核最佳化（Efficient Python）→ 多核（Parallel）/ 更快的引擎（Polars）→ 多機（Spark、Dask distributed）
 ```
 

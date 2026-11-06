@@ -72,7 +72,7 @@ CREATE TABLE textbook (
 
 把開頭的樣本表正規化到 3NF：
 
-```
+```text
 patients(patient_id PK, sex)
 vendors(vendor PK, site)
 assays(assay PK, vendor FK)

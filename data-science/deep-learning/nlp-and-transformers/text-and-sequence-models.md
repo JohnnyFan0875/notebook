@@ -6,7 +6,7 @@
 
 ## 從序列到 tensor
 
-```
+```text
 "I love NLP"  → tokenize → ["i", "love", "nlp"] → numericalize → [1, 2, 3]
                                                       ↓ pad 到同長度
                                                  [[1, 2, 3, 0, 0], ...]  (batch, L)

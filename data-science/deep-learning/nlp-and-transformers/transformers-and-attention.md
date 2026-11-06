@@ -85,7 +85,7 @@ $$
 
 ## Transformer Block
 
-```
+```text
 x ─► LayerNorm ─► Multi-Head Attention ─► (+) ─► LayerNorm ─► FFN (Linear → GELU → Linear) ─► (+) ─► 輸出
 │                                          ▲  │                                                ▲
 └──────────────── residual ────────────────┘  └─────────────────── residual ───────────────────┘

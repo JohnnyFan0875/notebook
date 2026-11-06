@@ -13,7 +13,7 @@
 
 ## 流程
 
-```
+```text
 項目 → 特徵向量（one-hot / TF-IDF / embedding）→ 項目間相似度（cosine）
 使用者歷史 → 加權平均成 user profile → 對沒看過的項目算相似度 → 排序取 top-N
 ```

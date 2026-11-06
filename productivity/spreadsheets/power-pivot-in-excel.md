@@ -17,7 +17,7 @@ Power Pivot 是 Excel 的資料模型 (Data Model) 層：把多張表建立關�
 
 ## 流程
 
-```
+```text
 Power Query 整理資料 ──► 載入資料模型 ──► 建立關聯 ──► 計算欄 / 量值 (DAX)
   ──► 樞紐分析表 / 樞紐分析圖 / slicer / KPI
 ```

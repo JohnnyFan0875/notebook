@@ -66,7 +66,7 @@ cross_val_score(RandomForestClassifier(random_state=0), X_adv, y_adv, scoring="r
 
 ## 檢查順序
 
-```
+```text
 1. 資料切分與 pipeline 正確嗎？（洩漏？）
 2. 整體分數比 baseline 好多少？
 3. 錯誤集中在哪些切片？

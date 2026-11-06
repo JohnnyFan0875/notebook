@@ -90,7 +90,7 @@ fuzzy_left_join(
 
 ## 工作流程
 
-```
+```text
 原始字串
   └─ 1. 標準化：str_to_lower()、str_squish()、移除標點與固定前後綴（regex）
      2. 完全相符的直接配對

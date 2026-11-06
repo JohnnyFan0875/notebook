@@ -22,7 +22,7 @@ SNOMED CT (Systematized Nomenclature of Medicine – Clinical Terms) 是最完�
 | Relationship | 定義語意的邏輯關係 | `is a` → *Diabetes mellitus*；`finding site` → *Structure of endocrine system* |
 | Hierarchy | 頂層類別，如 *Clinical finding*、*Procedure*、*Body structure*、*Organism*、*Substance* | — |
 
-```
+```text
 Clinical finding
  └── Disease
       └── Disorder of endocrine system

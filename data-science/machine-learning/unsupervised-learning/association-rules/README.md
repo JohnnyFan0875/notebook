@@ -18,7 +18,7 @@
 
 ## 流程
 
-```
+```text
 交易資料 → one-hot（交易 × 項目的布林矩陣）→ 找頻繁項目集（min_support）→ 產生規則（min confidence / lift）→ 篩選與解讀
 ```
 

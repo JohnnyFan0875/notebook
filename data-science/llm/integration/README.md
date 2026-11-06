@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 API 模式 → 選模型 → Hugging Face（開源模型）→ LangChain（需要組合多步驟時）→ 多模態 / Fine-tuning（依需要）
 ```
 

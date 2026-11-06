@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 迴歸：線性 → Ridge / Lasso / Elastic Net → 迴歸樹
 分類：邏輯斯迴歸 → KNN → 決策樹 → SVM → Naive Bayes
 集成：Bagging → 隨機森林 → Boosting（AdaBoost → Gradient Boosting → XGBoost）→ Voting / Stacking

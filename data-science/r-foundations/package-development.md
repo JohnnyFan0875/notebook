@@ -6,7 +6,7 @@
 
 ## 開發流程
 
-```
+```text
 create_package()  →  use_r("fn")  →  load_all() 互動試用  →  寫 roxygen 註解  →  document()
        ↑                                                                          ↓
   use_package() 加依賴  ←──  check() 修到 0 errors / 0 warnings  ←──  use_test() + test()
@@ -33,7 +33,7 @@ install()                              # 安裝到本機 library
 
 ## 套件結構
 
-```
+```text
 labtools/
 ├── DESCRIPTION        # metadata 與依賴
 ├── NAMESPACE          # 匯出 / 匯入；由 roxygen 產生，不要手改

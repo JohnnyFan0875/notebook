@@ -105,7 +105,7 @@ ASCII 品質編碼與 Phred 換算見 [鹼基品質分數](../genomics/ngs-qc/ba
 
 RNA-seq、甲基化、蛋白質體的「特徵 × 樣本」矩陣，加上樣本資訊與特徵資訊，打包成一個物件；**切子集時三者自動同步**，不會發生 metadata 與欄位錯位。
 
-```
+```text
               colData（樣本：cell、dex、batch…）
               ┌───────────────┐
  rowData /    │  assay(se)    │   counts、log-CPM 等，可存多個 assay

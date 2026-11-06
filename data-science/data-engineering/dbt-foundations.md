@@ -13,7 +13,7 @@ dbt 把 warehouse 內的資料轉換工程化：每個轉換寫成一個 SQL（�
 
 ## 專案結構
 
-```
+```text
 my_project/
 ├── dbt_project.yml       # 專案設定（每專案一份）
 ├── models/

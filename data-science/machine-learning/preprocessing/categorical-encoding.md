@@ -78,7 +78,7 @@ pipe = make_pipeline(TargetEncoder(), LogisticRegression())
 
 ## 怎麼選
 
-```
+```text
 類別有順序嗎？
 ├─ 是 → Ordinal（指定順序）
 └─ 否 → 類別數？

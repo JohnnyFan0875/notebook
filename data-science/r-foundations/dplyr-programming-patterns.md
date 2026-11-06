@@ -4,7 +4,7 @@
 
 一次性的 pipeline 變成要對不同欄位、不同資料表重複套用時，需要三種工具：**tidyselect** 規則化選欄、**`across()`** 批次轉換多欄、**tidy evaluation (`{{ }}`)** 讓函式接受欄名參數。基本 verbs 見 [Tidyverse 工作流](tidyverse-workflow.md)。
 
-```
+```text
 同一段 pipeline 重複貼？ → 包成函式（參數是值）
 很多欄套同一轉換？      → across() + 選欄 helper
 函式參數是「欄名」？    → {{ col }}；動態輸出欄名 → "mean_{{ col }}" :=

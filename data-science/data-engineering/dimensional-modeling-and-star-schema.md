@@ -61,7 +61,7 @@ Lakehouse 常用 medallion architecture 表達同樣的資料成熟度：
 
 star schema 把資料分成兩種表：fact table 記錄事件與度量，dimension table 提供描述與分析脈絡。
 
-```
+```text
               dim_date
                  │
 dim_patient ── fact_measurement ── dim_gene

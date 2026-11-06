@@ -6,7 +6,7 @@
 
 ## Chat API 的心智模型
 
-```
+```text
 請求 = 模型 ID + messages（system / user / assistant / tool）+ 參數 + [輸出 schema] + [工具定義]
 回應 = 生成內容 或 工具呼叫請求 + 停止原因 + token 用量
 ```
@@ -110,7 +110,7 @@ info = AbstractInfo.model_validate_json(raw_text)   # 失敗會丟 ValidationErr
 
 讓模型決定「要呼叫哪個函式、帶什麼參數」，由程式實際執行，再把結果回傳給模型。適合模型不該自己編的東西：資料庫查詢、計算、外部 API。
 
-```
+```text
 使用者問題 → 模型回傳 tool_calls（函式名 + JSON 參數）→ 程式驗證參數並執行
          → 結果以 role="tool" 回傳 → 模型產生最終回答（或再呼叫工具）
 ```
@@ -222,7 +222,7 @@ n = len(enc.encode(long_document))
 
 ## 上線前的請求流程
 
-```
+```text
 驗證請求 → 輸入 guardrail → 組 prompt（模板 + 檢索結果）→ 呼叫模型（有上限的參數）
 → 驗證輸出 / 工具參數 → 只對暫時性錯誤重試 → 記錄（版本、token、延遲、結果）
 ```

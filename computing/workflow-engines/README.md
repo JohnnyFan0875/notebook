@@ -19,7 +19,7 @@
 | 社群 pipeline | — | Snakemake Workflow Catalog | **nf-core** | providers（整合各系統） |
 | 典型用途 | 小專案、報告建置 | 學術生資分析 | 標準化生資 pipeline、臨床與大型專案 | ETL / ELT、資料倉儲、跨系統協調 |
 
-```
+```text
 樣本級的生資分析（FASTQ → BAM → VCF / counts）？
 ├─ 有現成 nf-core pipeline → Nextflow（nf-core）
 ├─ 自己寫、偏好 Python      → Snakemake

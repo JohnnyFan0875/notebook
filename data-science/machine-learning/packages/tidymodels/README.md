@@ -19,7 +19,7 @@ R 的預測建模套件集合，定位等同 Python 的 [scikit-learn](../scikit
 
 ## 完整流程
 
-```
+```text
 initial_split ──► training ──► vfold_cv ──► tune_grid（每折內 prep recipe + fit）
       │                                         │
       │                                   select_best

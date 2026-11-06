@@ -23,7 +23,7 @@ RxNorm 是美國 NLM 維護的臨床藥品標準命名，把各家藥品資料�
 | SCD | 臨床藥品 = 成分 + 劑量 + 劑型 | acetaminophen 500 MG Oral Tablet（RxCUI `198440`） |
 | SBD | 品牌藥品 = SCD + 品牌 | acetaminophen 500 MG Oral Tablet [Tylenol]（RxCUI `209459`） |
 
-```
+```text
 IN  acetaminophen ──┐
 DF  Oral Tablet ────┼──► SCD acetaminophen 500 MG Oral Tablet
 BN  Tylenol ────────┘          │

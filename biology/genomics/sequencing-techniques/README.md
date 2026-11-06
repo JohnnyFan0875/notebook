@@ -9,6 +9,8 @@
 | [定序平台](sequencing-platforms.md) | Illumina、MGI、Element、PacBio、ONT 等的原理與錯誤型態；2-channel、RCA、cPAS、avidity 化學 | 該用短讀還是長讀？會有哪些假象？ |
 | [標靶定序](targeted-panels.md) | WGS / WES / panel、amplicon vs hybrid capture、panel 內容資源 | 要定多大範圍？用哪種捕捉方式？ |
 | [ChIP-seq](chip-seq.md) | 蛋白質–DNA 結合、peak calling、差異結合 | 轉錄因子 / 組蛋白修飾在哪裡？ |
+| [ATAC-seq](atac-seq.md) | Tn5 tagmentation、片段長度與 TSS enrichment QC、差異可及性、motif、scATAC | 哪些調控區是開放的？條件間如何改變？ |
+| [DNA 甲基化定序](dna-methylation-sequencing.md) | bisulfite / EM-seq / 長讀 / 陣列、Bismark、β vs M 值、DMR、細胞組成混淆 | 哪些 CpG 或區域的甲基化不同？ |
 | [液態切片](liquid-biopsy.md) | cfDNA、ctDNA、CTC、MRD | 能不能從血液偵測腫瘤？ |
 | [單細胞 RNA-seq](single-cell-rna-seq/README.md) | 流程、QC、分群、軌跡分析 | 樣本中有哪些細胞類型與狀態？ |
 

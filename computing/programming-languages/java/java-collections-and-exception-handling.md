@@ -108,7 +108,7 @@ try {
 
 ### 例外的種類
 
-```
+```text
 Throwable
 ├── Error                    嚴重問題，通常不處理：OutOfMemoryError、StackOverflowError
 └── Exception

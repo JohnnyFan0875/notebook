@@ -69,7 +69,7 @@ CREATE WAREHOUSE analytics_wh
 
 ### 載入與監控
 
-```
+```text
 從雲端儲存準備檔案 → 建立 stage 並設定權限（storage integration）→ COPY INTO 載入 → 檢查 copy history
 ```
 

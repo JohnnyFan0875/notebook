@@ -20,7 +20,7 @@ Git 負責記錄歷史；GitHub 是建立在 Git repo 之上的協作平台：�
 
 ## Pull Request 流程
 
-```
+```text
 1. 建立 feature 分支           git switch -c fix/bed-parser
 2. 在本機 commit               git commit -m "Fix off-by-one in BED parser"
 3. 推送分支                    git push -u origin fix/bed-parser

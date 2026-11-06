@@ -6,7 +6,7 @@
 
 ## 先決定要不要 scraping
 
-```
+```text
 有官方 API / 下載檔？ ──是──→ 用 API（見 API 與 HTTP），不要抓 HTML
         │否
 DevTools → Network 看得到 XHR / fetch 回傳的 JSON？ ──是──→ 直接呼叫那個 JSON 端點

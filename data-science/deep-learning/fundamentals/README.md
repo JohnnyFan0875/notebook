@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 tensor → linear layer → activation → loss → 反向傳播 / optimizer → 初始化 → 正則化與 normalization
 (資料)    (一層的運算)   (非線性)     (目標)   (怎麼更新)            (起點)      (怎麼不過擬合、怎麼穩)
 ```

@@ -258,7 +258,7 @@ df.select_dtypes("number").to_numpy()
 
 ## 匯入流程檢查表
 
-```
+```text
 辨識格式（副檔名 + 用 head / less 看前幾行）
   → 決定目標結構（array / DataFrame / 專用物件）
   → 大檔先讀一小段（nrows / chunksize）

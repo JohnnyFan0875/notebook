@@ -40,7 +40,7 @@ renv::history(); renv::revert(commit = "abc123")   # 搭配 git 回到舊的 loc
 renv::deactivate()                       # 停用
 ```
 
-```
+```text
 init() ──→ 開發：install() / 寫程式 ──→ status() ──→ snapshot() ──→ git commit renv.lock
                          ↑                                              │
                          └──────────── 合作者：git pull → restore() ←──┘

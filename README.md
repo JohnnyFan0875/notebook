@@ -9,7 +9,7 @@
 | [Computing](computing/README.md) | CS 基礎、命令列、SSH 與開發工具、Git、conda / 容器、Slurm 與工作流引擎、雲端、DevOps、Web 開發 | [建議路線](computing/README.md#建議路線) |
 | [Productivity](productivity/README.md) | Excel 與 Power Query / Pivot、Markdown、Word、數位簽章、課程製作 | [試算表](productivity/spreadsheets/README.md) |
 
-```
+```text
 Biology（資料怎麼來、代表什麼）
    ⇅
 Data Science（怎麼分析）  ⇄  Computing（怎麼跑得動、跑得出同樣結果）

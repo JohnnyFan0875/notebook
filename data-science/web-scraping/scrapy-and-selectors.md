@@ -4,7 +4,7 @@
 
 Scrapy 是 Python 的爬蟲框架：排程請求、跟隨連結、節流、重試、輸出都幫你處理好。它的 selector 引擎 `parsel` 也可以單獨使用，對任何 HTML 寫 CSS / XPath。CSS 與 XPath 語法對照見 [Web Scraping](README.md#css-selector-vs-xpath)。
 
-```
+```text
 抓一頁 → 解析 HTML → 選重複區塊 → 抽文字 / 屬性 → 跟隨下一頁連結 → 輸出結構化資料
 ```
 

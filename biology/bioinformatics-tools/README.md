@@ -15,7 +15,7 @@
 
 ## 一個樣本從 FASTQ 到 VCF 用到的工具
 
-```
+```text
 FASTQ ──FastQC / fastp──► 乾淨 FASTQ ──比對（BWA / STAR）──► BAM
   ──samtools sort / index──► Picard / sambamba 標記重複 ──► 變異呼叫 ──► VCF
   ──bcftools filter / norm / annotate──► bgzip + tabix ──► 下游判讀

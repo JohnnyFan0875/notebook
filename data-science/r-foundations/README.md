@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 資料結構 → 類別資料 → 控制流程 → 函式 → 日期時間 → 匯入 → 缺值
                                                         ↓
      Bioconductor ← 統計函式 ← data.table ← join / reshape ← tidyverse

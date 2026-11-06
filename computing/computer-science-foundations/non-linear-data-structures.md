@@ -106,7 +106,7 @@ heapq.nlargest(3, [5, 1, 9, 7, 3])         # [9, 7, 5]：前 k 名，O(n log k)
 
 用雜湊函數 (hash function) 把 key 轉成陣列位置，查詢、插入、刪除平均 `O(1)`。Python 的 `dict` 與 `set` 就是雜湊表。
 
-```
+```text
 key "TP53" ──hash()──► 8172...  ──mod 表大小──► 第 3 格 ──► value
 ```
 

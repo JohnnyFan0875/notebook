@@ -8,7 +8,7 @@
 
 各成像模態量的物理量（HU、MRI 加權、SUV）與假影見 [Biology：醫學影像](../../biology/medical-imaging/README.md)。
 
-```
+```text
 讀影像與 metadata → 確認 shape / spacing / FOV / 方向 → 用強度建 mask → 形態學修 mask
   → 標記物件 → 轉成可量測特徵（體積、距離、中心）→ 必要時 registration / resampling
 ```

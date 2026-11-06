@@ -6,7 +6,7 @@ Autoencoder 把輸入壓縮成低維的潛在表示 (latent representation) $z$�
 
 ## Autoencoder
 
-```
+```text
 x (高維，如 2,000 個基因) ─► encoder ─► z (低維，如 10) ─► decoder ─► x̂ (重建)
                                                          loss = ‖x − x̂‖²
 ```

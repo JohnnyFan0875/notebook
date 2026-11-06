@@ -21,7 +21,7 @@ Agent = LLM + 工具 + 編排：模型判斷還缺什麼資訊、呼叫工具取
 
 ## Thought → Action → Observation
 
-```
+```text
 任務 ──→ 思考：還缺什麼？下一步做什麼？
             ↓
          行動：呼叫工具（搜尋 PubMed、查 GEO、執行程式）

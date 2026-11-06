@@ -4,7 +4,7 @@
 
 從某個起點出發，有系統地拜訪所有可到達的節點。兩種經典走法：深度優先 (DFS) 一路走到底再回頭，廣度優先 (BFS) 一圈一圈往外擴。兩者的差別來自背後的資料結構：DFS 對應[堆疊](linear-data-structures.md#堆疊-stacklifo)（或遞迴），BFS 對應[佇列](linear-data-structures.md#佇列-queuefifo)。圖的表示法見 [非線性資料結構](non-linear-data-structures.md#圖的表示法-graph-representation)。
 
-```
+```text
         A                DFS（A 起）：A → B → D → E → C → F    一條路走到底再回溯
        / \               BFS（A 起）：A → B → C → D → E → F    先走完距離 1，再走距離 2
       B   C

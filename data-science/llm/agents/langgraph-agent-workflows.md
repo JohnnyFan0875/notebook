@@ -19,7 +19,7 @@ LangGraph 把 agent 寫成一張**狀態圖**：節點 (node) 是步驟，邊 (e
 
 ## 最小的 tool-using agent
 
-```
+```text
 START → model ──(有 tool_calls)──→ tools ──→ model ……
               └─(沒有 tool_calls)──→ END
 ```

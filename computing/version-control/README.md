@@ -4,7 +4,7 @@
 
 用 Git 記錄程式碼的每個版本、用 GitHub 協作。分析程式碼、pipeline、筆記都應該放在版本控制下；資料與大型產出則不放進 Git（用 [DVC](../../data-science/machine-learning/production/dvc.md) 或資料倉儲）。
 
-```
+```text
 Git（本機：commit、branch、merge、復原）→ GitHub（遠端：PR、review、CI、保護分支）
 ```
 

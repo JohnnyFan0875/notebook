@@ -4,7 +4,7 @@
 
 真正做網路分析時，資料很少一開始就是乾淨的 node–edge 表：拿到的是事件紀錄、文字、交易、移動軌跡或表現量矩陣，要自己決定怎麼轉成 graph。不同的建模選擇會產生不同的 edge 意義。指標的定義與解讀見 [入門](introduction-to-network-analysis.md) 與 [結構指標](directed-networks-and-structural-metrics.md)。
 
-```
+```text
 定義一列代表什麼事件 → 決定事件會不會產生 edge（方向、意義）→ 必要時從文字抽出關係
   → 重複互動聚合成權重 → 建圖後清理 → 大圖切子圖或時間切片 → 計算指標、比較方法
 ```

@@ -6,7 +6,7 @@ Azure 是 Microsoft 的雲端平台，常見於已深度使用 Microsoft 生態�
 
 ## 資源階層
 
-```
+```text
 Microsoft Entra ID 租用戶 (tenant)：身分
 └── 管理群組 (management group)：多個訂用帳戶的治理
     └── 訂用帳戶 (subscription)：計費與存取邊界

@@ -81,7 +81,7 @@ ndiffs(np.log(y), test="adf")              # 自動建議差分次數 d
 
 ## 流程
 
-```
+```text
 畫圖 → 變異變大？→ log / Box-Cox → ADF + KPSS → 定態？→ 完成
                                               ↓ 否
                                     一階差分 → 再檢定 → 看 ACF 是否快速衰減

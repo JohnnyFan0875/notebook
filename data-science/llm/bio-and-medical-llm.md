@@ -23,7 +23,7 @@ LLM 在生資與醫療研究中最可靠的用途是**處理文字**：文獻篩
 
 ## 文獻探勘流程
 
-```
+```text
 PubMed 查詢（E-utilities / Biopython Entrez）
         ↓  PMID、標題、摘要、MeSH
 LLM 篩選（structured output：include / exclude / uncertain + 理由）

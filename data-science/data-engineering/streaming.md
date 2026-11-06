@@ -38,7 +38,7 @@ Apache Kafka 是開源、分散式的事件串流平台：producer 把事件寫�
 | Consumer group | 同一 group 的 consumer 分工：每個 partition 同時只分給 group 中一個 consumer |
 | Broker / cluster | Kafka 伺服器；以叢集運作，負責儲存與通訊（Kafka 4.0 起只用 KRaft，不再需要 ZooKeeper） |
 
-```
+```text
 producers → topic "orders"
               ├── partition 0: e0 e3 e6 ...  ──┐
               ├── partition 1: e1 e4 e7 ...  ──┼─→ consumer group A（寫入分析表）
@@ -118,7 +118,7 @@ counts = (events.selectExpr("CAST(value AS STRING) AS json", "timestamp")
 
 ## AWS：Kinesis + Firehose + Lambda
 
-```
+```text
 來源 → Kinesis Data Streams ──→ Lambda（過濾、轉換、enrichment）──→ S3 / Redshift / OpenSearch / API
           或 Amazon Data Firehose（緩衝後直接送達目的地，可掛 Lambda 轉換）
                                    └→ CloudWatch 指標 / 告警 → SNS 通知

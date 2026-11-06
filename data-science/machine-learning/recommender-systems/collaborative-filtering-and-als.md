@@ -18,7 +18,7 @@ $$
 
 同時最佳化 U 和 V 很難，但固定其中一個後，另一個就是一般的 [Ridge 迴歸](../supervised-learning/regression/ridge.md)，有封閉解：
 
-```
+```text
 初始化 U、V
 重複：
   固定 V，對每個使用者解 Ridge 迴歸 → 更新 U

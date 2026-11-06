@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 MLOps 概觀 → 部署與監控 → MLflow（實驗追蹤、模型註冊）→ DVC（資料與 pipeline 版本）
 ```
 

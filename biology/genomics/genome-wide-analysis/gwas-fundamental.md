@@ -6,7 +6,7 @@
 
 ## 流程
 
-```
+```text
 基因型（晶片 / 定序）──QC──► 填補 (imputation) ──► 族群結構（PCA）
   ──► 逐 SNP 關聯檢定（共變數：年齡、性別、PCs）──► Manhattan / QQ、λ
   ──► 顯著位點 ──► fine-mapping、colocalization、功能註解 ──► 候選基因

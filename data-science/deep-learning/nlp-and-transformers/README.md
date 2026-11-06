@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 token / embedding → RNN / LSTM（狀態傳遞） → attention → Transformer → 應用
                                                                    ├─ LLM：見 LLM 章節
                                                                    └─ DNA / 蛋白質：見生資應用

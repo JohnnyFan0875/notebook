@@ -6,7 +6,7 @@ GitHub Actions 是 GitHub 內建的 CI/CD：在 push、PR、排程等事件發�
 
 ## 結構
 
-```
+```text
 workflow（一個 .yml 檔）
 ├── on：觸發條件（push、pull_request、schedule…）
 └── jobs：可平行執行的工作

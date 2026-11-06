@@ -6,7 +6,7 @@ PyTorch 沒有 `fit()`，訓練迴圈要自己寫。好處是每一步都看得�
 
 ## 整體流程
 
-```
+```text
 資料切分（先切！以病人 / 個體 / 序列群為單位）
   ↓
 Dataset（怎麼取第 i 筆）→ DataLoader（batch、shuffle、平行讀取）

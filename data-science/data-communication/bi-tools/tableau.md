@@ -6,7 +6,7 @@ Tableau 是視覺分析工具：拖放探索、快速迭代問題與圖表、交
 
 ## 工作流程
 
-```
+```text
 形成問題 → 連接資料 → 定義欄位 → 分析 → 組成 dashboard → 溝通決策
 ```
 
@@ -57,7 +57,7 @@ Tableau 是視覺分析工具：拖放探索、快速迭代問題與圖表、交
 | LOD 運算式 | 在指定的 grain 聚合，不受視覺當前的層級影響 | `{FIXED [Customer ID] : MIN([Order Date])}`（每位客戶的首購日） |
 | Table calculation | 對視覺中已算好的值再計算 | 累計總和、排名、與前期差異、佔總計比例 |
 
-```
+```text
 // 列層級 vs 聚合：利潤率要先聚合再相除
 Profit Ratio (錯)  = [Profit] / [Sales]                  // 每列算比率，視覺再加總 → 比率被加總
 Profit Ratio (對)  = SUM([Profit]) / SUM([Sales])

@@ -4,7 +4,7 @@
 
 日常開發與遠端工作的工具：編輯器、連線到伺服器、保持長時間工作不中斷、傳輸與驗證檔案。生資工作的典型組合是：VS Code（Remote-SSH）+ SSH 金鑰 + tmux + rsync + md5sum。
 
-```
+```text
 本機 ──SSH（金鑰、config、ProxyJump）──► 伺服器 / HPC
  │  VS Code Remote-SSH 編輯         │  tmux 保持 session
  └─ rsync / scp 傳檔 ──────────────►│  md5sum 驗證、tar / gzip 打包

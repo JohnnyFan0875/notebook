@@ -59,7 +59,7 @@
 
 由 Complete Genomics（後被 BGI 收購）發展，源自早期的 cPAL（probe-anchor **ligation**），後來把連接酶改成聚合酶，名稱也從 ligation 變成 synthesis。
 
-```
+```text
 anchor primer 與 DNB 接頭雜交
   → 聚合酶接上一個帶螢光、可逆終止的核苷酸
   → 成像判讀鹼基

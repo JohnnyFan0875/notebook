@@ -6,7 +6,7 @@
 
 ## 流程
 
-```
+```text
 FASTQ ──比對（Bowtie2 / BWA）──► BAM ──過濾（MAPQ、重複、blacklist）
   ──► peak calling（MACS3，ChIP vs input）──► peak（BED / narrowPeak）
   ──► QC（FRiP、重複一致性、指紋圖）
@@ -23,7 +23,7 @@ FASTQ ──比對（Bowtie2 / BWA）──► BAM ──過濾（MAPQ、重複�
 | 定序深度 | 轉錄因子約 20 M reads；廣域組蛋白修飾（H3K27me3、H3K36me3）40 M 以上 |
 | 抗體 | 品質決定一切；用已驗證的 ChIP 級抗體 |
 | peak 類型 | 轉錄因子、H3K4me3：窄峰 (narrow)；H3K27me3、H3K36me3：廣域 (broad) |
-| 替代方法 | CUT&RUN / CUT&Tag（低起始量、背景低）；ATAC-seq（開放染色質，不需抗體） |
+| 替代方法 | CUT&RUN / CUT&Tag（低起始量、背景低）；[ATAC-seq](atac-seq.md)（開放染色質，不需抗體） |
 
 ## Peak calling 與 QC
 

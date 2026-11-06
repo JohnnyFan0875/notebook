@@ -36,7 +36,7 @@
 | 自然鍵 (natural key) | 業務系統，如病歷號、Ensembl ID | 有意義、可直接對外 | 可能變動或重用（基因改名、ID 改版） |
 | 代理鍵 (surrogate key) | 系統產生的流水號或 UUID | 穩定、單欄、與業務規則解耦 | 本身沒有意義，需要另外保存自然鍵 |
 
-```
+```text
 patient (patient_id PK, sex, birth_year)
    │ 1:N
 sample  (sample_id PK, patient_id FK, tissue, collection_date)

@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 scikit-image 基本功（灰階、濾波、對比、閾值、分割、量測）→ 生醫影像（3D volume、spacing、mask、體積、registration）
 ```
 

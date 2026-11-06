@@ -6,7 +6,7 @@
 
 ## 建議順序
 
-```
+```text
 基礎 → 函數 → 資料準備 → 資料驗證 / 條件式格式 → 資料分析 → Power Query → Power Pivot
                                                               └─ 自動化：Python
 ```

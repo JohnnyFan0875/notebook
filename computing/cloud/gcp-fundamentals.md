@@ -6,7 +6,7 @@ Google Cloud (GCP) 是 Google 的雲端平台，特色是全球網路、資料�
 
 ## 資源階層
 
-```
+```text
 組織 (organization)
 └── 資料夾 (folder)
     └── 專案 (project)：計費、API 啟用、權限的基本單位

@@ -4,7 +4,7 @@
 
 Docker 把應用程式與其相依套件打包成可攜的映像檔 (image)，再以容器 (container) 執行。對資料工作者：把分析環境（R / Python 版本、系統函式庫、生資工具）固定下來，在筆電、伺服器、雲端得到一樣的結果；HPC 上則用 [Apptainer](../apptainer.md) 執行同一個映像檔。概念與 VM 的比較見 [容器與虛擬化](../containerization-and-virtualization.md)。
 
-```
+```text
 Dockerfile ──docker build──► Image ──docker run──► Container
                                │  ▲
                    docker push │  │ docker pull
@@ -14,7 +14,7 @@ Dockerfile ──docker build──► Image ──docker run──► Container
 
 ## 建議順序
 
-```
+```text
 映像檔 → 容器 → Dockerfile → Volume 與掛載 → 網路 → Compose
 ```
 

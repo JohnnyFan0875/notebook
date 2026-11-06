@@ -13,7 +13,7 @@ CDISC (Clinical Data Interchange Standards Consortium) 制定臨床試驗資料�
 
 ## 標準家族
 
-```
+```text
 CDASH（收集：CRF 欄位）
    │
 SDTM（整理：標準 domain）     SEND（非臨床 / 動物試驗版的 SDTM）

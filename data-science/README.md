@@ -1,3 +1,5 @@
+[Notebook](../README.md) › Data Science
+
 # 資料科學 (Data Science)
 
 從 Python / R 基礎、資料整理與 EDA、統計推論，到機器學習、深度學習與 LLM 應用。主軸是**先理解資料，再建立模型，最後把結果說清楚**。
